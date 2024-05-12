@@ -1,7 +1,7 @@
 # Vvr.System
 
 *Part of **Vvr Framework**®  
-Copyright 2022 Syadeu. All rights reserved* 
+Copyright 2024 Syadeu. All rights reserved* 
 
 ------
 
