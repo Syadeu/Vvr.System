@@ -30,12 +30,12 @@ using Vvr.System.Model;
 
 namespace Vvr.System.Controller
 {
-    public sealed partial class SkillContainer : ITimeUpdate, IDisposable, ISkill
+    public sealed partial class SkillController : ITimeUpdate, IDisposable, ISkill
     {
-        private static readonly Dictionary<Hash, SkillContainer>
+        private static readonly Dictionary<Hash, SkillController>
             s_CachedController = new();
 
-        public static SkillContainer GetOrCreate(IActor o)
+        public static SkillController GetOrCreate(IActor o)
         {
 #if UNITY_EDITOR
             if (o is UnityEngine.Object uo &&
@@ -48,7 +48,7 @@ namespace Vvr.System.Controller
             Hash hash = o.GetHash();
             if (!s_CachedController.TryGetValue(hash, out var r))
             {
-                r = new SkillContainer(hash, o);
+                r = new SkillController(hash, o);
                 TimeController.Register(r);
                 s_CachedController[hash] = r;
             }
@@ -87,7 +87,7 @@ namespace Vvr.System.Controller
 
         private IActor Owner { get; }
 
-        private SkillContainer(
+        private SkillController(
             Hash            hash, IActor o)
         {
             m_Hash           = hash;
@@ -326,7 +326,7 @@ namespace Vvr.System.Controller
         }
     }
 
-    partial class SkillContainer : IConnector<ITargetProvider>
+    partial class SkillController : IConnector<ITargetProvider>
     {
         void IConnector<ITargetProvider>.Connect(ITargetProvider t)
         {
