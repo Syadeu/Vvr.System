@@ -242,39 +242,38 @@ public void PlusOperatorTest_3()
 
 ```C#
 GameMethodImplDelegate IGameMethodProvider.Resolve(GameMethod method)
+{
+  if (method == GameMethod.Destroy)
+  {
+    return async e =>
     {
-        if (method == GameMethod.Destroy)
-        {
-            return async e =>
-            {
-                if (m_DestroyProcessing) return;
-                if (e is not IActor x) return;
+      if (m_DestroyProcessing) return;
+      if (e is not IActor x) return;
 
-                m_DestroyProcessing = true;
-                using (var trigger = ConditionTrigger.Push(x, nameof(GameMethod)))
-                {
-                    await trigger.Execute(Condition.OnActorDead, null);
-                }
+      m_DestroyProcessing = true;
+      using (var trigger = ConditionTrigger.Push(x, nameof(GameMethod)))
+      {
+        await trigger.Execute(Condition.OnActorDead, null);
+      }
 
-                var field = x.ConditionResolver[Condition.IsPlayerActor](null) ? m_PlayerField : m_EnemyField;
-                int index = field.FindIndex(e => e.owner == x);
-                if (index < 0)
-                {
-                    $"{index} not found in field {x.ConditionResolver[Condition.IsPlayerActor](null)}".ToLogError();
-                    return;
-                }
+      var field = x.ConditionResolver[Condition.IsPlayerActor](null) ? m_PlayerField : m_EnemyField;
+      int index = field.FindIndex(e => e.owner == x);
+      if (index < 0)
+      {
+        $"{index} not found in field {x.ConditionResolver[Condition.IsPlayerActor](null)}".ToLogError();
+        return;
+      }
 
-                RuntimeActor actor = field[index];
+      RuntimeActor actor = field[index];
 
-                $"Actor {actor.owner.DisplayName} is dead {actor.owner.Stats[StatType.HP]}".ToLog();
+      $"Actor {actor.owner.DisplayName} is dead {actor.owner.Stats[StatType.HP]}".ToLog();
 
-                await Delete(field, actor);
-                m_DestroyProcessing = false;
-            };
-        }
+      await Delete(field, actor);
+      m_DestroyProcessing = false;
+    };
+  }
 
-        throw new NotImplementedException();
-    }
+  throw new NotImplementedException();
 }
 ```
 
