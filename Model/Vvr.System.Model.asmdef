@@ -1,0 +1,21 @@
+{
+  "name": "Vvr.System.Model",
+  "autoReferenced": true,
+  "references": [
+    "BakingSheet",
+    "BakingSheet.ScriptableObject",
+    "BakingSheet.Google",
+    "BakingSheet.Excel",
+
+    "Unity.ResourceManager",
+    "Unity.Addressables",
+    "Unity.Collections",
+    "Unity.Mathematics",
+
+    "Vvr",
+    "Vvr.UI",
+
+    "UniTask",
+    "UniTask.Addressables"
+  ]
+}

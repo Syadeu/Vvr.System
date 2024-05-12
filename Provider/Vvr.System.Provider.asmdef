@@ -1,0 +1,15 @@
+{
+  "name": "Vvr.System.Provider",
+  "autoReferenced": true,
+  "references": [
+    "Vvr",
+    "Vvr.System.Model",
+
+    "Unity.Collections",
+    "Unity.Mathematics",
+
+    "BakingSheet",
+
+    "UniTask"
+  ]
+}
