@@ -22,7 +22,7 @@
 using System.Collections.Generic;
 using Vvr.System.Model;
 
-namespace Vvr.System.Provider
+namespace Vvr.MPC.Provider
 {
     public sealed class WalletProvider
     {

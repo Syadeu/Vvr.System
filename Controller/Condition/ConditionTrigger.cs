@@ -25,8 +25,8 @@ using System.Linq;
 using Cysharp.Threading.Tasks;
 using UnityEngine.Assertions;
 using Vvr.Buffer;
+using Vvr.MPC.Provider;
 using Vvr.System.Model;
-using Vvr.System.Provider;
 
 namespace Vvr.System.Controller
 {

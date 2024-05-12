@@ -24,8 +24,8 @@ using System.Linq;
 using Cysharp.Threading.Tasks;
 using UnityEngine.Assertions;
 using UnityEngine.Scripting;
+using Vvr.MPC.Provider;
 using Vvr.System.Model;
-using Vvr.System.Provider;
 
 namespace Vvr.System.Controller
 {
@@ -42,8 +42,8 @@ namespace Vvr.System.Controller
 
         protected override async UniTask OnInitialize()
         {
-            Provider.Provider.Static.Connect<IStateConditionProvider>(this);
-            Provider.Provider.Static.Connect<IGameConfigProvider>(this);
+            Provider.Static.Connect<IStateConditionProvider>(this);
+            Provider.Static.Connect<IGameConfigProvider>(this);
 
             TimeController.Register(this);
 
@@ -54,8 +54,8 @@ namespace Vvr.System.Controller
         }
         protected override UniTask OnReserve()
         {
-            Provider.Provider.Static.Disconnect<IStateConditionProvider>(this);
-            Provider.Provider.Static.Disconnect<IGameConfigProvider>(this);
+            Provider.Static.Disconnect<IStateConditionProvider>(this);
+            Provider.Static.Disconnect<IGameConfigProvider>(this);
 
             TimeController.Unregister(this);
 
@@ -143,7 +143,7 @@ namespace Vvr.System.Controller
     {
         private async UniTask ExecuteMethod(IEventTarget o, GameMethod method)
         {
-            var methodProvider = await Provider.Provider.Static.GetAsync<IGameMethodProvider>();
+            var methodProvider = await Provider.Static.GetAsync<IGameMethodProvider>();
             await methodProvider.Resolve(method)(o);
         }
 

@@ -24,7 +24,7 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using Vvr.System.Model;
 
-namespace Vvr.System.Provider
+namespace Vvr.MPC.Provider
 {
     public sealed class StatProvider : IStatConditionProvider
     {

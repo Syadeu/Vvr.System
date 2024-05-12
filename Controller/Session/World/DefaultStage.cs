@@ -26,8 +26,8 @@ using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Assertions;
 using UnityEngine.Scripting;
+using Vvr.MPC.Provider;
 using Vvr.System.Model;
-using Vvr.System.Provider;
 using Vvr.UI.Observer;
 using NotImplementedException = System.NotImplementedException;
 
@@ -216,24 +216,24 @@ namespace Vvr.System.Controller
 
         protected override async UniTask OnInitialize(IParentSession session, SessionData data)
         {
-            Provider.Provider.Static.Register<ITargetProvider>(this);
-            Provider.Provider.Static.Register<IStateConditionProvider>(this);
-            Provider.Provider.Static.Register<IGameMethodProvider>(this);
+            Provider.Static.Register<ITargetProvider>(this);
+            Provider.Static.Register<IStateConditionProvider>(this);
+            Provider.Static.Register<IGameMethodProvider>(this);
 
-            await Provider.Provider.Static.ConnectAsync<IEventTargetProvider>(this);
+            await Provider.Static.ConnectAsync<IEventTargetProvider>(this);
 
-            m_ViewProvider = Provider.Provider.Static.GetLazyAsync<IEventViewProvider>();
+            m_ViewProvider = Provider.Static.GetLazyAsync<IEventViewProvider>();
 
             m_EnemyId = Owner.Issue;
         }
 
         protected override UniTask OnReserve()
         {
-            Provider.Provider.Static.Unregister<ITargetProvider>(this);
-            Provider.Provider.Static.Unregister<IStateConditionProvider>(this);
-            Provider.Provider.Static.Unregister<IGameMethodProvider>(this);
+            Provider.Static.Unregister<ITargetProvider>(this);
+            Provider.Static.Unregister<IStateConditionProvider>(this);
+            Provider.Static.Unregister<IGameMethodProvider>(this);
 
-            Provider.Provider.Static.Disconnect<IEventTargetProvider>(this);
+            Provider.Static.Disconnect<IEventTargetProvider>(this);
 
             m_ViewProvider = null;
 

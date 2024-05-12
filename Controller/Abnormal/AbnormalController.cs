@@ -26,8 +26,8 @@ using System.Linq;
 using Cysharp.Threading.Tasks;
 using DG.Tweening;
 using Vvr.Crypto;
+using Vvr.MPC.Provider;
 using Vvr.System.Model;
-using Vvr.System.Provider;
 using Vvr.UI.Observer;
 
 namespace Vvr.System.Controller

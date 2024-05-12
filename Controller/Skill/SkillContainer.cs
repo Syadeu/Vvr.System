@@ -25,8 +25,8 @@ using Cathei.BakingSheet;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Assertions;
+using Vvr.MPC.Provider;
 using Vvr.System.Model;
-using Vvr.System.Provider;
 
 namespace Vvr.System.Controller
 {
@@ -136,7 +136,7 @@ namespace Vvr.System.Controller
 
             if (value.skill.Presentation.SelfEffect.IsValid())
             {
-                IEventViewProvider viewProvider = await Provider.Provider.Static.GetAsync<IEventViewProvider>();
+                IEventViewProvider viewProvider = await Provider.Static.GetAsync<IEventViewProvider>();
                 Transform          view         = await viewProvider.Resolve(Owner);
 
                 var effectPool = GameObjectPool.Get(value.skill.Presentation.SelfEffect);
@@ -192,7 +192,7 @@ namespace Vvr.System.Controller
 
             // Cache effect position
             // because target can be destroyed during this skill execution (ex. actor is dead)
-            IEventViewProvider viewProvider = await Provider.Provider.Static.GetAsync<IEventViewProvider>();
+            IEventViewProvider viewProvider = await Provider.Static.GetAsync<IEventViewProvider>();
             Vector3            viewPosition;
             {
                 Transform view = await viewProvider.Resolve(target);

@@ -22,8 +22,8 @@
 using System;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
+using Vvr.MPC.Provider;
 using Vvr.System.Model;
-using Vvr.System.Provider;
 
 namespace Vvr.System.Controller
 {
@@ -46,7 +46,7 @@ namespace Vvr.System.Controller
 
         protected override UniTask OnInitialize(IParentSession session, SessionData data)
         {
-            m_ViewProvider = Provider.Provider.Static.GetLazyAsync<IEventViewProvider>();
+            m_ViewProvider = Provider.Static.GetLazyAsync<IEventViewProvider>();
 
             return base.OnInitialize(session, data);
         }

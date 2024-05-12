@@ -19,7 +19,7 @@
 
 #endregion
 
-namespace Vvr.System.Provider
+namespace Vvr.MPC.Provider
 {
     public interface IConnector<in T> where T : IProvider
     {

@@ -21,7 +21,7 @@
 
 using Vvr.System.Model;
 
-namespace Vvr.System.Provider
+namespace Vvr.MPC.Provider
 {
     public interface IAbnormalConditionProvider
     {

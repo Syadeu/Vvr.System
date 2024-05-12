@@ -24,7 +24,7 @@ using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using UnityEngine.Assertions;
 
-namespace Vvr.System.Provider
+namespace Vvr.MPC.Provider
 {
     public struct Provider
     {

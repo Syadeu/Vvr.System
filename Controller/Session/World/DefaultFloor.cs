@@ -23,8 +23,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Cysharp.Threading.Tasks;
+using Vvr.MPC.Provider;
 using Vvr.System.Model;
-using Vvr.System.Provider;
 using Vvr.UI.Observer;
 
 namespace Vvr.System.Controller
@@ -66,7 +66,7 @@ namespace Vvr.System.Controller
             m_StageStartEvent = new();
 
             ObjectObserver<DefaultFloor>.Get(this).EnsureContainer();
-            Provider.Provider.Static.Register<IStageProvider>(this);
+            Provider.Static.Register<IStageProvider>(this);
 
             return base.OnInitialize(session, data);
         }
@@ -74,7 +74,7 @@ namespace Vvr.System.Controller
         protected override UniTask OnReserve()
         {
             m_FloorStartEvent.TrySetResult();
-            Provider.Provider.Static.Unregister<IStageProvider>(this);
+            Provider.Static.Unregister<IStageProvider>(this);
 
             return base.OnReserve();
         }
