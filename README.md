@@ -51,8 +51,6 @@ Stat(이하 스탯)또한 기획 필요로 인해 새로운 스탯이 추가되�
 
 스탯은 최대 64개를 기획자가 개발할 수 있도록 설계되었으며, 중요 시스템에서 사용되는 스탯 값이 아닌 스탯 값들은 Unknown 스탯 값으로 구분되어 long 값을 통해 시스템에서 동적으로 스탯을 참조하고 할당합니다.
 
-이 시트의 구조는 https://docs.google.com/spreadsheets/d/1210EHg1DeiuPKkWcynhwGYKuEg2DfxmbKICNM4rGw8c/edit?usp=sharing 에서 확인할 수 있습니다.
-
 ------
 
 ## Provider
@@ -232,4 +230,5 @@ public ConditionResolver Connect(IStatValueStack stats, IStatConditionProvider p
 
 DefaultWorld -> DefaultMap -> DefaultRegion -> DefaultFloor -> DefaultStage
 
-World 는 GameWorld 를 통해 생성될 수 있으며, 각 계층 구조에 맞게 생성되어야합니다. 
+World 는 GameWorld 를 통해 생성될 수 있으며, 각 계층 구조에 맞게 생성되어야합니다. 이와 같은 설계를 갖게된 것은 각 세션 Depth 에 맞춰서 설정된 이상현상을 부여할 수 있기 때문인데, 예를 들어 어떤 패시브는 Region(이하 지역)내에서만 활성화되는 기획일 수 있기 때문입니다. 이 경우, Floor, Stage 와 상관없이 해당 지역의 세션에 액터가 존재한다면 활성화될 수 있습니다.
+
