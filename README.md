@@ -299,7 +299,7 @@ public interface IEventTarget
 
 ## Controller
 
-Controller는 시스템 내에서 최종적인 데이터 가공이 이루어지고, 실제 View 에게 공급하는 역할을 합니다. 사용자에 의해 정의된 모든 이벤트 주체는 IEventTarget 을 통해 모든 조건들에 대해 검사할 수 있으며, 사용자에 의해 정의된 플레이어 객체 IActor(이하 액터) 만을 위한 조건도 존재합니다. 이는 조건을 제공하는 Controller에서 Provider에게 해당 조건을 제공하고, [SkillController](Controller/Skill/SkillController.cs), [AbnormalController](Controller/Abnormal/AbnormalController.cs), [PassiveController](Controller/Passive/PassiveController.cs)등에서 조건들에 대해 [ConditionTrigger](Controller/Condition/ConditionTrigger.cs)로 공급하게 합니다.
+Controller는 시스템 내에서 최종적인 데이터 가공이 이루어지고, 실제 View 에게 공급하는 역할을 합니다. 사용자에 의해 정의된 모든 이벤트 주체는 [IEventTarget](Provider/IEventTarget.cs)을 통해 모든 조건들에 대해 검사할 수 있으며, 사용자에 의해 정의된 플레이어 객체 [IActor](Controller/Actor/IActor.cs)(이하 액터) 만을 위한 조건도 존재합니다. 이는 조건을 제공하는 Controller에서 Provider에게 해당 조건을 제공하고, [SkillController](Controller/Skill/SkillController.cs), [AbnormalController](Controller/Abnormal/AbnormalController.cs), [PassiveController](Controller/Passive/PassiveController.cs)등에서 조건들에 대해 [ConditionTrigger](Controller/Condition/ConditionTrigger.cs)로 공급하게 합니다.
 
 ### ConditionTrigger
 
@@ -388,7 +388,7 @@ public ConditionResolver Connect(IStatValueStack stats, IStatConditionProvider p
 }
 ```
 
-이렇게 연결되면 해당 컨디션에 대해 해결할 의무는 온전히 Provider, 즉 여기서는 [IStatConditionProvider](Provider/IStatConditionProvider.cs)에게 이관됩니다. 이 인터페이스를 상속받는 StatProvider는 시트에서 문자열로 입력받은 값에 대해 파싱하고, 검증하여 반환하도록 보장합니다.
+이렇게 연결되면 해당 컨디션에 대해 해결할 의무는 온전히 Provider, 즉 여기서는 [IStatConditionProvider](Provider/IStatConditionProvider.cs)에게 이관됩니다. 이 인터페이스를 상속받는 [StatProvider](Provider/StatProvider.cs)는 시트에서 문자열로 입력받은 값에 대해 파싱하고, 검증하여 반환하도록 보장합니다.
 
 연결된 스탯은 델리게이트 생성자를 통해 간접 참조를 수행할 수 있습니다.
 
