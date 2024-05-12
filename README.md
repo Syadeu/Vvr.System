@@ -388,7 +388,7 @@ public ConditionResolver Connect(IStatValueStack stats, IStatConditionProvider p
 }
 ```
 
-이렇게 연결되면 해당 컨디션에 대해 해결할 의무는 온전히 Provider, 즉 여기서는 [IStatConditionProvider](Provider/IStatConditionProvider.cs)에게 이관됩니다. 이 인터페이스를 상속받는 [StatProvider](Provider/StatProvider.cs)는 시트에서 문자열로 입력받은 값에 대해 파싱하고, 검증하여 반환하도록 보장합니다.
+이렇게 연결되면 해당 조건에 대해 해결할 의무는 온전히 Provider, 즉 여기서는 [IStatConditionProvider](Provider/IStatConditionProvider.cs)에게 이관됩니다. 이 인터페이스를 상속받는 [StatProvider](Provider/StatProvider.cs)는 시트에서 문자열로 입력받은 값에 대해 파싱하고, 검증하여 반환하도록 보장합니다.
 
 연결된 스탯은 델리게이트 생성자를 통해 간접 참조를 수행할 수 있습니다.
 
