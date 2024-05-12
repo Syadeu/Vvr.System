@@ -81,7 +81,7 @@ namespace Vvr.System.Provider
             {
                 float v = float.Parse(percentMatch.Groups[1].Value);
 
-                float percent = stats[statType] / stats[statType] * 100;
+                float percent = stats[statType] / centerStats[statType] * 100;
                 switch (condition)
                 {
                     case OperatorCondition.GEqual:
