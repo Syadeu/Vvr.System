@@ -390,6 +390,55 @@ public ConditionResolver Connect(IStatValueStack stats, IStatConditionProvider p
 
 이렇게 연결되면 해당 컨디션에 대해 해결할 의무는 온전히 Provider, 즉 여기서는 [IStatConditionProvider](Provider/IStatConditionProvider.cs)에게 이관됩니다. 이 인터페이스를 상속받는 StatProvider는 시트에서 문자열로 입력받은 값에 대해 파싱하고, 검증하여 반환하도록 보장합니다.
 
+연결된 스탯은 델리게이트 생성자를 통해 간접 참조를 수행할 수 있습니다.
+
+```C#
+public delegate float StatValueGetterDelegate(in IReadOnlyStatValues stat);
+public delegate void StatValueSetterDelegate(in StatValues stat, float value);
+```
+
+```C#
+public static StatValueGetterDelegate GetGetMethod(StatType t)
+{
+    if (!s_CachedGetter.TryGetValue(t, out var d))
+    {
+        d                 = (in IReadOnlyStatValues x) => x[t];
+        s_CachedGetter[t] = d;
+    }
+    return d;
+}
+public static StatValueSetterDelegate GetSetMethod(StatType t)
+{
+    if (!s_CachedSetter.TryGetValue(t, out var d))
+    {
+        d              = (in StatValues x, float value) => x.SetValue(t, value);
+        s_CachedSetter[t] = d;
+    }
+
+    return d;
+}
+```
+
+스탯 타입(프로그램에 정의되지 않은 값도 가능)으로 해당 스탯 타입으로 연결하는 델리게이트를 얻을 수 있고, 이것을 통해 각 Controller의 기능 수행부분은 스탯이 무엇인지 알지못해도 알맞는 스탯에 대해 연산을 수행할 수 있습니다.
+
+```C#
+void IStatModifier.UpdateValues(in IReadOnlyStatValues originalStats, ref StatValues stats)
+{
+    foreach (var e in m_Values.OrderBy(ValueMethodOrderComparer.Selector, ValueMethodOrderComparer.Static))
+    {
+        int length = e.updateCount;
+        for (int i = 0; i < length; i++)
+        {
+            e.abnormal.setter(stats, e.abnormal.method(
+                e.abnormal.getter(stats),
+                e.abnormal.value
+            ));
+        }
+    }
+    m_IsDirty = false;
+}
+```
+
 ### Session
 
 이 시스템을 기반으로하는 게임은 세션을 통해 관리됩니다. 세션의 종류는 크게 3가지로 나뉘며, 각 종류에 맞는 역할을 부여받습니다.
