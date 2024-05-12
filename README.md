@@ -47,7 +47,7 @@ Excel sheet를 기반으로 설계하여 기획자의 요구사항을 맞추고,
 | SPD   | ATT  | DEF  | ARM  | HP   |
 | 10    | 20   | 5    | 2    | 300  |
 
-Stat(이하 스탯)또한 기획 필요로 인해 새로운 스탯이 추가되어도 이를 별도 스탯 데이터 시트에 추가하고, 해당 ID 를 입력하면 게임 내에서 동적으로 해결되도록 설계하였습니다. 이를 가능하게 하기 위해 시트에서 값을 가져오는 [UnresolvedStatValues](Model/Stat/UnresolvedStatValues.cs)와 스탯 데이터 시트를 통해 해결된 값들을 담는 [StatValues](Model/Stat/StatValues)로 설계되었습니다.
+Stat(이하 스탯)또한 기획 필요로 인해 새로운 스탯이 추가되어도 이를 별도 스탯 데이터 시트에 추가하고, 해당 ID 를 입력하면 게임 내에서 동적으로 해결되도록 설계하였습니다. 이를 가능하게 하기 위해 시트에서 값을 가져오는 [UnresolvedStatValues](Model/Stat/UnresolvedStatValues.cs)와 스탯 데이터 시트를 통해 해결된 값들을 담는 [StatValues](Model/Stat/StatValues.cs)로 설계되었습니다.
 
 스탯은 최대 64개를 기획자가 개발할 수 있도록 설계되었으며, 이때 시스템에서 직접 개입하는 스탯에 대해서는 [StatType](Model/Stat/StatType.cs)으로 관리하며, 중요 시스템에서 사용되는 스탯 값이 아닌 스탯 값들은 Unknown 스탯 값으로 구분되어 long 값을 통해 시스템에서 동적으로 추론하여 스탯을 참조하고 할당합니다.
 
@@ -57,7 +57,7 @@ Stat(이하 스탯)또한 기획 필요로 인해 새로운 스탯이 추가되�
 
 [Provider](Provider/Provider.cs)는 값을 제공받고, 연결된 모든 [IConnector](Provider/IConnector.cs)에게 값을 보장하는 역할을 합니다. Model로부터 데이터를 받으면 즉시 연결된 모든 Connector(대부분 Controller)에게 값을 전달하는 방식과 필요에 의해 값을 보장받을 수 있는 Lazy 로 구분됩니다.
 
-이벤트 객체를 직접적으로 알고있거나, 조건에 대해 제공할 의무가 있는 Controller를 위해 설계되었습니다. [DefaultStage](Controller/Session/World/DefaultStage.cs)(이하 스테이지) 객체는 스테이지에 대한 모든 액터에 대해 제공할 의무가 있는 설계상 가장 하위 Session(이하 세션)입니다. 그래서 스테이지 객체는 [IGameMethodProvider](Controller/Provider/IGameMethodProvider.cs), [ITargetProvider](Controller/Provider/ITargetProvider.cs), [IStateConditionProvider](Controller/Provider/IStateConditionProvider)를 상속받고, 요청에 맞는 각 메서드를 제공합니다. 예를 들어, [GameConfigSheet](Model/GameConfigSheet.cs)에서 정의된 조건에 맞는 메서드를 생성하여 반환합니다.
+이벤트 객체를 직접적으로 알고있거나, 조건에 대해 제공할 의무가 있는 Controller를 위해 설계되었습니다. [DefaultStage](Controller/Session/World/DefaultStage.cs)(이하 스테이지) 객체는 스테이지에 대한 모든 액터에 대해 제공할 의무가 있는 설계상 가장 하위 Session(이하 세션)입니다. 그래서 스테이지 객체는 [IGameMethodProvider](Controller/Provider/IGameMethodProvider.cs), [ITargetProvider](Controller/Provider/ITargetProvider.cs), [IStateConditionProvider](Controller/Provider/IStateConditionProvider.cs)를 상속받고, 요청에 맞는 각 메서드를 제공합니다. 예를 들어, [GameConfigSheet](Model/GameConfigSheet.cs)에서 정의된 조건에 맞는 메서드를 생성하여 반환합니다.
 
 ```C#
 GameMethodImplDelegate IGameMethodProvider.Resolve(GameMethod method)
