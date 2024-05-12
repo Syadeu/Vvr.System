@@ -228,7 +228,7 @@ public ConditionResolver Connect(IStatValueStack stats, IStatConditionProvider p
 
 이 세션의 구조를 사용하여 World를 구성하고, 하위 구조를 설계할 수 있습니다. 아래는 현재 기본으로 구성한 세션의 구조입니다.
 
-DefaultWorld -> DefaultMap -> DefaultRegion -> DefaultFloor -> DefaultStage
+[DefaultWorld](Controller/Session/World/DefaultWorld.cs) -> DefaultMap -> DefaultRegion -> DefaultFloor -> DefaultStage
 
 World 는 GameWorld 를 통해 생성될 수 있으며, 각 계층 구조에 맞게 생성되어야합니다. 이와 같은 설계를 갖게된 것은 각 세션 Depth 에 맞춰서 설정된 이상현상을 부여할 수 있기 때문인데, 예를 들어 어떤 패시브는 Region(이하 지역)내에서만 활성화되는 기획일 수 있기 때문입니다. 이 경우, Floor, Stage 와 상관없이 해당 지역의 세션에 액터가 존재한다면 활성화될 수 있습니다.
 
