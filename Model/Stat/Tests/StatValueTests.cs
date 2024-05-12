@@ -119,6 +119,49 @@ namespace Vvr.System.Model.Stat.Tests
 
             Assert.IsTrue(Mathf.Approximately(10, result[StatType.HP]), $"{result[StatType.HP]}");
         }
+        [Test]
+        public void AndOperatorTest_3()
+        {
+            StatValues
+                x = StatValues.Create(StatType.HP);
+
+            x[StatType.HP] = 10;
+
+            x |= StatType.ARM;
+            x |= StatType.SPD;
+
+            Assert.AreEqual(StatType.HP | StatType.ARM | StatType.SPD, x.Types);
+            Assert.AreEqual(3, x.Values.Count);
+
+            Assert.IsTrue(Mathf.Approximately(10, x[StatType.HP]), $"{x[StatType.HP]}");
+
+            x[StatType.ARM] = 100;
+            x[StatType.SPD] = 850;
+
+            Assert.IsTrue(Mathf.Approximately(100, x[StatType.ARM]), $"{x[StatType.ARM]}");
+            Assert.IsTrue(Mathf.Approximately(850, x[StatType.SPD]), $"{x[StatType.SPD]}");
+        }
+
+        [Test]
+        public void UnknownTypeTest()
+        {
+            StatType unknownType1 = (StatType)(1L << 50);
+            StatType unknownType2 = (StatType)(1L << 40);
+            StatType unknownType3 = (StatType)(1L << 35);
+            StatValues
+                x = StatValues.Create(unknownType1 | unknownType2 | unknownType3);
+
+            x[unknownType1] = 10;
+            x[unknownType2] = 506;
+            x[unknownType3] = 123124;
+
+            Assert.IsTrue(Mathf.Approximately(10, x[unknownType1]),
+                $"{x[unknownType1]}");
+            Assert.IsTrue(Mathf.Approximately(506, x[unknownType2]),
+                $"{x[unknownType2]}");
+            Assert.IsTrue(Mathf.Approximately(123124, x[unknownType3]),
+                $"{x[unknownType3]}");
+        }
 
         [Test]
         public void JsonTest_1()

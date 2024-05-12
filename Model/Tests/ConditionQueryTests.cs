@@ -54,5 +54,31 @@ namespace Vvr.System.Model.Tests
             Assert.IsTrue(query.Has(Condition.GEqual));
             Assert.IsFalse(query.Has(Condition.OnHit));
         }
+        [Test]
+        public void Test_4()
+        {
+            ConditionQuery query = Condition.GEqual;
+            query |= Condition.OnHit;
+            query |= Condition.HasAbnormal;
+            query |= Condition.HasPassive;
+            query |= Condition.IsInHand;
+            query |= Condition.IsPlayerActor;
+
+            ConditionQuery targetQuery = Condition.HasPassive;
+            targetQuery |= Condition.HasAbnormal;
+            targetQuery |= Condition.OnActorDead;
+
+            query &= targetQuery;
+
+            Assert.AreEqual(2, query.Count);
+            Assert.IsTrue(query.Has(Condition.HasPassive));
+            Assert.IsTrue(query.Has(Condition.HasAbnormal));
+
+            Assert.IsFalse(query.Has(Condition.GEqual));
+            Assert.IsFalse(query.Has(Condition.OnHit));
+            Assert.IsFalse(query.Has(Condition.OnActorDead));
+            Assert.IsFalse(query.Has(Condition.IsInHand));
+            Assert.IsFalse(query.Has(Condition.IsPlayerActor));
+        }
     }
 }

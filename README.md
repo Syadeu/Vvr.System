@@ -40,7 +40,70 @@ Excel sheet를 기반으로 설계하여 기획자의 요구사항을 맞추고,
 
 다음과 같이 아무 패시브를 갖고있고, 손에 들고있다면 지속시간이 차감될 수 있다는 의미로 만들어질 수 있습니다.
 
-이러한 [Condition](Model/Condition.cs)(이하 조건)들은 시스템 내에서 시간 단위로 관리되며. 조건은 게임의 볼륨에 따라 매우 많이 증가할 수 있어(+64개 그 이상) Bitmask 형태를 고려하지 않았으므로, 추가적인 그룹 구조가 필요하였습니다. 이를 해결하기 위해 [ConditionQuery](Model/ConditionQuery.cs)를 설계하여 발생한 이벤트들을 최대 64개 단위로 묶어 Controller가 이를 확인할 수 있습니다. 
+이러한 [Condition](Model/Condition.cs)(이하 조건)들은 시스템 내에서 시간 단위로 관리되며. 조건은 게임의 볼륨에 따라 매우 많이 증가할 수 있어(+64개 그 이상) Bitmask 형태를 고려하지 않았으므로, 추가적인 그룹 구조가 필요하였습니다. 이를 해결하기 위해 [ConditionQuery](Model/ConditionQuery.cs)를 설계하여 발생한 이벤트들을 최대 64개 단위로 묶어 Controller가 이를 확인할 수 있습니다.
+
+조건들은 순차 정수로 정의되어 비트 마스킹이 불가능하기 때문에 여러 조건들을 한번에 검사하는 것은 이것만으로는 불가능합니다. 이를 일일이 검사하는 것은 무의미한 시간낭비이고, 연산 낭비에 속하기 때문에 비트 마스킹을 가능하도록 하는 쿼리를 여러 연산자를 오버로딩하여 알맞게 사용할 수 있도록 설계하였습니다.
+
+```C#
+public static implicit operator ConditionQuery(Condition c) => new ConditionQuery((short)c, 1);
+```
+
+단일 조건을 먼저 쿼리로 변환할 수 있도록하고,
+
+```C#
+public static ConditionQuery operator |(ConditionQuery x, ConditionQuery y)
+{
+    short o = x.m_Offset < y.m_Offset ? x.m_Offset : y.m_Offset;
+    long xf = x.m_Filter << math.abs(o - x.m_Offset),
+        yf  = y.m_Filter << math.abs(o - y.m_Offset);
+
+    return new ConditionQuery(o, xf | yf);
+}
+```
+
+여러 조건들을 병합할 수 있도록 | 연산자를 오버로딩합니다.
+
+```C#
+public static ConditionQuery operator &(ConditionQuery x, ConditionQuery y)
+{
+    short o = x.m_Offset < y.m_Offset ? x.m_Offset : y.m_Offset;
+    long xf = x.m_Filter << math.abs(o - x.m_Offset),
+        yf  = y.m_Filter << math.abs(o - y.m_Offset);
+
+    return new ConditionQuery(o, xf & yf);
+}
+```
+
+그리고 & 연산자를 통해 해당 조건들이 존재하는지 한번에 확인할 수 있습니다.
+
+```c#
+[Test]
+public void Test_4()
+{
+    ConditionQuery query = Condition.GEqual;
+    query |= Condition.OnHit;
+    query |= Condition.HasAbnormal;
+    query |= Condition.HasPassive;
+    query |= Condition.IsInHand;
+    query |= Condition.IsPlayerActor;
+
+    ConditionQuery targetQuery = Condition.HasPassive;
+    targetQuery |= Condition.HasAbnormal;
+    targetQuery |= Condition.OnActorDead;
+
+    query &= targetQuery;
+
+    Assert.AreEqual(2, query.Count);
+    Assert.IsTrue(query.Has(Condition.HasPassive));
+    Assert.IsTrue(query.Has(Condition.HasAbnormal));
+
+    Assert.IsFalse(query.Has(Condition.GEqual));
+    Assert.IsFalse(query.Has(Condition.OnHit));
+    Assert.IsFalse(query.Has(Condition.OnActorDead));
+    Assert.IsFalse(query.Has(Condition.IsInHand));
+    Assert.IsFalse(query.Has(Condition.IsPlayerActor));
+}
+```
 
 | Stats |      |      |      |      |
 | ----- | ---- | ---- | ---- | ---- |
@@ -50,6 +113,124 @@ Excel sheet를 기반으로 설계하여 기획자의 요구사항을 맞추고,
 Stat(이하 스탯)또한 기획 필요로 인해 새로운 스탯이 추가되어도 이를 별도 스탯 데이터 시트에 추가하고, 해당 ID 를 입력하면 게임 내에서 동적으로 해결되도록 설계하였습니다. 이를 가능하게 하기 위해 시트에서 값을 가져오는 [UnresolvedStatValues](Model/Stat/UnresolvedStatValues.cs)와 스탯 데이터 시트를 통해 해결된 값들을 담는 [StatValues](Model/Stat/StatValues.cs)로 설계되었습니다.
 
 스탯은 최대 64개를 기획자가 개발할 수 있도록 설계되었으며, 이때 시스템에서 직접 개입하는 스탯에 대해서는 [StatType](Model/Stat/StatType.cs)으로 관리하며, 중요 시스템에서 사용되는 스탯 값이 아닌 스탯 값들은 Unknown 스탯 값으로 구분되어 long 값을 통해 시스템에서 동적으로 추론하여 스탯을 참조하고 할당합니다.
+
+중요 스탯 이외는 프로그래머가 인지하지 못하는 값으로 시스템에 존재하므로, 연산을 위해 다양한 Operator 를 추가하였습니다. [StatValues](Model/Stat/StatValues.cs)는 존재하는 스탯만을 위한 배열을 생성하는데 (예를 들어 HP | MP = 길이 2의 배열) 이를 각 코드에서 프로그래머가 제어하는 것은 대단히 위험하고 복잡한 작업이 될 것입니다.
+
+```C#
+public static StatValues operator |(StatValues x, StatType t)
+{
+    if ((x.Types & t) == t) return x;
+
+    var result   = Create(x.Types | t);
+    int maxIndex = result.Values.Count;
+    for (int i = 0, c = 0, xx = 0; i < 64 && c < maxIndex; i++)
+    {
+        var e = 1L << i;
+        if (((long)result.Types & e) == 0) continue;
+
+        if (((long)x.Types & e) != 0) result.m_Values[c] = x.m_Values[xx++];
+        c++;
+    }
+    return result;
+}
+public static StatValues operator +(StatValues x, IReadOnlyStatValues y)
+{
+    if (y?.Values == null) return x;
+
+    var newTypes = (x.Types | y.Types);
+    var result   = (x.Types & y.Types) != y.Types ? Create(x.Types | y.Types) : x;
+
+    int maxIndex = result.Values.Count;
+    for (int i = 0, c = 0, xx = 0, yy = 0; i < 64 && c < maxIndex; i++)
+    {
+        var e = 1L << i;
+        if (((long)newTypes & e) == 0) continue;
+
+        if (((long)x.Types & e) != 0) result.m_Values[c] =  x.m_Values[xx++];
+        if (((long)y.Types & e) != 0) result.m_Values[c] += y.Values[yy++];
+        c++;
+    }
+
+    return result;
+}
+```
+
+이를 방지하기 위한 연산자를 오버로딩하고, 상황에 알맞게 연산하도록 하였습니다.
+
+```c#
+[Test]
+public void UnknownTypeTest()
+{
+    StatType unknownType1 = (StatType)(1L << 50);
+    StatType unknownType2 = (StatType)(1L << 40);
+    StatType unknownType3 = (StatType)(1L << 35);
+    StatValues
+        x = StatValues.Create(unknownType1 | unknownType2 | unknownType3);
+
+    x[unknownType1] = 10;
+    x[unknownType2] = 506;
+    x[unknownType3] = 123124;
+
+    Assert.IsTrue(Mathf.Approximately(10, x[unknownType1]),
+        $"{x[unknownType1]}");
+    Assert.IsTrue(Mathf.Approximately(506, x[unknownType2]),
+        $"{x[unknownType2]}");
+    Assert.IsTrue(Mathf.Approximately(123124, x[unknownType3]),
+        $"{x[unknownType3]}");
+}
+```
+
+이렇게 프로그래머에 의해 정의되지 않은 스탯에 대해서도 값을 해결할 수 있고,
+
+```c#
+[Test]
+public void AndOperatorTest_3()
+{
+    StatValues
+        x = StatValues.Create(StatType.HP);
+
+    x[StatType.HP] = 10;
+
+    x |= StatType.ARM;
+    x |= StatType.SPD;
+
+    Assert.AreEqual(StatType.HP | StatType.ARM | StatType.SPD, x.Types);
+    Assert.AreEqual(3, x.Values.Count);
+
+    Assert.IsTrue(Mathf.Approximately(10, x[StatType.HP]), $"{x[StatType.HP]}");
+
+    x[StatType.ARM] = 100;
+    x[StatType.SPD] = 850;
+
+    Assert.IsTrue(Mathf.Approximately(100, x[StatType.ARM]), $"{x[StatType.ARM]}");
+    Assert.IsTrue(Mathf.Approximately(850, x[StatType.SPD]), $"{x[StatType.SPD]}");
+}
+```
+
+```c#
+[Test]
+public void PlusOperatorTest_3()
+{
+    StatValues
+        x = StatValues.Create(StatType.HP  | StatType.ATT),
+        y = StatValues.Create(StatType.ARM | StatType.HP | StatType.DEF | StatType.ATT);
+
+    x[StatType.HP]  = 10;
+    x[StatType.ATT] = 50;
+
+    y[StatType.HP]  = 90;
+    y[StatType.ATT] = 50;
+    y[StatType.ARM] = 200;
+
+    StatValues result = x - y;
+    Assert.IsTrue(Mathf.Approximately(-80, result[StatType.HP]), $"{result[StatType.HP]}");
+    Assert.IsTrue(Mathf.Approximately(0, result[StatType.ATT]), $"{result[StatType.ATT]}");
+    Assert.IsTrue(Mathf.Approximately(-200, result[StatType.ARM]), $"{result[StatType.ARM]}");
+    Assert.IsTrue(Mathf.Approximately(0, result[StatType.DEF]), $"{result[StatType.DEF]}");
+}
+```
+
+다음과 같이 유동적으로 값을 수정할 수 있게 설계하였습니다.
 
 ------
 

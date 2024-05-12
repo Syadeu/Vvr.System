@@ -20,6 +20,7 @@
 #endregion
 
 using System;
+using JetBrains.Annotations;
 using Unity.Mathematics;
 
 namespace Vvr.System.Model
@@ -53,6 +54,7 @@ namespace Vvr.System.Model
             m_Filter = filter;
         }
 
+        [Pure]
         public bool Has(Condition c)
         {
             short s = (short)c;
