@@ -19,10 +19,14 @@
 
 #endregion
 
+using Vvr.MPC.Provider;
+
 namespace Vvr.Controller.Condition
 {
     public interface IReadOnlyConditionResolver
     {
+        IEventTarget Owner { get; }
+
         ConditionDelegate this[Model.Condition t] { get; }
 
         void Subscribe(IConditionObserver   ob);

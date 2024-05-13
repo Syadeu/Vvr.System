@@ -63,6 +63,25 @@ namespace Vvr.Model
             }
         }
 
+        public int MaxIndex
+        {
+            get
+            {
+                int index = 63;
+                while (index >= 0)
+                {
+                    if ((m_Filter & (1L << index)) != 0)
+                    {
+                        return index;
+                    }
+
+                    index--;
+                }
+
+                throw new InvalidOperationException("No condition in this query");
+            }
+        }
+
         /// <summary>
         /// Take last <see cref="Condition"/> in this query
         /// </summary>

@@ -20,6 +20,7 @@
 #endregion
 
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -43,14 +44,22 @@ namespace Vvr.Controller.Condition
 
         public static ConditionResolver Create(IEventTarget o)
         {
-            Hash hash = o.GetHash();
-            return new(o, hash);
+            return new(o);
+        }
+        public static ConditionResolver Create(IEventTarget o, IReadOnlyConditionResolver parent)
+        {
+            return new(o, parent);
         }
         internal static async UniTask Execute(IEventTarget o, Model.Condition condition, string v)
         {
             if (o is not IConditionTarget target) return;
 
             var resolver = (ConditionResolver)target.ConditionResolver;
+            if (resolver.m_Parent != null)
+            {
+                await Execute(resolver.m_Parent.Owner, condition, v);
+            }
+
             for (int i = 0; i < resolver.m_EventObservers.Count; i++)
             {
                 var e = resolver.m_EventObservers[i];
@@ -60,11 +69,10 @@ namespace Vvr.Controller.Condition
             }
         }
 
-        private readonly IEventTarget m_Owner;
-        private readonly Hash         m_Hash;
+        private readonly IReadOnlyConditionResolver m_Parent;
 
-        private readonly ConditionDelegate[]
-            m_Delegates = new ConditionDelegate[VvrTypeHelper.Enum<Model.Condition>.Length];
+        private ConditionQuery      m_Filter;
+        private ConditionDelegate[] m_Delegates;
 
         private readonly List<IConditionObserver> m_EventObservers = new();
 
@@ -72,20 +80,44 @@ namespace Vvr.Controller.Condition
         {
             get
             {
-                if (t == Model.Condition.Always) return Always;
+                if (t == 0) return Always;
 
-                if (m_Delegates[(int)t] == null)
+                if (m_Delegates == null ||
+                    !m_Filter.Has(t))
                 {
                     $"[Condition] Condition {t} is not connected.".ToLog();
                     return False;
                 }
 
-                return m_Delegates[(int)t];
+                int i = m_Filter.IndexOf(t);
+                return m_Delegates[i];
             }
             set
             {
-#if UNITY_EDITOR
-                var target = m_Delegates[(int)t];
+                var modifiedQuery  = m_Filter | t;
+                int modifiedLength = modifiedQuery.MaxIndex + 1;
+
+                // require resize
+                if (m_Delegates == null || m_Delegates.Length < modifiedLength)
+                {
+                    ConditionDelegate[] nArr = ArrayPool<ConditionDelegate>.Shared.Rent(modifiedLength);
+
+                    if (m_Delegates != null)
+                    {
+                        foreach (var condition in m_Filter)
+                        {
+                            nArr[modifiedQuery.IndexOf(condition)] = m_Delegates[m_Filter.IndexOf(condition)];
+                        }
+                        ArrayPool<ConditionDelegate>.Shared.Return(m_Delegates, true);
+                    }
+
+                    m_Delegates = nArr;
+                }
+
+                m_Filter = modifiedQuery;
+                int i = m_Filter.IndexOf(t);
+
+                var target = m_Delegates[i];
                 if (target != null && target.GetInvocationList().Length > 0)
                 {
                     StringBuilder sb = new();
@@ -93,16 +125,16 @@ namespace Vvr.Controller.Condition
                     sb.AppendLine("List:");
 
                     var list = target.GetInvocationList();
-                    for (int i = 0; i < list.Length; i++)
+                    for (int j = 0; j < list.Length; j++)
                     {
-                        var e = list[i];
+                        var e = list[j];
                         sb.AppendLine($"{e.Method?.DeclaringType}.{e.Method?.Name}");
                     }
 
-                    Assert.IsTrue(true, sb.ToString());
+                    throw new InvalidOperationException(sb.ToString());
                 }
-#endif
-                m_Delegates[(int)t] = value;
+
+                m_Delegates[i] = value;
             }
         }
 
@@ -110,10 +142,16 @@ namespace Vvr.Controller.Condition
         private bool Disposed { get; set; }
 #endif
 
-        private ConditionResolver(IEventTarget owner, Hash hash)
+        public IEventTarget Owner { get; }
+
+        private ConditionResolver(IEventTarget owner)
         {
-            m_Owner = owner;
-            m_Hash  = hash;
+            Owner = owner;
+        }
+        private ConditionResolver(IEventTarget owner, IReadOnlyConditionResolver parent)
+            : this(owner)
+        {
+            m_Parent = parent;
         }
 
         void IConnector<IEventConditionProvider>.Connect(IEventConditionProvider provider)
@@ -122,7 +160,7 @@ namespace Vvr.Controller.Condition
                 = Enum.GetValues(typeof(EventCondition)).Cast<EventCondition>();
             foreach (var condition in conditions)
             {
-                this[(Model.Condition)condition] = x => provider.Resolve(condition, m_Owner, x);
+                this[(Model.Condition)condition] = x => provider.Resolve(condition, Owner, x);
             }
         }
         void IConnector<IEventConditionProvider>.Disconnect()
@@ -141,7 +179,7 @@ namespace Vvr.Controller.Condition
                 = Enum.GetValues(typeof(StateCondition)).Cast<StateCondition>();
             foreach (var condition in conditions)
             {
-                this[(Model.Condition)condition] = x => t.Resolve(condition, m_Owner, x);
+                this[(Model.Condition)condition] = x => t.Resolve(condition, Owner, x);
             }
         }
         void IConnector<IStateConditionProvider>.Disconnect()
@@ -156,7 +194,7 @@ namespace Vvr.Controller.Condition
 
         public ConditionResolver Connect(IAbnormalConditionProvider provider)
         {
-            Assert.IsTrue(m_Owner is IActor);
+            Assert.IsTrue(Owner is IActor);
 
             var conditions
                 = Enum.GetValues(typeof(AbnormalCondition)).Cast<AbnormalCondition>();
@@ -170,7 +208,7 @@ namespace Vvr.Controller.Condition
 
         public ConditionResolver Connect(IStatValueStack stats, IStatConditionProvider provider)
         {
-            Assert.IsTrue(m_Owner is IActor);
+            Assert.IsTrue(Owner is IActor);
 
             var conditions
                 = Enum.GetValues(typeof(OperatorCondition)).Cast<OperatorCondition>();
@@ -194,7 +232,7 @@ namespace Vvr.Controller.Condition
 
         public void Dispose()
         {
-            Array.Clear(m_Delegates, 0, m_Delegates.Length);
+            ArrayPool<ConditionDelegate>.Shared.Return(m_Delegates, true);
             Disposed = true;
         }
     }

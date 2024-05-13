@@ -46,9 +46,10 @@ namespace Vvr.Controller.Session.World
 
         private ConditionResolver m_ConditionResolver;
 
-        public Owner                      Owner             { get; private set; }
-        string IEventTarget.              DisplayName       => nameof(DefaultRegion);
-        public bool                       Disposed          { get; private set; }
+        public         Owner  Owner       { get; private set; }
+        public virtual string DisplayName => nameof(DefaultRegion);
+        public         bool   Disposed    { get; private set; }
+
         public IReadOnlyConditionResolver ConditionResolver => m_ConditionResolver;
 
 
@@ -74,6 +75,7 @@ namespace Vvr.Controller.Session.World
 
         public async UniTask Start(StageSheet sheet, Owner playerId, ActorSheet.Row[] playerData)
         {
+            using var trigger = ConditionTrigger.Push(this, DisplayName);
             // StageSheet.Row startStage = Data.sheet[Data.startStageId];
             StageSheet.Row startStage = sheet[0];
 

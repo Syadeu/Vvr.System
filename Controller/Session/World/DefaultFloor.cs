@@ -75,13 +75,12 @@ namespace Vvr.Controller.Session.World
             m_FloorStartEvent = new();
             m_StageStartEvent = new();
 
-            m_ConditionResolver = ConditionResolver.Create(this);
+            m_ConditionResolver = ConditionResolver.Create(this, ((ISessionTarget)session).ConditionResolver);
             Connect(m_ConditionResolver);
 
             ObjectObserver<DefaultFloor>.Get(this).EnsureContainer();
 
             m_ViewProvider = MPC.Provider.Provider.Static.GetLazyAsync<IEventViewProvider>();
-            MPC.Provider.Provider.Static.Register<IStageProvider>(this);
 
             // ConditionTrigger.OnEventExecutedAsync += OnEventExecuted;
 
@@ -140,6 +139,8 @@ namespace Vvr.Controller.Session.World
                 }
 
                 m_CurrentStage = await CreateSession<DefaultStage>(sessionData);
+                MPC.Provider.Provider.Static.Register<IStageProvider>(this);
+
                 if (!m_StageStartEvent.TrySetResult())
                 {
                     "??".ToLogError();
@@ -167,6 +168,7 @@ namespace Vvr.Controller.Session.World
                     prevPlayers.AddRange(stageResult.playerActors);
                 }
 
+                MPC.Provider.Provider.Static.Unregister<IStageProvider>(this);
                 m_StageStartEvent = new();
                 await m_CurrentStage.Reserve();
 

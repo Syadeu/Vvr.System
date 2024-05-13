@@ -20,6 +20,7 @@
 #endregion
 
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using Vvr.Model;
@@ -37,23 +38,50 @@ namespace Vvr.Controller.Condition
     {
         private ConditionResolver m_Parent;
 
-        private ConditionQuery                  m_Filter;
-        private List<ConditionObserverDelegate> m_Delegates = new();
+        private ConditionQuery              m_Filter;
+        private ConditionObserverDelegate[] m_Delegates;
 
         public ConditionObserverDelegate this[Model.Condition t]
         {
             get
             {
-                int i = m_Filter.IndexOf(t);
-                if (i < 0) return null;
+                if (m_Delegates == null ||
+                    !m_Filter.Has(t))
+                {
+                    $"[Condition] Condition {t} is not connected.".ToLog();
+                    return null;
+                }
 
+                int i = m_Filter.IndexOf(t);
                 return m_Delegates[i];
             }
             set
             {
-                m_Filter |= t;
+                var modifiedQuery  = m_Filter | t;
+                int modifiedLength = modifiedQuery.MaxIndex + 1;
 
-                m_Delegates.Insert(m_Filter.IndexOf(t), value);
+                // require resize
+                if (m_Delegates == null || m_Delegates.Length < modifiedLength)
+                {
+                    var nArr = ArrayPool<ConditionObserverDelegate>.Shared.Rent(modifiedLength);
+
+                    if (m_Delegates != null)
+                    {
+                        foreach (var condition in m_Filter)
+                        {
+                            nArr[modifiedQuery.IndexOf(condition)] = m_Delegates[m_Filter.IndexOf(condition)];
+                        }
+
+                        ArrayPool<ConditionObserverDelegate>.Shared.Return(m_Delegates, true);
+                    }
+
+                    m_Delegates = nArr;
+                }
+
+                m_Filter = modifiedQuery;
+                int i = m_Filter.IndexOf(t);
+
+                m_Delegates[i] = value;
             }
         }
 
@@ -77,7 +105,7 @@ namespace Vvr.Controller.Condition
         {
             m_Parent.Unsubscribe(this);
 
-            m_Delegates.Clear();
+            ArrayPool<ConditionObserverDelegate>.Shared.Return(m_Delegates, true);
             m_Parent = null;
         }
     }
