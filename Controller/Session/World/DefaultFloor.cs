@@ -126,9 +126,9 @@ namespace Vvr.Controller.Session.World
                 }
 
                 {
-                    await trigger.Execute(Model.Condition.OnStageStarted, sessionData.stageId);
+                    await trigger.Execute(Model.Condition.OnStageStarted, sessionData.stage.Id);
                     stageResult = await m_CurrentStage.Start();
-                    await trigger.Execute(Model.Condition.OnStageEnded, sessionData.stageId);
+                    await trigger.Execute(Model.Condition.OnStageEnded, sessionData.stage.Id);
 
                     var viewProvider = await m_ViewProvider;
                     foreach (var enemy in stageResult.enemyActors)

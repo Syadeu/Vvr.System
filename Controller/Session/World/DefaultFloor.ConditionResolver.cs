@@ -34,8 +34,8 @@ namespace Vvr.Controller.Session.World
 
             conditionResolver[Model.Condition.IsFloorStarted] = x => Started  && Data.stages.First.Value.Id == x;
             conditionResolver[Model.Condition.IsFloorEnded]   = x => !Started && Data.stages.First.Value.Id == x;
-            conditionResolver[Model.Condition.IsStageStarted] = x => Started  && m_CurrentStage != null && m_CurrentStage.Data.stageId == x;
-            conditionResolver[Model.Condition.IsStageEnded] = x => Started  && m_CurrentStage != null && m_CurrentStage.Data.stageId == x;
+            conditionResolver[Model.Condition.IsStageStarted] = x => Started  && m_CurrentStage != null && m_CurrentStage.Data.stage.Id == x;
+            conditionResolver[Model.Condition.IsStageEnded] = x => Started  && m_CurrentStage != null && m_CurrentStage.Data.stage.Id == x;
         }
 
         // ConditionQuery IConditionObserver.Filter { get; } =

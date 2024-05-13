@@ -25,6 +25,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Cysharp.Threading.Tasks;
 using DG.Tweening;
+using UnityEngine.Assertions;
 using Vvr.Controller.Actor;
 using Vvr.Controller.Condition;
 using Vvr.Controller.Stat;
@@ -37,21 +38,10 @@ namespace Vvr.Controller.Abnormal
 {
     public sealed partial class AbnormalController : IAbnormal, IDisposable
     {
-        private static readonly Dictionary<Hash, AbnormalController>
-            s_CachedControllers = new();
-
-        public static AbnormalController GetOrCreate(IActor o)
+        public static AbnormalController Create(IActor o)
         {
             Hash hash = o.GetHash();
-
-            if (!s_CachedControllers.TryGetValue(hash, out var r))
-            {
-                r = new(o, hash);
-                TimeController.Register(r);
-                s_CachedControllers.Add(hash, r);
-            }
-
-            return r;
+            return new(o, hash);
         }
 
         struct Value : IComparable<Value>, IReadOnlyRuntimeAbnormal
@@ -79,10 +69,9 @@ namespace Vvr.Controller.Abnormal
         private readonly List<Value>  m_Values = new();
 
         private uint m_Counter;
+        private bool m_IsDirty;
 
-#if UNITY_EDITOR
         private bool Disposed { get; set; }
-#endif
 
         public IActor Owner { get; }
         public int    Count => m_Values.Count;
@@ -92,14 +81,14 @@ namespace Vvr.Controller.Abnormal
             Owner  = owner;
             m_Hash = hash;
 
-            Owner.ConditionResolver.Subscribe(this);
-
             m_IsDirty = true;
             ObjectObserver<AbnormalController>.Get(this).EnsureContainer();
         }
 
         public async UniTask Add(AbnormalSheet.Row data)
         {
+            Assert.IsFalse(Disposed);
+
             var abnormal = new RuntimeAbnormal(data);
             for (int i = 0; i < abnormal.abnormalChain?.Count; i++)
             {
@@ -189,32 +178,39 @@ namespace Vvr.Controller.Abnormal
 
         public bool Contains(Hash abnormalId)
         {
+            Assert.IsFalse(Disposed);
             return m_Values.Any(x => x.abnormal.hash == abnormalId);
         }
 
-
         public void Dispose()
         {
+            Assert.IsFalse(Disposed);
             ObjectObserver<AbnormalController>.Remove(this);
             TimeController.Unregister(this);
 
-            Owner.ConditionResolver.Unsubscribe(this);
-
-#if UNITY_EDITOR
             Disposed = true;
-            DOVirtual.DelayedCall(1, () => s_CachedControllers.Remove(m_Hash));
-            return;
-#endif
-            s_CachedControllers.Remove(m_Hash);
         }
 
         public IEnumerator<IReadOnlyRuntimeAbnormal> GetEnumerator()
         {
+            Assert.IsFalse(Disposed);
             return m_Values.Select(x => (IReadOnlyRuntimeAbnormal)x).GetEnumerator();
         }
         IEnumerator IEnumerable.GetEnumerator()
         {
             return GetEnumerator();
         }
+
+        #region ConditionObserver
+
+        private partial bool CheckCancellation(ref int index, EventCondition condition);
+
+        #endregion
+
+        #region TimeUpdate
+
+        private partial bool CheckTimeCondition(Value value);
+
+        #endregion
     }
 }

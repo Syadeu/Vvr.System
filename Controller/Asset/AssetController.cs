@@ -34,7 +34,7 @@ namespace Vvr.Controller.Asset
         where TAssetType : struct, IConvertible
     {
         private readonly IEventTarget            m_Owner;
-        private readonly CancellationTokenSource m_CancellationTokenSource;
+        private CancellationTokenSource m_CancellationTokenSource;
 
         private readonly Dictionary<TAssetType, AsyncLazy<UnityEngine.Object>> m_Assets;
 
@@ -54,6 +54,7 @@ namespace Vvr.Controller.Asset
         public void Connect<TLoadProvider>(IReadOnlyDictionary<TAssetType, AddressablePath> t)
             where TLoadProvider : IAssetLoadTaskProvider<TAssetType>
         {
+            m_CancellationTokenSource ??= new();
             foreach (var item in t)
             {
                 m_Assets[item.Key] = UniTask.Lazy(
@@ -78,7 +79,7 @@ namespace Vvr.Controller.Asset
             }
         }
 
-        public void Dispose()
+        public void Clear()
         {
             m_CancellationTokenSource.Cancel();
 
@@ -89,19 +90,14 @@ namespace Vvr.Controller.Asset
 
             m_Handles.Clear();
             m_Assets.Clear();
+
             m_CancellationTokenSource.Dispose();
+            m_CancellationTokenSource = null;
         }
-    }
 
-    [UnityEngine.Scripting.RequireImplementors]
-    public interface IAssetLoadTaskProvider<in TAssetType>
-        where TAssetType : struct, IConvertible
-    {
-        AsyncOperationHandle Resolve(TAssetType type, string path);
-    }
-
-    public interface IAsset
-    {
-        AsyncLazy<UnityEngine.Object> this[AssetType t] { get; }
+        public void Dispose()
+        {
+            Clear();
+        }
     }
 }

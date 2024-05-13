@@ -55,7 +55,6 @@ namespace Vvr.Controller.Abnormal
             }
         }
 
-        private bool       m_IsDirty;
         bool IStatModifier.IsDirty => m_IsDirty;
         int IStatModifier. Order   => StatModifierOrder.Abnormal;
 

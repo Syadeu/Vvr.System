@@ -1,5 +1,4 @@
 #region Copyrights
-
 // Copyright 2024 Syadeu
 // Author : Seung Ha Kim
 //
@@ -15,16 +14,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// File created : 2024, 05, 14 01:05
-
+// File created : 2024, 05, 14 03:05
 #endregion
 
-namespace Vvr.Model
-{
-    public enum AssetType : short
-    {
-        CardPortrait,
+using UnityEngine;
+using UnityEngine.AddressableAssets;
+using UnityEngine.ResourceManagement.AsyncOperations;
+using Vvr.Controller.Asset;
+using Vvr.Model;
 
-        BackgroundImage,
+namespace Vvr.Controller.Session.World
+{
+    partial class DefaultStage
+    {
+        private struct AssetLoadTaskProvider : IAssetLoadTaskProvider<AssetType>
+        {
+            public AsyncOperationHandle Resolve(AssetType type, string path)
+            {
+                return Addressables.LoadAssetAsync<Sprite>(path);
+            }
+        }
     }
 }

@@ -67,7 +67,7 @@ namespace Vvr.Controller.Abnormal
             if (shouldUpdate) m_IsDirty = true;
         }
 
-        private bool CheckCancellation(ref int index, EventCondition condition)
+        private partial bool CheckCancellation(ref int index, EventCondition condition)
         {
             Value e = m_Values[index];
 

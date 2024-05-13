@@ -31,7 +31,7 @@ namespace Vvr.Controller.Abnormal
 {
     partial class AbnormalController : ITimeUpdate
     {
-         private bool CheckTimeCondition(Value value)
+        private partial bool CheckTimeCondition(Value value)
          {
              if (value.abnormal.timeCondition       == null ||
                  value.abnormal.timeCondition.Count == 0) return true;

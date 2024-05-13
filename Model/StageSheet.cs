@@ -31,11 +31,12 @@ namespace Vvr.Model
         public sealed class Row : SheetRow
         {
             [UsedImplicitly] public string Name { get; private set; }
-            [UsedImplicitly] public List<AddressablePath> BackgroundImages { get; private set; }
             [UsedImplicitly] public int Population { get; private set; }
             [UsedImplicitly] public StageSheet.Reference NextStage { get; private set; }
             [UsedImplicitly] public bool IsFinalStage { get; private set; }
             [UsedImplicitly] public List<ActorSheet.Reference> Actors { get; private set; }
+
+            [UsedImplicitly] public Dictionary<AssetType, AddressablePath> Assets { get; private set; }
         }
 
         public StageSheet()
