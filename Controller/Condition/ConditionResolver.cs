@@ -203,8 +203,7 @@ namespace Vvr.System.Controller
         {
             ConditionResolver r = (ConditionResolver)t;
 
-            DynamicConditionObserver ob = new();
-            r.Subscribe(ob);
+            DynamicConditionObserver ob = new(r);
             return ob;
         }
     }

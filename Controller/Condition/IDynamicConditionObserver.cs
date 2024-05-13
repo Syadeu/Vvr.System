@@ -36,6 +36,8 @@ namespace Vvr.System.Controller
 
     internal sealed class DynamicConditionObserver : IDynamicConditionObserver
     {
+        private ConditionResolver m_Parent;
+
         private ConditionQuery                  m_Filter;
         private List<ConditionObserverDelegate> m_Delegates = new();
 
@@ -58,6 +60,11 @@ namespace Vvr.System.Controller
 
         ConditionQuery IConditionObserver.Filter => m_Filter;
 
+        internal DynamicConditionObserver(ConditionResolver r)
+        {
+            m_Parent = r;
+            m_Parent.Subscribe(this);
+        }
 
         public async UniTask OnExecute(Condition condition, string value)
         {
@@ -69,7 +76,10 @@ namespace Vvr.System.Controller
 
         public void Dispose()
         {
+            m_Parent.Unsubscribe(this);
+
             m_Delegates.Clear();
+            m_Parent = null;
         }
     }
 }
