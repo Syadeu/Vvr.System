@@ -22,6 +22,7 @@
 using System;
 using JetBrains.Annotations;
 using Unity.Mathematics;
+using UnityEngine.Assertions;
 
 namespace Vvr.System.Model
 {
@@ -45,6 +46,25 @@ namespace Vvr.System.Model
                 }
 
                 return count;
+            }
+        }
+
+        public Condition Last
+        {
+            get
+            {
+                int index = 63;
+                while (index >= 0)
+                {
+                    if ((m_Filter & (1L << index)) != 0)
+                    {
+                        return (Condition)(index + m_Offset);
+                    }
+
+                    index--;
+                }
+
+                throw new InvalidOperationException("No condition in this query");
             }
         }
 
@@ -97,6 +117,12 @@ namespace Vvr.System.Model
         public static ConditionQuery operator |(ConditionQuery x, ConditionQuery y)
         {
             short o = x.m_Offset < y.m_Offset ? x.m_Offset : y.m_Offset;
+            if (64 <= math.abs(o - x.m_Offset) ||
+                64 <= math.abs(o - y.m_Offset))
+                throw new InvalidOperationException($"exceed query");
+            if (0 < y.m_Filter && x.m_Offset + 63 < (int)y.Last)
+                throw new InvalidOperationException($"exceed query");
+
             long xf = x.m_Filter << math.abs(o - x.m_Offset),
                 yf  = y.m_Filter << math.abs(o - y.m_Offset);
 
@@ -105,9 +131,21 @@ namespace Vvr.System.Model
 
         public static ConditionQuery operator &(ConditionQuery x, ConditionQuery y)
         {
+            if (64 <= math.abs(x.m_Offset - y.m_Offset)) return default;
+
             short o = x.m_Offset < y.m_Offset ? x.m_Offset : y.m_Offset;
+            if (64 <= math.abs(o - x.m_Offset) ||
+                64 <= math.abs(o - y.m_Offset))
+                throw new InvalidOperationException($"exceed query");
+
+            int yo = math.abs(o - y.m_Offset);
             long xf = x.m_Filter << math.abs(o - x.m_Offset),
-                yf  = y.m_Filter << math.abs(o - y.m_Offset);
+                yf  = y.m_Filter << yo;
+            yo -= 64;
+            while (0 < yo)
+            {
+                yf &= ~(1L << yo--);
+            }
 
             return new ConditionQuery(o, xf & yf);
         }

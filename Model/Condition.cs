@@ -39,6 +39,7 @@ namespace Vvr.System.Model
         OnHit,
         OnAttackStart,
         OnBattleStart,
+        OnBattleEnd,
 
         OnTagIn,
         OnTagOut,
@@ -172,6 +173,7 @@ namespace Vvr.System.Model
         OnHit = Condition.OnHit,
         OnAttackStart = Condition.OnAttackStart,
         OnBattleStart = Condition.OnBattleStart,
+        OnBattleEnd = Condition.OnBattleEnd,
 
         OnTagIn  = Condition.OnTagIn,
         OnTagOut = Condition.OnTagOut,

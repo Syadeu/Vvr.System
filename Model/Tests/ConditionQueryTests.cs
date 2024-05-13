@@ -17,6 +17,7 @@
 // File created : 2024, 05, 11 15:05
 #endregion
 
+using System;
 using NUnit.Framework;
 
 namespace Vvr.System.Model.Tests
@@ -79,6 +80,65 @@ namespace Vvr.System.Model.Tests
             Assert.IsFalse(query.Has(Condition.OnActorDead));
             Assert.IsFalse(query.Has(Condition.IsInHand));
             Assert.IsFalse(query.Has(Condition.IsPlayerActor));
+        }
+        [Test]
+        public void Test_5()
+        {
+            ConditionQuery query = (Condition)0;
+            query |= (Condition)1;
+            query |= (Condition)2;
+            query |= (Condition)5;
+            query |= (Condition)45;
+            query |= (Condition)63;
+
+            ConditionQuery targetQuery = (Condition)80;
+            targetQuery |= (Condition)45;
+            targetQuery |= (Condition)63;
+            targetQuery |= (Condition)100;
+
+            query &= targetQuery;
+
+            Assert.AreEqual(2, query.Count);
+            Assert.IsTrue(query.Has((Condition)45));
+            Assert.IsTrue(query.Has((Condition)63));
+        }
+        [Test]
+        public void Test_6()
+        {
+            ConditionQuery query = (Condition)0;
+            query |= (Condition)1;
+            query |= (Condition)2;
+            query |= (Condition)5;
+            query |= (Condition)45;
+
+            Assert.Catch<InvalidOperationException>(() => query |= (Condition)100);
+
+            ConditionQuery targetQuery = (Condition)80;
+            targetQuery |= (Condition)45;
+            targetQuery |= (Condition)63;
+            targetQuery |= (Condition)100;
+
+            Assert.Catch<InvalidOperationException>(() => query |= targetQuery);
+        }
+        [Test]
+        public void Test_7()
+        {
+            ConditionQuery query = (Condition)0;
+            query |= (Condition)1;
+            query |= (Condition)2;
+            query |= (Condition)5;
+            query |= (Condition)63;
+
+            ConditionQuery targetQuery = (Condition)123;
+            targetQuery |= (Condition)63;
+            targetQuery |= (Condition)120;
+            targetQuery |= (Condition)122;
+
+            ConditionQuery result = query & targetQuery;
+
+            Assert.AreEqual(1, result.Count);
+            Assert.AreEqual((Condition)63, result.Last);
+            Assert.IsTrue(result.Has((Condition)63));
         }
     }
 }

@@ -50,10 +50,16 @@ public static implicit operator ConditionQuery(Condition c) => new ConditionQuer
 
 단일 조건을 먼저 쿼리로 변환할 수 있도록하고,
 
-```C#
+```c#
 public static ConditionQuery operator |(ConditionQuery x, ConditionQuery y)
 {
     short o = x.m_Offset < y.m_Offset ? x.m_Offset : y.m_Offset;
+    if (64 <= math.abs(o - x.m_Offset) ||
+        64 <= math.abs(o - y.m_Offset))
+        throw new InvalidOperationException($"exceed query");
+    if (0 < y.m_Filter && x.m_Offset + 63 < (int)y.Last)
+        throw new InvalidOperationException($"exceed query");
+
     long xf = x.m_Filter << math.abs(o - x.m_Offset),
         yf  = y.m_Filter << math.abs(o - y.m_Offset);
 
@@ -63,12 +69,24 @@ public static ConditionQuery operator |(ConditionQuery x, ConditionQuery y)
 
 여러 조건들을 병합할 수 있도록 | 연산자를 오버로딩합니다.
 
-```C#
+```c#
 public static ConditionQuery operator &(ConditionQuery x, ConditionQuery y)
 {
+    if (64 <= math.abs(x.m_Offset - y.m_Offset)) return default;
+
     short o = x.m_Offset < y.m_Offset ? x.m_Offset : y.m_Offset;
+    if (64 <= math.abs(o - x.m_Offset) ||
+        64 <= math.abs(o - y.m_Offset))
+        throw new InvalidOperationException($"exceed query");
+
+    int yo = math.abs(o - y.m_Offset);
     long xf = x.m_Filter << math.abs(o - x.m_Offset),
-        yf  = y.m_Filter << math.abs(o - y.m_Offset);
+        yf  = y.m_Filter << yo;
+    yo -= 64;
+    while (0 < yo)
+    {
+        yf &= ~(1L << yo--);
+    }
 
     return new ConditionQuery(o, xf & yf);
 }

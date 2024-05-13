@@ -42,6 +42,7 @@ namespace Vvr.System.Controller
                     // m_DestroyProcessing = true;
                     using (var trigger = ConditionTrigger.Push(x, nameof(GameMethod)))
                     {
+                        await trigger.Execute(Condition.OnBattleEnd, null);
                         await trigger.Execute(Condition.OnActorDead, null);
                     }
 

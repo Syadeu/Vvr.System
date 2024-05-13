@@ -23,6 +23,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Cysharp.Threading.Tasks;
+using JetBrains.Annotations;
 using UnityEngine.Assertions;
 using Vvr.Buffer;
 using Vvr.MPC.Provider;
@@ -112,6 +113,12 @@ namespace Vvr.System.Controller
                 .Any(x => x.condition == condition && predicate(x.value));
         }
 
+        // TODO: make gc allocation free
+        [UsedImplicitly]
+        private class ConditionQueryWrapper
+        {
+            public ConditionQuery value;
+        }
         private readonly struct Event : IEquatable<Event>
         {
             public readonly  Condition condition;
@@ -145,11 +152,14 @@ namespace Vvr.System.Controller
             }
         }
 
-        private readonly Hash           m_Hash;
-        private          IEventTarget   m_Target;
-        private          HashSet<Event> m_Events;
-        private readonly string         m_Path;
-        private readonly bool           m_Copied;
+        private readonly Hash         m_Hash;
+        private readonly IEventTarget m_Target;
+
+        private ConditionQueryWrapper m_Conditions;
+        private LinkedList<Event>     m_Events;
+
+        private readonly string            m_Path;
+        private readonly bool              m_Copied;
 
         private ConditionTrigger(ConditionTrigger t, string path)
         {
@@ -159,11 +169,12 @@ namespace Vvr.System.Controller
         }
         private ConditionTrigger(IEventTarget ta, string path)
         {
-            m_Hash   = Hash.NewHash();
-            m_Target = ta;
-            m_Events = ObjectPool<HashSet<Event>>.Shared.Get();
-            m_Path   = path;
-            m_Copied = false;
+            m_Hash       = Hash.NewHash();
+            m_Target     = ta;
+            m_Conditions = ObjectPool<ConditionQueryWrapper>.Shared.Get();
+            m_Events     = ObjectPool<LinkedList<Event>>.Shared.Get();
+            m_Path       = path;
+            m_Copied     = false;
         }
 
         public async UniTask Execute(Condition condition, string value)
@@ -171,7 +182,8 @@ namespace Vvr.System.Controller
             Assert.IsFalse(m_Target.Disposed);
 
             $"[Condition:{m_Target.Owner}:{m_Target.GetHashCode()}({m_Path})] Execute condition({condition}) with {value}".ToLog();
-            m_Events.Add(new Event(condition, value));
+            m_Conditions.value |= condition;
+            m_Events.AddLast(new Event(condition, value));
 
             await ConditionResolver.Execute(m_Target, condition, value);
 
@@ -186,11 +198,12 @@ namespace Vvr.System.Controller
                 s_Stack.RemoveAt(s_Stack.Count - 1);
                 m_Events.Clear();
 
-                ObjectPool<HashSet<Event>>.Shared.Reserve(m_Events);
+                ObjectPool<ConditionQueryWrapper>.Shared.Reserve(m_Conditions);
+                ObjectPool<LinkedList<Event>>.Shared.Reserve(m_Events);
             }
             // $"[Condition:{m_Target.Owner}:{m_Target.name}({m_Path})] Pop trigger stack depth: {s_Stack.Count}".ToLog();
-            m_Target = null;
-            m_Events = null;
+            m_Conditions = null;
+            m_Events     = null;
         }
 
         public override int GetHashCode() => unchecked((int)m_Hash.Value);

@@ -384,6 +384,24 @@ namespace Vvr.System.Controller
                 ObjectObserver<ActorList>.ChangedEvent(m_Timeline);
             }
 
+            foreach (var item in m_PlayerField)
+            {
+                using var trigger = ConditionTrigger.Push(item.owner, ConditionTrigger.Game);
+                await trigger.Execute(Condition.OnBattleEnd, null);
+            }
+
+            foreach (var item in m_HandActors)
+            {
+                using var trigger = ConditionTrigger.Push(item.owner, ConditionTrigger.Game);
+                await trigger.Execute(Condition.OnBattleEnd, null);
+            }
+
+            foreach (var item in m_EnemyField)
+            {
+                using var trigger = ConditionTrigger.Push(item.owner, ConditionTrigger.Game);
+                await trigger.Execute(Condition.OnBattleEnd, null);
+            }
+
             m_Timeline.Clear();
             "Stage end".ToLog();
             return new Result(GetCurrentPlayerActors(), GetCurrentEnemyActors());
