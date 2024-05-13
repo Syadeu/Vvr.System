@@ -5,7 +5,7 @@ Copyright 2024 Syadeu. All rights reserved*
 
 ------
 
-이 시스템은 MVPC, Model, View, Provider(Presenter), Controller 으로 설계되었습니다. 
+이 시스템은 MVPC, Model, View, Provider, Controller(Presenter) 으로 설계되었습니다. 
 
 Model은 게임에서의 가장 기초적인 데이터를 다루고 있습니다. 예를 들어, [AbnormalSheet](Model/AbnormalSheet.cs)와 같이 기획에서 구성된 데이터를 기초 가공하여 저장합니다.
 
