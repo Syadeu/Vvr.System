@@ -27,37 +27,49 @@ using Vvr.System.Model;
 
 namespace Vvr.System.Controller
 {
+    public delegate UniTask ConditionObserverDelegate(string value);
+
     public interface IDynamicConditionObserver : IConditionObserver, IDisposable
     {
-
+        ConditionObserverDelegate this[Condition t] { get; set; }
     }
 
     internal sealed class DynamicConditionObserver : IDynamicConditionObserver
     {
-        private ConditionQuery          m_Filter;
-        private List<ConditionDelegate> m_Delegates = new();
+        private ConditionQuery                  m_Filter;
+        private List<ConditionObserverDelegate> m_Delegates = new();
 
-        public ConditionDelegate this[Condition t]
+        public ConditionObserverDelegate this[Condition t]
         {
+            get
+            {
+                int i = m_Filter.IndexOf(t);
+                if (i < 0) return null;
+
+                return m_Delegates[i];
+            }
             set
             {
                 m_Filter |= t;
 
-                m_Delegates[m_Filter.IndexOf(t)] =  value;
+                m_Delegates.Insert(m_Filter.IndexOf(t), value);
             }
         }
 
         ConditionQuery IConditionObserver.Filter => m_Filter;
 
 
-        public UniTask        OnExecute(Condition condition)
+        public async UniTask OnExecute(Condition condition, string value)
         {
+            int i = m_Filter.IndexOf(condition);
+            if (i < 0) return;
 
+            await m_Delegates[i](value);
         }
 
         public void Dispose()
         {
-            // TODO release managed resources here
+            m_Delegates.Clear();
         }
     }
 }

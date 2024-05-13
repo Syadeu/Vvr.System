@@ -27,6 +27,6 @@ namespace Vvr.System.Controller
     public interface IConditionObserver
     {
         ConditionQuery Filter { get; }
-        UniTask   OnExecute(Condition condition);
+        UniTask   OnExecute(Condition condition, string value);
     }
 }

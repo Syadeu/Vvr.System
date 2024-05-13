@@ -28,18 +28,18 @@ namespace Vvr.System.Controller
     partial class PassiveController : IConditionObserver
     {
         ConditionQuery IConditionObserver.Filter => ConditionQuery.All;
-        async UniTask IConditionObserver.OnExecute(Condition c)
+        async UniTask IConditionObserver.OnExecute(Condition c, string value)
         {
             EventCondition condition = (EventCondition)c;
             for (int i = 0; i < m_Values.Count; i++)
             {
                 var e = m_Values[i];
 
-                await ExecuteValue(e, condition);
+                await ExecuteValue(e, condition, value);
             }
         }
 
-        private async UniTask ExecuteValue(Value e, EventCondition condition)
+        private async UniTask ExecuteValue(Value e, EventCondition condition, string value)
         {
             // If condition is not met
             if (e.passive.activateCondition != (Condition)condition ||

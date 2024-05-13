@@ -28,7 +28,7 @@ namespace Vvr.System.Controller
     {
         ConditionQuery IConditionObserver.Filter => ConditionQuery.All - Condition.Always;
 
-        async UniTask IConditionObserver.OnExecute(Condition c)
+        async UniTask IConditionObserver.OnExecute(Condition c, string value)
         {
             EventCondition condition = (EventCondition)c;
 

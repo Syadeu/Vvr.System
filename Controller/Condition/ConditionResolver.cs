@@ -54,7 +54,7 @@ namespace Vvr.System.Controller
                 var e = resolver.m_EventObservers[i];
                 if ((e.Filter & condition) != condition) continue;
 
-                await e.OnExecute(condition);
+                await e.OnExecute(condition, v);
             }
         }
 
@@ -194,6 +194,18 @@ namespace Vvr.System.Controller
         {
             Array.Clear(m_Delegates, 0, m_Delegates.Length);
             Disposed = true;
+        }
+    }
+
+    public static class ConditionResolverExtensions
+    {
+        public static IDynamicConditionObserver CreateObserver(this IReadOnlyConditionResolver t)
+        {
+            ConditionResolver r = (ConditionResolver)t;
+
+            DynamicConditionObserver ob = new();
+            r.Subscribe(ob);
+            return ob;
         }
     }
 }
