@@ -20,6 +20,7 @@
 #endregion
 
 using Vvr.Controller.Abnormal;
+using Vvr.Controller.Asset;
 using Vvr.Controller.Condition;
 using Vvr.Controller.Skill;
 using Vvr.Controller.Stat;
@@ -33,6 +34,8 @@ namespace Vvr.Controller.Actor
         IStatValueStack Stats    { get; }
         IAbnormal       Abnormal { get; }
         ISkill          Skill    { get; }
+
+        IAsset Assets { get; }
 
         int GetInstanceID();
 

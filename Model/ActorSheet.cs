@@ -22,6 +22,7 @@
 using System;
 using System.Collections.Generic;
 using Cathei.BakingSheet;
+using Cathei.BakingSheet.Unity;
 using JetBrains.Annotations;
 using UnityEngine.Scripting;
 using Vvr.Model.Stat;
@@ -53,6 +54,8 @@ namespace Vvr.Model
 
             [UsedImplicitly] public List<PassiveSheet.Reference>    Passive { get; private set; }
             [UsedImplicitly] public List<SkillSheet.Reference> Skills  { get; private set; }
+
+            [UsedImplicitly] public Dictionary<AssetType, AddressablePath> Assets { get; private set; }
         }
 
         public ActorSheet()
