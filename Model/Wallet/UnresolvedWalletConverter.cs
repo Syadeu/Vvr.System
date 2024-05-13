@@ -24,7 +24,7 @@ using Cathei.BakingSheet;
 using Newtonsoft.Json.Linq;
 using UnityEngine.Scripting;
 
-namespace Vvr.System.Model
+namespace Vvr.Model.Wallet
 {
     [Preserve]
     internal class UnresolvedWalletConverter : SheetValueConverter<UnresolvedWallet>

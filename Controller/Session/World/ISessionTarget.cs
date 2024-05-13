@@ -19,7 +19,9 @@
 
 #endregion
 
-namespace Vvr.System.Controller
+using Vvr.Controller.Condition;
+
+namespace Vvr.Controller.Session.World
 {
     public interface ISessionTarget : IConditionTarget
     {

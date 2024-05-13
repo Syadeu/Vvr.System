@@ -21,7 +21,7 @@
 
 using System;
 
-namespace Vvr.System.Controller
+namespace Vvr.Controller.Condition
 {
     public struct ProbabilityResolver
     {

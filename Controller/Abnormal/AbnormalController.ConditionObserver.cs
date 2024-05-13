@@ -20,15 +20,16 @@
 #endregion
 
 using Cysharp.Threading.Tasks;
-using Vvr.System.Model;
+using Vvr.Controller.Condition;
+using Vvr.Model;
 
-namespace Vvr.System.Controller
+namespace Vvr.Controller.Abnormal
 {
     partial class AbnormalController : IConditionObserver
     {
-        ConditionQuery IConditionObserver.Filter => ConditionQuery.All - Condition.Always;
+        ConditionQuery IConditionObserver.Filter => ConditionQuery.All - Model.Condition.Always;
 
-        async UniTask IConditionObserver.OnExecute(Condition c, string value)
+        async UniTask IConditionObserver.OnExecute(Model.Condition c, string value)
         {
             EventCondition condition = (EventCondition)c;
 
@@ -49,7 +50,7 @@ namespace Vvr.System.Controller
 
                 // If has update and met condition
                 if (e.abnormal.enableUpdate &&
-                    e.abnormal.updateCondition == (Condition)condition)
+                    e.abnormal.updateCondition == (Model.Condition)condition)
                 {
                     if (Owner.ConditionResolver[e.abnormal.updateCondition](e.abnormal.updateValue))
                     {
@@ -70,7 +71,7 @@ namespace Vvr.System.Controller
         {
             Value e = m_Values[index];
 
-            if (e.abnormal.cancelCondition != (Condition)condition) return false;
+            if (e.abnormal.cancelCondition != (Model.Condition)condition) return false;
 
             // Check probability
             if (!ProbabilityResolver.Get().Resolve(e.abnormal.cancelProbability))

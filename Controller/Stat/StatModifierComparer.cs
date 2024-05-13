@@ -22,7 +22,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Vvr.System.Controller
+namespace Vvr.Controller.Stat
 {
     struct StatModifierComparer : IComparer<IStatModifier>
     {

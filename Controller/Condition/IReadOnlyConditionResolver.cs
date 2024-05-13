@@ -19,13 +19,11 @@
 
 #endregion
 
-using Vvr.System.Model;
-
-namespace Vvr.System.Controller
+namespace Vvr.Controller.Condition
 {
     public interface IReadOnlyConditionResolver
     {
-        ConditionDelegate this[Condition t] { get; }
+        ConditionDelegate this[Model.Condition t] { get; }
 
         void Subscribe(IConditionObserver   ob);
         void Unsubscribe(IConditionObserver ob);

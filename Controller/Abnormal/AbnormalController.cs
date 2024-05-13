@@ -25,12 +25,15 @@ using System.Collections.Generic;
 using System.Linq;
 using Cysharp.Threading.Tasks;
 using DG.Tweening;
+using Vvr.Controller.Actor;
+using Vvr.Controller.Condition;
+using Vvr.Controller.Stat;
 using Vvr.Crypto;
+using Vvr.Model;
 using Vvr.MPC.Provider;
-using Vvr.System.Model;
 using Vvr.UI.Observer;
 
-namespace Vvr.System.Controller
+namespace Vvr.Controller.Abnormal
 {
     public sealed partial class AbnormalController : IAbnormal, IDisposable
     {
@@ -143,7 +146,7 @@ namespace Vvr.System.Controller
                 m_IsDirty = true;
                 ObjectObserver<AbnormalController>.ChangedEvent(this);
                 ObjectObserver<IStatValueStack>.ChangedEvent(Owner.Stats);
-                await trigger.Execute(Condition.OnAbnormalAdded, data.Id);
+                await trigger.Execute(Model.Condition.OnAbnormalAdded, data.Id);
                 return;
             }
 
@@ -181,7 +184,7 @@ namespace Vvr.System.Controller
             m_IsDirty       = true;
             ObjectObserver<AbnormalController>.ChangedEvent(this);
             ObjectObserver<IStatValueStack>.ChangedEvent(Owner.Stats);
-            await trigger.Execute(Condition.OnAbnormalAdded, data.Id);
+            await trigger.Execute(Model.Condition.OnAbnormalAdded, data.Id);
         }
 
         public bool Contains(Hash abnormalId)

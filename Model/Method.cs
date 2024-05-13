@@ -19,10 +19,9 @@
 
 #endregion
 
-using System;
 using UnityEngine;
 
-namespace Vvr.System.Model
+namespace Vvr.Model
 {
     public delegate float MethodImplDelegate(float source, float value);
 

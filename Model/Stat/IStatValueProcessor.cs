@@ -19,7 +19,7 @@
 
 #endregion
 
-namespace Vvr.System.Model
+namespace Vvr.Model.Stat
 {
     public interface IStatValueProcessor
     {

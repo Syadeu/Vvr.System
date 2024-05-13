@@ -19,18 +19,15 @@
 
 #endregion
 
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Cathei.BakingSheet;
 using JetBrains.Annotations;
-using Newtonsoft.Json;
-using Unity.Mathematics;
 using UnityEngine.Assertions;
 
-namespace Vvr.System.Model
+namespace Vvr.Model.Stat
 {
     public delegate float StatValueGetterDelegate(in IReadOnlyStatValues stat);
     public delegate void StatValueSetterDelegate(in StatValues stat, float value);

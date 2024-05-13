@@ -22,10 +22,12 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine.Assertions;
+using Vvr.Controller.Actor;
+using Vvr.Controller.Provider;
+using Vvr.Model;
 using Vvr.MPC.Provider;
-using Vvr.System.Model;
 
-namespace Vvr.System.Controller
+namespace Vvr.Controller.Passive
 {
     public sealed partial class PassiveController : IDisposable
     {

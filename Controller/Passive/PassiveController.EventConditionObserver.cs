@@ -21,14 +21,16 @@
 
 using System;
 using Cysharp.Threading.Tasks;
-using Vvr.System.Model;
+using Vvr.Controller.Condition;
+using Vvr.Controller.Skill;
+using Vvr.Model;
 
-namespace Vvr.System.Controller
+namespace Vvr.Controller.Passive
 {
     partial class PassiveController : IConditionObserver
     {
         ConditionQuery IConditionObserver.Filter => ConditionQuery.All;
-        async UniTask IConditionObserver.OnExecute(Condition c, string value)
+        async UniTask IConditionObserver.OnExecute(Model.Condition c, string value)
         {
             EventCondition condition = (EventCondition)c;
             for (int i = 0; i < m_Values.Count; i++)
@@ -42,7 +44,7 @@ namespace Vvr.System.Controller
         private async UniTask ExecuteValue(Value e, EventCondition condition, string value)
         {
             // If condition is not met
-            if (e.passive.activateCondition != (Condition)condition ||
+            if (e.passive.activateCondition != (Model.Condition)condition ||
                 !Owner.ConditionResolver[e.passive.activateCondition](e.passive.activateValue))
             {
                 return;

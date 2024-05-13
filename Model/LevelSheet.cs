@@ -23,7 +23,7 @@ using Cathei.BakingSheet;
 using JetBrains.Annotations;
 using UnityEngine.Scripting;
 
-namespace Vvr.System.Model
+namespace Vvr.Model
 {
     [Preserve]
     public sealed class LevelSheet : Sheet<LevelSheet.Row>

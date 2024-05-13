@@ -22,7 +22,7 @@
 using Cysharp.Threading.Tasks;
 using UnityEngine.Scripting;
 
-namespace Vvr.System.Controller
+namespace Vvr.Controller.Session
 {
     [RequireImplementors]
     public interface IGameSessionBase

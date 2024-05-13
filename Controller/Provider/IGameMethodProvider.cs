@@ -19,13 +19,13 @@
 
 #endregion
 
+using Vvr.Controller.GameMethod;
 using Vvr.MPC.Provider;
-using Vvr.System.Model;
 
-namespace Vvr.System.Controller
+namespace Vvr.Controller.Provider
 {
     public interface IGameMethodProvider : IProvider
     {
-        GameMethodImplDelegate Resolve(GameMethod method);
+        GameMethodImplDelegate Resolve(Model.GameMethod method);
     }
 }

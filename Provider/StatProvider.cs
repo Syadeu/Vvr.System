@@ -22,7 +22,8 @@
 using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
-using Vvr.System.Model;
+using Vvr.Model;
+using Vvr.Model.Stat;
 
 namespace Vvr.MPC.Provider
 {

@@ -25,7 +25,7 @@ using Cathei.BakingSheet;
 using Newtonsoft.Json;
 using UnityEngine.Assertions;
 
-namespace Vvr.System.Model
+namespace Vvr.Model.Stat
 {
     /// <summary>
     /// Unresolved version of <see cref="StatValues"/>

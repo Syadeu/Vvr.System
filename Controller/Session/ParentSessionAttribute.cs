@@ -21,7 +21,7 @@
 
 using System;
 
-namespace Vvr.System.Controller
+namespace Vvr.Controller.Session
 {
     /// <summary>
     /// ChildSession 에 부모를 명시하는

@@ -19,7 +19,9 @@
 
 #endregion
 
-namespace Vvr.System.Controller
+using Vvr.Controller.Item;
+
+namespace Vvr.Controller.Provider
 {
     public interface IItemProvider
     {

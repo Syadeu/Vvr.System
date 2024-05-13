@@ -21,7 +21,7 @@
 
 using Vvr.MPC.Provider;
 
-namespace Vvr.System.Controller
+namespace Vvr.Controller.Condition
 {
     public interface IConditionTarget : IEventTarget
     {

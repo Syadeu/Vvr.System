@@ -19,7 +19,7 @@
 
 #endregion
 
-namespace Vvr.System.Model
+namespace Vvr.Model.Stat
 {
     /// <summary>
     /// Helper struct for ordering stat modifiers.

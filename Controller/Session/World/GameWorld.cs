@@ -22,7 +22,7 @@
 using System;
 using Cysharp.Threading.Tasks;
 
-namespace Vvr.System.Controller
+namespace Vvr.Controller.Session.World
 {
     public static class GameWorld
     {

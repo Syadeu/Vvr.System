@@ -20,9 +20,11 @@
 #endregion
 
 using Cysharp.Threading.Tasks;
+using Vvr.Controller.Actor;
+using Vvr.Controller.Session.World;
 using Vvr.MPC.Provider;
 
-namespace Vvr.System.Controller
+namespace Vvr.Controller.Provider
 {
     public interface IStageProvider : IProvider
     {

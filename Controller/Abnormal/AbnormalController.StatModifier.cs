@@ -22,9 +22,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Vvr.System.Model;
+using Vvr.Controller.Stat;
+using Vvr.Model;
+using Vvr.Model.Stat;
 
-namespace Vvr.System.Controller
+namespace Vvr.Controller.Abnormal
 {
     partial class AbnormalController : IStatModifier
     {

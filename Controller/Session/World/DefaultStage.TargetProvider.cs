@@ -23,9 +23,12 @@ using System;
 using System.Buffers;
 using System.Collections.Generic;
 using UnityEngine.Assertions;
-using Vvr.System.Model;
+using Vvr.Controller.Actor;
+using Vvr.Controller.Provider;
+using Vvr.Controller.Skill;
+using Vvr.Model;
 
-namespace Vvr.System.Controller
+namespace Vvr.Controller.Session.World
 {
     partial class DefaultStage : ITargetProvider
     {

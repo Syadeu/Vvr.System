@@ -23,7 +23,7 @@ using System;
 using System.Text;
 using JetBrains.Annotations;
 
-namespace Vvr.System.Model
+namespace Vvr.Model
 {
     /// <summary>
     /// <seealso cref="ConditionResolver"/>

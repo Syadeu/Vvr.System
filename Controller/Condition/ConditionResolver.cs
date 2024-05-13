@@ -24,12 +24,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Cysharp.Threading.Tasks;
-using DG.Tweening;
 using UnityEngine.Assertions;
+using Vvr.Controller.Actor;
+using Vvr.Controller.Stat;
+using Vvr.Model;
 using Vvr.MPC.Provider;
-using Vvr.System.Model;
 
-namespace Vvr.System.Controller
+namespace Vvr.Controller.Condition
 {
     public delegate bool ConditionDelegate(string value);
 
@@ -45,7 +46,7 @@ namespace Vvr.System.Controller
             Hash hash = o.GetHash();
             return new(o, hash);
         }
-        internal static async UniTask Execute(IEventTarget o, Condition condition, string v)
+        internal static async UniTask Execute(IEventTarget o, Model.Condition condition, string v)
         {
             if (o is not IConditionTarget target) return;
 
@@ -63,15 +64,15 @@ namespace Vvr.System.Controller
         private readonly Hash         m_Hash;
 
         private readonly ConditionDelegate[]
-            m_Delegates = new ConditionDelegate[VvrTypeHelper.Enum<Condition>.Length];
+            m_Delegates = new ConditionDelegate[VvrTypeHelper.Enum<Model.Condition>.Length];
 
         private readonly List<IConditionObserver> m_EventObservers = new();
 
-        public ConditionDelegate this[Condition t]
+        public ConditionDelegate this[Model.Condition t]
         {
             get
             {
-                if (t == Condition.Always) return Always;
+                if (t == Model.Condition.Always) return Always;
 
                 if (m_Delegates[(int)t] == null)
                 {
@@ -121,7 +122,7 @@ namespace Vvr.System.Controller
                 = Enum.GetValues(typeof(EventCondition)).Cast<EventCondition>();
             foreach (var condition in conditions)
             {
-                this[(Condition)condition] = x => provider.Resolve(condition, m_Owner, x);
+                this[(Model.Condition)condition] = x => provider.Resolve(condition, m_Owner, x);
             }
         }
         void IConnector<IEventConditionProvider>.Disconnect()
@@ -130,7 +131,7 @@ namespace Vvr.System.Controller
                 = Enum.GetValues(typeof(EventCondition)).Cast<EventCondition>();
             foreach (var condition in conditions)
             {
-                this[(Condition)condition] = null;
+                this[(Model.Condition)condition] = null;
             }
         }
 
@@ -140,7 +141,7 @@ namespace Vvr.System.Controller
                 = Enum.GetValues(typeof(StateCondition)).Cast<StateCondition>();
             foreach (var condition in conditions)
             {
-                this[(Condition)condition] = x => t.Resolve(condition, m_Owner, x);
+                this[(Model.Condition)condition] = x => t.Resolve(condition, m_Owner, x);
             }
         }
         void IConnector<IStateConditionProvider>.Disconnect()
@@ -149,7 +150,7 @@ namespace Vvr.System.Controller
                 = Enum.GetValues(typeof(StateCondition)).Cast<StateCondition>();
             foreach (var condition in conditions)
             {
-                this[(Condition)condition] = null;
+                this[(Model.Condition)condition] = null;
             }
         }
 
@@ -161,7 +162,7 @@ namespace Vvr.System.Controller
                 = Enum.GetValues(typeof(AbnormalCondition)).Cast<AbnormalCondition>();
             foreach (var condition in conditions)
             {
-                this[(Condition)condition] = x => provider.Resolve(condition, x);
+                this[(Model.Condition)condition] = x => provider.Resolve(condition, x);
             }
 
             return this;
@@ -175,7 +176,7 @@ namespace Vvr.System.Controller
                 = Enum.GetValues(typeof(OperatorCondition)).Cast<OperatorCondition>();
             foreach (var condition in conditions)
             {
-                this[(Condition)condition] = x => provider.Resolve(stats.OriginalStats, stats, condition, x);
+                this[(Model.Condition)condition] = x => provider.Resolve(stats.OriginalStats, stats, condition, x);
             }
             return this;
         }

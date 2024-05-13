@@ -24,10 +24,11 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine.Assertions;
-using Vvr.System.Model;
+using Vvr.Controller.Actor;
+using Vvr.Model.Stat;
 using Vvr.UI.Observer;
 
-namespace Vvr.System.Controller
+namespace Vvr.Controller.Stat
 {
     public sealed class StatValueStack : IStatValueStack, IDisposable
     {

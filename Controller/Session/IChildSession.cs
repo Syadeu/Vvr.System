@@ -21,7 +21,7 @@
 
 using Cysharp.Threading.Tasks;
 
-namespace Vvr.System.Controller
+namespace Vvr.Controller.Session
 {
     public interface IChildSession : IGameSessionBase
     {

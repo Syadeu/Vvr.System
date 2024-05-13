@@ -24,10 +24,13 @@ using System.Linq;
 using Cysharp.Threading.Tasks;
 using UnityEngine.Assertions;
 using UnityEngine.Scripting;
+using Vvr.Controller.Actor;
+using Vvr.Controller.Condition;
+using Vvr.Controller.Provider;
+using Vvr.Model;
 using Vvr.MPC.Provider;
-using Vvr.System.Model;
 
-namespace Vvr.System.Controller
+namespace Vvr.Controller.Session.World
 {
     [Preserve]
     public partial class DefaultWorld : RootSession, IWorldSession,
@@ -42,8 +45,8 @@ namespace Vvr.System.Controller
 
         protected override async UniTask OnInitialize()
         {
-            Provider.Static.Connect<IStateConditionProvider>(this);
-            Provider.Static.Connect<IGameConfigProvider>(this);
+            MPC.Provider.Provider.Static.Connect<IStateConditionProvider>(this);
+            MPC.Provider.Provider.Static.Connect<IGameConfigProvider>(this);
 
             TimeController.Register(this);
 
@@ -54,8 +57,8 @@ namespace Vvr.System.Controller
         }
         protected override UniTask OnReserve()
         {
-            Provider.Static.Disconnect<IStateConditionProvider>(this);
-            Provider.Static.Disconnect<IGameConfigProvider>(this);
+            MPC.Provider.Provider.Static.Disconnect<IStateConditionProvider>(this);
+            MPC.Provider.Provider.Static.Disconnect<IGameConfigProvider>(this);
 
             TimeController.Unregister(this);
 
@@ -65,7 +68,7 @@ namespace Vvr.System.Controller
         }
 
         private async UniTask OnEventExecutedAsync(
-            IEventTarget e, Condition condition, string value)
+            IEventTarget e, Model.Condition condition, string value)
         {
             // TODO: temp
             if (e is not IActor target) return;
@@ -85,7 +88,7 @@ namespace Vvr.System.Controller
                         continue;
                 }
 
-                if (!target.ConditionResolver[(Condition)config.Evaluation.Condition](config.Evaluation.Value)) continue;
+                if (!target.ConditionResolver[(Model.Condition)config.Evaluation.Condition](config.Evaluation.Value)) continue;
 
                 $"[World] Evaluation completed {condition} == {config.Evaluation.Condition}".ToLog();
 
@@ -144,9 +147,9 @@ namespace Vvr.System.Controller
     }
     partial class DefaultWorld : ITimeUpdate
     {
-        private async UniTask ExecuteMethod(IEventTarget o, GameMethod method)
+        private async UniTask ExecuteMethod(IEventTarget o, Model.GameMethod method)
         {
-            var methodProvider = await Provider.Static.GetAsync<IGameMethodProvider>();
+            var methodProvider = await MPC.Provider.Provider.Static.GetAsync<IGameMethodProvider>();
             await methodProvider.Resolve(method)(o);
         }
 

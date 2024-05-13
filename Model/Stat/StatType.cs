@@ -21,7 +21,7 @@
 
 using System;
 
-namespace Vvr.System.Model
+namespace Vvr.Model.Stat
 {
     [Flags]
     public enum StatType : long

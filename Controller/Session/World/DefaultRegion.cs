@@ -22,10 +22,12 @@
 using System;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
+using Vvr.Controller.Actor;
+using Vvr.Controller.Condition;
+using Vvr.Model;
 using Vvr.MPC.Provider;
-using Vvr.System.Model;
 
-namespace Vvr.System.Controller
+namespace Vvr.Controller.Session.World
 {
     [ParentSession(typeof(DefaultMap))]
     public class DefaultRegion : ParentSession<DefaultRegion.SessionData>, ISessionTarget
@@ -54,7 +56,7 @@ namespace Vvr.System.Controller
         {
             Owner = Owner.Issue;
 
-            m_ConditionResolver = Vvr.System.Controller.ConditionResolver.Create(this);
+            m_ConditionResolver = Condition.ConditionResolver.Create(this);
 
             Disposed = false;
 

@@ -22,7 +22,7 @@
 using System.Collections.Generic;
 using Newtonsoft.Json;
 
-namespace Vvr.System.Model
+namespace Vvr.Model.Wallet
 {
     [JsonConverter(typeof(UnresolvedWalletJsonConverter))]
     public interface IReadOnlyWallet : IEnumerable<KeyValuePair<WalletType, float>>

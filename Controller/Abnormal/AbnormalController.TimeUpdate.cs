@@ -22,10 +22,12 @@
 using System;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
-using Vvr.System.Model;
+using Vvr.Controller.Condition;
+using Vvr.Controller.Stat;
+using Vvr.Model;
 using Vvr.UI.Observer;
 
-namespace Vvr.System.Controller
+namespace Vvr.Controller.Abnormal
 {
     partial class AbnormalController : ITimeUpdate
     {
@@ -38,7 +40,7 @@ namespace Vvr.System.Controller
             LogicalOperator op         = default;
             for (int i = 0; i < value.abnormal.timeCondition?.Count; i++)
             {
-                Condition condition = value.abnormal.timeCondition[i];
+                Model.Condition condition = value.abnormal.timeCondition[i];
                 if (Enum.IsDefined(VvrTypeHelper.TypeOf<LogicalCondition>.Type, (LogicalCondition)condition))
                 {
                     op |= (LogicalCondition)condition;
@@ -125,7 +127,7 @@ namespace Vvr.System.Controller
                             m_Values.RemoveAt(i--);
                             m_IsDirty = true;
 
-                            await trigger.Execute(Condition.OnAbnormalRemoved, e.abnormal.id);
+                            await trigger.Execute(Model.Condition.OnAbnormalRemoved, e.abnormal.id);
                             continue;
                         }
                     }
@@ -155,7 +157,7 @@ namespace Vvr.System.Controller
                     m_Values[i]       = e;
 
                     if (updateCount > 0)
-                        await trigger.Execute(Condition.OnAbnormalUpdate, e.abnormal.id);
+                        await trigger.Execute(Model.Condition.OnAbnormalUpdate, e.abnormal.id);
                 }
             }
 

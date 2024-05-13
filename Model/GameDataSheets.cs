@@ -23,7 +23,7 @@ using Cathei.BakingSheet;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 
-namespace Vvr.System.Model
+namespace Vvr.Model
 {
     public sealed class GameDataSheets : SheetContainerBase
     {

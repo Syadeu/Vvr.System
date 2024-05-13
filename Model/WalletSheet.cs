@@ -21,8 +21,9 @@
 
 using Cathei.BakingSheet;
 using UnityEngine.Scripting;
+using Vvr.Model.Wallet;
 
-namespace Vvr.System.Model
+namespace Vvr.Model
 {
     [Preserve]
     public sealed class WalletSheet : Sheet<WalletSheet.Row>

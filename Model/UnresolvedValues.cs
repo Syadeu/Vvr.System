@@ -23,7 +23,7 @@ using Cathei.BakingSheet;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-namespace Vvr.System.Model
+namespace Vvr.Model
 {
     internal abstract class UnresolvedValues<TValue>
     {

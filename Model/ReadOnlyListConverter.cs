@@ -27,7 +27,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using UnityEngine.Scripting;
 
-namespace Vvr.System.Model
+namespace Vvr.Model
 {
     [Preserve]
     public sealed class ReadOnlyListConverter<T> : SheetValueConverter<IReadOnlyList<T>>

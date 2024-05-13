@@ -26,7 +26,7 @@ using JetBrains.Annotations;
 using UnityEngine;
 using UnityEngine.Scripting;
 
-namespace Vvr.System.Model
+namespace Vvr.Model
 {
     [Preserve]
     public sealed class GameConfigSheet : Sheet<GameConfigSheet.Row>

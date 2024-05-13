@@ -24,7 +24,7 @@ using Cathei.BakingSheet;
 using JetBrains.Annotations;
 using UnityEngine.Scripting;
 
-namespace Vvr.System.Model
+namespace Vvr.Model
 {
     [SheetValueConverter(typeof(DynamicReferenceConverter))]
     public struct DynamicReference : IEquatable<DynamicReference>

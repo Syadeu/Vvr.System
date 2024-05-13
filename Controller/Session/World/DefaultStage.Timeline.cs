@@ -24,9 +24,11 @@ using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using UnityEngine;
 using UnityEngine.Assertions;
-using Vvr.System.Model;
+using Vvr.Controller.Actor;
+using Vvr.Model;
+using Vvr.Model.Stat;
 
-namespace Vvr.System.Controller
+namespace Vvr.Controller.Session.World
 {
     partial class DefaultStage
     {

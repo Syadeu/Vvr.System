@@ -25,7 +25,7 @@ using Cathei.BakingSheet.Internal;
 using Cysharp.Threading.Tasks;
 using UnityEngine.Assertions;
 
-namespace Vvr.System.Controller
+namespace Vvr.Controller.Session
 {
     [Preserve, UnityEngine.Scripting.RequireDerived]
     public abstract class ChildSession<TSessionData> : IChildSession

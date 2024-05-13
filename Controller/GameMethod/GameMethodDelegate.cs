@@ -20,7 +20,7 @@
 using Cysharp.Threading.Tasks;
 using Vvr.MPC.Provider;
 
-namespace Vvr.System.Controller
+namespace Vvr.Controller.GameMethod
 {
     public delegate UniTask GameMethodImplDelegate(IEventTarget target);
 }

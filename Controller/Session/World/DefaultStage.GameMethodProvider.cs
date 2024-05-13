@@ -20,19 +20,21 @@
 #endregion
 
 using System;
-using System.Collections.Generic;
-using Vvr.System.Model;
-using Vvr.UI.Observer;
+using Vvr.Controller.Actor;
+using Vvr.Controller.Condition;
+using Vvr.Controller.GameMethod;
+using Vvr.Controller.Provider;
+using Vvr.Model.Stat;
 
-namespace Vvr.System.Controller
+namespace Vvr.Controller.Session.World
 {
     partial class DefaultStage : IGameMethodProvider
     {
         // private bool m_DestroyProcessing;
 
-        GameMethodImplDelegate IGameMethodProvider.Resolve(GameMethod method)
+        GameMethodImplDelegate IGameMethodProvider.Resolve(Model.GameMethod method)
         {
-            if (method == GameMethod.Destroy)
+            if (method == Model.GameMethod.Destroy)
             {
                 return async e =>
                 {
@@ -40,17 +42,17 @@ namespace Vvr.System.Controller
                     if (e is not IActor x) return;
 
                     // m_DestroyProcessing = true;
-                    using (var trigger = ConditionTrigger.Push(x, nameof(GameMethod)))
+                    using (var trigger = ConditionTrigger.Push(x, nameof(Model.GameMethod)))
                     {
-                        await trigger.Execute(Condition.OnBattleEnd, null);
-                        await trigger.Execute(Condition.OnActorDead, null);
+                        await trigger.Execute(Model.Condition.OnBattleEnd, null);
+                        await trigger.Execute(Model.Condition.OnActorDead, null);
                     }
 
-                    var field = x.ConditionResolver[Condition.IsPlayerActor](null) ? m_PlayerField : m_EnemyField;
+                    var field = x.ConditionResolver[Model.Condition.IsPlayerActor](null) ? m_PlayerField : m_EnemyField;
                     int index = field.FindIndex(e => e.owner == x);
                     if (index < 0)
                     {
-                        $"{index} not found in field {x.ConditionResolver[Condition.IsPlayerActor](null)}".ToLogError();
+                        $"{index} not found in field {x.ConditionResolver[Model.Condition.IsPlayerActor](null)}".ToLogError();
                         return;
                     }
 

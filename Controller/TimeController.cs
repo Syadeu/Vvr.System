@@ -25,7 +25,7 @@ using Cysharp.Threading.Tasks;
 using UnityEngine.Assertions;
 using Vvr.Crypto;
 
-namespace Vvr.System.Controller
+namespace Vvr.Controller
 {
     public struct TimeController
     {

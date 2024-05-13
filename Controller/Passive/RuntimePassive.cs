@@ -20,9 +20,9 @@
 #endregion
 
 using System;
-using Vvr.System.Model;
+using Vvr.Model;
 
-namespace Vvr.System.Controller
+namespace Vvr.Controller.Passive
 {
     internal readonly struct RuntimePassive : IComparable<RuntimePassive>
     {
@@ -30,12 +30,12 @@ namespace Vvr.System.Controller
         public readonly int                type, level;
         public readonly PassiveSheet.AffectType affectType;
 
-        public readonly Condition activateCondition;
-        public readonly string    activateValue;
+        public readonly Model.Condition activateCondition;
+        public readonly string          activateValue;
 
-        public readonly Condition executeCondition;
-        public readonly string    executeValue;
-        public readonly float     executeProbability;
+        public readonly Model.Condition executeCondition;
+        public readonly string          executeValue;
+        public readonly float           executeProbability;
 
         public readonly PassiveSheet.Target         conclusionTarget;
         public readonly PassiveSheet.Position         conclusionPosition;

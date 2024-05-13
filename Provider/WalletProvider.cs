@@ -20,7 +20,8 @@
 #endregion
 
 using System.Collections.Generic;
-using Vvr.System.Model;
+using Vvr.Model;
+using Vvr.Model.Wallet;
 
 namespace Vvr.MPC.Provider
 {

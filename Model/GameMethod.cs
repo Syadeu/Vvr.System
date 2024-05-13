@@ -19,10 +19,7 @@
 
 #endregion
 
-using System;
-using Cysharp.Threading.Tasks;
-
-namespace Vvr.System.Model
+namespace Vvr.Model
 {
     /// <summary>
     /// Should provide method with <see cref="IGameMethodProvider"/>

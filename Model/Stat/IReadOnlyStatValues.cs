@@ -22,7 +22,7 @@
 using System.Collections.Generic;
 using Newtonsoft.Json;
 
-namespace Vvr.System.Model
+namespace Vvr.Model.Stat
 {
     [JsonConverter(typeof(UnresolvedStatValuesJsonConverter))]
     public interface IReadOnlyStatValues : IEnumerable<KeyValuePair<StatType, float>>

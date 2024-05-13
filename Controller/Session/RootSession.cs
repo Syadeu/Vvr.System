@@ -25,7 +25,7 @@ using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using UnityEngine.Assertions;
 
-namespace Vvr.System.Controller
+namespace Vvr.Controller.Session
 {
     public abstract class RootSession : IParentSession, IGameSessionCallback, IDisposable
     {

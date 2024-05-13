@@ -19,7 +19,7 @@
 
 #endregion
 
-namespace Vvr.System.Controller
+namespace Vvr.Controller.Abnormal
 {
     public interface IReadOnlyRuntimeAbnormal
     {

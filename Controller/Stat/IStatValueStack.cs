@@ -19,9 +19,9 @@
 
 #endregion
 
-using System.Collections.Generic;
+using Vvr.Model.Stat;
 
-namespace Vvr.System.Model
+namespace Vvr.Controller.Stat
 {
     public interface IStatValueStack : IReadOnlyStatValues
     {

@@ -17,13 +17,9 @@
 // File created : 2024, 05, 13 14:05
 #endregion
 
-using System;
-using Cysharp.Threading.Tasks;
-using Vvr.MPC.Provider;
-using Vvr.System.Model;
-using NotImplementedException = System.NotImplementedException;
+using Vvr.Controller.Condition;
 
-namespace Vvr.System.Controller
+namespace Vvr.Controller.Session.World
 {
     partial class DefaultFloor
     {
@@ -31,15 +27,15 @@ namespace Vvr.System.Controller
 
         protected virtual partial void Connect(ConditionResolver conditionResolver)
         {
-            conditionResolver[Condition.OnFloorStarted] = x => ConditionTrigger.Any(this, Condition.OnFloorStarted, x);
-            conditionResolver[Condition.OnFloorEnded] = x => ConditionTrigger.Any(this, Condition.OnFloorEnded, x);
-            conditionResolver[Condition.OnStageStarted] = x => Started && ConditionTrigger.Any(this, Condition.OnStageStarted, x);
-            conditionResolver[Condition.OnStageEnded] = x => Started && ConditionTrigger.Any(this, Condition.OnStageEnded, x);
+            conditionResolver[Model.Condition.OnFloorStarted] = x => ConditionTrigger.Any(this, Model.Condition.OnFloorStarted, x);
+            conditionResolver[Model.Condition.OnFloorEnded] = x => ConditionTrigger.Any(this, Model.Condition.OnFloorEnded, x);
+            conditionResolver[Model.Condition.OnStageStarted] = x => Started && ConditionTrigger.Any(this, Model.Condition.OnStageStarted, x);
+            conditionResolver[Model.Condition.OnStageEnded] = x => Started && ConditionTrigger.Any(this, Model.Condition.OnStageEnded, x);
 
-            conditionResolver[Condition.IsFloorStarted] = x => Started  && Data.stages.First.Value.Id == x;
-            conditionResolver[Condition.IsFloorEnded]   = x => !Started && Data.stages.First.Value.Id == x;
-            conditionResolver[Condition.IsStageStarted] = x => Started  && m_CurrentStage != null && m_CurrentStage.Data.stageId == x;
-            conditionResolver[Condition.IsStageEnded] = x => Started  && m_CurrentStage != null && m_CurrentStage.Data.stageId == x;
+            conditionResolver[Model.Condition.IsFloorStarted] = x => Started  && Data.stages.First.Value.Id == x;
+            conditionResolver[Model.Condition.IsFloorEnded]   = x => !Started && Data.stages.First.Value.Id == x;
+            conditionResolver[Model.Condition.IsStageStarted] = x => Started  && m_CurrentStage != null && m_CurrentStage.Data.stageId == x;
+            conditionResolver[Model.Condition.IsStageEnded] = x => Started  && m_CurrentStage != null && m_CurrentStage.Data.stageId == x;
         }
 
         // ConditionQuery IConditionObserver.Filter { get; } =

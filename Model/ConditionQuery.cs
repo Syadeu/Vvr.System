@@ -24,9 +24,8 @@ using System.Collections;
 using System.Collections.Generic;
 using JetBrains.Annotations;
 using Unity.Mathematics;
-using UnityEngine.Assertions;
 
-namespace Vvr.System.Model
+namespace Vvr.Model
 {
     /// <summary>
     /// 64 <see cref="Condition"/> query

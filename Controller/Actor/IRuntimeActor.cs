@@ -19,9 +19,9 @@
 
 #endregion
 
-using Vvr.System.Model;
+using Vvr.Model;
 
-namespace Vvr.System.Controller
+namespace Vvr.Controller.Actor
 {
     internal interface IRuntimeActor
     {

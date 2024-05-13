@@ -19,10 +19,14 @@
 
 #endregion
 
+using Vvr.Controller.Abnormal;
+using Vvr.Controller.Condition;
+using Vvr.Controller.Skill;
+using Vvr.Controller.Stat;
+using Vvr.Model;
 using Vvr.MPC.Provider;
-using Vvr.System.Model;
 
-namespace Vvr.System.Controller
+namespace Vvr.Controller.Actor
 {
     public interface IActor : IConditionTarget
     {

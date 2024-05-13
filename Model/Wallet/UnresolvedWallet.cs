@@ -25,7 +25,7 @@ using Cathei.BakingSheet;
 using Newtonsoft.Json;
 using UnityEngine.Assertions;
 
-namespace Vvr.System.Model
+namespace Vvr.Model.Wallet
 {
     [JsonConverter(typeof(UnresolvedWalletJsonConverter))]
     class UnresolvedWallet : UnresolvedValues<Wallet>, IReadOnlyWallet

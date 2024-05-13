@@ -21,7 +21,7 @@
 
 using Cysharp.Threading.Tasks;
 
-namespace Vvr.System.Controller
+namespace Vvr.Controller.Session.World
 {
     [ParentSession(typeof(DefaultWorld))]
     public class DefaultMap : ParentSession<DefaultMap.Data>

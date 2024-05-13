@@ -21,9 +21,9 @@
 
 using System;
 using UnityEngine.Assertions;
-using Vvr.System.Model;
+using Vvr.Model;
 
-namespace Vvr.System.Controller
+namespace Vvr.Controller.Skill
 {
     public interface ITargetDefinition
     {

@@ -23,8 +23,10 @@ using System.Collections.Generic;
 using Cathei.BakingSheet;
 using JetBrains.Annotations;
 using UnityEngine.Scripting;
+using Vvr.Model.Stat;
+using Vvr.Model.Wallet;
 
-namespace Vvr.System.Model
+namespace Vvr.Model
 {
     [Preserve]
     public sealed class ItemSheet : Sheet<ItemSheet.Row>

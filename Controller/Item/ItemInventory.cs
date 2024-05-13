@@ -22,10 +22,13 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine.Assertions;
+using Vvr.Controller.Provider;
+using Vvr.Controller.Stat;
+using Vvr.Model;
+using Vvr.Model.Stat;
 using Vvr.MPC.Provider;
-using Vvr.System.Model;
 
-namespace Vvr.System.Controller
+namespace Vvr.Controller.Item
 {
     public sealed partial class ItemInventory : IItemProvider, IDisposable
     {

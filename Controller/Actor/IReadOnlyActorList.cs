@@ -21,7 +21,7 @@
 
 using System.Collections.Generic;
 
-namespace Vvr.System.Controller
+namespace Vvr.Controller.Actor
 {
     public interface IReadOnlyActorList : IReadOnlyList<CachedActor>
     {

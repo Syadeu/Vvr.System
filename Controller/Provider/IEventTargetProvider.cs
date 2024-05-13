@@ -19,10 +19,11 @@
 
 #endregion
 
+using Vvr.Controller.Actor;
+using Vvr.Model;
 using Vvr.MPC.Provider;
-using Vvr.System.Model;
 
-namespace Vvr.System.Controller
+namespace Vvr.Controller.Provider
 {
     public interface IEventTargetProvider : IProvider
     {

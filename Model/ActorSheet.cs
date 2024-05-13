@@ -23,10 +23,10 @@ using System;
 using System.Collections.Generic;
 using Cathei.BakingSheet;
 using JetBrains.Annotations;
-using UnityEngine.Assertions;
 using UnityEngine.Scripting;
+using Vvr.Model.Stat;
 
-namespace Vvr.System.Model
+namespace Vvr.Model
 {
     [Preserve]
     public sealed class ActorSheet : Sheet<ActorSheet.Row>

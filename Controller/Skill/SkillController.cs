@@ -25,10 +25,14 @@ using Cathei.BakingSheet;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Assertions;
+using Vvr.Controller.Actor;
+using Vvr.Controller.Condition;
+using Vvr.Controller.Provider;
+using Vvr.Model;
+using Vvr.Model.Stat;
 using Vvr.MPC.Provider;
-using Vvr.System.Model;
 
-namespace Vvr.System.Controller
+namespace Vvr.Controller.Skill
 {
     public sealed partial class SkillController : ITimeUpdate, IDisposable, ISkill
     {
@@ -106,7 +110,7 @@ namespace Vvr.System.Controller
         public async UniTask Queue(SkillSheet.Row data) => await Queue(data, null);
         public async UniTask Queue(SkillSheet.Row data, IActor specifiedTarget)
         {
-            Assert.IsTrue(Owner.ConditionResolver[Condition.IsActorTurn](null));
+            Assert.IsTrue(Owner.ConditionResolver[Model.Condition.IsActorTurn](null));
 
             $"{Owner.Owner}:{Owner.GetInstanceID()} SKILL QUEUED {data.Id}".ToLog();
 
@@ -118,7 +122,7 @@ namespace Vvr.System.Controller
 
         async UniTask ExecuteSkill(ConditionTrigger trigger, Value value)
         {
-            Assert.IsTrue(Owner.ConditionResolver[Condition.IsActorTurn](null));
+            Assert.IsTrue(Owner.ConditionResolver[Model.Condition.IsActorTurn](null));
 
             // Check cooltime
             if (m_SkillCooltimes.ContainsKey(value.hash))
@@ -130,13 +134,13 @@ namespace Vvr.System.Controller
 
             $"[Skill:{Owner.Owner}:{Owner.GetInstanceID()}] Skill start {value.skill.Id}".ToLog();
 
-            await trigger.Execute(Condition.OnSkillStart, value.skill.Id);
+            await trigger.Execute(Model.Condition.OnSkillStart, value.skill.Id);
 
             #region Warmup
 
             if (value.skill.Presentation.SelfEffect.IsValid())
             {
-                IEventViewProvider viewProvider = await Provider.Static.GetAsync<IEventViewProvider>();
+                IEventViewProvider viewProvider = await MPC.Provider.Provider.Static.GetAsync<IEventViewProvider>();
                 Transform          view         = await viewProvider.Resolve(Owner);
 
                 var effectPool = GameObjectPool.Get(value.skill.Presentation.SelfEffect);
@@ -163,7 +167,7 @@ namespace Vvr.System.Controller
         async UniTask ExecuteSkillBody(ConditionTrigger trigger, Value value)
         {
             Assert.IsFalse(Owner.Disposed);
-            Assert.IsTrue(Owner.ConditionResolver[Condition.IsActorTurn](null));
+            Assert.IsTrue(Owner.ConditionResolver[Model.Condition.IsActorTurn](null));
 
             if (value.overrideTarget != null)
             {
@@ -188,11 +192,11 @@ namespace Vvr.System.Controller
         async UniTask ExecuteSkillTarget(ConditionTrigger trigger, Value value, IActor target)
         {
             Assert.IsFalse(target.Disposed);
-            Assert.IsTrue(Owner.ConditionResolver[Condition.IsActorTurn](null));
+            Assert.IsTrue(Owner.ConditionResolver[Model.Condition.IsActorTurn](null));
 
             // Cache effect position
             // because target can be destroyed during this skill execution (ex. actor is dead)
-            IEventViewProvider viewProvider = await Provider.Static.GetAsync<IEventViewProvider>();
+            IEventViewProvider viewProvider = await MPC.Provider.Provider.Static.GetAsync<IEventViewProvider>();
             Vector3            viewPosition;
             {
                 Transform view = await viewProvider.Resolve(target);
@@ -216,7 +220,7 @@ namespace Vvr.System.Controller
                     case SkillSheet.Method.Damage:
                         target.Stats.Push<DamageProcessor>(
                             value.skill.Execution.TargetStat.Ref.ToStat(), dmg);
-                        await targetTrigger.Execute(Condition.OnHit, $"{dmg}");
+                        await targetTrigger.Execute(Model.Condition.OnHit, $"{dmg}");
 
                         break;
                     case SkillSheet.Method.Default:
@@ -225,7 +229,7 @@ namespace Vvr.System.Controller
                         target.Stats.Push(
                             value.skill.Execution.TargetStat.Ref.ToStat(), dmg);
 
-                        await targetTrigger.Execute(Condition.OnHit, $"{dmg}");
+                        await targetTrigger.Execute(Model.Condition.OnHit, $"{dmg}");
                         break;
                 }
             }
@@ -245,7 +249,7 @@ namespace Vvr.System.Controller
                 // "play hit eff".ToLog();
             }
 
-            await trigger.Execute(Condition.OnSkillEnd, value.skill.Id);
+            await trigger.Execute(Model.Condition.OnSkillEnd, value.skill.Id);
 
             $"[Skill:{Owner.Owner}:{Owner.GetInstanceID()}] Skill({value.skill.Id}) executed to {target.GetInstanceID()}({target.Owner})".ToLog();
         }
@@ -296,7 +300,7 @@ namespace Vvr.System.Controller
         {
             Assert.IsFalse(Owner.Disposed);
 
-            if (!Owner.ConditionResolver[Condition.IsActorTurn](null))
+            if (!Owner.ConditionResolver[Model.Condition.IsActorTurn](null))
             {
                 // "22. not this actor turn. skip".ToLog();
                 return;
@@ -308,7 +312,7 @@ namespace Vvr.System.Controller
             {
                 Value e = m_Values[i];
 
-                await trigger.Execute(Condition.OnSkillCasting, e.skill.Id);
+                await trigger.Execute(Model.Condition.OnSkillCasting, e.skill.Id);
 
                 // If time completed, execute
                 if (e.delayedExecutionTime > 0) continue;

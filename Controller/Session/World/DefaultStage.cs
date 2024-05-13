@@ -26,12 +26,15 @@ using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Assertions;
 using UnityEngine.Scripting;
+using Vvr.Controller.Actor;
+using Vvr.Controller.Condition;
+using Vvr.Controller.Provider;
+using Vvr.Model;
+using Vvr.Model.Stat;
 using Vvr.MPC.Provider;
-using Vvr.System.Model;
 using Vvr.UI.Observer;
-using NotImplementedException = System.NotImplementedException;
 
-namespace Vvr.System.Controller
+namespace Vvr.Controller.Session.World
 {
     [ParentSession(typeof(DefaultFloor), true), Preserve]
     public partial class DefaultStage : ChildSession<DefaultStage.SessionData>,
@@ -216,24 +219,24 @@ namespace Vvr.System.Controller
 
         protected override async UniTask OnInitialize(IParentSession session, SessionData data)
         {
-            Provider.Static.Register<ITargetProvider>(this);
-            Provider.Static.Register<IStateConditionProvider>(this);
-            Provider.Static.Register<IGameMethodProvider>(this);
+            MPC.Provider.Provider.Static.Register<ITargetProvider>(this);
+            MPC.Provider.Provider.Static.Register<IStateConditionProvider>(this);
+            MPC.Provider.Provider.Static.Register<IGameMethodProvider>(this);
 
-            await Provider.Static.ConnectAsync<IEventTargetProvider>(this);
+            await MPC.Provider.Provider.Static.ConnectAsync<IEventTargetProvider>(this);
 
-            m_ViewProvider = Provider.Static.GetLazyAsync<IEventViewProvider>();
+            m_ViewProvider = MPC.Provider.Provider.Static.GetLazyAsync<IEventViewProvider>();
 
             m_EnemyId = Owner.Issue;
         }
 
         protected override UniTask OnReserve()
         {
-            Provider.Static.Unregister<ITargetProvider>(this);
-            Provider.Static.Unregister<IStateConditionProvider>(this);
-            Provider.Static.Unregister<IGameMethodProvider>(this);
+            MPC.Provider.Provider.Static.Unregister<ITargetProvider>(this);
+            MPC.Provider.Provider.Static.Unregister<IStateConditionProvider>(this);
+            MPC.Provider.Provider.Static.Unregister<IGameMethodProvider>(this);
 
-            Provider.Static.Disconnect<IEventTargetProvider>(this);
+            MPC.Provider.Provider.Static.Disconnect<IEventTargetProvider>(this);
 
             m_ViewProvider = null;
 
@@ -329,17 +332,17 @@ namespace Vvr.System.Controller
             foreach (var item in m_PlayerField)
             {
                 using var trigger = ConditionTrigger.Push(item.owner, ConditionTrigger.Game);
-                await trigger.Execute(Condition.OnBattleStart, Data.stageId);
+                await trigger.Execute(Model.Condition.OnBattleStart, Data.stageId);
             }
             foreach (var item in m_HandActors)
             {
                 using var trigger = ConditionTrigger.Push(item.owner, ConditionTrigger.Game);
-                await trigger.Execute(Condition.OnBattleStart, Data.stageId);
+                await trigger.Execute(Model.Condition.OnBattleStart, Data.stageId);
             }
             foreach (var item in m_EnemyField)
             {
                 using var trigger = ConditionTrigger.Push(item.owner, ConditionTrigger.Game);
-                await trigger.Execute(Condition.OnBattleStart, Data.stageId);
+                await trigger.Execute(Model.Condition.OnBattleStart, Data.stageId);
             }
 
             while (m_Timeline.Count > 0 && m_PlayerField.Count > 0 && m_EnemyField.Count > 0)
@@ -352,7 +355,7 @@ namespace Vvr.System.Controller
 
                 using (var trigger = ConditionTrigger.Push(currentRuntimeActor.owner, ConditionTrigger.Game))
                 {
-                    await trigger.Execute(Condition.OnActorTurn, null);
+                    await trigger.Execute(Model.Condition.OnActorTurn, null);
                     await UniTask.WaitForSeconds(1f);
                     await TimeController.Next(1);
 
@@ -387,19 +390,19 @@ namespace Vvr.System.Controller
             foreach (var item in m_PlayerField)
             {
                 using var trigger = ConditionTrigger.Push(item.owner, ConditionTrigger.Game);
-                await trigger.Execute(Condition.OnBattleEnd, Data.stageId);
+                await trigger.Execute(Model.Condition.OnBattleEnd, Data.stageId);
             }
 
             foreach (var item in m_HandActors)
             {
                 using var trigger = ConditionTrigger.Push(item.owner, ConditionTrigger.Game);
-                await trigger.Execute(Condition.OnBattleEnd, Data.stageId);
+                await trigger.Execute(Model.Condition.OnBattleEnd, Data.stageId);
             }
 
             foreach (var item in m_EnemyField)
             {
                 using var trigger = ConditionTrigger.Push(item.owner, ConditionTrigger.Game);
-                await trigger.Execute(Condition.OnBattleEnd, Data.stageId);
+                await trigger.Execute(Model.Condition.OnBattleEnd, Data.stageId);
             }
 
             m_Timeline.Clear();
@@ -463,11 +466,11 @@ namespace Vvr.System.Controller
 
                 using (var trigger = ConditionTrigger.Push(currentFieldRuntimeActor.owner, ConditionTrigger.Game))
                 {
-                    await trigger.Execute(Condition.OnTagOut, null);
+                    await trigger.Execute(Model.Condition.OnTagOut, null);
                 }
                 using (var trigger = ConditionTrigger.Push(m_HandActors[index].owner, ConditionTrigger.Game))
                 {
-                    await trigger.Execute(Condition.OnTagIn, null);
+                    await trigger.Execute(Model.Condition.OnTagIn, null);
                 }
             }
 

@@ -20,10 +20,10 @@
 #endregion
 
 using System;
+using Vvr.Model;
 using Vvr.MPC.Provider;
-using Vvr.System.Model;
 
-namespace Vvr.System.Controller
+namespace Vvr.Controller.Session.World
 {
     partial class DefaultStage : IStateConditionProvider
     {

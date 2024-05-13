@@ -20,13 +20,11 @@
 #endregion
 
 using System;
-using System.Collections.Generic;
 using Cathei.BakingSheet;
 using JetBrains.Annotations;
 using UnityEngine.Scripting;
-using Vvr.Buffer;
 
-namespace Vvr.System.Model
+namespace Vvr.Model
 {
     [Preserve]
     public sealed class PassiveSheet : Sheet<PassiveSheet.Row>

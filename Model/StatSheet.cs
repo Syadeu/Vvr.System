@@ -22,8 +22,9 @@
 using Cathei.BakingSheet;
 using JetBrains.Annotations;
 using UnityEngine.Scripting;
+using Vvr.Model.Stat;
 
-namespace Vvr.System.Model
+namespace Vvr.Model
 {
     [Preserve]
     public sealed class StatSheet : Sheet<StatSheet.Row>

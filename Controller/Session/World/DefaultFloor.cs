@@ -23,11 +23,14 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Cysharp.Threading.Tasks;
+using Vvr.Controller.Actor;
+using Vvr.Controller.Condition;
+using Vvr.Controller.Provider;
+using Vvr.Model;
 using Vvr.MPC.Provider;
-using Vvr.System.Model;
 using Vvr.UI.Observer;
 
-namespace Vvr.System.Controller
+namespace Vvr.Controller.Session.World
 {
  	[ParentSession(typeof(DefaultRegion), true)]
     public partial class DefaultFloor : ParentSession<DefaultFloor.SessionData>, ISessionTarget
@@ -77,8 +80,8 @@ namespace Vvr.System.Controller
 
             ObjectObserver<DefaultFloor>.Get(this).EnsureContainer();
 
-            m_ViewProvider = Provider.Static.GetLazyAsync<IEventViewProvider>();
-            Provider.Static.Register<IStageProvider>(this);
+            m_ViewProvider = MPC.Provider.Provider.Static.GetLazyAsync<IEventViewProvider>();
+            MPC.Provider.Provider.Static.Register<IStageProvider>(this);
 
             // ConditionTrigger.OnEventExecutedAsync += OnEventExecuted;
 
@@ -94,7 +97,7 @@ namespace Vvr.System.Controller
         protected override UniTask OnReserve()
         {
             m_FloorStartEvent.TrySetResult();
-            Provider.Static.Unregister<IStageProvider>(this);
+            MPC.Provider.Provider.Static.Unregister<IStageProvider>(this);
 
             m_ConditionResolver.Dispose();
 
@@ -120,7 +123,7 @@ namespace Vvr.System.Controller
             List<CachedActor>              prevPlayers = new(Data.cachedActors);
 
             string cachedStartStageId = startStage.Value.Id;
-            await trigger.Execute(Condition.OnFloorStarted, cachedStartStageId);
+            await trigger.Execute(Model.Condition.OnFloorStarted, cachedStartStageId);
 
             while (startStage != null)
             {
@@ -143,9 +146,9 @@ namespace Vvr.System.Controller
                 }
 
                 {
-                    await trigger.Execute(Condition.OnStageStarted, sessionData.stageId);
+                    await trigger.Execute(Model.Condition.OnStageStarted, sessionData.stageId);
                     stageResult = await m_CurrentStage.Start();
-                    await trigger.Execute(Condition.OnStageEnded, sessionData.stageId);
+                    await trigger.Execute(Model.Condition.OnStageEnded, sessionData.stageId);
 
                     var viewProvider = await m_ViewProvider;
                     foreach (var enemy in stageResult.enemyActors)
@@ -179,7 +182,7 @@ namespace Vvr.System.Controller
             m_CurrentStage = null;
             Started        = false;
 
-            await trigger.Execute(Condition.OnFloorEnded, cachedStartStageId);
+            await trigger.Execute(Model.Condition.OnFloorEnded, cachedStartStageId);
 
             return floorResult;
         }

@@ -23,7 +23,7 @@ using System;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using UnityEngine.Scripting;
-using Vvr.System.Model;
+using Vvr.Model.Stat;
 
 namespace Vvr.MPC.Provider.JsonConverter
 {

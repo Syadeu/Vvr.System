@@ -27,7 +27,7 @@ using JetBrains.Annotations;
 using Unity.Mathematics;
 using UnityEngine.Scripting;
 
-namespace Vvr.System.Model
+namespace Vvr.Model
 {
     [Preserve]
     public sealed class SkillSheet : Sheet<SkillSheet.Row>

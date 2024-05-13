@@ -24,9 +24,8 @@ using System.Collections.Generic;
 using Cathei.BakingSheet;
 using Newtonsoft.Json;
 using UnityEngine.Assertions;
-using NotImplementedException = System.NotImplementedException;
 
-namespace Vvr.System.Model
+namespace Vvr.Model.Wallet
 {
     public delegate float WalletGetterDelegate(in Wallet wallet);
     public delegate void WalletSetterDelegate(in Wallet wallet, float value);

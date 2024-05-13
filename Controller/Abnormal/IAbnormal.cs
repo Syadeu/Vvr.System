@@ -21,9 +21,10 @@
 
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
-using Vvr.System.Model;
+using Vvr.Controller.Actor;
+using Vvr.Model;
 
-namespace Vvr.System.Controller
+namespace Vvr.Controller.Abnormal
 {
     /// <summary>
     /// Abnormal controller

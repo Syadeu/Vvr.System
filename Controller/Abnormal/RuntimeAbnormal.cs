@@ -22,9 +22,10 @@
 using System;
 using System.Collections.Generic;
 using Vvr.Crypto;
-using Vvr.System.Model;
+using Vvr.Model;
+using Vvr.Model.Stat;
 
-namespace Vvr.System.Controller
+namespace Vvr.Controller.Abnormal
 {
     internal readonly struct RuntimeAbnormal : IComparable<RuntimeAbnormal>, IEquatable<RuntimeAbnormal>
     {
@@ -45,20 +46,20 @@ namespace Vvr.System.Controller
         public readonly CryptoFloat delayTime;
         public readonly CryptoFloat duration;
 
-        public readonly IReadOnlyList<Condition> timeCondition;
+        public readonly IReadOnlyList<Model.Condition> timeCondition;
 
         // Update
-        public readonly bool        enableUpdate;
-        public readonly Condition   updateCondition;
-        public readonly string      updateValue;
-        public readonly CryptoFloat updateInterval;
-        public readonly CryptoInt   updateMaxCount;
+        public readonly bool            enableUpdate;
+        public readonly Model.Condition updateCondition;
+        public readonly string          updateValue;
+        public readonly CryptoFloat     updateInterval;
+        public readonly CryptoInt       updateMaxCount;
 
         // Cancellation
-        public readonly Condition   cancelCondition;
-        public readonly string      cancelValue;
-        public readonly CryptoFloat cancelProbability;
-        public readonly bool        cancelClearAllStacks;
+        public readonly Model.Condition cancelCondition;
+        public readonly string          cancelValue;
+        public readonly CryptoFloat     cancelProbability;
+        public readonly bool            cancelClearAllStacks;
 
         // Chain
         public readonly IReadOnlyList<AbnormalSheet.Reference> abnormalChain;

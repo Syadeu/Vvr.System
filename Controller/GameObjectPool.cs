@@ -27,7 +27,7 @@ using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.ResourceManagement.ResourceProviders;
 
-namespace Vvr.System.Controller
+namespace Vvr.Controller
 {
     internal sealed class GameObjectPool : MonoBehaviour
     {

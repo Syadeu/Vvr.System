@@ -19,7 +19,8 @@
 
 #endregion
 
-using Vvr.System.Model;
+using Vvr.Model;
+using Vvr.Model.Stat;
 
 namespace Vvr.MPC.Provider
 {

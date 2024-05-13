@@ -26,10 +26,10 @@ using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using UnityEngine.Assertions;
 using Vvr.Buffer;
+using Vvr.Model;
 using Vvr.MPC.Provider;
-using Vvr.System.Model;
 
-namespace Vvr.System.Controller
+namespace Vvr.Controller.Condition
 {
     /// <summary>
     /// Condition trigger for broadcasting all event targets.
@@ -47,7 +47,7 @@ namespace Vvr.System.Controller
         /// <summary>
         /// Event that executes any condition has triggered by any event target
         /// </summary>
-        public static event Func<IEventTarget, Condition, string, UniTask> OnEventExecutedAsync;
+        public static event Func<IEventTarget, Model.Condition, string, UniTask> OnEventExecutedAsync;
 
         /// <summary>
         /// Push new condition trigger stack for event target
@@ -87,7 +87,7 @@ namespace Vvr.System.Controller
         /// <param name="condition"></param>
         /// <param name="value"></param>
         /// <returns></returns>
-        public static bool Last(IEventTarget target, Condition condition, string value)
+        public static bool Last(IEventTarget target, Model.Condition condition, string value)
         {
             var d = s_Stack
                 .Where(x => x.m_Target == target)
@@ -98,7 +98,7 @@ namespace Vvr.System.Controller
             return d.m_Events.Any(x => x.condition == condition && x.value == value);
         }
 
-        public static bool Any(IEventTarget target, Condition condition)
+        public static bool Any(IEventTarget target, Model.Condition condition)
         {
             return s_Stack
                 .Where(x => x.m_Target == target)
@@ -106,7 +106,7 @@ namespace Vvr.System.Controller
                 .Any(x => x.condition == condition);
         }
 
-        public static bool Any(IEventTarget target, Condition condition, string value)
+        public static bool Any(IEventTarget target, Model.Condition condition, string value)
         {
             Event e = new Event(condition, value);
             // if value is null, should check only condition
@@ -121,7 +121,7 @@ namespace Vvr.System.Controller
                 .Where(x => x.m_Target == target)
                 .Any(x => x.m_Events.Contains(e));
         }
-        public static bool Any(IEventTarget target, Condition condition, Predicate<string> predicate)
+        public static bool Any(IEventTarget target, Model.Condition condition, Predicate<string> predicate)
         {
             return s_Stack
                 .Where(x => x.m_Target == target)
@@ -137,12 +137,12 @@ namespace Vvr.System.Controller
         }
         private readonly struct Event : IEquatable<Event>
         {
-            public readonly  Condition condition;
-            public readonly  string    value;
+            public readonly Model.Condition condition;
+            public readonly string          value;
 
             private readonly uint m_ValueHash;
 
-            public Event(Condition t, string v)
+            public Event(Model.Condition t, string v)
             {
                 condition = t;
                 value     = v;
@@ -201,7 +201,7 @@ namespace Vvr.System.Controller
         /// </remarks>
         /// <param name="condition"></param>
         /// <param name="value"></param>
-        public async UniTask Execute(Condition condition, string value)
+        public async UniTask Execute(Model.Condition condition, string value)
         {
             Assert.IsFalse(m_Target.Disposed);
 

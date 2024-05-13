@@ -19,9 +19,9 @@
 
 #endregion
 
-using Vvr.System.Model;
+using Vvr.Model.Stat;
 
-namespace Vvr.System.Controller
+namespace Vvr.Controller.Item
 {
     public interface IItem
     {

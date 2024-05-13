@@ -24,7 +24,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using UnityEngine.Scripting;
 
-namespace Vvr.System.Model
+namespace Vvr.Model.Stat
 {
     [Preserve]
     internal class UnresolvedStatValuesJsonConverter : JsonConverter<UnresolvedStatValues>

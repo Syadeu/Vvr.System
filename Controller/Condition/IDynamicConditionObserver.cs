@@ -22,16 +22,15 @@
 using System;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
-using UnityEngine.Assertions;
-using Vvr.System.Model;
+using Vvr.Model;
 
-namespace Vvr.System.Controller
+namespace Vvr.Controller.Condition
 {
     public delegate UniTask ConditionObserverDelegate(string value);
 
     public interface IDynamicConditionObserver : IDisposable
     {
-        ConditionObserverDelegate this[Condition t] { get; set; }
+        ConditionObserverDelegate this[Model.Condition t] { get; set; }
     }
 
     internal sealed class DynamicConditionObserver : IConditionObserver, IDynamicConditionObserver
@@ -41,7 +40,7 @@ namespace Vvr.System.Controller
         private ConditionQuery                  m_Filter;
         private List<ConditionObserverDelegate> m_Delegates = new();
 
-        public ConditionObserverDelegate this[Condition t]
+        public ConditionObserverDelegate this[Model.Condition t]
         {
             get
             {
@@ -66,7 +65,7 @@ namespace Vvr.System.Controller
             m_Parent.Subscribe(this);
         }
 
-        public async UniTask OnExecute(Condition condition, string value)
+        public async UniTask OnExecute(Model.Condition condition, string value)
         {
             int i = m_Filter.IndexOf(condition);
             if (i < 0) return;

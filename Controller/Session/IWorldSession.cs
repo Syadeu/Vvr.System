@@ -21,7 +21,7 @@
 
 using System;
 
-namespace Vvr.System.Controller
+namespace Vvr.Controller.Session
 {
     public interface IWorldSession : IParentSession, IDisposable
     {

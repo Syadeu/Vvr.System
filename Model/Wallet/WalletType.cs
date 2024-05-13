@@ -21,7 +21,7 @@
 
 using System;
 
-namespace Vvr.System.Model
+namespace Vvr.Model.Wallet
 {
     [Flags]
     public enum WalletType : long

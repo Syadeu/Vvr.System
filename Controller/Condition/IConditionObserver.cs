@@ -20,13 +20,13 @@
 #endregion
 
 using Cysharp.Threading.Tasks;
-using Vvr.System.Model;
+using Vvr.Model;
 
-namespace Vvr.System.Controller
+namespace Vvr.Controller.Condition
 {
     public interface IConditionObserver
     {
         ConditionQuery Filter { get; }
-        UniTask   OnExecute(Condition condition, string value);
+        UniTask        OnExecute(Model.Condition condition, string value);
     }
 }

@@ -20,9 +20,11 @@
 #endregion
 
 using System.Collections.Generic;
+using Vvr.Controller.Actor;
+using Vvr.Controller.Skill;
 using Vvr.MPC.Provider;
 
-namespace Vvr.System.Controller
+namespace Vvr.Controller.Provider
 {
     public interface ITargetProvider : IProvider
     {
