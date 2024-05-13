@@ -24,6 +24,8 @@ using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using UnityEngine.Assertions;
+using Vvr.Controller.Condition;
+using Vvr.MPC.Provider;
 
 namespace Vvr.Controller.Session
 {
@@ -32,9 +34,9 @@ namespace Vvr.Controller.Session
 
         where TSessionData : ISessionData
     {
-        private readonly List<IChildSession>  m_ChildSessions  = new();
+        private readonly List<IChildSession> m_ChildSessions  = new();
 
-        public IReadOnlyList<IChildSession> ChildSessions => m_ChildSessions;
+        public IReadOnlyList<IChildSession> ChildSessions     => m_ChildSessions;
 
         protected override UniTask OnReserve()
         {
@@ -57,7 +59,7 @@ namespace Vvr.Controller.Session
             Assert.IsFalse(VvrTypeHelper.TypeOf<TChildSession>.IsAbstract);
 
             TChildSession session = (TChildSession)Activator.CreateInstance(typeof(TChildSession));
-            await session.Initialize();
+            await session.Initialize(Owner);
 
             m_ChildSessions.Add(session);
 

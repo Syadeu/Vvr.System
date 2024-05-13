@@ -80,6 +80,7 @@ namespace Vvr.Controller.Condition
         {
             get
             {
+                Assert.IsFalse(Disposed);
                 if (t == 0) return Always;
 
                 if (m_Delegates == null ||
@@ -94,6 +95,7 @@ namespace Vvr.Controller.Condition
             }
             set
             {
+                Assert.IsFalse(Disposed);
                 if (t == 0) throw new InvalidOperationException("You are trying to override Always condition.");
 
                 var modifiedQuery  = m_Filter | t;
@@ -144,9 +146,7 @@ namespace Vvr.Controller.Condition
             }
         }
 
-#if UNITY_EDITOR
         private bool Disposed { get; set; }
-#endif
 
         public IEventTarget Owner { get; }
 
@@ -162,6 +162,7 @@ namespace Vvr.Controller.Condition
 
         void IConnector<IEventConditionProvider>.Connect(IEventConditionProvider provider)
         {
+            Assert.IsFalse(Disposed);
             var conditions
                 = Enum.GetValues(typeof(EventCondition)).Cast<EventCondition>();
             foreach (var condition in conditions)
@@ -173,6 +174,7 @@ namespace Vvr.Controller.Condition
         }
         void IConnector<IEventConditionProvider>.Disconnect()
         {
+            Assert.IsFalse(Disposed);
             var conditions
                 = Enum.GetValues(typeof(EventCondition)).Cast<EventCondition>();
             foreach (var condition in conditions)
@@ -185,6 +187,7 @@ namespace Vvr.Controller.Condition
 
         void IConnector<IStateConditionProvider>.Connect(IStateConditionProvider t)
         {
+            Assert.IsFalse(Disposed);
             var conditions
                 = Enum.GetValues(typeof(StateCondition)).Cast<StateCondition>();
             foreach (var condition in conditions)
@@ -196,6 +199,7 @@ namespace Vvr.Controller.Condition
         }
         void IConnector<IStateConditionProvider>.Disconnect()
         {
+            Assert.IsFalse(Disposed);
             var conditions
                 = Enum.GetValues(typeof(StateCondition)).Cast<StateCondition>();
             foreach (var condition in conditions)
@@ -208,6 +212,7 @@ namespace Vvr.Controller.Condition
 
         public ConditionResolver Connect(IAbnormalConditionProvider provider)
         {
+            Assert.IsFalse(Disposed);
             Assert.IsTrue(Owner is IActor);
 
             var conditions
@@ -224,6 +229,7 @@ namespace Vvr.Controller.Condition
 
         public ConditionResolver Connect(IStatValueStack stats, IStatConditionProvider provider)
         {
+            Assert.IsFalse(Disposed);
             Assert.IsTrue(Owner is IActor);
 
             var conditions
@@ -239,17 +245,20 @@ namespace Vvr.Controller.Condition
 
         public void Subscribe(IConditionObserver ob)
         {
+            Assert.IsFalse(Disposed);
             Assert.IsFalse(m_EventObservers.Contains(ob));
             m_EventObservers.Add(ob);
         }
 
         public void Unsubscribe(IConditionObserver ob)
         {
+            Assert.IsFalse(Disposed);
             m_EventObservers.Remove(ob);
         }
 
         public void Dispose()
         {
+            Assert.IsFalse(Disposed);
             ArrayPool<ConditionDelegate>.Shared.Return(m_Delegates, true);
             Disposed = true;
         }

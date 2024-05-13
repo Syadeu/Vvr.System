@@ -38,10 +38,11 @@ namespace Vvr.Controller.Session.World
         IConnector<IGameConfigProvider>
     {
         public DefaultMap     DefaultMap { get; private set; }
-        public ConditionQuery Filter     { get; }
 
         private IGameConfigProvider      m_ConfigProvider;
         private IStateConditionProvider m_StateProvider;
+
+        public override string DisplayName => nameof(DefaultWorld);
 
         protected override async UniTask OnInitialize()
         {

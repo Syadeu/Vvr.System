@@ -19,9 +19,11 @@
 
 #endregion
 
+using Vvr.Controller.Session.World;
+
 namespace Vvr.Controller.Session
 {
-    public interface IParentSession : IGameSessionBase
+    public interface IParentSession : IGameSessionBase, ISessionTarget
     {
     }
 }

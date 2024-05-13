@@ -20,10 +20,11 @@
 #endregion
 
 using Cysharp.Threading.Tasks;
+using Vvr.Controller.Session.World;
 
 namespace Vvr.Controller.Session
 {
-    public interface IChildSession : IGameSessionBase
+    public interface IChildSession : IGameSessionBase,  ISessionTarget
     {
         UniTask Initialize(IParentSession parent, ISessionData data);
     }

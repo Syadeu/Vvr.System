@@ -24,6 +24,8 @@ using System.Threading;
 using Cathei.BakingSheet.Internal;
 using Cysharp.Threading.Tasks;
 using UnityEngine.Assertions;
+using Vvr.Controller.Condition;
+using Vvr.MPC.Provider;
 
 namespace Vvr.Controller.Session
 {
@@ -33,8 +35,17 @@ namespace Vvr.Controller.Session
     {
         private CancellationTokenSource m_InitializeToken;
 
+        private ConditionResolver m_ConditionResolver;
+
+        public          Owner  Owner       { get; private set; }
+        public abstract string DisplayName { get; }
+
         public IParentSession Parent { get; private set; }
         public TSessionData   Data   { get; private set; }
+
+        public IReadOnlyConditionResolver ConditionResolver => m_ConditionResolver;
+
+        public bool Disposed { get; private set; }
 
         UniTask IChildSession.Initialize(IParentSession parent, ISessionData data)
         {
@@ -54,8 +65,13 @@ namespace Vvr.Controller.Session
                 m_InitializeToken.Dispose();
             }
 
+            Disposed = false;
+
             Parent = parent;
             Data   = data != null ? (TSessionData)data : default;
+
+            m_ConditionResolver = Condition.ConditionResolver.Create(this, parent.ConditionResolver);
+            Connect(m_ConditionResolver);
 
             m_InitializeToken = new();
 
@@ -64,7 +80,11 @@ namespace Vvr.Controller.Session
                 .SuppressCancellationThrow()
                 ;
         }
-        UniTask IGameSessionBase.Initialize() => UniTask.CompletedTask;
+        UniTask IGameSessionBase.Initialize(Owner owner)
+        {
+            Owner = owner;
+            return UniTask.CompletedTask;
+        }
 
         public async UniTask Reserve()
         {
@@ -78,12 +98,19 @@ namespace Vvr.Controller.Session
             }
 
             m_InitializeToken.Dispose();
-            Parent            = null;
-            Data              = default;
-            m_InitializeToken = null;
+            m_ConditionResolver.Dispose();
+
+            Parent              = null;
+            Data                = default;
+            m_ConditionResolver = null;
+            m_InitializeToken   = null;
+
+            Disposed = true;
         }
 
         protected virtual UniTask OnInitialize(IParentSession session, TSessionData data) => UniTask.CompletedTask;
         protected virtual UniTask OnReserve() => UniTask.CompletedTask;
+
+        protected virtual void Connect(ConditionResolver conditionResolver) {}
     }
 }

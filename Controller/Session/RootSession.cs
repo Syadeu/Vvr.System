@@ -24,20 +24,42 @@ using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using UnityEngine.Assertions;
+using Vvr.Controller.Condition;
+using Vvr.MPC.Provider;
 
 namespace Vvr.Controller.Session
 {
     public abstract class RootSession : IParentSession, IGameSessionCallback, IDisposable
     {
         private readonly List<IChildSession> m_ChildSessions = new();
+        private          ConditionResolver   m_ConditionResolver;
 
-        async UniTask IGameSessionBase.Initialize()
+        public          Owner  Owner       { get; private set; }
+        public abstract string DisplayName { get; }
+
+        public IReadOnlyConditionResolver ConditionResolver => m_ConditionResolver;
+
+        public bool Disposed { get; private set; }
+
+        async UniTask IGameSessionBase.Initialize(Owner owner)
         {
+            Disposed = false;
+
+            Owner               = owner;
+            m_ConditionResolver = Condition.ConditionResolver.Create(this);
+            Connect(m_ConditionResolver);
+
             await OnInitialize();
         }
         async UniTask IGameSessionBase.Reserve()
         {
             await OnReserve();
+
+            m_ConditionResolver.Dispose();
+
+            m_ConditionResolver = null;
+
+            Disposed = true;
         }
 
         public void Dispose()
@@ -64,7 +86,7 @@ namespace Vvr.Controller.Session
             Assert.IsFalse(VvrTypeHelper.TypeOf<TChildSession>.IsAbstract);
 
             TChildSession session = (TChildSession)Activator.CreateInstance(typeof(TChildSession));
-            await session.Initialize();
+            await session.Initialize(Owner);
 
             m_ChildSessions.Add(session);
 
@@ -82,6 +104,10 @@ namespace Vvr.Controller.Session
             m_ChildSessions.Remove(session);
 
             return UniTask.CompletedTask;
+        }
+
+        protected virtual void Connect(ConditionResolver conditionResolver)
+        {
         }
     }
 }

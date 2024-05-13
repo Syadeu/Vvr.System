@@ -25,7 +25,7 @@ namespace Vvr.Controller.Session.World
     {
         private bool Started { get; set; }
 
-        protected virtual partial void Connect(ConditionResolver conditionResolver)
+        protected override void Connect(ConditionResolver conditionResolver)
         {
             conditionResolver[Model.Condition.OnFloorStarted] = x => ConditionTrigger.Any(this, Model.Condition.OnFloorStarted, x);
             conditionResolver[Model.Condition.OnFloorEnded] = x => ConditionTrigger.Any(this, Model.Condition.OnFloorEnded, x);

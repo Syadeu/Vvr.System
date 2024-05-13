@@ -30,7 +30,7 @@ using Vvr.MPC.Provider;
 namespace Vvr.Controller.Session.World
 {
     [ParentSession(typeof(DefaultMap))]
-    public class DefaultRegion : ParentSession<DefaultRegion.SessionData>, ISessionTarget
+    public class DefaultRegion : ParentSession<DefaultRegion.SessionData>
     {
         public struct SessionData : ISessionData
         {
@@ -44,34 +44,7 @@ namespace Vvr.Controller.Session.World
             }
         }
 
-        private ConditionResolver m_ConditionResolver;
-
-        public         Owner  Owner       { get; private set; }
-        public virtual string DisplayName => nameof(DefaultRegion);
-        public         bool   Disposed    { get; private set; }
-
-        public IReadOnlyConditionResolver ConditionResolver => m_ConditionResolver;
-
-
-        protected override UniTask OnInitialize(IParentSession session, SessionData data)
-        {
-            Owner = Owner.Issue;
-
-            m_ConditionResolver = Condition.ConditionResolver.Create(this);
-
-            Disposed = false;
-
-            return base.OnInitialize(session, data);
-        }
-
-        protected override UniTask OnReserve()
-        {
-            m_ConditionResolver.Dispose();
-
-            Disposed            = true;
-            m_ConditionResolver = null;
-            return base.OnReserve();
-        }
+        public override string DisplayName => nameof(DefaultRegion);
 
         public async UniTask Start(StageSheet sheet, Owner playerId, ActorSheet.Row[] playerData)
         {

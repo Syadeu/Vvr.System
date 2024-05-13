@@ -21,13 +21,14 @@
 
 using Cysharp.Threading.Tasks;
 using UnityEngine.Scripting;
+using Vvr.MPC.Provider;
 
 namespace Vvr.Controller.Session
 {
     [RequireImplementors]
     public interface IGameSessionBase
     {
-        UniTask Initialize();
+        UniTask Initialize(Owner owner);
         UniTask Reserve();
     }
 }

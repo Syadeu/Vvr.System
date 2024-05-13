@@ -33,7 +33,7 @@ using Vvr.UI.Observer;
 namespace Vvr.Controller.Session.World
 {
  	[ParentSession(typeof(DefaultRegion), true)]
-    public partial class DefaultFloor : ParentSession<DefaultFloor.SessionData>, ISessionTarget
+    public partial class DefaultFloor : ParentSession<DefaultFloor.SessionData>
     {
         public struct SessionData : ISessionData
         {
@@ -61,49 +61,28 @@ namespace Vvr.Controller.Session.World
         private UniTaskCompletionSource m_FloorStartEvent;
         private UniTaskCompletionSource m_StageStartEvent;
 
-        private ConditionResolver m_ConditionResolver;
-
         private AsyncLazy<IEventViewProvider> m_ViewProvider;
 
-        public         Owner                      Owner             => ((ISessionTarget)Parent).Owner;
-        public virtual string                     DisplayName       => nameof(DefaultFloor);
-        public         bool                       Disposed          { get; private set; }
-        IReadOnlyConditionResolver IConditionTarget.ConditionResolver => m_ConditionResolver;
+        public override string DisplayName => nameof(DefaultFloor);
 
         protected override UniTask OnInitialize(IParentSession session, SessionData data)
         {
             m_FloorStartEvent = new();
             m_StageStartEvent = new();
 
-            m_ConditionResolver = ConditionResolver.Create(this, ((ISessionTarget)session).ConditionResolver);
-            Connect(m_ConditionResolver);
-
             ObjectObserver<DefaultFloor>.Get(this).EnsureContainer();
 
             m_ViewProvider = MPC.Provider.Provider.Static.GetLazyAsync<IEventViewProvider>();
 
-            // ConditionTrigger.OnEventExecutedAsync += OnEventExecuted;
-
-            Disposed = false;
-
             return base.OnInitialize(session, data);
         }
-
-        // private partial async UniTask OnEventExecuted(IEventTarget target, Condition condition, string value);
-
-        protected virtual partial void Connect(ConditionResolver conditionResolver);
 
         protected override UniTask OnReserve()
         {
             m_FloorStartEvent.TrySetResult();
             MPC.Provider.Provider.Static.Unregister<IStageProvider>(this);
 
-            m_ConditionResolver.Dispose();
-
-            m_ConditionResolver = null;
-            m_ViewProvider      = null;
-
-            Disposed = true;
+            m_ViewProvider = null;
 
             return base.OnReserve();
         }

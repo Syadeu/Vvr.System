@@ -212,6 +212,8 @@ namespace Vvr.Controller.Session.World
 
         private UniTaskCompletionSource m_ResetEvent;
 
+        public override string DisplayName => nameof(DefaultStage);
+
         public IReadOnlyActorList Timeline    => m_Timeline;
         public IReadOnlyActorList HandActors  => m_HandActors;
         public IReadOnlyActorList PlayerField => m_PlayerField;

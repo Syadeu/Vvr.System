@@ -21,6 +21,7 @@
 
 using System;
 using Cysharp.Threading.Tasks;
+using Vvr.MPC.Provider;
 
 namespace Vvr.Controller.Session.World
 {
@@ -28,24 +29,15 @@ namespace Vvr.Controller.Session.World
     {
         internal static IWorldSession s_WorldSession;
 
-        public static async UniTask<TWorldSession> GetOrCreate<TWorldSession>()
+        public static async UniTask<TWorldSession> GetOrCreate<TWorldSession>(Owner owner)
             where TWorldSession : IWorldSession
         {
             var world = (TWorldSession)Activator.CreateInstance(typeof(TWorldSession));
-            await world.Initialize();
+            await world.Initialize(owner);
 
             s_WorldSession = world;
 
             return world;
-        }
-
-        private static async UniTaskVoid test()
-        {
-            DefaultWorld world = await GetOrCreate<DefaultWorld>();
-            DefaultMap map = await world.CreateSession<DefaultMap>(new DefaultMap.Data());
-            DefaultRegion region = await map.CreateSession<DefaultRegion>(default);
-            DefaultFloor floor = await map.CreateSession<DefaultFloor>(default);
-            // DefaultStage stage = await map.CreateSession<DefaultStage>(new StageSheet.Row());
         }
     }
 }

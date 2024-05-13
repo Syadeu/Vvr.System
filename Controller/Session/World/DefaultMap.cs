@@ -32,6 +32,8 @@ namespace Vvr.Controller.Session.World
             public int    Index { get; }
         }
 
+        public override string DisplayName => nameof(DefaultMap);
+
         public DefaultRegion DefaultRegion { get; private set; }
 
         protected override async UniTask OnInitialize(IParentSession session, Data data)
