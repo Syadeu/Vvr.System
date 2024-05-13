@@ -254,7 +254,7 @@ public void PlusOperatorTest_3()
 
 ## Provider
 
-[Provider](Provider/Provider.cs)는 값을 제공받고, 연결된 모든 [IConnector](Provider/IConnector.cs)에게 값을 보장하는 역할을 합니다. Model로부터 데이터를 받으면 즉시 연결된 모든 Connector(대부분 Controller)에게 값을 전달하는 방식과 필요에 의해 값을 보장받을 수 있는 Lazy 로 구분됩니다.
+[Provider](Provider/Provider.cs)는 값을 제공받고, 연결된 모든 [IConnector](Provider/IConnector.cs)에게 값을 제공하는 역할을 합니다. Model로부터 데이터를 받으면 즉시 연결된 모든 Connector(대부분 Controller)에게 값을 전달하는 방식과, 필요에 의해 값을 제공받을 수 있는 Lazy(지연 제공)로 구분됩니다.
 
 이벤트 객체를 직접적으로 알고있거나, 조건에 대해 제공할 의무가 있는 Controller를 위해 설계되었습니다. [DefaultStage](Controller/Session/World/DefaultStage.cs)(이하 스테이지) 객체는 스테이지에 대한 모든 액터에 대해 제공할 의무가 있는 설계상 가장 하위 Session(이하 세션)입니다. 그래서 스테이지 객체는 [IGameMethodProvider](Controller/Provider/IGameMethodProvider.cs), [ITargetProvider](Controller/Provider/ITargetProvider.cs), [IStateConditionProvider](Provider/IStateConditionProvider.cs)를 상속받고, 요청에 맞는 각 메서드를 제공합니다. 예를 들어, [GameConfigSheet](Model/GameConfigSheet.cs)에서 정의된 조건에 맞는 메서드를 생성하여 반환합니다.
 
