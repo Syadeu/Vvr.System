@@ -32,7 +32,7 @@ namespace Vvr.System.Model
     {
         Always = 0,
 
-        // GameCondition
+        // EventCondition
         OnActorTurn,
         OnActorDead,
 
@@ -51,7 +51,7 @@ namespace Vvr.System.Model
         OnAbnormalAdded,
         OnAbnormalRemoved,
         OnAbnormalUpdate,
-        // GameCondition
+        // EventCondition
 
         // StageCondition
         IsPlayerActor,
@@ -80,6 +80,24 @@ namespace Vvr.System.Model
         GEqual,
         LEqual,
         // OperatorCondition
+
+        // Session
+        OnFloorStarted,
+        OnFloorEnded,
+        OnStageStarted,
+        OnStageEnded,
+
+        IsFloorStarted,
+        IsFloorEnded,
+        IsStageStarted,
+        IsStageEnded,
+        // Session
+    }
+
+    public enum SessionEventCondition : short
+    {
+        OnFloorStarted = Condition.OnFloorStarted,
+        OnFloorEnded   = Condition.OnFloorEnded,
     }
 
     public enum StateCondition : short

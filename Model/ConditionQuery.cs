@@ -20,13 +20,15 @@
 #endregion
 
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using JetBrains.Annotations;
 using Unity.Mathematics;
 using UnityEngine.Assertions;
 
 namespace Vvr.System.Model
 {
-    public readonly struct ConditionQuery : IEquatable<ConditionQuery>
+    public readonly struct ConditionQuery : IEquatable<ConditionQuery>, IEnumerable<Condition>
     {
         public static ConditionQuery All => new ConditionQuery(0, ~0L);
 
@@ -78,16 +80,56 @@ namespace Vvr.System.Model
         public bool Has(Condition c)
         {
             short s = (short)c;
-            if (s < m_Offset) return false;
-
             int  o = s - m_Offset;
+
+            if (s < m_Offset || 64 <= o) return false;
+
             long f = 1L << o;
             return (m_Filter & f) == f;
         }
 
-        public bool Equals(ConditionQuery other)
+        [Pure]
+        public int IndexOf(Condition c)
         {
-            return m_Offset == other.m_Offset && m_Filter == other.m_Filter;
+            short s = (short)c;
+            int  o = s - m_Offset;
+            long f = 1L << o;
+
+            if (s < m_Offset || 64 <= o || (m_Filter & f) != f) return -1;
+
+            int index = 0;
+            while (index < 64)
+            {
+                if ((o & (1L << index)) != 0)
+                {
+                    return index;
+                }
+
+                index++;
+            }
+
+            return -1;
+        }
+
+        [Pure]
+        public IEnumerator<Condition> GetEnumerator()
+        {
+            int index = 0;
+            while (index < 64)
+            {
+                if ((m_Filter & (1L << index)) != 0)
+                {
+                    yield return (Condition)(index + m_Offset);
+                }
+                index++;
+            }
+        }
+
+        public bool Equals(ConditionQuery y)
+        {
+            ConditionQuery q = this & y;
+            return q.m_Offset == m_Offset   && q.m_Filter == m_Filter &&
+                   q.m_Offset == y.m_Offset && q.m_Filter == y.m_Filter;
         }
 
         public override bool Equals(object obj)
@@ -103,11 +145,18 @@ namespace Vvr.System.Model
             }
         }
 
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
+        }
+
         public static implicit operator ConditionQuery(Condition c) => new ConditionQuery((short)c, 1);
 
         public static bool operator ==(ConditionQuery x, ConditionQuery y)
         {
-            return x.m_Offset == y.m_Offset && x.m_Filter == y.m_Filter;
+            ConditionQuery q = x & y;
+            return q.m_Offset == x.m_Offset && q.m_Filter == x.m_Filter &&
+                   q.m_Offset == y.m_Offset && q.m_Filter == y.m_Filter;
         }
         public static bool operator !=(ConditionQuery x, ConditionQuery y)
         {
@@ -116,6 +165,9 @@ namespace Vvr.System.Model
 
         public static ConditionQuery operator |(ConditionQuery x, ConditionQuery y)
         {
+            if (x.m_Filter == 0) return y;
+            if (y.m_Filter == 0) return x;
+
             short o = x.m_Offset < y.m_Offset ? x.m_Offset : y.m_Offset;
             if (64 <= math.abs(o - x.m_Offset) ||
                 64 <= math.abs(o - y.m_Offset))

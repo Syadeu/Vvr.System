@@ -37,30 +37,17 @@ namespace Vvr.System.Controller
         IConnector<IEventConditionProvider>,
         IConnector<IStateConditionProvider>
     {
-        private static readonly Dictionary<Hash, ConditionResolver>
-            s_CachedResolvers = new();
+        public static readonly ConditionDelegate Always = _ => true;
+        public static readonly ConditionDelegate False = _ => false;
 
-        private static readonly ConditionDelegate s_Always = _ => true;
-
-        public static ConditionResolver GetOrCreate(IEventTarget o)
+        public static ConditionResolver Create(IEventTarget o)
         {
             Hash hash = o.GetHash();
-            if (!s_CachedResolvers.TryGetValue(hash, out var r))
-            {
-                r = new(o, hash);
-                s_CachedResolvers[hash] = r;
-            }
-#if UNITY_EDITOR
-            if (r.Disposed)
-            {
-                throw new InvalidOperationException();
-            }
-#endif
-            return r;
+            return new(o, hash);
         }
         internal static async UniTask Execute(IEventTarget o, Condition condition, string v)
         {
-            var resolver = GetOrCreate(o);
+            var resolver = Create(o);
 
             for (int i = 0; i < resolver.m_EventObservers.Count; i++)
             {
@@ -83,12 +70,12 @@ namespace Vvr.System.Controller
         {
             get
             {
-                if (t == Condition.Always) return s_Always;
+                if (t == Condition.Always) return Always;
 
                 if (m_Delegates[(int)t] == null)
                 {
                     $"[Condition] Condition {t} is not connected.".ToLog();
-                    return s_Always;
+                    return False;
                 }
 
                 return m_Delegates[(int)t];
@@ -206,12 +193,7 @@ namespace Vvr.System.Controller
         public void Dispose()
         {
             Array.Clear(m_Delegates, 0, m_Delegates.Length);
-#if UNITY_EDITOR
             Disposed = true;
-            DOVirtual.DelayedCall(1, () => s_CachedResolvers.Remove(m_Hash));
-            return;
-#endif
-            s_CachedResolvers.Remove(m_Hash);
         }
     }
 }

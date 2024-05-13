@@ -30,7 +30,7 @@ using Vvr.UI.Observer;
 namespace Vvr.System.Controller
 {
  	[ParentSession(typeof(DefaultRegion), true)]
-    public partial class DefaultFloor : ParentSession<DefaultFloor.SessionData>
+    public partial class DefaultFloor : ParentSession<DefaultFloor.SessionData>, ISessionTarget
     {
         public struct SessionData : ISessionData
         {
@@ -58,40 +58,66 @@ namespace Vvr.System.Controller
         private UniTaskCompletionSource m_FloorStartEvent;
         private UniTaskCompletionSource m_StageStartEvent;
 
+        private ConditionResolver m_ConditionResolver;
+
         private AsyncLazy<IEventViewProvider> m_ViewProvider;
+
+        public         Owner                      Owner             => ((ISessionTarget)Parent).Owner;
+        public virtual string                     DisplayName       => nameof(DefaultFloor);
+        public         bool                       Disposed          { get; private set; }
+        IReadOnlyConditionResolver ISessionTarget.ConditionResolver => m_ConditionResolver;
 
         protected override UniTask OnInitialize(IParentSession session, SessionData data)
         {
             m_FloorStartEvent = new();
             m_StageStartEvent = new();
 
+            m_ConditionResolver = ConditionResolver.Create(this);
+            Connect(m_ConditionResolver);
+
             ObjectObserver<DefaultFloor>.Get(this).EnsureContainer();
 
             m_ViewProvider = Provider.Static.GetLazyAsync<IEventViewProvider>();
             Provider.Static.Register<IStageProvider>(this);
 
+            Disposed = false;
+
             return base.OnInitialize(session, data);
         }
+
+        protected virtual partial void Connect(ConditionResolver conditionResolver);
 
         protected override UniTask OnReserve()
         {
             m_FloorStartEvent.TrySetResult();
             Provider.Static.Unregister<IStageProvider>(this);
 
-            m_ViewProvider = null;
+            m_ConditionResolver.Dispose();
+
+            m_ConditionResolver = null;
+            m_ViewProvider      = null;
+
+            Disposed = true;
 
             return base.OnReserve();
         }
 
         public async UniTask<Result> Start(Owner playerId, ActorSheet.Row[] playerData)
         {
+            using var trigger = ConditionTrigger.Push(this, DisplayName);
+
             m_FloorStartEvent.TrySetResult();
+            Started = true;
 
             Result              floorResult = default;
             DefaultStage.Result stageResult = default;
 
-            var               startStage  = Data.stages.First;
-            List<CachedActor> prevPlayers = new(Data.cachedActors);
+            LinkedListNode<StageSheet.Row> startStage  = Data.stages.First;
+            List<CachedActor>              prevPlayers = new(Data.cachedActors);
+
+            string cachedStartStageId = startStage.Value.Id;
+            await trigger.Execute(Condition.OnFloorStarted, cachedStartStageId);
+
             while (startStage != null)
             {
                 DefaultStage.SessionData sessionData;
@@ -111,8 +137,11 @@ namespace Vvr.System.Controller
                 {
                     "??".ToLogError();
                 }
+
                 {
+                    await trigger.Execute(Condition.OnStageStarted, sessionData.stageId);
                     stageResult = await m_CurrentStage.Start();
+                    await trigger.Execute(Condition.OnStageEnded, sessionData.stageId);
 
                     var viewProvider = await m_ViewProvider;
                     foreach (var enemy in stageResult.enemyActors)
@@ -144,6 +173,9 @@ namespace Vvr.System.Controller
                 prevPlayers.Any() ? prevPlayers.ToArray() : Array.Empty<CachedActor>());
 
             m_CurrentStage = null;
+            Started        = false;
+
+            await trigger.Execute(Condition.OnFloorEnded, cachedStartStageId);
 
             return floorResult;
         }

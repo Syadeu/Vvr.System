@@ -28,7 +28,7 @@ using Vvr.System.Model;
 namespace Vvr.System.Controller
 {
     [ParentSession(typeof(DefaultMap))]
-    public class DefaultRegion : ParentSession<DefaultRegion.SessionData>
+    public class DefaultRegion : ParentSession<DefaultRegion.SessionData>, ISessionTarget
     {
         public struct SessionData : ISessionData
         {
@@ -40,6 +40,34 @@ namespace Vvr.System.Controller
                 sheet        = t;
                 startStageId = ta;
             }
+        }
+
+        private ConditionResolver m_ConditionResolver;
+
+        public Owner                              Owner             { get; private set; }
+        string IEventTarget.                      DisplayName       => nameof(DefaultRegion);
+        public bool                               Disposed          { get; private set; }
+        IReadOnlyConditionResolver ISessionTarget.ConditionResolver => m_ConditionResolver;
+
+
+        protected override UniTask OnInitialize(IParentSession session, SessionData data)
+        {
+            Owner = Owner.Issue;
+
+            m_ConditionResolver = ConditionResolver.Create(this);
+
+            Disposed = false;
+
+            return base.OnInitialize(session, data);
+        }
+
+        protected override UniTask OnReserve()
+        {
+            m_ConditionResolver.Dispose();
+
+            Disposed            = true;
+            m_ConditionResolver = null;
+            return base.OnReserve();
         }
 
         public async UniTask Start(StageSheet sheet, Owner playerId, ActorSheet.Row[] playerData)
@@ -77,5 +105,10 @@ namespace Vvr.System.Controller
                 await UniTask.Yield();
             } while (currentStage != null);
         }
+    }
+
+    public interface ISessionTarget : IEventTarget
+    {
+        IReadOnlyConditionResolver ConditionResolver { get; }
     }
 }
