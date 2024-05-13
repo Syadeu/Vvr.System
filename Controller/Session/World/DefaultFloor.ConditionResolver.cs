@@ -18,6 +18,8 @@
 #endregion
 
 using System;
+using Cysharp.Threading.Tasks;
+using Vvr.MPC.Provider;
 using Vvr.System.Model;
 using NotImplementedException = System.NotImplementedException;
 
@@ -39,5 +41,14 @@ namespace Vvr.System.Controller
             conditionResolver[Condition.IsStageStarted] = x => Started  && m_CurrentStage != null && m_CurrentStage.Data.stageId == x;
             conditionResolver[Condition.IsStageEnded] = x => Started  && m_CurrentStage != null && m_CurrentStage.Data.stageId == x;
         }
+
+        // ConditionQuery IConditionObserver.Filter { get; } =
+        //     Condition.OnFloorStarted | (ConditionQuery)Condition.OnFloorEnded |
+        //     (ConditionQuery)Condition.OnStageStarted | (ConditionQuery)Condition.OnStageEnded;
+        //
+        // private partial async UniTask OnEventExecuted(IEventTarget target, Condition condition, string value)
+        // {
+        //
+        // }
     }
 }

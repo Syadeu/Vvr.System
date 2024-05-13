@@ -21,9 +21,20 @@
 
 namespace Vvr.MPC.Provider
 {
+    /// <summary>
+    /// Base connector for connects <see cref="Provider"/>
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
     public interface IConnector<in T> where T : IProvider
     {
+        /// <summary>
+        /// Method when T has been resolved.
+        /// </summary>
+        /// <param name="t"></param>
         void Connect(T    t);
+        /// <summary>
+        /// Method when T has been disconnected.
+        /// </summary>
         void Disconnect();
     }
 }

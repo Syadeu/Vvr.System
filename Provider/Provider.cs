@@ -26,6 +26,9 @@ using UnityEngine.Assertions;
 
 namespace Vvr.MPC.Provider
 {
+    /// <summary>
+    /// Global provider that provides all <see cref="IProvider"/> to requesters.
+    /// </summary>
     public struct Provider
     {
         struct Observer : IEquatable<Observer>
@@ -56,6 +59,12 @@ namespace Vvr.MPC.Provider
         private static readonly Dictionary<Type, IProvider>      s_Providers = new();
         private static readonly Dictionary<Type, List<Observer>> s_Observers = new();
 
+        /// <summary>
+        /// Register given provider and resolve all other related <see cref="IConnector{T}"/>s
+        /// </summary>
+        /// <param name="p"></param>
+        /// <typeparam name="TProvider"></typeparam>
+        /// <returns></returns>
         public Provider Register<TProvider>(TProvider p) where TProvider : IProvider
         {
             Type t = typeof(TProvider);
@@ -74,6 +83,12 @@ namespace Vvr.MPC.Provider
 
             return this;
         }
+        /// <summary>
+        /// Unregister given provider and disconnect all related <see cref="IConnector{T}"/>
+        /// </summary>
+        /// <param name="p"></param>
+        /// <typeparam name="TProvider"></typeparam>
+        /// <returns></returns>
         public Provider Unregister<TProvider>(TProvider p) where TProvider : IProvider
         {
             Type t = typeof(TProvider);
@@ -91,6 +106,11 @@ namespace Vvr.MPC.Provider
             return this;
         }
 
+        /// <summary>
+        /// Async operation that waits until target provider has resolved.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
         public async UniTask<T> GetAsync<T>() where T : IProvider
         {
             Type t = typeof(T);
@@ -102,11 +122,22 @@ namespace Vvr.MPC.Provider
             return (T)s_Providers[t];
         }
 
+        /// <summary>
+        /// Async lazy operation that returns container can be resolved by any time.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
         public AsyncLazy<T> GetLazyAsync<T>() where T : IProvider
         {
             Func<UniTask<T>> p = GetAsync<T>;
             return UniTask.Lazy(p);
         }
+        /// <summary>
+        /// Async operation that waits until target provider has resolved.
+        /// </summary>
+        /// <param name="c"></param>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
         public async UniTask<T> ConnectAsync<T>(IConnector<T> c) where T : IProvider
         {
             Type t = typeof(T);
@@ -139,6 +170,16 @@ namespace Vvr.MPC.Provider
 
             return p;
         }
+
+        /// <summary>
+        /// Connect to request provider and subscribe.
+        /// </summary>
+        /// <remarks>
+        /// If requested provider already resolved, returns immediately.
+        /// </remarks>
+        /// <param name="c"></param>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
         public Provider Connect<T>(IConnector<T> c) where T : IProvider
         {
             Type t = typeof(T);
@@ -168,6 +209,12 @@ namespace Vvr.MPC.Provider
 
             return this;
         }
+        /// <summary>
+        /// Disconnect and remove from observer.
+        /// </summary>
+        /// <param name="c"></param>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
         public Provider Disconnect<T>(IConnector<T> c) where T : IProvider
         {
             Type t    = typeof(T);

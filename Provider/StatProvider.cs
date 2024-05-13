@@ -26,6 +26,13 @@ using Vvr.System.Model;
 
 namespace Vvr.MPC.Provider
 {
+    /// <summary>
+    /// Global stat provider
+    /// </summary>
+    /// <remarks>
+    /// Due to stats are immutable, stat types can be held at static.
+    /// Because stat type will not be changed during application life-cycle.
+    /// </remarks>
     public sealed class StatProvider : IStatConditionProvider
     {
         public static  StatProvider Static { get; private set; }

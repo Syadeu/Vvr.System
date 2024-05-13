@@ -28,13 +28,26 @@ using UnityEngine.Assertions;
 
 namespace Vvr.System.Model
 {
+    /// <summary>
+    /// 64 <see cref="Condition"/> query
+    /// </summary>
+    /// <remarks>
+    /// This query can contains maximum 64 conditions.
+    /// </remarks>
     public readonly struct ConditionQuery : IEquatable<ConditionQuery>, IEnumerable<Condition>
     {
+        /// <summary>
+        /// This helper property returns zero based bit flags.
+        /// Might not hold all conditions if there's more than 64
+        /// </summary>
         public static ConditionQuery All => new ConditionQuery(0, ~0L);
 
         private readonly short m_Offset;
         private readonly long  m_Filter;
 
+        /// <summary>
+        /// Counts all <see cref="Condition"/> in this query
+        /// </summary>
         public int Count
         {
             get
@@ -51,6 +64,10 @@ namespace Vvr.System.Model
             }
         }
 
+        /// <summary>
+        /// Take last <see cref="Condition"/> in this query
+        /// </summary>
+        /// <exception cref="InvalidOperationException"></exception>
         public Condition Last
         {
             get
@@ -70,12 +87,23 @@ namespace Vvr.System.Model
             }
         }
 
+        /// <summary>
+        /// Base constructor.
+        /// End user should not use this constructor due to implemented by operator
+        /// </summary>
+        /// <param name="c"></param>
+        /// <param name="filter"></param>
         private ConditionQuery(short c, long filter)
         {
             m_Offset = c;
             m_Filter = filter;
         }
 
+        /// <summary>
+        /// Returns given condition is in this query.
+        /// </summary>
+        /// <param name="c"></param>
+        /// <returns></returns>
         [Pure]
         public bool Has(Condition c)
         {
@@ -88,6 +116,11 @@ namespace Vvr.System.Model
             return (m_Filter & f) == f;
         }
 
+        /// <summary>
+        /// Returns given condition index that relative from this query
+        /// </summary>
+        /// <param name="c"></param>
+        /// <returns></returns>
         [Pure]
         public int IndexOf(Condition c)
         {
@@ -97,10 +130,11 @@ namespace Vvr.System.Model
 
             if (s < m_Offset || 64 <= o || (m_Filter & f) != f) return -1;
 
-            int index = 0;
+            long t     = 1L << o;
+            int  index = 0;
             while (index < 64)
             {
-                if ((o & (1L << index)) != 0)
+                if ((t & (1L << index)) != 0)
                 {
                     return index;
                 }
@@ -111,6 +145,10 @@ namespace Vvr.System.Model
             return -1;
         }
 
+        /// <summary>
+        /// Iterate all conditions in this query
+        /// </summary>
+        /// <returns></returns>
         [Pure]
         public IEnumerator<Condition> GetEnumerator()
         {
@@ -152,12 +190,24 @@ namespace Vvr.System.Model
 
         public static implicit operator ConditionQuery(Condition c) => new ConditionQuery((short)c, 1);
 
+        /// <summary>
+        /// This is (x & y) == y short-handed operator
+        /// </summary>
+        /// <param name="x"></param>
+        /// <param name="y"></param>
+        /// <returns></returns>
         public static bool operator ==(ConditionQuery x, ConditionQuery y)
         {
             ConditionQuery q = x & y;
             return q.m_Offset == x.m_Offset && q.m_Filter == x.m_Filter &&
                    q.m_Offset == y.m_Offset && q.m_Filter == y.m_Filter;
         }
+        /// <summary>
+        /// This is (x & y) != y short-handed operator
+        /// </summary>
+        /// <param name="x"></param>
+        /// <param name="y"></param>
+        /// <returns></returns>
         public static bool operator !=(ConditionQuery x, ConditionQuery y)
         {
             return !(x == y);
@@ -180,7 +230,6 @@ namespace Vvr.System.Model
 
             return new ConditionQuery(o, xf | yf);
         }
-
         public static ConditionQuery operator &(ConditionQuery x, ConditionQuery y)
         {
             if (64 <= math.abs(x.m_Offset - y.m_Offset)) return default;
@@ -210,6 +259,12 @@ namespace Vvr.System.Model
             return new ConditionQuery(o, xf ^ yf);
         }
 
+        /// <summary>
+        /// Take out the condition from x
+        /// </summary>
+        /// <param name="x"></param>
+        /// <param name="y"></param>
+        /// <returns></returns>
         public static ConditionQuery operator -(ConditionQuery x, Condition y)
         {
             ConditionQuery yy = y;

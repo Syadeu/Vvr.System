@@ -35,7 +35,6 @@ namespace Vvr.System.Model
     public delegate float StatValueGetterDelegate(in IReadOnlyStatValues stat);
     public delegate void StatValueSetterDelegate(in StatValues stat, float value);
 
-    // [JsonConverter(typeof(StatValuesJsonConverter))]
     [SheetValueConverter(typeof(UnresolvedStatValuesConverter))]
     public readonly struct StatValues : IReadOnlyStatValues
     {
@@ -44,6 +43,11 @@ namespace Vvr.System.Model
         private static readonly Dictionary<StatType, StatValueSetterDelegate>
             s_CachedSetter = new();
 
+        /// <summary>
+        /// Get delegate that returns value related StatType
+        /// </summary>
+        /// <param name="t"></param>
+        /// <returns></returns>
         public static StatValueGetterDelegate GetGetMethod(StatType t)
         {
             if (!s_CachedGetter.TryGetValue(t, out var d))
@@ -53,6 +57,11 @@ namespace Vvr.System.Model
             }
             return d;
         }
+        /// <summary>
+        /// Get delegate that returns value setter related StatType
+        /// </summary>
+        /// <param name="t"></param>
+        /// <returns></returns>
         public static StatValueSetterDelegate GetSetMethod(StatType t)
         {
             if (!s_CachedSetter.TryGetValue(t, out var d))
@@ -82,7 +91,13 @@ namespace Vvr.System.Model
             set => SetValue(t, value);
         }
 
+        /// <summary>
+        /// Bit-masked StatType in this struct
+        /// </summary>
         public StatType     Types  { get; }
+        /// <summary>
+        /// Returns all values
+        /// </summary>
         public IList<float> Values => m_Values;
 
         IReadOnlyList<float> IReadOnlyStatValues.Values    => m_Values;
@@ -117,7 +132,6 @@ namespace Vvr.System.Model
 
             return Values[index];
         }
-        [Pure]
         public void SetValue(StatType t, float v)
         {
             int index = IndexOf(t);

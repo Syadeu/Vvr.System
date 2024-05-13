@@ -44,17 +44,17 @@ namespace Vvr.System.Controller
 
         private ConditionResolver m_ConditionResolver;
 
-        public Owner                              Owner             { get; private set; }
-        string IEventTarget.                      DisplayName       => nameof(DefaultRegion);
-        public bool                               Disposed          { get; private set; }
-        IReadOnlyConditionResolver ISessionTarget.ConditionResolver => m_ConditionResolver;
+        public Owner                      Owner             { get; private set; }
+        string IEventTarget.              DisplayName       => nameof(DefaultRegion);
+        public bool                       Disposed          { get; private set; }
+        public IReadOnlyConditionResolver ConditionResolver => m_ConditionResolver;
 
 
         protected override UniTask OnInitialize(IParentSession session, SessionData data)
         {
             Owner = Owner.Issue;
 
-            m_ConditionResolver = ConditionResolver.Create(this);
+            m_ConditionResolver = Vvr.System.Controller.ConditionResolver.Create(this);
 
             Disposed = false;
 
@@ -105,10 +105,5 @@ namespace Vvr.System.Controller
                 await UniTask.Yield();
             } while (currentStage != null);
         }
-    }
-
-    public interface ISessionTarget : IEventTarget
-    {
-        IReadOnlyConditionResolver ConditionResolver { get; }
     }
 }

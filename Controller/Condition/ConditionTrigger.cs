@@ -31,6 +31,9 @@ using Vvr.System.Model;
 
 namespace Vvr.System.Controller
 {
+    /// <summary>
+    /// Condition trigger for broadcasting all event targets.
+    /// </summary>
     public struct ConditionTrigger : IDisposable
     {
         public const string
@@ -41,8 +44,21 @@ namespace Vvr.System.Controller
 
         private static readonly List<ConditionTrigger> s_Stack = new();
 
+        /// <summary>
+        /// Event that executes any condition has triggered by any event target
+        /// </summary>
         public static event Func<IEventTarget, Condition, string, UniTask> OnEventExecutedAsync;
 
+        /// <summary>
+        /// Push new condition trigger stack for event target
+        /// </summary>
+        /// <remarks>
+        /// If the event target will trigger any conditions,
+        /// ConditionTrigger must be pushed before it.
+        /// </remarks>
+        /// <param name="target"></param>
+        /// <param name="displayName"></param>
+        /// <returns></returns>
         public static ConditionTrigger Push(IEventTarget target, string displayName = null)
         {
             Assert.IsFalse(target.Disposed);
@@ -177,6 +193,14 @@ namespace Vvr.System.Controller
             m_Copied     = false;
         }
 
+        /// <summary>
+        /// Execute condition for current event target with value
+        /// </summary>
+        /// <remarks>
+        /// This method also broadcasting to all other related observers.
+        /// </remarks>
+        /// <param name="condition"></param>
+        /// <param name="value"></param>
         public async UniTask Execute(Condition condition, string value)
         {
             Assert.IsFalse(m_Target.Disposed);

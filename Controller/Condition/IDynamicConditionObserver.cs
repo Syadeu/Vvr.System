@@ -29,12 +29,12 @@ namespace Vvr.System.Controller
 {
     public delegate UniTask ConditionObserverDelegate(string value);
 
-    public interface IDynamicConditionObserver : IConditionObserver, IDisposable
+    public interface IDynamicConditionObserver : IDisposable
     {
         ConditionObserverDelegate this[Condition t] { get; set; }
     }
 
-    internal sealed class DynamicConditionObserver : IDynamicConditionObserver
+    internal sealed class DynamicConditionObserver : IConditionObserver, IDynamicConditionObserver
     {
         private ConditionResolver m_Parent;
 

@@ -23,8 +23,17 @@ using Vvr.System.Model;
 
 namespace Vvr.MPC.Provider
 {
+    /// <summary>
+    /// Condition provider for only resolving abnormal.
+    /// </summary>
     public interface IAbnormalConditionProvider
     {
+        /// <summary>
+        /// Resolve given condition with value
+        /// </summary>
+        /// <param name="condition"></param>
+        /// <param name="value"></param>
+        /// <returns></returns>
         bool Resolve(AbnormalCondition condition, string value);
     }
 }

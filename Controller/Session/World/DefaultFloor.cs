@@ -65,7 +65,7 @@ namespace Vvr.System.Controller
         public         Owner                      Owner             => ((ISessionTarget)Parent).Owner;
         public virtual string                     DisplayName       => nameof(DefaultFloor);
         public         bool                       Disposed          { get; private set; }
-        IReadOnlyConditionResolver ISessionTarget.ConditionResolver => m_ConditionResolver;
+        IReadOnlyConditionResolver IConditionTarget.ConditionResolver => m_ConditionResolver;
 
         protected override UniTask OnInitialize(IParentSession session, SessionData data)
         {
@@ -80,10 +80,14 @@ namespace Vvr.System.Controller
             m_ViewProvider = Provider.Static.GetLazyAsync<IEventViewProvider>();
             Provider.Static.Register<IStageProvider>(this);
 
+            // ConditionTrigger.OnEventExecutedAsync += OnEventExecuted;
+
             Disposed = false;
 
             return base.OnInitialize(session, data);
         }
+
+        // private partial async UniTask OnEventExecuted(IEventTarget target, Condition condition, string value);
 
         protected virtual partial void Connect(ConditionResolver conditionResolver);
 

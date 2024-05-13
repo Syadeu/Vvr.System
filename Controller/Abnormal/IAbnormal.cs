@@ -25,12 +25,25 @@ using Vvr.System.Model;
 
 namespace Vvr.System.Controller
 {
+    /// <summary>
+    /// Abnormal controller
+    /// </summary>
     public interface IAbnormal : IEnumerable<IReadOnlyRuntimeAbnormal>
     {
         IActor Owner { get; }
         int    Count { get; }
 
+        /// <summary>
+        /// Add raw abnormal data to process
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
         UniTask Add(AbnormalSheet.Row data);
+        /// <summary>
+        /// Returns given abnormal id is in this controller
+        /// </summary>
+        /// <param name="abnormalId"></param>
+        /// <returns></returns>
         bool Contains(Hash       abnormalId);
     }
 }

@@ -27,6 +27,12 @@ using UnityEngine.Assertions;
 
 namespace Vvr.System.Model
 {
+    /// <summary>
+    /// Unresolved version of <see cref="StatValues"/>
+    /// </summary>
+    /// <remarks>
+    /// This class designed for parsing sheet that should be indexed by system.
+    /// </remarks>
     [JsonConverter(typeof(UnresolvedStatValuesJsonConverter))]
     class UnresolvedStatValues : UnresolvedValues<StatValues>, IReadOnlyStatValues
     {

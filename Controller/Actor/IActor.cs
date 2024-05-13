@@ -24,10 +24,8 @@ using Vvr.System.Model;
 
 namespace Vvr.System.Controller
 {
-    public interface IActor : IEventTarget
+    public interface IActor : IConditionTarget
     {
-        IReadOnlyConditionResolver ConditionResolver { get; }
-
         IStatValueStack Stats    { get; }
         IAbnormal       Abnormal { get; }
         ISkill          Skill    { get; }

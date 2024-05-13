@@ -47,8 +47,9 @@ namespace Vvr.System.Controller
         }
         internal static async UniTask Execute(IEventTarget o, Condition condition, string v)
         {
-            var resolver = Create(o);
+            if (o is not IConditionTarget target) return;
 
+            var resolver = (ConditionResolver)target.ConditionResolver;
             for (int i = 0; i < resolver.m_EventObservers.Count; i++)
             {
                 var e = resolver.m_EventObservers[i];

@@ -15,18 +15,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // 
-// File created : 2024, 05, 12 00:05
+// File created : 2024, 05, 13 16:05
 
 #endregion
 
-namespace Vvr.System.Model
+namespace Vvr.System.Controller
 {
-    /// <summary>
-    /// Helper struct for ordering stat modifiers.
-    /// </summary>
-    public struct StatModifierOrder
+    public interface ISessionTarget : IConditionTarget
     {
-        public static int Item     => 0;
-        public static int Abnormal => Item + 1;
     }
 }
