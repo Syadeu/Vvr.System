@@ -42,22 +42,6 @@ namespace Vvr.System.Controller
             }
         }
 
-        private AsyncLazy<IEventViewProvider> m_ViewProvider;
-
-        protected override UniTask OnInitialize(IParentSession session, SessionData data)
-        {
-            m_ViewProvider = Provider.Static.GetLazyAsync<IEventViewProvider>();
-
-            return base.OnInitialize(session, data);
-        }
-
-        protected override UniTask OnReserve()
-        {
-            m_ViewProvider = null;
-
-            return base.OnReserve();
-        }
-
         public async UniTask Start(StageSheet sheet, Owner playerId, ActorSheet.Row[] playerData)
         {
             // StageSheet.Row startStage = Data.sheet[Data.startStageId];
@@ -76,14 +60,6 @@ namespace Vvr.System.Controller
 
                     DefaultFloor.Result result = await floor.Start(playerId, playerData);
                     aliveActors = result.alivePlayerActors;
-
-                    var viewProvider = await m_ViewProvider;
-                    // Cleanup previous enemies
-                    foreach (var aliveEnemyActor in result.aliveEnemyActors)
-                    {
-                        viewProvider.Release(aliveEnemyActor.Owner);
-                        aliveEnemyActor.Owner.Release();
-                    }
 
                     await floor.Reserve();
 

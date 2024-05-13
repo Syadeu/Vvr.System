@@ -329,17 +329,17 @@ namespace Vvr.System.Controller
             foreach (var item in m_PlayerField)
             {
                 using var trigger = ConditionTrigger.Push(item.owner, ConditionTrigger.Game);
-                await trigger.Execute(Condition.OnBattleStart, null);
+                await trigger.Execute(Condition.OnBattleStart, Data.stageId);
             }
             foreach (var item in m_HandActors)
             {
                 using var trigger = ConditionTrigger.Push(item.owner, ConditionTrigger.Game);
-                await trigger.Execute(Condition.OnBattleStart, null);
+                await trigger.Execute(Condition.OnBattleStart, Data.stageId);
             }
             foreach (var item in m_EnemyField)
             {
                 using var trigger = ConditionTrigger.Push(item.owner, ConditionTrigger.Game);
-                await trigger.Execute(Condition.OnBattleStart, null);
+                await trigger.Execute(Condition.OnBattleStart, Data.stageId);
             }
 
             while (m_Timeline.Count > 0 && m_PlayerField.Count > 0 && m_EnemyField.Count > 0)
@@ -387,19 +387,19 @@ namespace Vvr.System.Controller
             foreach (var item in m_PlayerField)
             {
                 using var trigger = ConditionTrigger.Push(item.owner, ConditionTrigger.Game);
-                await trigger.Execute(Condition.OnBattleEnd, null);
+                await trigger.Execute(Condition.OnBattleEnd, Data.stageId);
             }
 
             foreach (var item in m_HandActors)
             {
                 using var trigger = ConditionTrigger.Push(item.owner, ConditionTrigger.Game);
-                await trigger.Execute(Condition.OnBattleEnd, null);
+                await trigger.Execute(Condition.OnBattleEnd, Data.stageId);
             }
 
             foreach (var item in m_EnemyField)
             {
                 using var trigger = ConditionTrigger.Push(item.owner, ConditionTrigger.Game);
-                await trigger.Execute(Condition.OnBattleEnd, null);
+                await trigger.Execute(Condition.OnBattleEnd, Data.stageId);
             }
 
             m_Timeline.Clear();

@@ -47,12 +47,10 @@ namespace Vvr.System.Controller
         public struct Result
         {
             public readonly CachedActor[] alivePlayerActors;
-            public readonly CachedActor[] aliveEnemyActors;
 
-            public Result(CachedActor[] x, CachedActor[] y)
+            public Result(CachedActor[] x)
             {
                 alivePlayerActors = x;
-                aliveEnemyActors  = y;
             }
         }
 
@@ -60,12 +58,16 @@ namespace Vvr.System.Controller
         private UniTaskCompletionSource m_FloorStartEvent;
         private UniTaskCompletionSource m_StageStartEvent;
 
+        private AsyncLazy<IEventViewProvider> m_ViewProvider;
+
         protected override UniTask OnInitialize(IParentSession session, SessionData data)
         {
             m_FloorStartEvent = new();
             m_StageStartEvent = new();
 
             ObjectObserver<DefaultFloor>.Get(this).EnsureContainer();
+
+            m_ViewProvider = Provider.Static.GetLazyAsync<IEventViewProvider>();
             Provider.Static.Register<IStageProvider>(this);
 
             return base.OnInitialize(session, data);
@@ -75,6 +77,8 @@ namespace Vvr.System.Controller
         {
             m_FloorStartEvent.TrySetResult();
             Provider.Static.Unregister<IStageProvider>(this);
+
+            m_ViewProvider = null;
 
             return base.OnReserve();
         }
@@ -103,12 +107,17 @@ namespace Vvr.System.Controller
                 }
 
                 m_CurrentStage = await CreateSession<DefaultStage>(sessionData);
-                m_StageStartEvent.TrySetResult();
+                if (!m_StageStartEvent.TrySetResult())
+                {
+                    "??".ToLogError();
+                }
                 {
                     stageResult = await m_CurrentStage.Start();
 
+                    var viewProvider = await m_ViewProvider;
                     foreach (var enemy in stageResult.enemyActors)
                     {
+                        viewProvider.Release(enemy.Owner);
                         enemy.Owner.Release();
                     }
 
@@ -132,12 +141,7 @@ namespace Vvr.System.Controller
             }
 
             floorResult = new Result(
-                stageResult.playerActors.Any() ? stageResult.playerActors.ToArray() : Array.Empty<CachedActor>(),
-                stageResult.enemyActors.Any() ? stageResult.enemyActors.ToArray() : Array.Empty<CachedActor>());
-            // foreach (var actor in prevPlayers)
-            // {
-            //     actor.Owner.Release();
-            // }
+                prevPlayers.Any() ? prevPlayers.ToArray() : Array.Empty<CachedActor>());
 
             m_CurrentStage = null;
 

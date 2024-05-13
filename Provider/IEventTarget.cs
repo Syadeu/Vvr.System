@@ -36,11 +36,6 @@ namespace Vvr.MPC.Provider
         public static Hash GetHash(this IEventTarget o)
         {
             return new Hash(unchecked((uint)o.GetHashCode()));
-            // Hash hash;
-            // if (o is string str) hash                 = new Hash(str);
-            // else if (o is UnityEngine.Object uo) hash = new Hash(unchecked((uint)uo.GetInstanceID()));
-            // else hash                                 = new Hash(unchecked((uint)o.GetHashCode()));
-            // return hash;
         }
     }
 }
