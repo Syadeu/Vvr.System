@@ -375,6 +375,7 @@ namespace Vvr.Controller.Session.World
 
                     ExecuteTurn(currentRuntimeActor).Forget();
 
+                    await trigger.Execute(Model.Condition.OnActorTurnEnd, null);
                     await m_ResetEvent.Task;
                 }
 
@@ -384,11 +385,10 @@ namespace Vvr.Controller.Session.World
                     // Find alive actor
                     var actor = m_HandActors
                             .Where<RuntimeActor>(x => x.owner.Stats[StatType.HP] > 0)
-                            .FirstOrDefault()
                         ;
-                    if (actor.owner != null)
+                    if (actor.Any())
                     {
-                        await SwapPlayerCard(actor);
+                        await SwapPlayerCard(actor.First());
                         "add actor from hand".ToLog();
                         Assert.IsTrue(m_PlayerField.Count > 0);
                         await UniTask.WaitForSeconds(1);
@@ -430,10 +430,19 @@ namespace Vvr.Controller.Session.World
         // TODO: Test auto play method
         public async UniTask ExecuteTurn(RuntimeActor runtimeActor)
         {
-            int count = runtimeActor.data.Skills.Count;
-            var skill = runtimeActor.data.Skills[UnityEngine.Random.Range(0, count)].Ref;
+            // AI
+            if (!m_InputProvider.CanControl(runtimeActor.owner))
+            {
+                int count = runtimeActor.data.Skills.Count;
+                var skill = runtimeActor.data.Skills[UnityEngine.Random.Range(0, count)].Ref;
 
-            await runtimeActor.owner.Skill.Queue(skill);
+                await runtimeActor.owner.Skill.Queue(skill);
+            }
+            else
+            {
+                m_InputProvider.Request(runtimeActor.owner);
+                await m_InputProvider.WaitForInput();
+            }
 
             m_ResetEvent.TrySetResult();
         }

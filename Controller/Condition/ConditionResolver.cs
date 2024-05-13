@@ -146,7 +146,8 @@ namespace Vvr.Controller.Condition
             }
         }
 
-        private bool Disposed { get; set; }
+        private bool Connected { get; set; }
+        private bool Disposed  { get; set; }
 
         public IEventTarget Owner { get; }
 
@@ -158,6 +159,27 @@ namespace Vvr.Controller.Condition
             : this(owner)
         {
             m_Parent = parent;
+        }
+
+        public ConditionResolver Connect()
+        {
+            Assert.IsFalse(Disposed);
+
+            MPC.Provider.Provider.Static
+                .Connect<IEventConditionProvider>(this)
+                .Connect<IStateConditionProvider>(this);
+
+            Connected = true;
+            return this;
+        }
+        public ConditionResolver Disconnect()
+        {
+            Assert.IsFalse(Disposed);
+
+            MPC.Provider.Provider.Static
+                .Disconnect<IEventConditionProvider>(this)
+                .Disconnect<IStateConditionProvider>(this);
+            return this;
         }
 
         void IConnector<IEventConditionProvider>.Connect(IEventConditionProvider provider)
@@ -249,7 +271,6 @@ namespace Vvr.Controller.Condition
             Assert.IsFalse(m_EventObservers.Contains(ob));
             m_EventObservers.Add(ob);
         }
-
         public void Unsubscribe(IConditionObserver ob)
         {
             Assert.IsFalse(Disposed);
@@ -259,6 +280,8 @@ namespace Vvr.Controller.Condition
         public void Dispose()
         {
             Assert.IsFalse(Disposed);
+
+            if (Connected) Disconnect();
             ArrayPool<ConditionDelegate>.Shared.Return(m_Delegates, true);
             Disposed = true;
         }
@@ -271,6 +294,7 @@ namespace Vvr.Controller.Condition
             ConditionResolver r = (ConditionResolver)t;
 
             DynamicConditionObserver ob = new(r);
+            t.Subscribe(ob);
             return ob;
         }
     }

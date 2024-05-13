@@ -24,10 +24,11 @@ using System.Buffers;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using Vvr.Model;
+using Vvr.MPC.Provider;
 
 namespace Vvr.Controller.Condition
 {
-    public delegate UniTask ConditionObserverDelegate(string value);
+    public delegate UniTask ConditionObserverDelegate(IEventTarget owner, string value);
 
     public interface IDynamicConditionObserver : IDisposable
     {
@@ -36,7 +37,7 @@ namespace Vvr.Controller.Condition
 
     internal sealed class DynamicConditionObserver : IConditionObserver, IDynamicConditionObserver
     {
-        public static readonly ConditionObserverDelegate None = _ => UniTask.CompletedTask;
+        public static readonly ConditionObserverDelegate None = (_, _) => UniTask.CompletedTask;
 
         private ConditionResolver m_Parent;
 
@@ -91,15 +92,14 @@ namespace Vvr.Controller.Condition
         internal DynamicConditionObserver(ConditionResolver r)
         {
             m_Parent = r;
-            m_Parent.Subscribe(this);
         }
 
-        public async UniTask OnExecute(Model.Condition condition, string value)
+        async UniTask IConditionObserver.OnExecute(Model.Condition condition, string value)
         {
             int i = m_Filter.IndexOf(condition);
             if (i < 0) return;
 
-            await m_Delegates[i](value);
+            await m_Delegates[i](m_Parent.Owner, value);
         }
 
         public void Dispose()

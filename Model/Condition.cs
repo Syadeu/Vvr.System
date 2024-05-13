@@ -34,6 +34,7 @@ namespace Vvr.Model
 
         // EventCondition
         OnActorTurn,
+        OnActorTurnEnd,
         OnActorDead,
 
         OnHit,
@@ -186,6 +187,7 @@ namespace Vvr.Model
         None = 0,
 
         OnActorTurn = Condition.OnActorTurn,
+        OnActorTurnEnd = Condition.OnActorTurnEnd,
         OnActorDead = Condition.OnActorDead,
 
         OnHit = Condition.OnHit,

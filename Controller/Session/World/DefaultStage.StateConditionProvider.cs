@@ -20,6 +20,7 @@
 #endregion
 
 using System;
+using Vvr.Controller.Input;
 using Vvr.Model;
 using Vvr.MPC.Provider;
 
@@ -50,6 +51,4 @@ namespace Vvr.Controller.Session.World
             }
         }
     }
-
-
 }
