@@ -36,6 +36,8 @@ namespace Vvr.Controller.Condition
 
     internal sealed class DynamicConditionObserver : IConditionObserver, IDynamicConditionObserver
     {
+        public static readonly ConditionObserverDelegate None = _ => UniTask.CompletedTask;
+
         private ConditionResolver m_Parent;
 
         private ConditionQuery              m_Filter;
@@ -48,7 +50,6 @@ namespace Vvr.Controller.Condition
                 if (m_Delegates == null ||
                     !m_Filter.Has(t))
                 {
-                    $"[Condition] Condition {t} is not connected.".ToLog();
                     return null;
                 }
 

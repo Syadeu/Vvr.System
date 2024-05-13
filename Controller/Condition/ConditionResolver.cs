@@ -94,6 +94,8 @@ namespace Vvr.Controller.Condition
             }
             set
             {
+                if (t == 0) throw new InvalidOperationException("You are trying to override Always condition.");
+
                 var modifiedQuery  = m_Filter | t;
                 int modifiedLength = modifiedQuery.MaxIndex + 1;
 
@@ -117,21 +119,25 @@ namespace Vvr.Controller.Condition
                 m_Filter = modifiedQuery;
                 int i = m_Filter.IndexOf(t);
 
-                var target = m_Delegates[i];
-                if (target != null && target.GetInvocationList().Length > 0)
+                if (value != null)
                 {
-                    StringBuilder sb = new();
-                    sb.AppendLine("Chaining condition will leads unexpected result.");
-                    sb.AppendLine("List:");
-
-                    var list = target.GetInvocationList();
-                    for (int j = 0; j < list.Length; j++)
+                    var target = m_Delegates[i];
+                    if (target != null && target.GetInvocationList().Length > 0)
                     {
-                        var e = list[j];
-                        sb.AppendLine($"{e.Method?.DeclaringType}.{e.Method?.Name}");
-                    }
+                        StringBuilder sb = new();
+                        sb.AppendLine("Chaining condition will leads unexpected result.");
+                        sb.Append("List: ");
+                        sb.Append($"{value.Method?.DeclaringType}.{value.Method?.Name}");
 
-                    throw new InvalidOperationException(sb.ToString());
+                        var list = target.GetInvocationList();
+                        for (int j = 0; j < list.Length; j++)
+                        {
+                            var e = list[j];
+                            sb.AppendLine($"{e.Method?.DeclaringType}.{e.Method?.Name}");
+                        }
+
+                        throw new InvalidOperationException(sb.ToString());
+                    }
                 }
 
                 m_Delegates[i] = value;
@@ -160,6 +166,8 @@ namespace Vvr.Controller.Condition
                 = Enum.GetValues(typeof(EventCondition)).Cast<EventCondition>();
             foreach (var condition in conditions)
             {
+                if (condition == 0) continue;
+
                 this[(Model.Condition)condition] = x => provider.Resolve(condition, Owner, x);
             }
         }
@@ -169,6 +177,8 @@ namespace Vvr.Controller.Condition
                 = Enum.GetValues(typeof(EventCondition)).Cast<EventCondition>();
             foreach (var condition in conditions)
             {
+                if (condition == 0) continue;
+
                 this[(Model.Condition)condition] = null;
             }
         }
@@ -179,6 +189,8 @@ namespace Vvr.Controller.Condition
                 = Enum.GetValues(typeof(StateCondition)).Cast<StateCondition>();
             foreach (var condition in conditions)
             {
+                if (condition == 0) continue;
+
                 this[(Model.Condition)condition] = x => t.Resolve(condition, Owner, x);
             }
         }
@@ -188,6 +200,8 @@ namespace Vvr.Controller.Condition
                 = Enum.GetValues(typeof(StateCondition)).Cast<StateCondition>();
             foreach (var condition in conditions)
             {
+                if (condition == 0) continue;
+
                 this[(Model.Condition)condition] = null;
             }
         }
@@ -200,6 +214,8 @@ namespace Vvr.Controller.Condition
                 = Enum.GetValues(typeof(AbnormalCondition)).Cast<AbnormalCondition>();
             foreach (var condition in conditions)
             {
+                if (condition == 0) continue;
+
                 this[(Model.Condition)condition] = x => provider.Resolve(condition, x);
             }
 
@@ -214,6 +230,8 @@ namespace Vvr.Controller.Condition
                 = Enum.GetValues(typeof(OperatorCondition)).Cast<OperatorCondition>();
             foreach (var condition in conditions)
             {
+                if (condition == 0) continue;
+
                 this[(Model.Condition)condition] = x => provider.Resolve(stats.OriginalStats, stats, condition, x);
             }
             return this;
