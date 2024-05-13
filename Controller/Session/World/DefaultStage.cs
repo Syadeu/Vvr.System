@@ -221,9 +221,10 @@ namespace Vvr.Controller.Session.World
 
         protected override async UniTask OnInitialize(IParentSession session, SessionData data)
         {
-            MPC.Provider.Provider.Static.Register<ITargetProvider>(this);
-            MPC.Provider.Provider.Static.Register<IStateConditionProvider>(this);
-            MPC.Provider.Provider.Static.Register<IGameMethodProvider>(this);
+            MPC.Provider.Provider.Static
+                .Register<ITargetProvider>(this)
+                .Register<IStateConditionProvider>(this)
+                .Register<IGameMethodProvider>(this);
 
             await MPC.Provider.Provider.Static.ConnectAsync<IEventTargetProvider>(this);
 
@@ -234,9 +235,10 @@ namespace Vvr.Controller.Session.World
 
         protected override UniTask OnReserve()
         {
-            MPC.Provider.Provider.Static.Unregister<ITargetProvider>(this);
-            MPC.Provider.Provider.Static.Unregister<IStateConditionProvider>(this);
-            MPC.Provider.Provider.Static.Unregister<IGameMethodProvider>(this);
+            MPC.Provider.Provider.Static
+                .Unregister<ITargetProvider>(this)
+                .Unregister<IStateConditionProvider>(this)
+                .Unregister<IGameMethodProvider>(this);
 
             MPC.Provider.Provider.Static.Disconnect<IEventTargetProvider>(this);
 

@@ -68,8 +68,8 @@ namespace Vvr.MPC.Provider
         public Provider Register<TProvider>(TProvider p) where TProvider : IProvider
         {
             Type t = typeof(TProvider);
-            Assert.IsFalse(s_Providers.ContainsKey(t));
-            s_Providers[t] = p;
+            if (!s_Providers.TryAdd(t, p))
+                throw new InvalidOperationException("Multiple provider is not allowed");
 
             if (s_Observers.TryGetValue(t, out var list))
             {
