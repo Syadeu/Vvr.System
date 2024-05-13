@@ -44,7 +44,7 @@ namespace Vvr.System.Controller
             pos.z              = isFront ? 1 : 0;
             view.localPosition = pos;
 
-
+            m_Queue.Enqueue(actor, actor.owner.Stats[StatType.SPD]);
         }
 
         private partial async UniTask Delete(ActorList field, RuntimeActor actor)

@@ -199,8 +199,6 @@ namespace Vvr.System.Controller
                 viewPosition = view.position;
             }
 
-            UniTask executionBodyTask;
-
             #region Execution body
 
             using (var targetTrigger = ConditionTrigger.Push(target, ConditionTrigger.Skill))
@@ -212,14 +210,13 @@ namespace Vvr.System.Controller
                     await target.Abnormal.Add(e);
                 }
 
-                UniTask methodTask;
                 float   dmg = Owner.Stats[StatType.ATT] * value.skill.Execution.Multiplier;
                 switch (value.skill.Execution.Method)
                 {
                     case SkillSheet.Method.Damage:
                         target.Stats.Push<DamageProcessor>(
                             value.skill.Execution.TargetStat.Ref.ToStat(), dmg);
-                        methodTask = targetTrigger.Execute(Condition.OnHit, $"{dmg}");
+                        await targetTrigger.Execute(Condition.OnHit, $"{dmg}");
 
                         break;
                     case SkillSheet.Method.Default:
@@ -228,11 +225,9 @@ namespace Vvr.System.Controller
                         target.Stats.Push(
                             value.skill.Execution.TargetStat.Ref.ToStat(), dmg);
 
-                        methodTask = targetTrigger.Execute(Condition.OnHit, $"{dmg}");
+                        await targetTrigger.Execute(Condition.OnHit, $"{dmg}");
                         break;
                 }
-
-                executionBodyTask = methodTask;
             }
 
             #endregion
@@ -250,7 +245,6 @@ namespace Vvr.System.Controller
                 // "play hit eff".ToLog();
             }
 
-            await executionBodyTask;
             await trigger.Execute(Condition.OnSkillEnd, value.skill.Id);
 
             $"[Skill:{Owner.Owner}:{Owner.GetInstanceID()}] Skill({value.skill.Id}) executed to {target.GetInstanceID()}({target.Owner})".ToLog();

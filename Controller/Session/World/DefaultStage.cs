@@ -272,7 +272,6 @@ namespace Vvr.System.Controller
                         else
                         {
                             await Join(m_PlayerField, runtimeActor);
-                            m_Queue.Enqueue(runtimeActor, runtimeActor.owner.Stats[StatType.SPD]);
                         }
 
                         playerIndex++;
@@ -298,7 +297,6 @@ namespace Vvr.System.Controller
                         else
                         {
                             await Join(m_PlayerField, runtimeActor);
-                            m_Queue.Enqueue(runtimeActor, runtimeActor.owner.Stats[StatType.SPD]);
                         }
 
                         playerIndex++;
@@ -317,7 +315,6 @@ namespace Vvr.System.Controller
                 };
 
                 await Join(m_EnemyField, runtimeActor);
-                m_Queue.Enqueue(runtimeActor, runtimeActor.owner.Stats[StatType.SPD]);
             }
 
             ObjectObserver<ActorList>.ChangedEvent(m_HandActors);
@@ -327,6 +324,7 @@ namespace Vvr.System.Controller
             TimeController.ResetTime();
 
             AddActorsInOrderWithSpeed(5);
+            ObjectObserver<ActorList>.ChangedEvent(m_Timeline);
 
             foreach (var item in m_PlayerField)
             {
@@ -352,11 +350,11 @@ namespace Vvr.System.Controller
                 RuntimeActor currentRuntimeActor  = m_Timeline[0];
                 Assert.IsFalse(currentRuntimeActor.owner.Disposed);
 
-                await TimeController.Next(1);
-
                 using (var trigger = ConditionTrigger.Push(currentRuntimeActor.owner, ConditionTrigger.Game))
                 {
                     await trigger.Execute(Condition.OnActorTurn, null);
+                    await UniTask.WaitForSeconds(1f);
+                    await TimeController.Next(1);
 
                     ExecuteTurn(currentRuntimeActor).Forget();
 
@@ -381,10 +379,8 @@ namespace Vvr.System.Controller
                 }
 
                 //
-                await UniTask.WaitForSeconds(1);
-
                 if (m_Timeline.Count > 0) m_Timeline.RemoveAt(0);
-                AddActorsInOrderWithSpeed(1);
+                AddActorsInOrderWithSpeed(10);
                 ObjectObserver<ActorList>.ChangedEvent(m_Timeline);
             }
 
@@ -424,10 +420,11 @@ namespace Vvr.System.Controller
             Assert.IsFalse(index < 0);
             Assert.IsTrue(index < m_HandActors.Count);
 
-            int     currentTime       = m_Timeline[0].time;
+            int currentTime = m_Timeline[0].time;
             if (m_PlayerField.Count > 0)
             {
                 RuntimeActor currentFieldRuntimeActor = m_PlayerField[0];
+
                 m_Queue.RemoveAll(x => x.owner == currentFieldRuntimeActor.owner);
                 int found = 0;
                 for (int i = 0; i < m_Timeline.Count; i++)
@@ -458,18 +455,22 @@ namespace Vvr.System.Controller
 
             // Swap
             var temp = m_HandActors[index];
+            temp.time = currentTime;
             m_HandActors.RemoveAt(index);
-
             await Join(m_PlayerField, temp);
+
+            m_Timeline.Insert(1, temp);
+            // m_Timeline.Clear();
+            // AddActorsInOrderWithSpeed(5);
 
             // if (IsInBattle)
             {
-                InsertActorInTimeline(
-                    new RuntimeActor(temp, currentTime),
-                    // temp.ToRuntimeActor(sheet, PlayerSystem.ActiveData.Id, m_LastOrder++, currentTime),
-                    // Mathf.Max(1, found - 1)
-                    5
-                    );
+                // InsertActorInTimeline(
+                //     new RuntimeActor(temp, currentTime),
+                //     // temp.ToRuntimeActor(sheet, PlayerSystem.ActiveData.Id, m_LastOrder++, currentTime),
+                //     // Mathf.Max(1, found - 1)
+                //     5
+                //     );
             }
 
             ObjectObserver<ActorList>.ChangedEvent(m_HandActors);
@@ -554,46 +555,6 @@ namespace Vvr.System.Controller
         void IConnector<IEventTargetProvider>.Disconnect()
         {
             m_EventTargetProvider = null;
-        }
-    }
-
-    partial class DefaultStage : IGameMethodProvider
-    {
-        private bool m_DestroyProcessing;
-
-        GameMethodImplDelegate IGameMethodProvider.Resolve(GameMethod method)
-        {
-            if (method == GameMethod.Destroy)
-            {
-                return async e =>
-                {
-                    if (m_DestroyProcessing) return;
-                    if (e is not IActor x) return;
-
-                    m_DestroyProcessing = true;
-                    using (var trigger = ConditionTrigger.Push(x, nameof(GameMethod)))
-                    {
-                        await trigger.Execute(Condition.OnActorDead, null);
-                    }
-
-                    var field = x.ConditionResolver[Condition.IsPlayerActor](null) ? m_PlayerField : m_EnemyField;
-                    int index = field.FindIndex(e => e.owner == x);
-                    if (index < 0)
-                    {
-                        $"{index} not found in field {x.ConditionResolver[Condition.IsPlayerActor](null)}".ToLogError();
-                        return;
-                    }
-
-                    RuntimeActor actor = field[index];
-
-                    $"Actor {actor.owner.DisplayName} is dead {actor.owner.Stats[StatType.HP]}".ToLog();
-
-                    await Delete(field, actor);
-                    m_DestroyProcessing = false;
-                };
-            }
-
-            throw new NotImplementedException();
         }
     }
 }

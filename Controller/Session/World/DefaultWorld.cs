@@ -73,6 +73,9 @@ namespace Vvr.System.Controller
             $"[World] Update configs :{target} :{condition}: {m_Configs.Count()}".ToLog();
             foreach (var config in m_Configs)
             {
+                // Prevent infinite loop
+                await UniTask.Yield();
+
                 // Check lifecycle condition
                 if (config.Lifecycle.Condition != 0)
                 {
@@ -84,12 +87,12 @@ namespace Vvr.System.Controller
 
                 if (!target.ConditionResolver[(Condition)config.Evaluation.Condition](config.Evaluation.Value)) continue;
 
-                $"Evaluation completed {condition} == {config.Evaluation.Condition}".ToLog();
+                $"[World] Evaluation completed {condition} == {config.Evaluation.Condition}".ToLog();
 
                 if (!target.ConditionResolver[config.Execution.Condition](config.Execution.Value))
                     continue;
 
-                $"Execution condition completed {condition} == {config.Execution.Condition}".ToLog();
+                $"[World] Execution condition completed {condition} == {config.Execution.Condition}".ToLog();
 
                 // Check probability
                 if (!ProbabilityResolver.Get().Resolve(config.Evaluation.Probability))
@@ -97,7 +100,7 @@ namespace Vvr.System.Controller
                     continue;
                 }
 
-                Hash hash = new Hash(config.Id);
+                Hash hash = e.GetHash();
                 m_ExecutionCount.TryGetValue(hash, out int count);
 
                 // Exceed max execution count
@@ -107,11 +110,11 @@ namespace Vvr.System.Controller
                     {
                         continue;
                     }
+
+                    m_ExecutionCount[hash] = ++count;
                 }
 
                 await ExecuteMethod(target, config.Execution.Method);
-
-                m_ExecutionCount[hash] = ++count;
             }
         }
 
@@ -153,6 +156,7 @@ namespace Vvr.System.Controller
         }
         async UniTask ITimeUpdate.OnEndUpdateTime()
         {
+            m_ExecutionCount.Clear();
         }
     }
 }
