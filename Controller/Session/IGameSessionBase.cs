@@ -50,6 +50,9 @@ namespace Vvr.Controller.Session
         /// <summary>
         /// Connects the specified provider to the game session.
         /// </summary>
+        /// <remarks>
+        /// If connector found, also connect provider respectfully.
+        /// </remarks>
         /// <typeparam name="TProvider">The type of the provider.</typeparam>
         /// <param name="provider">The provider instance to connect.</param>
         [PublicAPI]
@@ -60,7 +63,10 @@ namespace Vvr.Controller.Session
         /// </summary>
         /// <typeparam name="TProvider">The type of the provider.</typeparam>
         /// <remarks>
-        /// This method disconnects the specified provider from the game session. The provider must implement the <see cref="IProvider"/> interface.
+        /// This method disconnects the specified provider from the game session.
+        /// The provider must implement the <see cref="IProvider"/> interface.
+        ///
+        /// If there is relevant connectors also disconnect respectfully.
         /// </remarks>
         /// <seealso cref="Register{TProvider}"/>
         [PublicAPI]
@@ -69,6 +75,9 @@ namespace Vvr.Controller.Session
         /// <summary>
         /// Connects a connector to the session for the specified provider.
         /// </summary>
+        /// <remarks>
+        /// If target provider already registerd, connect immediately.
+        /// </remarks>
         /// <typeparam name="TProvider">The type of the provider.</typeparam>
         /// <param name="c">The connector to connect.</param>
         /// <returns>void</returns>

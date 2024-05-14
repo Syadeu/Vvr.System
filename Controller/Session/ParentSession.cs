@@ -96,6 +96,46 @@ namespace Vvr.Controller.Session
             m_ChildSessions.Clear();
         }
 
+        public async UniTask<IChildSession> WaitUntilSessionAvailableAsync(Type sessionType)
+        {
+            IChildSession found;
+            while ((found = GetSession(sessionType)) == null)
+            {
+                await UniTask.Yield();
+            }
+
+            return found;
+        }
+        public async UniTask<TChildSession> WaitUntilSessionAvailableAsync<TChildSession>()
+            where TChildSession : class, IChildSession
+        {
+            IChildSession found = await WaitUntilSessionAvailableAsync(typeof(TChildSession));
+            return found as TChildSession;
+        }
+        public IChildSession GetSession(Type sessionType)
+        {
+            IChildSession found;
+            foreach (var session in m_ChildSessions)
+            {
+                if (session is IParentSession parentSession &&
+                    (found = parentSession.GetSession(sessionType)) != null)
+                {
+                    return found;
+                }
+
+                if (VvrTypeHelper.InheritsFrom(session.Type, sessionType))
+                {
+                    return session;
+                }
+            }
+
+            return null;
+        }
+        public TChildSession GetSession<TChildSession>() where TChildSession : class, IChildSession
+        {
+            return GetSession(typeof(TChildSession)) as TChildSession;
+        }
+
         protected sealed override void OnProviderRegistered(Type providerType, IProvider provider)
         {
             foreach (var childSession in ChildSessions)

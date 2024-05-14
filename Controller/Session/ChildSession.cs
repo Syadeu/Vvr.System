@@ -54,7 +54,7 @@ namespace Vvr.Controller.Session
 
         protected IReadOnlyDictionary<Type, IProvider> ConnectedProviders => m_ConnectedProviders;
 
-        protected Type Type => (m_Type ??= GetType());
+        public Type Type => (m_Type ??= GetType());
         private Type[] ConnectorTypes
         {
             get

@@ -19,6 +19,7 @@
 
 #endregion
 
+using System;
 using JetBrains.Annotations;
 using Vvr.Controller.Session.World;
 using Vvr.Provider;
@@ -30,6 +31,8 @@ namespace Vvr.Controller.Session
     /// </summary>
     public interface IChildSession : IGameSessionBase, ISessionTarget
     {
+        public Type Type { get; }
+
         /// <summary>
         /// Represents the root parent session of a child session.
         /// </summary>

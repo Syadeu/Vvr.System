@@ -20,13 +20,6 @@
 #endregion
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using Cysharp.Threading.Tasks;
-using JetBrains.Annotations;
-using UnityEngine.Assertions;
-using Vvr.Controller.Condition;
-using Vvr.Provider;
 
 namespace Vvr.Controller.Session
 {
@@ -34,106 +27,9 @@ namespace Vvr.Controller.Session
     /// RootSession is an abstract class that serves as the base class for all root session implementations in the Vvr.Controller.Session namespace.
     /// </summary>
     public abstract class RootSession
-        : ChildSession<RootSession.RootData>, IParentSession,
-        IGameSessionCallback, IDisposable
+        : ParentSession<RootSession.RootData>, IDisposable
     {
-        public struct RootData : ISessionData
-        {
-
-        }
-
-        private readonly List<IChildSession> m_ChildSessions = new();
-
-        public  IReadOnlyList<IChildSession> ChildSessions => m_ChildSessions;
-
-        protected override async UniTask OnReserve()
-        {
-            await CloseAllSessions();
-        }
-
-        public async UniTask<TChildSession> CreateSession<TChildSession>(ISessionData data)
-            where TChildSession : IChildSession
-        {
-            Assert.IsFalse(VvrTypeHelper.TypeOf<TChildSession>.IsAbstract);
-
-            Type          childType = typeof(TChildSession);
-            TChildSession session   = (TChildSession)Activator.CreateInstance(childType);
-
-            if (session is IChildSessionConnector sessionConnector)
-            {
-                $"[Session: {Type.FullName}] Chain connector to {childType.FullName}".ToLog();
-                foreach (var item in ConnectedProviders)
-                {
-                    var pType = item.Key;
-                    sessionConnector.Register(pType, item.Value);
-                }
-            }
-            else $"[Session: {Type.FullName}] No connector for {childType.FullName}".ToLog();
-
-            m_ChildSessions.Add(session);
-
-            await OnCreateSession(session);
-
-            await session.Initialize(Owner, this, data);
-            return session;
-        }
-        async UniTask IGameSessionCallback.OnSessionClose(IGameSessionBase child)
-        {
-            IChildSession session = (IChildSession)child;
-
-            await OnSessionClose(session);
-            m_ChildSessions.Remove(session);
-        }
-
-        /// <summary>
-        /// Closes all child sessions within the root session.
-        /// </summary>
-        /// <returns>A UniTask representing the asynchronous operation</returns>
-        [PublicAPI]
-        public async UniTask CloseAllSessions()
-        {
-            foreach (var session in m_ChildSessions)
-            {
-                await session.Reserve();
-            }
-            m_ChildSessions.Clear();
-        }
-
-        protected sealed override void OnProviderRegistered(Type providerType, IProvider provider)
-        {
-            foreach (var childSession in ChildSessions)
-            {
-                if (ReferenceEquals(childSession, provider)) continue;
-                if (childSession is not IChildSessionConnector c) continue;
-
-                c.Register(providerType, provider);
-            }
-        }
-        protected sealed override void OnProviderUnregistered(Type providerType)
-        {
-            foreach (var childSession in ChildSessions)
-            {
-                if (childSession is not IChildSessionConnector c) continue;
-
-                c.Unregister(providerType);
-            }
-        }
-
-        /// <summary>
-        /// Event method when child session has been created
-        /// </summary>
-        /// <param name="session">The child session that has been created</param>
-        /// <returns>A UniTask representing the asynchronous operation</returns>
-        [PublicAPI]
-        protected virtual UniTask OnCreateSession(IChildSession session) => UniTask.CompletedTask;
-
-        /// <summary>
-        /// Event method that is called when a child session is about to be closed and disposed.
-        /// </summary>
-        /// <param name="session">The child session that is about to be closed</param>
-        /// <returns>A UniTask representing the asynchronous operation</returns>
-        [PublicAPI]
-        protected virtual UniTask OnSessionClose(IChildSession session) => UniTask.CompletedTask;
+        public struct RootData : ISessionData {}
 
         public virtual void Dispose()
         {
