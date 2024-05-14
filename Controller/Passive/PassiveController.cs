@@ -31,27 +31,9 @@ namespace Vvr.Controller.Passive
 {
     public sealed partial class PassiveController : IDisposable
     {
-        private static readonly Dictionary<Hash, PassiveController>
-            s_CachedController = new();
-
-        public static PassiveController GetOrCreate(IActor o)
+        public static PassiveController Create(IActor o)
         {
-#if UNITY_EDITOR
-            if (o is UnityEngine.Object uo &&
-                uo == null)
-            {
-                throw new InvalidOperationException();
-            }
-#endif
-
-            Hash hash = o.GetHash();
-            if (!s_CachedController.TryGetValue(hash, out var r))
-            {
-                r                        = new PassiveController(hash, o);
-                s_CachedController[hash] = r;
-            }
-
-            return r;
+            return new PassiveController(o);
         }
 
         struct Value : IComparable<Value>
@@ -69,20 +51,15 @@ namespace Vvr.Controller.Passive
             }
         }
 
-        private readonly Hash m_Hash;
-
         private IActor Owner { get; }
 
         private ITargetProvider m_TargetProvider;
 
         private readonly List<Value> m_Values = new();
 
-        private PassiveController(Hash hash, IActor o)
+        private PassiveController(IActor o)
         {
-            m_Hash              = hash;
-            Owner             = o;
-
-            Owner.ConditionResolver.Subscribe(this);
+            Owner = o;
         }
 
         public void Add(PassiveSheet.Row data)
@@ -113,10 +90,7 @@ namespace Vvr.Controller.Passive
 
         public void Dispose()
         {
-            Owner.ConditionResolver.Unsubscribe(this);
             m_Values.Clear();
-
-            s_CachedController.Remove(m_Hash);
 
             m_TargetProvider = null;
         }

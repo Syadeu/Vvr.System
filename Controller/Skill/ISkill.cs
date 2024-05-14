@@ -27,6 +27,9 @@ namespace Vvr.Controller.Skill
 {
     public interface ISkill
     {
+        UniTask<int> GetSkillCount();
+        UniTask      Queue(int index);
+
         UniTask Queue(SkillSheet.Row data);
         UniTask Queue(SkillSheet.Row data, IActor specifiedTarget);
     }

@@ -265,16 +265,18 @@ namespace Vvr.Controller.Condition
             return this;
         }
 
-        public void Subscribe(IConditionObserver ob)
+        public IReadOnlyConditionResolver Subscribe(IConditionObserver ob)
         {
             Assert.IsFalse(Disposed);
             Assert.IsFalse(m_EventObservers.Contains(ob));
             m_EventObservers.Add(ob);
+            return this;
         }
-        public void Unsubscribe(IConditionObserver ob)
+        public IReadOnlyConditionResolver Unsubscribe(IConditionObserver ob)
         {
             Assert.IsFalse(Disposed);
             m_EventObservers.Remove(ob);
+            return this;
         }
 
         public void Dispose()

@@ -29,7 +29,7 @@ namespace Vvr.Controller.Condition
 
         ConditionDelegate this[Model.Condition t] { get; }
 
-        void Subscribe(IConditionObserver   ob);
-        void Unsubscribe(IConditionObserver ob);
+        IReadOnlyConditionResolver Subscribe(IConditionObserver   ob);
+        IReadOnlyConditionResolver Unsubscribe(IConditionObserver ob);
     }
 }

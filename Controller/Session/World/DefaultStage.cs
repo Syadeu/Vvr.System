@@ -29,6 +29,7 @@ using UnityEngine.Scripting;
 using Vvr.Controller.Actor;
 using Vvr.Controller.Asset;
 using Vvr.Controller.Condition;
+using Vvr.Controller.Input;
 using Vvr.Controller.Provider;
 using Vvr.Model;
 using Vvr.Model.Stat;
@@ -199,8 +200,9 @@ namespace Vvr.Controller.Session.World
             }
         }
 
-        private IEventTargetProvider          m_EventTargetProvider;
-        private AsyncLazy<IEventViewProvider> m_ViewProvider;
+        private IEventTargetProvider             m_EventTargetProvider;
+        private AsyncLazy<IEventViewProvider>    m_ViewProvider;
+        private AsyncLazy<IInputControlProvider> m_InputControlProvider;
 
         private AssetController<AssetType> m_AssetController;
 
@@ -231,8 +233,9 @@ namespace Vvr.Controller.Session.World
 
             await MPC.Provider.Provider.Static.ConnectAsync<IEventTargetProvider>(this);
 
-            m_ViewProvider    = MPC.Provider.Provider.Static.GetLazyAsync<IEventViewProvider>();
-            m_AssetController = new(this);
+            m_ViewProvider         = MPC.Provider.Provider.Static.GetLazyAsync<IEventViewProvider>();
+            m_InputControlProvider = MPC.Provider.Provider.Static.GetLazyAsync<IInputControlProvider>();
+            m_AssetController      = new(this);
 
             m_EnemyId = Owner.Issue;
 
@@ -250,8 +253,9 @@ namespace Vvr.Controller.Session.World
 
             m_AssetController.Dispose();
 
-            m_ViewProvider    = null;
-            m_AssetController = null;
+            m_ViewProvider         = null;
+            m_InputControlProvider = null;
+            m_AssetController      = null;
 
             m_HandActors.Clear();
             m_PlayerField.Clear();
@@ -375,8 +379,9 @@ namespace Vvr.Controller.Session.World
 
                     ExecuteTurn(currentRuntimeActor).Forget();
 
-                    await trigger.Execute(Model.Condition.OnActorTurnEnd, null);
                     await m_ResetEvent.Task;
+
+                    await trigger.Execute(Model.Condition.OnActorTurnEnd, null);
                 }
 
                 // TODO: Should controlled by GameConfig?
@@ -430,9 +435,11 @@ namespace Vvr.Controller.Session.World
         // TODO: Test auto play method
         public async UniTask ExecuteTurn(RuntimeActor runtimeActor)
         {
+            var inputControl = await m_InputControlProvider;
             // AI
-            if (!m_InputControlProvider.CanControl(runtimeActor.owner))
+            if (!inputControl.CanControl(runtimeActor.owner))
             {
+                "[Stage] AI control".ToLog();
                 int count = runtimeActor.data.Skills.Count;
                 var skill = runtimeActor.data.Skills[UnityEngine.Random.Range(0, count)].Ref;
 
@@ -440,7 +447,8 @@ namespace Vvr.Controller.Session.World
             }
             else
             {
-                await m_InputControlProvider.TransferControl(runtimeActor.owner);
+                "[Stage] player control".ToLog();
+                await inputControl.TransferControl(runtimeActor.owner);
             }
 
             m_ResetEvent.TrySetResult();

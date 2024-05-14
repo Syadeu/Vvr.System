@@ -31,6 +31,8 @@ namespace Vvr.Controller.Actor
 {
     public interface IActor : IConditionTarget
     {
+        string DataID { get; }
+
         IStatValueStack Stats    { get; }
         IAbnormal       Abnormal { get; }
         ISkill          Skill    { get; }

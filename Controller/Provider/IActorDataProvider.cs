@@ -15,27 +15,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// File created : 2024, 05, 14 04:05
+// File created : 2024, 05, 14 14:05
 
 #endregion
 
-using System;
-using Vvr.Controller.Input;
+using Vvr.Controller.Actor;
+using Vvr.Model;
 using Vvr.MPC.Provider;
 
-namespace Vvr.Controller.Session.World
+namespace Vvr.Controller.Provider
 {
-    partial class DefaultStage : IConnector<IInputControlProvider>
+    internal interface IActorDataProvider : IProvider
     {
-        private IInputControlProvider m_InputControlProvider;
-
-        void IConnector<IInputControlProvider>.Connect(IInputControlProvider t)
-        {
-            m_InputControlProvider = t;
-        }
-        void IConnector<IInputControlProvider>.Disconnect()
-        {
-            m_InputControlProvider = null;
-        }
+        ActorSheet.Row Resolve(string key);
     }
 }

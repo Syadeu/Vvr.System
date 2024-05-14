@@ -52,8 +52,6 @@ namespace Vvr.Controller.Input
             }
         }
 
-        private UniTaskCompletionSource m_ResetEvent              = new();
-
         public bool EnableControl  { get; set; } = true;
         public bool HasControl { get; private set; }
 
@@ -66,7 +64,8 @@ namespace Vvr.Controller.Input
 
         private readonly List<InputControlPredicate> m_Predicates = new();
 
-        private Action DisposeInterrupters;
+        private CancellationTokenSource m_CancellationTokenSource;
+        private Action                  m_DisposeInterrupters;
 
         public event InputControlAction OnGainControl;
 
@@ -75,23 +74,23 @@ namespace Vvr.Controller.Input
         }
         public void Dispose()
         {
-            m_ResetEvent.TrySetCanceled();
+            m_CancellationTokenSource.Cancel();
 
             Unregister();
 
-            m_ResetEvent              = null;
+            m_CancellationTokenSource = null;
 
             Disposed = true;
         }
 
         public InputControlController Register()
         {
-            MPC.Provider.Provider.Static.Register(this);
+            MPC.Provider.Provider.Static.Register<IInputControlProvider>(this);
             return this;
         }
         public InputControlController Unregister()
         {
-            MPC.Provider.Provider.Static.Unregister(this);
+            MPC.Provider.Provider.Static.Unregister<IInputControlProvider>(this);
             return this;
         }
 
@@ -110,31 +109,32 @@ namespace Vvr.Controller.Input
             UnityAction d = Queue;
             button.onClick.AddListener(d);
 
-            if (DisposeInterrupters == null)
-                DisposeInterrupters = () => button.onClick.RemoveListener(d);
+            if (m_DisposeInterrupters == null)
+                m_DisposeInterrupters = () => button.onClick.RemoveListener(d);
             else
-                DisposeInterrupters += () => button.onClick.RemoveListener(d);
+                m_DisposeInterrupters += () => button.onClick.RemoveListener(d);
         }
 
         public async UniTask WaitForInput()
         {
-            Assert.IsNotNull(m_InputOwner);
-            Assert.IsTrue(EnableControl);
-            await m_ResetEvent.Task;
+            while (
+                EnableControl && m_InputOwner != null &&
+                !m_CancellationTokenSource.IsCancellationRequested)
+            {
+                await UniTask.Yield();
+            }
         }
 
         async UniTask IInputControlProvider.TransferControl(IEventTarget actor)
         {
-            m_InputOwner   = actor;
-            if (m_InputOwner is IConnector<IInputControlProvider> p)
-            {
-                p.Connect(this);
-            }
-            HasControl = true;
+            m_InputOwner              = actor;
+            m_CancellationTokenSource = new();
+            HasControl                = true;
 
             OnGainControl_Impl(actor)
                 .Forget();
 
+            "[Input] Wait for input".ToLog();
             await WaitForInput();
         }
 
@@ -142,30 +142,39 @@ namespace Vvr.Controller.Input
         {
             if (OnGainControl == null) return;
 
-            await OnGainControl(target);
+            using (InputScope)
+            {
+                await OnGainControl(target)
+                    .AttachExternalCancellation(m_CancellationTokenSource.Token);
+            }
         }
 
         public void Queue()
         {
             Assert.IsNotNull(m_InputOwner);
 
-            if (!m_ResetEvent.TrySetResult())
-            {
-                "??".ToLogError();
-            }
-
-            if (m_InputOwner is IConnector<IInputControlProvider> p)
-            {
-                p.Disconnect();
-            }
-
-            DisposeInterrupters?.Invoke();
-
-            m_ResetEvent = new();
+            m_CancellationTokenSource.Cancel();
+            m_DisposeInterrupters?.Invoke();
 
             HasControl          = false;
             m_InputOwner        = null;
-            DisposeInterrupters = null;
+            m_DisposeInterrupters = null;
+
+            "[Input] Queue".ToLog();
+        }
+    }
+
+    public static class InputControllerExtensions
+    {
+        public static InputControlController OnlyPlayerActor(this InputControlController t)
+        {
+            t.AddControlPredicate(x =>
+            {
+                if (x is not IActor actor) return false;
+
+                return actor.ConditionResolver[Model.Condition.IsPlayerActor](null);
+            });
+            return t;
         }
     }
 

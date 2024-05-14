@@ -21,6 +21,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Cathei.BakingSheet;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
@@ -36,30 +37,15 @@ namespace Vvr.Controller.Skill
 {
     public sealed partial class SkillController : ITimeUpdate, IDisposable, ISkill
     {
-        private static readonly Dictionary<Hash, SkillController>
-            s_CachedController = new();
-
-        public static SkillController GetOrCreate(IActor o)
+        public static SkillController Create(IActor o)
         {
-#if UNITY_EDITOR
-            if (o is UnityEngine.Object uo &&
-                uo == null)
-            {
-                throw new InvalidOperationException();
-            }
-#endif
-
-            Hash hash = o.GetHash();
-            if (!s_CachedController.TryGetValue(hash, out var r))
-            {
-                r = new SkillController(hash, o);
-                TimeController.Register(r);
-                s_CachedController[hash] = r;
-            }
-
-            return r;
+            return new SkillController(o);
         }
 
+        struct SkillData
+        {
+            public readonly SkillSheet.Row data;
+        }
         struct Value : ITargetDefinition
         {
             public readonly Hash           hash;
@@ -81,8 +67,8 @@ namespace Vvr.Controller.Skill
             public SkillSheet.Position Position => skill.Definition.Position;
         }
 
-        private readonly Hash            m_Hash;
-        private ITargetProvider m_TargetProvider;
+        private AsyncLazy<IActorDataProvider> m_DataProvider;
+        private AsyncLazy<ITargetProvider>    m_TargetProvider;
 
         private readonly List<Value> m_Values = new();
 
@@ -91,11 +77,14 @@ namespace Vvr.Controller.Skill
 
         private IActor Owner { get; }
 
-        private SkillController(
-            Hash            hash, IActor o)
+        private SkillController(IActor o)
         {
-            m_Hash           = hash;
-            Owner          = o;
+            Owner = o;
+
+            m_DataProvider   = MPC.Provider.Provider.Static.GetLazyAsync<IActorDataProvider>();
+            m_TargetProvider = MPC.Provider.Provider.Static.GetLazyAsync<ITargetProvider>();
+
+            TimeController.Register(this);
         }
         public void Dispose()
         {
@@ -104,12 +93,28 @@ namespace Vvr.Controller.Skill
             m_SkillCooltimes.Clear();
 
             TimeController.Unregister(this);
-            s_CachedController.Remove(m_Hash);
+
+            m_DataProvider   = null;
+            m_TargetProvider = null;
+        }
+
+        public async UniTask<int> GetSkillCount()
+        {
+            var dataProvider = await m_DataProvider;
+            var data         = dataProvider.Resolve(Owner.DataID);
+            return data.Skills.Count(x => x.Ref != null);
+        }
+        public async UniTask Queue(int index)
+        {
+            var dataProvider = await m_DataProvider;
+            var data = dataProvider.Resolve(Owner.DataID);
+            await Queue(data.Skills[index].Ref);
         }
 
         public async UniTask Queue(SkillSheet.Row data) => await Queue(data, null);
         public async UniTask Queue(SkillSheet.Row data, IActor specifiedTarget)
         {
+            Assert.IsNotNull(data);
             Assert.IsTrue(Owner.ConditionResolver[Model.Condition.IsActorTurn](null));
 
             $"{Owner.Owner}:{Owner.GetInstanceID()} SKILL QUEUED {data.Id}".ToLog();
@@ -175,8 +180,9 @@ namespace Vvr.Controller.Skill
             }
             else
             {
-                int count = 0;
-                foreach (var target in m_TargetProvider.FindTargets(Owner, value))
+                int count          = 0;
+                var targetProvider = await m_TargetProvider;
+                foreach (var target in targetProvider.FindTargets(Owner, value))
                 {
                     // If target count exceed its capability
                     if (value.skill.Definition.TargetCount <= count++) break;
@@ -302,7 +308,7 @@ namespace Vvr.Controller.Skill
 
             if (!Owner.ConditionResolver[Model.Condition.IsActorTurn](null))
             {
-                // "22. not this actor turn. skip".ToLog();
+                "22. not this actor turn. skip".ToLog();
                 return;
             }
 
@@ -321,19 +327,6 @@ namespace Vvr.Controller.Skill
 
                 m_Values.RemoveAt(i--);
             }
-        }
-    }
-
-    partial class SkillController : IConnector<ITargetProvider>
-    {
-        void IConnector<ITargetProvider>.Connect(ITargetProvider t)
-        {
-            Assert.IsNull(m_TargetProvider);
-            m_TargetProvider = t;
-        }
-        void IConnector<ITargetProvider>.Disconnect()
-        {
-            m_TargetProvider = null;
         }
     }
 }

@@ -21,6 +21,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Cysharp.Threading.Tasks;
 using UnityEngine.Assertions;
 
@@ -59,6 +60,19 @@ namespace Vvr.MPC.Provider
         private static readonly Dictionary<Type, IProvider>      s_Providers = new();
         private static readonly Dictionary<Type, List<Observer>> s_Observers = new();
 
+        private static Type ExtractType(Type t)
+        {
+            if (!VvrTypeHelper.InheritsFrom<IProvider>(t))
+                throw new InvalidOperationException();
+
+            if (t.IsInterface) return t;
+
+            return t.GetInterfaces()
+                .First(x =>
+                    x != VvrTypeHelper.TypeOf<IProvider>.Type &&
+                    VvrTypeHelper.InheritsFrom(x, VvrTypeHelper.TypeOf<IProvider>.Type));
+        }
+
         /// <summary>
         /// Register given provider and resolve all other related <see cref="IConnector{T}"/>s
         /// </summary>
@@ -68,6 +82,7 @@ namespace Vvr.MPC.Provider
         public Provider Register<TProvider>(TProvider p) where TProvider : IProvider
         {
             Type t = typeof(TProvider);
+            t = ExtractType(t);
             if (!s_Providers.TryAdd(t, p))
                 throw new InvalidOperationException("Multiple provider is not allowed");
 
@@ -92,6 +107,7 @@ namespace Vvr.MPC.Provider
         public Provider Unregister<TProvider>(TProvider p) where TProvider : IProvider
         {
             Type t = typeof(TProvider);
+            t = ExtractType(t);
             s_Providers.Remove(t);
 
             if (s_Observers.TryGetValue(t, out var list))
@@ -114,6 +130,7 @@ namespace Vvr.MPC.Provider
         public async UniTask<T> GetAsync<T>() where T : IProvider
         {
             Type t = typeof(T);
+            t = ExtractType(t);
             while (!s_Providers.ContainsKey(t))
             {
                 await UniTask.Yield();
@@ -141,6 +158,7 @@ namespace Vvr.MPC.Provider
         public async UniTask<T> ConnectAsync<T>(IConnector<T> c) where T : IProvider
         {
             Type t = typeof(T);
+            t = ExtractType(t);
             while (!s_Providers.ContainsKey(t))
             {
                 await UniTask.Yield();
@@ -183,6 +201,7 @@ namespace Vvr.MPC.Provider
         public Provider Connect<T>(IConnector<T> c) where T : IProvider
         {
             Type t = typeof(T);
+            t = ExtractType(t);
             if (s_Providers.TryGetValue(t, out var p))
             {
                 c.Connect((T)p);
@@ -217,7 +236,8 @@ namespace Vvr.MPC.Provider
         /// <returns></returns>
         public Provider Disconnect<T>(IConnector<T> c) where T : IProvider
         {
-            Type t    = typeof(T);
+            Type t = typeof(T);
+            t = ExtractType(t);
 
             c.Disconnect();
             if (s_Observers.TryGetValue(t, out var list))
