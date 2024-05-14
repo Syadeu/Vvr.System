@@ -39,11 +39,9 @@ namespace Vvr.Controller.Session
 
         public  IReadOnlyList<IChildSession> ChildSessions => m_ChildSessions;
 
-        protected override UniTask OnReserve()
+        protected override async UniTask OnReserve()
         {
-            m_ChildSessions.Clear();
-
-            return base.OnReserve();
+            await CloseAllSessions();
         }
 
         public async UniTask<TChildSession> CreateSession<TChildSession>(ISessionData data)
@@ -81,10 +79,20 @@ namespace Vvr.Controller.Session
             m_ChildSessions.Remove(session);
         }
 
+        public async UniTask CloseAllSessions()
+        {
+            foreach (var session in m_ChildSessions)
+            {
+                await session.Reserve();
+            }
+            m_ChildSessions.Clear();
+        }
+
         protected sealed override void OnProviderRegistered(Type providerType, IProvider provider)
         {
             foreach (var childSession in ChildSessions)
             {
+                if (ReferenceEquals(childSession, provider)) continue;
                 if (childSession is not IChildSessionConnector c) continue;
 
                 c.Register(providerType, provider);

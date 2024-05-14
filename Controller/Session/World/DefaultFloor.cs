@@ -118,6 +118,7 @@ namespace Vvr.Controller.Session.World
                 }
 
                 m_CurrentStage = await CreateSession<DefaultStage>(sessionData);
+                Parent.Register<IStageProvider>(m_CurrentStage);
 
                 if (!m_StageStartEvent.TrySetResult())
                 {
@@ -146,6 +147,7 @@ namespace Vvr.Controller.Session.World
                     prevPlayers.AddRange(stageResult.playerActors);
                 }
 
+                Parent.Unregister<IStageProvider>();
                 m_StageStartEvent = new();
                 await m_CurrentStage.Reserve();
 

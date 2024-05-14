@@ -74,7 +74,7 @@ namespace Vvr.Controller.Session
 
             Owner               = owner;
             m_ConditionResolver = Condition.ConditionResolver.Create(this);
-            Connect(m_ConditionResolver);
+            Register(m_ConditionResolver);
 
             await OnInitialize();
         }
@@ -113,8 +113,6 @@ namespace Vvr.Controller.Session
 
             Type          childType = typeof(TChildSession);
             TChildSession session   = (TChildSession)Activator.CreateInstance(childType);
-
-            IChildSessionConnector t = this;
 
             if (session is IChildSessionConnector sessionConnector)
             {
@@ -162,12 +160,14 @@ namespace Vvr.Controller.Session
             m_ChildSessions.Remove(session);
         }
 
-        protected virtual void Connect(ConditionResolver conditionResolver)
+        protected virtual void Register(ConditionResolver conditionResolver)
         {
         }
 
         public void Register<TProvider>(TProvider provider) where TProvider : IProvider
         {
+            Assert.IsFalse(ReferenceEquals(this, provider), "cannot register self");
+
             Type pType = typeof(TProvider);
             pType = Vvr.Provider.Provider.ExtractType(pType);
 
@@ -200,6 +200,8 @@ namespace Vvr.Controller.Session
 
         public void Connect<TProvider>(IConnector<TProvider> c) where TProvider : IProvider
         {
+            Assert.IsFalse(ReferenceEquals(this, c), "cannot connect self");
+
             Type t = typeof(TProvider);
             t = Vvr.Provider.Provider.ExtractType(t);
 
@@ -219,10 +221,16 @@ namespace Vvr.Controller.Session
                     else c.Connect((TProvider)x);
                 });
             list.AddLast(wr);
-        }
 
+            if (m_ConnectedProviders.TryGetValue(t, out var provider))
+            {
+                c.Connect((TProvider)provider);
+            }
+        }
         public void Disconnect<TProvider>(IConnector<TProvider> c) where TProvider : IProvider
         {
+            Assert.IsFalse(ReferenceEquals(this, c), "cannot disconnect self");
+
             Type t = typeof(TProvider);
             t = Vvr.Provider.Provider.ExtractType(t);
 
@@ -235,6 +243,8 @@ namespace Vvr.Controller.Session
 
         void IChildSessionConnector.Register(Type pType, IProvider provider)
         {
+            Assert.IsFalse(ReferenceEquals(this, provider), "cannot register self");
+
             $"[Session: {Type.FullName}] Connectors {ConnectorTypes.Length}".ToLog();
             m_ConnectedProviders[pType] = provider;
             for (var i = 0; i < ConnectorTypes.Length; i++)
@@ -254,13 +264,6 @@ namespace Vvr.Controller.Session
 
             ConnectObservers(pType, provider);
             $"[Session:{Type.FullName}] Connected {pType.FullName}".ToLog();
-
-            foreach (var childSession in ChildSessions)
-            {
-                if (childSession is not IChildSessionConnector c) continue;
-
-                c.Register(pType, provider);
-            }
 
             OnProviderRegistered(pType, provider);
         }
@@ -285,9 +288,20 @@ namespace Vvr.Controller.Session
 
             OnProviderUnregistered(pType);
         }
+        private void UnregisterAll()
+        {
+            IChildSessionConnector t = this;
+            foreach (var pType in m_ConnectedProviders.Keys.ToArray())
+            {
+                t.Unregister(pType);
+            }
+
+            m_ConnectedProviders.Clear();
+        }
 
         private void ConnectObservers(Type providerType, IProvider provider)
         {
+            Assert.IsFalse(ReferenceEquals(this, provider), "cannot connect self");
             if (!m_ConnectorWrappers.TryGetValue(providerType, out var list)) return;
 
             foreach (var wr in list)
@@ -295,7 +309,6 @@ namespace Vvr.Controller.Session
                 wr.setter(provider);
             }
         }
-
         private void DisconnectObservers(Type providerType)
         {
             if (!m_ConnectorWrappers.TryGetValue(providerType, out var list)) return;
@@ -306,10 +319,26 @@ namespace Vvr.Controller.Session
             }
         }
 
+        private void DisconnectAllObservers()
+        {
+            foreach (var list in m_ConnectorWrappers.Values)
+            {
+                foreach (var wr in list)
+                {
+                    wr.setter(null);
+                }
+
+                list.Clear();
+            }
+
+            m_ConnectorWrappers.Clear();
+        }
+
         private void OnProviderRegistered(Type providerType, IProvider provider)
         {
             foreach (var childSession in ChildSessions)
             {
+                if (ReferenceEquals(childSession, provider)) continue;
                 if (childSession is not IChildSessionConnector c) continue;
 
                 c.Register(providerType, provider);
