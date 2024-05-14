@@ -53,10 +53,10 @@ namespace Vvr.Controller.Session
 
         private ConditionResolver m_ConditionResolver;
 
-        protected internal IReadOnlyDictionary<Type, IProvider> ConnectedProviders => m_ConnectedProviders;
+        protected IReadOnlyDictionary<Type, IProvider> ConnectedProviders => m_ConnectedProviders;
 
         protected Type Type => (m_Type ??= GetType());
-        protected Type[] ConnectorTypes
+        private Type[] ConnectorTypes
         {
             get
             {
@@ -76,14 +76,6 @@ namespace Vvr.Controller.Session
         public          Owner  Owner       { get; private set; }
         public abstract string DisplayName { get; }
 
-        /// <summary>
-        /// Represents the root parent session of a child session.
-        /// </summary>
-        /// <remarks>
-        /// The root parent session is the topmost session in the hierarchy that does not have a parent session.
-        /// It is obtained by traversing up the parent sessions until a session without a parent is found.
-        /// </remarks>
-        [PublicAPI]
         public IParentSession Root
         {
             get
@@ -97,7 +89,6 @@ namespace Vvr.Controller.Session
                 return current;
             }
         }
-        [PublicAPI]
         public IParentSession Parent { get; private set; }
 
         /// <summary>
@@ -339,6 +330,9 @@ namespace Vvr.Controller.Session
 
             OnProviderUnregistered(pType);
         }
+        /// <summary>
+        /// Unregisters all connected providers from the child session.
+        /// </summary>
         private void UnregisterAll()
         {
             IChildSessionConnector t = this;
@@ -349,6 +343,11 @@ namespace Vvr.Controller.Session
             m_ConnectedProviders.Clear();
         }
 
+        /// <summary>
+        /// Connects observers to the specified provider.
+        /// </summary>
+        /// <param name="providerType">The type of the provider.</param>
+        /// <param name="provider">The provider to connect observers to.</param>
         private void ConnectObservers(Type providerType, IProvider provider)
         {
             Assert.IsFalse(ReferenceEquals(this, provider), "cannot connect self");
@@ -359,6 +358,11 @@ namespace Vvr.Controller.Session
                 wr.setter(provider);
             }
         }
+
+        /// <summary>
+        /// Disconnects the observers associated with the specified provider type.
+        /// </summary>
+        /// <param name="providerType">The type of the provider.</param>
         private void DisconnectObservers(Type providerType)
         {
             if (!m_ConnectorWrappers.TryGetValue(providerType, out var list)) return;
@@ -368,6 +372,10 @@ namespace Vvr.Controller.Session
                 wr.setter(null);
             }
         }
+        /// <summary>
+        /// Disconnects all observers from the child session.
+        /// This method removes all observers that are currently connected to the child session.
+        /// </summary>
         private void DisconnectAllObservers()
         {
             foreach (var list in m_ConnectorWrappers.Values)
@@ -382,7 +390,16 @@ namespace Vvr.Controller.Session
             m_ConnectorWrappers.Clear();
         }
 
+        /// <summary>
+        /// This method is called when a provider is registered with the child session.
+        /// </summary>
+        /// <param name="providerType">The type of the provider.</param>
+        /// <param name="provider">The instance of the provider.</param>
         protected virtual void OnProviderRegistered(Type   providerType, IProvider provider) {}
+        /// <summary>
+        /// Invoked when a provider is unregistered from the session.
+        /// </summary>
+        /// <param name="providerType">The type of the provider being unregistered.</param>
         protected virtual void OnProviderUnregistered(Type providerType) {}
     }
 }

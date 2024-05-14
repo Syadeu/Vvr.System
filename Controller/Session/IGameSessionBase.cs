@@ -66,8 +66,20 @@ namespace Vvr.Controller.Session
         [PublicAPI]
         void Unregister<TProvider>() where TProvider : IProvider;
 
+        /// <summary>
+        /// Connects a connector to the session for the specified provider.
+        /// </summary>
+        /// <typeparam name="TProvider">The type of the provider.</typeparam>
+        /// <param name="c">The connector to connect.</param>
+        /// <returns>void</returns>
         [PublicAPI]
         void Connect<TProvider>(IConnector<TProvider>    c) where TProvider : IProvider;
+
+        /// <summary>
+        /// Disconnects the specified provider from the game session.
+        /// </summary>
+        /// <typeparam name="TProvider">The type of provider to disconnect.</typeparam>
+        /// <param name="c">The connector of the provider.</param>
         [PublicAPI]
         void Disconnect<TProvider>(IConnector<TProvider> c) where TProvider : IProvider;
     }

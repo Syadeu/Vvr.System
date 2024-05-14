@@ -19,6 +19,7 @@
 
 #endregion
 
+using JetBrains.Annotations;
 using Vvr.Controller.Session.World;
 using Vvr.Provider;
 
@@ -27,10 +28,26 @@ namespace Vvr.Controller.Session
     public interface IChildSession : IGameSessionBase, ISessionTarget
     {
         /// <summary>
+        /// Represents the root parent session of a child session.
+        /// </summary>
+        /// <remarks>
+        /// The root parent session is the topmost session in the hierarchy that does not have a parent session.
+        /// It is obtained by traversing up the parent sessions until a session without a parent is found.
+        /// </remarks>
+        [PublicAPI]
+        IParentSession Root { get; }
+        /// <summary>
         /// Represents an interface for a parent session.
         /// </summary>
+        [PublicAPI]
         IParentSession Parent { get; }
 
+        /// <summary>
+        /// Gets the provider of the specified type.
+        /// </summary>
+        /// <typeparam name="TProvider">The type of the provider to retrieve.</typeparam>
+        /// <returns>The provider of the specified type if it exists, otherwise null.</returns>
+        [PublicAPI]
         TProvider GetProvider<TProvider>() where TProvider : class, IProvider;
     }
 }
