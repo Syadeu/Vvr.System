@@ -63,12 +63,11 @@ namespace Vvr.Controller.Session
             }
             else $"[Session: {Type.FullName}] No connector for {childType.FullName}".ToLog();
 
-            await session.Initialize(Owner);
             m_ChildSessions.Add(session);
 
             await OnCreateSession(session);
 
-            await session.Initialize(this, data);
+            await session.Initialize(Owner, this, data);
             return session;
         }
         async UniTask IGameSessionCallback.OnSessionClose(IGameSessionBase child)
@@ -79,6 +78,7 @@ namespace Vvr.Controller.Session
             m_ChildSessions.Remove(session);
         }
 
+        [PublicAPI]
         public async UniTask CloseAllSessions()
         {
             foreach (var session in m_ChildSessions)

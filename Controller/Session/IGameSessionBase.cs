@@ -36,8 +36,10 @@ namespace Vvr.Controller.Session
         /// Initializes the game session with the specified owner.
         /// </summary>
         /// <param name="owner">The owner of the game session.</param>
+        /// <param name="parent">The parent session.</param>
+        /// <param name="data">The session data.</param>
         /// <returns>A UniTask representing the completion of the initialization.</returns>
-        UniTask Initialize(Owner owner);
+        UniTask Initialize(Owner owner, IParentSession parent, ISessionData data);
 
         /// <summary>
         /// Reserves the game session.

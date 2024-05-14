@@ -19,7 +19,6 @@
 
 #endregion
 
-using Cysharp.Threading.Tasks;
 using Vvr.Controller.Session.World;
 using Vvr.Provider;
 
@@ -31,8 +30,6 @@ namespace Vvr.Controller.Session
         /// Represents an interface for a parent session.
         /// </summary>
         IParentSession Parent { get; }
-
-        UniTask Initialize(IParentSession parent, ISessionData data);
 
         TProvider GetProvider<TProvider>() where TProvider : class, IProvider;
     }

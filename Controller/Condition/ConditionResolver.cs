@@ -25,6 +25,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Cysharp.Threading.Tasks;
+using JetBrains.Annotations;
 using UnityEngine.Assertions;
 using Vvr.Controller.Actor;
 using Vvr.Controller.Stat;
@@ -292,8 +293,9 @@ namespace Vvr.Controller.Condition
 
     public static class ConditionResolverExtensions
     {
-        public static IDynamicConditionObserver CreateObserver(this IReadOnlyConditionResolver t)
+        public static IDynamicConditionObserver CreateObserver([NotNull] this IReadOnlyConditionResolver t)
         {
+            Assert.IsNotNull(t);
             ConditionResolver r = (ConditionResolver)t;
 
             DynamicConditionObserver ob = new(r);

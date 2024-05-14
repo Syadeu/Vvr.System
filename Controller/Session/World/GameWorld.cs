@@ -40,7 +40,7 @@ namespace Vvr.Controller.Session.World
             if (World != null) throw new NotImplementedException();
 
             var world = (TWorldSession)Activator.CreateInstance(typeof(TWorldSession));
-            await world.Initialize(owner);
+            await world.Initialize(owner, null, null);
 
             World = world;
 

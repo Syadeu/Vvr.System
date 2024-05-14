@@ -127,13 +127,10 @@ namespace Vvr.Controller.Session
         /// </remarks>
         public bool Disposed { get; private set; }
 
-        UniTask IGameSessionBase.Initialize(Owner owner)
+        UniTask IGameSessionBase.Initialize(Owner owner, IParentSession parent, ISessionData data)
         {
             Owner = owner;
-            return UniTask.CompletedTask;
-        }
-        UniTask IChildSession.Initialize(IParentSession parent, ISessionData data)
-        {
+
             ParentSessionAttribute att = GetType().GetCustomAttribute<ParentSessionAttribute>();
             if (att != null)
             {
@@ -155,7 +152,7 @@ namespace Vvr.Controller.Session
             Parent = parent;
             Data   = data != null ? (TSessionData)data : default;
 
-            m_ConditionResolver = Condition.ConditionResolver.Create(this, parent.ConditionResolver);
+            m_ConditionResolver = Condition.ConditionResolver.Create(this, parent?.ConditionResolver);
             Register(m_ConditionResolver);
 
             m_InitializeToken = new();
