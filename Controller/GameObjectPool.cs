@@ -29,6 +29,9 @@ using UnityEngine.ResourceManagement.ResourceProviders;
 
 namespace Vvr.Controller
 {
+    /// <summary>
+    /// Represents a pool of GameObject instances that can be spawned and reserved.
+    /// </summary>
     internal sealed class GameObjectPool : MonoBehaviour
     {
         [DisallowMultipleComponent]
@@ -47,6 +50,10 @@ namespace Vvr.Controller
 
         private static readonly Dictionary<Hash, GameObjectPool> s_ObjectPools = new();
 
+        /// <summary>
+        /// Retrieves or creates a GameObjectPool instance for the given AddressablePath.
+        /// <param name="path">The AddressablePath representing the path to the Unity Addressable Asset.</param>
+        /// <returns>The GameObjectPool instance associated with the given AddressablePath.</returns>
         public static GameObjectPool Get(AddressablePath path)
         {
             Hash h = new(path.FullPath);

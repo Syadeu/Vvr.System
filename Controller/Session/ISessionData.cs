@@ -21,6 +21,9 @@
 
 namespace Vvr.Controller.Session
 {
+    /// <summary>
+    /// Represents the session data for a game session.
+    /// </summary>
     public interface ISessionData
     {
 

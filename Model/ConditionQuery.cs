@@ -28,10 +28,10 @@ using Unity.Mathematics;
 namespace Vvr.Model
 {
     /// <summary>
-    /// 64 <see cref="Condition"/> query
+    /// 64 Condition query
     /// </summary>
     /// <remarks>
-    /// This query can contains maximum 64 conditions.
+    /// This query can contain a maximum of 64 conditions.
     /// </remarks>
     public readonly struct ConditionQuery : IEquatable<ConditionQuery>, IEnumerable<Condition>
     {
@@ -63,6 +63,14 @@ namespace Vvr.Model
             }
         }
 
+        /// <summary>
+        /// Gets the maximum index of the conditions in the query.
+        /// </summary>
+        /// <remarks>
+        /// This property returns the maximum index of the conditions in the query.
+        /// The index corresponds to the position of the highest bit flag.
+        /// If no conditions exist in the query, an InvalidOperationException is thrown.
+        /// </remarks>
         public int MaxIndex
         {
             get

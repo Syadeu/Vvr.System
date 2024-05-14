@@ -24,6 +24,9 @@ using Vvr.Model;
 
 namespace Vvr.Controller.Condition
 {
+    /// <summary>
+    /// Represents an observer for monitoring conditions.
+    /// </summary>
     public interface IConditionObserver
     {
         ConditionQuery Filter { get; }

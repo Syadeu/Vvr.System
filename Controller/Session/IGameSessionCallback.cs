@@ -25,6 +25,11 @@ namespace Vvr.Controller.Session
 {
     public interface IGameSessionCallback
     {
-        UniTask OnSessionClosed(IGameSessionBase child);
+        /// <summary>
+        /// Executed from child session that child of this session has been closed.
+        /// </summary>
+        /// <param name="child"></param>
+        /// <returns></returns>
+        UniTask OnSessionClose(IGameSessionBase child);
     }
 }

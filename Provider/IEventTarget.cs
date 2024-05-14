@@ -21,13 +21,27 @@
 
 namespace Vvr.MPC.Provider
 {
+    /// <summary>
+    /// Represents an event target.
+    /// </summary>
     public interface IEventTarget
     {
         /// <summary>
         /// Server level unique owner id
         /// </summary>
         Owner Owner { get; }
+
+        /// <summary>
+        /// Gets the display name of the object.
+        /// </summary>
+        /// <value>
+        /// The display name of the object.
+        /// </value>
         string DisplayName { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the object has been disposed.
+        /// </summary>
         bool   Disposed    { get; }
     }
 

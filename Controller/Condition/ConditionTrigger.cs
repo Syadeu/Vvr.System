@@ -56,9 +56,9 @@ namespace Vvr.Controller.Condition
         /// If the event target will trigger any conditions,
         /// ConditionTrigger must be pushed before it.
         /// </remarks>
-        /// <param name="target"></param>
-        /// <param name="displayName"></param>
-        /// <returns></returns>
+        /// <param name="target">The event target</param>
+        /// <param name="displayName">The display name (optional)</param>
+        /// <returns>A new instance of ConditionTrigger</returns>
         public static ConditionTrigger Push(IEventTarget target, string displayName = null)
         {
             Assert.IsFalse(target.Disposed);
@@ -83,10 +83,10 @@ namespace Vvr.Controller.Condition
         /// <summary>
         /// Find trigger in last of target stack only
         /// </summary>
-        /// <param name="target"></param>
-        /// <param name="condition"></param>
-        /// <param name="value"></param>
-        /// <returns></returns>
+        /// <param name="target">The event target</param>
+        /// <param name="condition">The condition to check</param>
+        /// <param name="value">The value to check (optional)</param>
+        /// <returns>True if the trigger is found, otherwise false</returns>
         public static bool Last(IEventTarget target, Model.Condition condition, string value)
         {
             var d = s_Stack
@@ -194,18 +194,19 @@ namespace Vvr.Controller.Condition
         }
 
         /// <summary>
-        /// Execute condition for current event target with value
+        /// Executes the condition for the current event target with the specified value
         /// </summary>
         /// <remarks>
-        /// This method also broadcasting to all other related observers.
+        /// This method also broadcasts to all other related observers.
         /// </remarks>
-        /// <param name="condition"></param>
-        /// <param name="value"></param>
+        /// <param name="condition">The condition to execute</param>
+        /// <param name="value">The value to use in the execution</param>
         public async UniTask Execute(Model.Condition condition, string value)
         {
             Assert.IsFalse(m_Target.Disposed);
 
-            $"[Condition:{m_Target.Owner}:{m_Target.GetHashCode()}({m_Path})] Execute condition({condition}) with {value}".ToLog();
+            $"[Condition:{m_Target.Owner}:{m_Target.GetHashCode()}({m_Path})] Execute condition({condition}) with {value}"
+                .ToLog();
             m_Conditions.value |= condition;
             m_Events.AddLast(new Event(condition, value));
 

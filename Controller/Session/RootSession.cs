@@ -140,7 +140,7 @@ namespace Vvr.Controller.Session
         protected virtual UniTask OnCreateSession(IChildSession session) => UniTask.CompletedTask;
         protected virtual UniTask OnSessionClosed(IChildSession session) => UniTask.CompletedTask;
 
-        async UniTask IGameSessionCallback.OnSessionClosed(IGameSessionBase child)
+        async UniTask IGameSessionCallback.OnSessionClose(IGameSessionBase child)
         {
             IChildSession session = (IChildSession)child;
 

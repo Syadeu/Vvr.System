@@ -46,8 +46,6 @@ namespace Vvr.Controller.Session
             return base.OnReserve();
         }
 
-        [PublicAPI]
-        [MustUseReturnValue]
         public async UniTask<TChildSession> CreateSession<TChildSession>(ISessionData data)
             where TChildSession : IChildSession
         {
@@ -77,15 +75,28 @@ namespace Vvr.Controller.Session
             await session.Initialize(this, data);
             return session;
         }
-        async UniTask IGameSessionCallback.OnSessionClosed(IGameSessionBase child)
+        async UniTask IGameSessionCallback.OnSessionClose(IGameSessionBase child)
         {
             IChildSession session = (IChildSession)child;
 
-            await OnSessionClosed(session);
+            await OnSessionClose(session);
             m_ChildSessions.Remove(session);
         }
 
+        /// <summary>
+        /// Event method when child session has been created
+        /// </summary>
+        /// <param name="session">The child session that has been created</param>
+        /// <returns>A UniTask representing the asynchronous operation</returns>
+        [PublicAPI]
         protected virtual UniTask OnCreateSession(IChildSession session) => UniTask.CompletedTask;
-        protected virtual UniTask OnSessionClosed(IChildSession session) => UniTask.CompletedTask;
+
+        /// <summary>
+        /// Event method that is called when a child session is about to be closed and disposed.
+        /// </summary>
+        /// <param name="session">The child session that is about to be closed</param>
+        /// <returns>A UniTask representing the asynchronous operation</returns>
+        [PublicAPI]
+        protected virtual UniTask OnSessionClose(IChildSession session) => UniTask.CompletedTask;
     }
 }

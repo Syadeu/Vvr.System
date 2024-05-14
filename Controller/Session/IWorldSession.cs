@@ -23,6 +23,9 @@ using System;
 
 namespace Vvr.Controller.Session
 {
+    /// <summary>
+    /// Represents a world session in the game.
+    /// </summary>
     public interface IWorldSession : IParentSession, IDisposable
     {
     }

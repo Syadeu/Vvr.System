@@ -24,8 +24,11 @@ using Vvr.Controller.Session.World;
 
 namespace Vvr.Controller.Session
 {
-    public interface IChildSession : IGameSessionBase,  ISessionTarget
+    public interface IChildSession : IGameSessionBase, ISessionTarget
     {
+        /// <summary>
+        /// Represents an interface for a parent session.
+        /// </summary>
         IParentSession Parent { get; }
 
         UniTask Initialize(IParentSession parent, ISessionData data);

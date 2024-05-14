@@ -24,13 +24,47 @@ using System;
 namespace Vvr.Controller.Session
 {
     /// <summary>
-    /// ChildSession 에 부모를 명시하는
+    /// Represents an attribute that specifies the parent session for a child session.
     /// </summary>
     /// <seealso cref="ChildSession{TSessionData}"/>
+    /// <example>
+    /// The following example demonstrates how to use the ParentSessionAttribute:
+    /// <code>
+    /// [ParentSession(typeof(DefaultWorld), true)]
+    /// public partial class DefaultFloor : ParentSession&lt;DefaultFloor.SessionData&gt;, IConnector&lt;IActorProvider&gt;
+    /// {
+    /// // class implementation
+    /// }
+    /// </code>
+    /// </example>
     [AttributeUsage(AttributeTargets.Class)]
     public sealed class ParentSessionAttribute : Attribute
     {
+        /// <summary>
+        /// Represents an attribute that specifies the parent session for a child session.
+        /// </summary>
+        /// <seealso cref="ChildSession{TSessionData}"/>
+        /// <example>
+        /// The following example demonstrates how to use the ParentSessionAttribute:
+        /// <code>
+        /// [ParentSession(typeof(DefaultWorld), true)]
+        /// public partial class DefaultFloor : ParentSession&lt;DefaultFloor.SessionData&gt;, IConnector&lt;IActorProvider&gt;
+        /// {
+        /// // class implementation
+        /// }
+        /// </code>
+        /// </example>
         public Type Type            { get; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the attribute should include the inheritance check.
+        /// </summary>
+        /// <remarks>
+        /// This property is used to specify whether the ParentSessionAttribute should include the inheritance check when initializing a child session.
+        /// If IncludeInherits is set to true, the parent session's type is checked to ensure that it is derived from the specified type in the ParentSessionAttribute.
+        /// If IncludeInherits is set to false, the parent session's type must match exactly with the specified type in the ParentSessionAttribute.
+        /// </remarks>
+        /// <seealso cref="ParentSessionAttribute"/>
         public bool IncludeInherits { get; set; }
 
         public ParentSessionAttribute(Type t)
