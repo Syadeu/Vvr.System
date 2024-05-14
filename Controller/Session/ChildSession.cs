@@ -346,7 +346,7 @@ namespace Vvr.Controller.Session
             }
         }
 
-        protected abstract void OnProviderRegistered(Type   providerType, IProvider provider);
-        protected abstract void OnProviderUnregistered(Type providerType);
+        protected virtual void OnProviderRegistered(Type   providerType, IProvider provider) {}
+        protected virtual void OnProviderUnregistered(Type providerType) {}
     }
 }
