@@ -252,13 +252,7 @@ namespace Vvr.Controller.Session
                 break;
             }
 
-            if (m_ConnectorWrappers.TryGetValue(pType, out var list))
-            {
-                foreach (var wr in list)
-                {
-                    wr.setter(provider);
-                }
-            }
+            ConnectObservers(pType, provider);
             $"[Session:{Type.FullName}] Connected {pType.FullName}".ToLog();
 
             foreach (var childSession in ChildSessions)
@@ -267,6 +261,8 @@ namespace Vvr.Controller.Session
 
                 c.Register(pType, provider);
             }
+
+            OnProviderRegistered(pType, provider);
         }
         void IChildSessionConnector.Unregister(Type pType)
         {
@@ -284,20 +280,48 @@ namespace Vvr.Controller.Session
                     break;
                 }
 
-                if (m_ConnectorWrappers.TryGetValue(pType, out var list))
-                {
-                    foreach (var wr in list)
-                    {
-                        wr.setter(null);
-                    }
-                }
+                DisconnectObservers(pType);
             }
 
+            OnProviderUnregistered(pType);
+        }
+
+        private void ConnectObservers(Type providerType, IProvider provider)
+        {
+            if (!m_ConnectorWrappers.TryGetValue(providerType, out var list)) return;
+
+            foreach (var wr in list)
+            {
+                wr.setter(provider);
+            }
+        }
+
+        private void DisconnectObservers(Type providerType)
+        {
+            if (!m_ConnectorWrappers.TryGetValue(providerType, out var list)) return;
+
+            foreach (var wr in list)
+            {
+                wr.setter(null);
+            }
+        }
+
+        private void OnProviderRegistered(Type providerType, IProvider provider)
+        {
             foreach (var childSession in ChildSessions)
             {
                 if (childSession is not IChildSessionConnector c) continue;
 
-                c.Unregister(pType);
+                c.Register(providerType, provider);
+            }
+        }
+        private void OnProviderUnregistered(Type providerType)
+        {
+            foreach (var childSession in ChildSessions)
+            {
+                if (childSession is not IChildSessionConnector c) continue;
+
+                c.Unregister(providerType);
             }
         }
     }
