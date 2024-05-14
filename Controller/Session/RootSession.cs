@@ -183,6 +183,18 @@ namespace Vvr.Controller.Session
             t.Disconnect(pType);
         }
 
+        public TProvider GetProvider<TProvider>() where TProvider : class, IProvider
+        {
+            TProvider r = null;
+            foreach (var s in ChildSessions)
+            {
+                r = s.GetProvider<TProvider>();
+                if (r != null) break;
+            }
+
+            return r;
+        }
+
         void IChildSessionConnector.Connect(Type pType, IProvider provider)
         {
             $"[Session: {Type.FullName}] Connectors {ConnectorTypes.Length}".ToLog();

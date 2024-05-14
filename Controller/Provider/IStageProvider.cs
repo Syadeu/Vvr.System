@@ -28,10 +28,6 @@ namespace Vvr.Controller.Provider
 {
     public interface IStageProvider : IProvider
     {
-        UniTask FloorStartTask { get; }
-        UniTask StageStartTask { get; }
-
-        DefaultStage       CurrentStage { get; }
         IReadOnlyActorList Timeline     { get; }
 
         IReadOnlyActorList HandActors  { get; }

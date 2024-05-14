@@ -19,6 +19,7 @@
 
 #endregion
 
+using JetBrains.Annotations;
 using Vvr.Controller.Abnormal;
 using Vvr.Controller.Asset;
 using Vvr.Controller.Condition;
@@ -44,12 +45,21 @@ namespace Vvr.Controller.Actor
         void Initialize(Owner t, ActorSheet.Row ta);
 
         IActor CreateInstance();
+
         /// <summary>
         ///
         /// </summary>
         /// <remarks>
         /// If actor has view target(ex. Card) should release first before this method.
         /// </remarks>
-        void   Release();
+        void Release();
+
+        [PublicAPI]
+        void ConnectTime();
+
+        [PublicAPI]
+        void DisconnectTime();
+        [PublicAPI]
+        void Reset();
     }
 }

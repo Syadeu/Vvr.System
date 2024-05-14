@@ -40,8 +40,7 @@ namespace Vvr.Controller.Abnormal
     {
         public static AbnormalController Create(IActor o)
         {
-            Hash hash = o.GetHash();
-            return new(o, hash);
+            return new(o);
         }
 
         struct Value : IComparable<Value>, IReadOnlyRuntimeAbnormal
@@ -65,7 +64,6 @@ namespace Vvr.Controller.Abnormal
             int IReadOnlyRuntimeAbnormal.   Stack   => stack;
         }
 
-        private readonly Hash         m_Hash;
         private readonly List<Value>  m_Values = new();
 
         private uint m_Counter;
@@ -76,15 +74,21 @@ namespace Vvr.Controller.Abnormal
         public IActor Owner { get; }
         public int    Count => m_Values.Count;
 
-        private AbnormalController(IActor owner, Hash hash)
+        private AbnormalController(IActor owner)
         {
             Owner  = owner;
-            m_Hash = hash;
 
             m_IsDirty = true;
             ObjectObserver<AbnormalController>.Get(this).EnsureContainer();
         }
 
+        public void Clear()
+        {
+            Assert.IsFalse(Disposed);
+
+            m_Values.Clear();
+            m_Counter = 0;
+        }
         public async UniTask Add(AbnormalSheet.Row data)
         {
             Assert.IsFalse(Disposed);
@@ -175,7 +179,6 @@ namespace Vvr.Controller.Abnormal
             ObjectObserver<IStatValueStack>.ChangedEvent(Owner.Stats);
             await trigger.Execute(Model.Condition.OnAbnormalAdded, data.Id);
         }
-
         public bool Contains(Hash abnormalId)
         {
             Assert.IsFalse(Disposed);

@@ -21,6 +21,7 @@
 
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
+using JetBrains.Annotations;
 using Vvr.Controller.Actor;
 using Vvr.Model;
 
@@ -34,17 +35,20 @@ namespace Vvr.Controller.Abnormal
         IActor Owner { get; }
         int    Count { get; }
 
+        void Clear();
         /// <summary>
         /// Add raw abnormal data to process
         /// </summary>
         /// <param name="data"></param>
         /// <returns></returns>
+        [PublicAPI]
         UniTask Add(AbnormalSheet.Row data);
         /// <summary>
         /// Returns given abnormal id is in this controller
         /// </summary>
         /// <param name="abnormalId"></param>
         /// <returns></returns>
+        [PublicAPI]
         bool Contains(Hash       abnormalId);
     }
 }

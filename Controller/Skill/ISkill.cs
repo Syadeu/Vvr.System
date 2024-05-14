@@ -20,6 +20,7 @@
 #endregion
 
 using Cysharp.Threading.Tasks;
+using JetBrains.Annotations;
 using Vvr.Controller.Actor;
 using Vvr.Model;
 
@@ -27,10 +28,17 @@ namespace Vvr.Controller.Skill
 {
     public interface ISkill
     {
+        [PublicAPI]
+        void         Clear();
+        [PublicAPI]
         UniTask<int> GetSkillCount();
+
+        [PublicAPI]
         UniTask      Queue(int index);
 
+        [PublicAPI]
         UniTask Queue(SkillSheet.Row data);
+        [PublicAPI]
         UniTask Queue(SkillSheet.Row data, IActor specifiedTarget);
     }
 }

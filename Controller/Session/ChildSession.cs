@@ -227,6 +227,23 @@ namespace Vvr.Controller.Session
             t.Disconnect(pType);
         }
 
+        public TProvider GetProvider<TProvider>() where TProvider : class, IProvider
+        {
+            if (this is TProvider p) return p;
+
+            TProvider result = null;
+            if (this is IParentSession parentSession)
+            {
+                foreach (var s in parentSession.ChildSessions)
+                {
+                    result = s.GetProvider<TProvider>();
+                    if (result != null) break;
+                }
+            }
+
+            return result;
+        }
+
         void IChildSessionConnector.Connect(Type pType, IProvider provider)
         {
             $"[Session: {Type.FullName}] Connectors {ConnectorTypes.Length}".ToLog();

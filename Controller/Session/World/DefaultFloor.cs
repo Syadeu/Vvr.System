@@ -81,7 +81,6 @@ namespace Vvr.Controller.Session.World
         protected override UniTask OnReserve()
         {
             m_FloorStartEvent.TrySetResult();
-            MPC.Provider.Provider.Static.Unregister<IStageProvider>(this);
 
             m_ViewProvider = null;
 
@@ -119,7 +118,6 @@ namespace Vvr.Controller.Session.World
                 }
 
                 m_CurrentStage = await CreateSession<DefaultStage>(sessionData);
-                MPC.Provider.Provider.Static.Register<IStageProvider>(this);
 
                 if (!m_StageStartEvent.TrySetResult())
                 {
@@ -148,7 +146,6 @@ namespace Vvr.Controller.Session.World
                     prevPlayers.AddRange(stageResult.playerActors);
                 }
 
-                MPC.Provider.Provider.Static.Unregister<IStageProvider>(this);
                 m_StageStartEvent = new();
                 await m_CurrentStage.Reserve();
 
@@ -175,16 +172,5 @@ namespace Vvr.Controller.Session.World
         void IConnector<IActorProvider>.Disconnect()
         {
         }
-    }
-    partial class DefaultFloor : IStageProvider
-    {
-        public UniTask FloorStartTask => m_FloorStartEvent.Task;
-        public UniTask StageStartTask => m_StageStartEvent.Task;
-
-        public DefaultStage       CurrentStage   => m_CurrentStage;
-        public IReadOnlyActorList Timeline       => CurrentStage.Timeline;
-        public IReadOnlyActorList HandActors     => CurrentStage.HandActors;
-        public IReadOnlyActorList PlayerField    => CurrentStage.PlayerField;
-        public IReadOnlyActorList EnemyField     => CurrentStage.EnemyField;
     }
 }

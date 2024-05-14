@@ -32,8 +32,6 @@ namespace Vvr.Controller.Session.World
 {
     partial class DefaultStage
     {
-
-
         private partial async UniTask Join(ActorList field, RuntimeActor actor)
         {
             field.Add(actor, ActorPositionComparer.Static);

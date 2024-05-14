@@ -83,19 +83,20 @@ namespace Vvr.Controller.Skill
 
             m_DataProvider   = MPC.Provider.Provider.Static.GetLazyAsync<IActorDataProvider>();
             m_TargetProvider = MPC.Provider.Provider.Static.GetLazyAsync<ITargetProvider>();
-
-            TimeController.Register(this);
         }
         public void Dispose()
         {
-            m_Values.Clear();
-            m_SkillCooltimeKeys.Clear();
-            m_SkillCooltimes.Clear();
-
-            TimeController.Unregister(this);
+            Clear();
 
             m_DataProvider   = null;
             m_TargetProvider = null;
+        }
+
+        public void Clear()
+        {
+            m_SkillCooltimeKeys.Clear();
+            m_SkillCooltimes.Clear();
+            m_Values.Clear();
         }
 
         public async UniTask<int> GetSkillCount()
@@ -308,7 +309,7 @@ namespace Vvr.Controller.Skill
 
             if (!Owner.ConditionResolver[Model.Condition.IsActorTurn](null))
             {
-                "22. not this actor turn. skip".ToLog();
+                $"22. not this actor turn. skip {Owner.DisplayName}".ToLog();
                 return;
             }
 

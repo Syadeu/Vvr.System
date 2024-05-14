@@ -20,8 +20,10 @@
 #endregion
 
 using System;
+using JetBrains.Annotations;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
+using UnityEngine.Assertions;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using Vvr.Controller.Abnormal;
 using Vvr.Controller.Asset;
@@ -62,6 +64,9 @@ namespace Vvr.Controller.Actor
         public string DisplayName => DataID;
         public bool   Disposed    { get; private set; }
 
+        public bool Initialized { get; private set; }
+        public bool Instanced   { get; private set; }
+
         public string                     DataID            { get; private set; }
         public IReadOnlyConditionResolver ConditionResolver => m_ConditionResolver;
         public IStatValueStack            Stats             => m_Stats;
@@ -72,7 +77,10 @@ namespace Vvr.Controller.Actor
 
         IActor IActor.CreateInstance()
         {
-            return Instantiate(this);
+            var d = Instantiate(this);
+            d.Instanced = true;
+
+            return d;
         }
         void IActor.Release()
         {
@@ -84,6 +92,8 @@ namespace Vvr.Controller.Actor
 
         public void Initialize(Owner t, ActorSheet.Row ta)
         {
+            Assert.IsFalse(Initialized);
+
             Owner  = t;
             DataID = ta.Id;
 
@@ -118,9 +128,13 @@ namespace Vvr.Controller.Actor
 
                 m_PassiveController.Add(ta.Passive[i].Ref);
             }
+
+            Initialized = true;
         }
         public void Teardown()
         {
+            DisconnectTime();
+
             m_ConditionResolver
                 .Disconnect()
                 .Unsubscribe(m_AbnormalController)
@@ -137,6 +151,25 @@ namespace Vvr.Controller.Actor
             m_PassiveController  = null;
             m_SkillController    = null;
             m_ItemInventory      = null;
+
+            Initialized = false;
+        }
+
+        public void ConnectTime()
+        {
+            TimeController.Register(m_SkillController);
+            TimeController.Register(m_AbnormalController);
+        }
+        public void DisconnectTime()
+        {
+            TimeController.Unregister(m_SkillController);
+            TimeController.Unregister(m_AbnormalController);
+        }
+
+        public void Reset()
+        {
+            m_SkillController.Clear();
+            m_AbnormalController.Clear();
         }
     }
 }

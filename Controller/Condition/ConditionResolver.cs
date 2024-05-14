@@ -284,7 +284,8 @@ namespace Vvr.Controller.Condition
             Assert.IsFalse(Disposed);
 
             if (Connected) Disconnect();
-            ArrayPool<ConditionDelegate>.Shared.Return(m_Delegates, true);
+            if (m_Delegates != null)
+                ArrayPool<ConditionDelegate>.Shared.Return(m_Delegates, true);
             Disposed = true;
         }
     }

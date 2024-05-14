@@ -83,6 +83,8 @@ namespace Vvr.Controller.Session.World
         private async UniTask OnEventExecutedAsync(
             IEventTarget e, Model.Condition condition, string value)
         {
+            Assert.IsFalse(e.Disposed);
+
             // TODO: temp
             if (e is not IActor target) return;
 
@@ -101,6 +103,8 @@ namespace Vvr.Controller.Session.World
                         continue;
                 }
 
+                Assert.IsFalse(target.Disposed);
+                Assert.IsNotNull(target.ConditionResolver);
                 if (!target.ConditionResolver[(Model.Condition)config.Evaluation.Condition](config.Evaluation.Value)) continue;
 
                 $"[World] Evaluation completed {condition} == {config.Evaluation.Condition}".ToLog();
