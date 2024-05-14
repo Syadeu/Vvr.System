@@ -431,7 +431,7 @@ namespace Vvr.Controller.Session.World
         public async UniTask ExecuteTurn(RuntimeActor runtimeActor)
         {
             // AI
-            if (!m_InputProvider.CanControl(runtimeActor.owner))
+            if (!m_InputControlProvider.CanControl(runtimeActor.owner))
             {
                 int count = runtimeActor.data.Skills.Count;
                 var skill = runtimeActor.data.Skills[UnityEngine.Random.Range(0, count)].Ref;
@@ -440,8 +440,7 @@ namespace Vvr.Controller.Session.World
             }
             else
             {
-                m_InputProvider.Request(runtimeActor.owner);
-                await m_InputProvider.WaitForInput();
+                await m_InputControlProvider.TransferControl(runtimeActor.owner);
             }
 
             m_ResetEvent.TrySetResult();

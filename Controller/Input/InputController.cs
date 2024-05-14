@@ -18,8 +18,13 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine.Assertions;
+using UnityEngine.Events;
+using UnityEngine.UI;
 using Vvr.Controller.Actor;
 using Vvr.Controller.Condition;
 using Vvr.Controller.Session.World;
@@ -27,37 +32,45 @@ using Vvr.MPC.Provider;
 
 namespace Vvr.Controller.Input
 {
-    public class InputController : IDisposable, IInputProvider
+    public delegate bool InputControlPredicate(IEventTarget target);
+    public delegate UniTask InputControlAction(IEventTarget target);
+
+    public class InputControlController : IDisposable, IInputControlProvider
     {
         public struct Scope : IDisposable
         {
-            private readonly InputController m_Controller;
+            private readonly InputControlController m_ControlController;
 
-            internal Scope(InputController ctr)
+            internal Scope(InputControlController ctr)
             {
-                m_Controller = ctr;
+                m_ControlController = ctr;
             }
 
             public void Dispose()
             {
-                m_Controller.Queue();
+                m_ControlController.Queue();
             }
         }
 
-        private UniTaskCompletionSource m_ResetEvent = new();
+        private UniTaskCompletionSource m_ResetEvent              = new();
 
         public bool EnableControl  { get; set; } = true;
-        public bool InputRequested { get; private set; }
+        public bool HasControl { get; private set; }
 
         public Scope InputScope    => new Scope(this);
 
         private bool Disposed      { get; set; }
 
 
-        private IActor m_InputOwner;
+        private IEventTarget m_InputOwner;
 
+        private readonly List<InputControlPredicate> m_Predicates = new();
 
-        public InputController()
+        private Action DisposeInterrupters;
+
+        public event InputControlAction OnGainControl;
+
+        public InputControlController()
         {
         }
         public void Dispose()
@@ -66,26 +79,43 @@ namespace Vvr.Controller.Input
 
             Unregister();
 
-            m_ResetEvent = null;
+            m_ResetEvent              = null;
 
             Disposed = true;
         }
 
-        public InputController Register()
+        public InputControlController Register()
         {
             MPC.Provider.Provider.Static.Register(this);
             return this;
         }
-        public InputController Unregister()
+        public InputControlController Unregister()
         {
             MPC.Provider.Provider.Static.Unregister(this);
             return this;
         }
 
-        public bool CanControl(IActor target)
+        public void AddControlPredicate(InputControlPredicate predicate)
         {
-            return EnableControl && target.ConditionResolver[Model.Condition.IsPlayerActor](null);
+            m_Predicates.Add(predicate);
         }
+
+        public bool CanControl(IEventTarget target)
+        {
+            return EnableControl && m_Predicates.All(x => x(target));
+        }
+
+        public void AddInterrupter(Button button)
+        {
+            UnityAction d = Queue;
+            button.onClick.AddListener(d);
+
+            if (DisposeInterrupters == null)
+                DisposeInterrupters = () => button.onClick.RemoveListener(d);
+            else
+                DisposeInterrupters += () => button.onClick.RemoveListener(d);
+        }
+
         public async UniTask WaitForInput()
         {
             Assert.IsNotNull(m_InputOwner);
@@ -93,14 +123,26 @@ namespace Vvr.Controller.Input
             await m_ResetEvent.Task;
         }
 
-        void IInputProvider.Request(IActor actor)
+        async UniTask IInputControlProvider.TransferControl(IEventTarget actor)
         {
             m_InputOwner   = actor;
-            if (m_InputOwner is IConnector<IInputProvider> p)
+            if (m_InputOwner is IConnector<IInputControlProvider> p)
             {
                 p.Connect(this);
             }
-            InputRequested = true;
+            HasControl = true;
+
+            OnGainControl_Impl(actor)
+                .Forget();
+
+            await WaitForInput();
+        }
+
+        private async UniTask OnGainControl_Impl(IEventTarget target)
+        {
+            if (OnGainControl == null) return;
+
+            await OnGainControl(target);
         }
 
         public void Queue()
@@ -112,24 +154,24 @@ namespace Vvr.Controller.Input
                 "??".ToLogError();
             }
 
-            if (m_InputOwner is IConnector<IInputProvider> p)
+            if (m_InputOwner is IConnector<IInputControlProvider> p)
             {
                 p.Disconnect();
             }
 
-            m_ResetEvent   = new();
-            InputRequested = false;
-            m_InputOwner   = null;
+            DisposeInterrupters?.Invoke();
+
+            m_ResetEvent = new();
+
+            HasControl          = false;
+            m_InputOwner        = null;
+            DisposeInterrupters = null;
         }
     }
 
-    public interface IInputProvider : IProvider
+    public interface IInputControlProvider : IProvider
     {
-        bool    CanControl(IActor target);
-        UniTask WaitForInput();
-
-        void Request(IActor actor);
-
-        void Queue();
+        bool    CanControl(IEventTarget target);
+        UniTask TransferControl(IEventTarget actor);
     }
 }

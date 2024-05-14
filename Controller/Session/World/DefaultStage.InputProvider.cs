@@ -25,17 +25,17 @@ using Vvr.MPC.Provider;
 
 namespace Vvr.Controller.Session.World
 {
-    partial class DefaultStage : IConnector<IInputProvider>
+    partial class DefaultStage : IConnector<IInputControlProvider>
     {
-        private IInputProvider m_InputProvider;
+        private IInputControlProvider m_InputControlProvider;
 
-        void IConnector<IInputProvider>.Connect(IInputProvider t)
+        void IConnector<IInputControlProvider>.Connect(IInputControlProvider t)
         {
-            m_InputProvider = t;
+            m_InputControlProvider = t;
         }
-        void IConnector<IInputProvider>.Disconnect()
+        void IConnector<IInputControlProvider>.Disconnect()
         {
-            m_InputProvider = null;
+            m_InputControlProvider = null;
         }
     }
 }
