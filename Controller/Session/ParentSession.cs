@@ -26,6 +26,7 @@ using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using UnityEngine.Assertions;
 using Vvr.Controller.Condition;
+using Vvr.Provider;
 
 namespace Vvr.Controller.Session
 {
@@ -53,8 +54,6 @@ namespace Vvr.Controller.Session
             Type          childType = typeof(TChildSession);
             TChildSession session   = (TChildSession)Activator.CreateInstance(childType);
 
-            IChildSessionConnector t = this;
-
             if (session is IChildSessionConnector sessionConnector)
             {
                 $"[Session: {Type.FullName}] Chain connector to {childType.FullName}".ToLog();
@@ -80,6 +79,25 @@ namespace Vvr.Controller.Session
 
             await OnSessionClose(session);
             m_ChildSessions.Remove(session);
+        }
+
+        protected sealed override void OnProviderRegistered(Type providerType, IProvider provider)
+        {
+            foreach (var childSession in ChildSessions)
+            {
+                if (childSession is not IChildSessionConnector c) continue;
+
+                c.Register(providerType, provider);
+            }
+        }
+        protected sealed override void OnProviderUnregistered(Type providerType)
+        {
+            foreach (var childSession in ChildSessions)
+            {
+                if (childSession is not IChildSessionConnector c) continue;
+
+                c.Unregister(providerType);
+            }
         }
 
         /// <summary>

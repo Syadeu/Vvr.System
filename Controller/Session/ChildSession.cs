@@ -124,6 +124,11 @@ namespace Vvr.Controller.Session
         /// </remarks>
         public bool Disposed { get; private set; }
 
+        UniTask IGameSessionBase.Initialize(Owner owner)
+        {
+            Owner = owner;
+            return UniTask.CompletedTask;
+        }
         UniTask IChildSession.Initialize(IParentSession parent, ISessionData data)
         {
             ParentSessionAttribute att = GetType().GetCustomAttribute<ParentSessionAttribute>();
@@ -156,11 +161,6 @@ namespace Vvr.Controller.Session
                 .AttachExternalCancellation(m_InitializeToken.Token)
                 .SuppressCancellationThrow()
                 ;
-        }
-        UniTask IGameSessionBase.Initialize(Owner owner)
-        {
-            Owner = owner;
-            return UniTask.CompletedTask;
         }
 
         /// <summary>
@@ -300,25 +300,10 @@ namespace Vvr.Controller.Session
                 break;
             }
 
-            if (m_ConnectorWrappers.TryGetValue(pType, out var list))
-            {
-                foreach (var wr in list)
-                {
-                    wr.setter(provider);
-                }
-            }
+            ConnectObservers(pType, provider);
             $"[Session:{Type.FullName}] Connected {pType.FullName}".ToLog();
 
-            if (this is not IParentSession parentSession)
-            {
-                return;
-            }
-            foreach (var childSession in parentSession.ChildSessions)
-            {
-                if (childSession is not IChildSessionConnector c) continue;
-
-                c.Register(pType, provider);
-            }
+            OnProviderRegistered(pType, provider);
         }
         void IChildSessionConnector.Unregister(Type pType)
         {
@@ -336,26 +321,32 @@ namespace Vvr.Controller.Session
                     break;
                 }
 
-                if (m_ConnectorWrappers.TryGetValue(pType, out var list))
-                {
-                    foreach (var wr in list)
-                    {
-                        wr.setter(null);
-                    }
-                }
+                DisconnectObservers(pType);
             }
 
-            if (this is not IParentSession parentSession)
-            {
-                return;
-            }
+            OnProviderUnregistered(pType);
+        }
 
-            foreach (var childSession in parentSession.ChildSessions)
-            {
-                if (childSession is not IChildSessionConnector c) continue;
+        private void ConnectObservers(Type providerType, IProvider provider)
+        {
+            if (!m_ConnectorWrappers.TryGetValue(providerType, out var list)) return;
 
-                c.Unregister(pType);
+            foreach (var wr in list)
+            {
+                wr.setter(provider);
             }
         }
+        private void DisconnectObservers(Type providerType)
+        {
+            if (!m_ConnectorWrappers.TryGetValue(providerType, out var list)) return;
+
+            foreach (var wr in list)
+            {
+                wr.setter(null);
+            }
+        }
+
+        protected abstract void OnProviderRegistered(Type   providerType, IProvider provider);
+        protected abstract void OnProviderUnregistered(Type providerType);
     }
 }
