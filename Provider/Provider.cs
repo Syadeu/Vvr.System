@@ -60,6 +60,11 @@ namespace Vvr.MPC.Provider
         private static readonly Dictionary<Type, IProvider>      s_Providers = new();
         private static readonly Dictionary<Type, List<Observer>> s_Observers = new();
 
+        /// <summary>
+        /// Extracts the base interface of a given type that inherits from <see cref="Vvr.MPC.Provider.IProvider"/>.
+        /// </summary>
+        /// <param name="t">The type to extract the base interface from.</param>
+        /// <returns>The base interface of the given type.</returns>
         public static Type ExtractType(Type t)
         {
             if (!VvrTypeHelper.InheritsFrom<IProvider>(t))
@@ -74,11 +79,11 @@ namespace Vvr.MPC.Provider
         }
 
         /// <summary>
-        /// Register given provider and resolve all other related <see cref="IConnector{T}"/>s
+        /// Register given provider and resolve all other related <see cref="IConnector{T}"/>s.
         /// </summary>
-        /// <param name="p"></param>
-        /// <typeparam name="TProvider"></typeparam>
-        /// <returns></returns>
+        /// <typeparam name="TProvider">The type of the provider to register.</typeparam>
+        /// <param name="p">The instance of the provider to register.</param>
+        /// <returns>The current instance of the <see cref="Provider"/> struct.</returns>
         public Provider Register<TProvider>(TProvider p) where TProvider : IProvider
         {
             Type t = typeof(TProvider);
@@ -98,12 +103,13 @@ namespace Vvr.MPC.Provider
 
             return this;
         }
+
         /// <summary>
-        /// Unregister given provider and disconnect all related <see cref="IConnector{T}"/>
+        /// Unregister given provider and disconnect all related <see cref="IConnector{T}"/>.
         /// </summary>
-        /// <param name="p"></param>
-        /// <typeparam name="TProvider"></typeparam>
-        /// <returns></returns>
+        /// <param name="p">The provider to unregister.</param>
+        /// <typeparam name="TProvider">Type of the provider.</typeparam>
+        /// <returns>The updated <see cref="Provider"/> instance.</returns>
         public Provider Unregister<TProvider>(TProvider p) where TProvider : IProvider
         {
             Type t = typeof(TProvider);
@@ -125,8 +131,8 @@ namespace Vvr.MPC.Provider
         /// <summary>
         /// Async operation that waits until target provider has resolved.
         /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <returns></returns>
+        /// <typeparam name="T">The type of the provider.</typeparam>
+        /// <returns>A <see cref="UniTask{T}"/> representing the asynchronous operation.</returns>
         public async UniTask<T> GetAsync<T>() where T : IProvider
         {
             Type t = typeof(T);
@@ -140,21 +146,22 @@ namespace Vvr.MPC.Provider
         }
 
         /// <summary>
-        /// Async lazy operation that returns container can be resolved by any time.
+        /// Async lazy operation that returns a container that can be resolved at any time.
         /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <returns></returns>
+        /// <typeparam name="T">The type of the container.</typeparam>
+        /// <returns>The async lazy container of type <typeparamref name="T"/>.</returns>
         public AsyncLazy<T> GetLazyAsync<T>() where T : IProvider
         {
             Func<UniTask<T>> p = GetAsync<T>;
             return UniTask.Lazy(p);
         }
+
         /// <summary>
-        /// Async operation that waits until target provider has resolved.
+        /// Asynchronous operation that waits until the target provider has resolved and connects the given connector to the provider.
         /// </summary>
-        /// <param name="c"></param>
-        /// <typeparam name="T"></typeparam>
-        /// <returns></returns>
+        /// <typeparam name="T">The type of the provider that the connector connects to. Must implement <see cref="Vvr.MPC.Provider.IProvider"/>.</typeparam>
+        /// <param name="c">The connector instance that needs to be connected to the provider.</param>
+        /// <returns>A <see cref="UniTask{T}"/> representing the asynchronous operation. The task will complete with the resolved provider instance.</returns>
         public async UniTask<T> ConnectAsync<T>(IConnector<T> c) where T : IProvider
         {
             Type t = typeof(T);
@@ -195,9 +202,9 @@ namespace Vvr.MPC.Provider
         /// <remarks>
         /// If requested provider already resolved, returns immediately.
         /// </remarks>
-        /// <param name="c"></param>
-        /// <typeparam name="T"></typeparam>
-        /// <returns></returns>
+        /// <param name="c">The connector to be connected.</param>
+        /// <typeparam name="T">The type of the provider to connect to.</typeparam>
+        /// <returns>The current instance of the <see cref="Provider"/> struct.</returns>
         public Provider Connect<T>(IConnector<T> c) where T : IProvider
         {
             Type t = typeof(T);
@@ -228,12 +235,13 @@ namespace Vvr.MPC.Provider
 
             return this;
         }
+
         /// <summary>
         /// Disconnect and remove from observer.
         /// </summary>
-        /// <param name="c"></param>
-        /// <typeparam name="T"></typeparam>
-        /// <returns></returns>
+        /// <param name="c">The connector to disconnect.</param>
+        /// <typeparam name="T">The type of IProvider.</typeparam>
+        /// <returns>The updated Provider.</returns>
         public Provider Disconnect<T>(IConnector<T> c) where T : IProvider
         {
             Type t = typeof(T);

@@ -32,6 +32,9 @@ namespace Vvr.Model.Stat
     public delegate float StatValueGetterDelegate(in IReadOnlyStatValues stat);
     public delegate void StatValueSetterDelegate(in StatValues stat, float value);
 
+    /// <summary>
+    /// Represents a struct that holds a collection of Actor stat values.
+    /// </summary>
     [SheetValueConverter(typeof(UnresolvedStatValuesConverter))]
     public readonly struct StatValues : IReadOnlyStatValues
     {
@@ -70,6 +73,11 @@ namespace Vvr.Model.Stat
             return d;
         }
 
+        /// <summary>
+        /// Creates a new instance of StatValues with the specified StatType.
+        /// </summary>
+        /// <param name="t">The StatType to initialize the StatValues with. By default, it is set to ~0.</param>
+        /// <returns>A new instance of StatValues.</returns>
         public static StatValues Create(StatType t = (StatType)~0)
         {
             return new StatValues(t, new float[t.Count()]);
@@ -105,7 +113,15 @@ namespace Vvr.Model.Stat
             m_Values = values;
         }
 
-        [Pure]
+        /// <summary>
+        /// Returns the index of the first occurrence of the specified StatType in the StatValues collection.
+        /// </summary>
+        /// <param name="t">The StatType to locate in the StatValues collection.</param>
+        /// <returns>
+        /// The index of the first occurrence of the specified StatType, if found;
+        /// otherwise, -1.
+        /// </returns>
+        [Pure, PublicAPI]
         public int IndexOf(StatType t)
         {
             long target  = (long)Types;
@@ -121,7 +137,13 @@ namespace Vvr.Model.Stat
 
             return -1;
         }
-        [Pure]
+
+        /// <summary>
+        /// Returns the value related to the specified StatType from the StatValues collection.
+        /// </summary>
+        /// <param name="t">The StatType to retrieve the value for.</param>
+        /// <returns>The value related to the specified StatType, or 0 if the StatType is not found.</returns>
+        [Pure, PublicAPI]
         public float GetValue(StatType t)
         {
             int index = IndexOf(t);
@@ -129,6 +151,13 @@ namespace Vvr.Model.Stat
 
             return Values[index];
         }
+
+        /// <summary>
+        /// Sets the value of a specific StatType in the StatValues struct.
+        /// </summary>
+        /// <param name="t">The StatType to set the value for.</param>
+        /// <param name="v">The new value for the StatType.</param>
+        [PublicAPI]
         public void SetValue(StatType t, float v)
         {
             int index = IndexOf(t);
@@ -137,6 +166,10 @@ namespace Vvr.Model.Stat
             Values[index] = v;
         }
 
+        /// <summary>
+        /// Clears all stat values to 0.
+        /// </summary>
+        [PublicAPI]
         public void Clear()
         {
             for (int i = 0; i < m_Values.Length; i++)
@@ -145,6 +178,13 @@ namespace Vvr.Model.Stat
             }
         }
 
+        /// <summary>
+        /// Returns an enumerator that iterates through the collection of StatType-statValue pairs in the StatValues object.
+        /// </summary>
+        /// <returns>
+        /// An enumerator that can be used to iterate through the collection of StatType-statValue pairs in the StatValues object.
+        /// </returns>
+        [PublicAPI]
         public IEnumerator<KeyValuePair<StatType, float>> GetEnumerator()
         {
             long target = (long)Types;
@@ -224,9 +264,5 @@ namespace Vvr.Model.Stat
 
             return result;
         }
-    }
-
-    public static class StatValuesExtensions
-    {
     }
 }

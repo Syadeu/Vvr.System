@@ -21,6 +21,9 @@
 
 namespace Vvr.MPC.Provider
 {
+    /// <summary>
+    /// Represents a base provider interface for all other providers.
+    /// </summary>
     public interface IProvider
     {
 

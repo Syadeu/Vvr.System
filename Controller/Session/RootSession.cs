@@ -106,8 +106,6 @@ namespace Vvr.Controller.Session
         protected virtual UniTask OnInitialize() => UniTask.CompletedTask;
         protected virtual UniTask OnReserve()    => UniTask.CompletedTask;
 
-        [PublicAPI]
-        [MustUseReturnValue]
         public async UniTask<TChildSession> CreateSession<TChildSession>(ISessionData data)
             where TChildSession : IChildSession
         {
@@ -137,7 +135,22 @@ namespace Vvr.Controller.Session
             await session.Initialize(this, data);
             return session;
         }
+
+        /// <summary>
+        /// Creates a child session of type <paramref name="session"/> and initializes it with the specified session data.
+        /// </summary>
+        /// <param name="session">The type of child session to create.</param>
+        /// <param name="data">The session data to initialize the child session with.</param>
+        /// <returns>A UniTask representing the asynchronous operation. The task completes when the child session has been created and initialized.</returns>
+        [PublicAPI]
         protected virtual UniTask OnCreateSession(IChildSession session) => UniTask.CompletedTask;
+
+        /// <summary>
+        /// Invoked when a child session is closed.
+        /// </summary>
+        /// <param name="session">The child session that was closed.</param>
+        /// <returns>A <see cref="UniTask"/> representing the asynchronous operation.</returns>
+        [PublicAPI]
         protected virtual UniTask OnSessionClosed(IChildSession session) => UniTask.CompletedTask;
 
         async UniTask IGameSessionCallback.OnSessionClose(IGameSessionBase child)
@@ -198,7 +211,6 @@ namespace Vvr.Controller.Session
                 c.Connect(pType, provider);
             }
         }
-
         void IChildSessionConnector.Disconnect(Type pType)
         {
             if (m_ConnectedProviders == null) return;

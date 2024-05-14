@@ -29,39 +29,27 @@ using Vvr.MPC.Provider;
 
 namespace Vvr.Controller.Provider
 {
+    /// <summary>
+    /// Represents an actor provider.
+    /// </summary>
     public interface IActorProvider : IProvider
     {
         /// <summary>
-        /// Due to resolved actor is concrete actor should not have any view targets.
+        /// Resolves an actor based on the given data.
         /// </summary>
-        /// <param name="data"></param>
-        /// <returns></returns>
+        /// <remarks>
+        /// Due to resolved actor is concrete actor should not have any view targets.
+        /// </remarks>
+        /// <param name="data">The data used to resolve the actor.</param>
+        /// <returns>The resolved actor.</returns>
         IActor Resolve(ActorSheet.Row data);
     }
 
     internal sealed class ActorProvider : IActorProvider, IDisposable
     {
-        struct ActorOrderComparer : IComparer<IActor>
-        {
-            public int Compare(IActor x, IActor y)
-            {
-                if (x == null && y != null) return 1;
-                if (y == null && x != null) return -1;
-                if (x == null) return 0;
-
-                uint
-                    xx = FNV1a32.Calculate(x.DataID),
-                    yy = FNV1a32.Calculate(y.DataID);
-
-                if (xx < yy) return -1;
-                if (xx > yy) return 1;
-                return 0;
-            }
-        }
-
         struct CachedActor : IComparable<CachedActor>
         {
-            public uint   hash;
+            public          uint   hash;
             public readonly IActor actor;
 
             public CachedActor(IActor t)
