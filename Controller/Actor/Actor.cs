@@ -70,8 +70,10 @@ namespace Vvr.Controller.Actor
         public string                     DataID            { get; private set; }
         public IReadOnlyConditionResolver ConditionResolver => m_ConditionResolver;
         public IStatValueStack            Stats             => m_Stats;
-        public IAbnormal                  Abnormal          => m_AbnormalController;
-        public ISkill                     Skill             => m_SkillController;
+
+        public IPassive  Passive  => m_PassiveController;
+        public IAbnormal Abnormal => m_AbnormalController;
+        public ISkill    Skill    => m_SkillController;
 
         public IAsset Assets => m_AssetController;
 

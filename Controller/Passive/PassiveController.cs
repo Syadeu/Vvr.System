@@ -26,10 +26,11 @@ using UnityEngine.Assertions;
 using Vvr.Controller.Actor;
 using Vvr.Controller.Provider;
 using Vvr.Model;
+using Vvr.Provider;
 
 namespace Vvr.Controller.Passive
 {
-    public sealed partial class PassiveController : IDisposable
+    public sealed partial class PassiveController : IPassive, IDisposable
     {
         public static PassiveController Create(IActor o)
         {
@@ -53,15 +54,13 @@ namespace Vvr.Controller.Passive
 
         private IActor Owner { get; }
 
-        private AsyncLazy<ITargetProvider> m_TargetProvider;
+        private ITargetProvider m_TargetProvider;
 
         private readonly List<Value> m_Values = new();
 
         private PassiveController(IActor o)
         {
             Owner = o;
-
-            m_TargetProvider = Vvr.Provider.Provider.Static.GetLazyAsync<ITargetProvider>();
         }
         public void Dispose()
         {
@@ -95,5 +94,19 @@ namespace Vvr.Controller.Passive
 
             m_Values[index] = boxed;
         }
+
+        void IConnector<ITargetProvider>.Connect(ITargetProvider t)
+        {
+            m_TargetProvider = t;
+        }
+        void IConnector<ITargetProvider>.Disconnect()
+        {
+            m_TargetProvider = null;
+        }
+    }
+
+    public interface IPassive : IConnector<ITargetProvider>
+    {
+        void Add(PassiveSheet.Row data);
     }
 }

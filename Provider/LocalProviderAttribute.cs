@@ -15,20 +15,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // 
-// File created : 2024, 05, 07 19:05
+// File created : 2024, 05, 15 02:05
 
 #endregion
 
-using System.Collections.Generic;
-using Vvr.Controller.Actor;
-using Vvr.Controller.Skill;
-using Vvr.Provider;
+using System;
 
-namespace Vvr.Controller.Provider
+namespace Vvr.Provider
 {
-    [LocalProvider]
-    public interface ITargetProvider : IProvider
+    /// <summary>
+    /// Local provider attribute used to mark an interface as a local provider.
+    /// </summary>
+    /// <remarks>
+    /// Local providers are interfaces that are specific to a particular module or component and are not intended to be used as a global provider.
+    /// They are usually implemented by classes within the same module or component.
+    /// </remarks>
+    [AttributeUsage(AttributeTargets.Interface)]
+    public sealed class LocalProviderAttribute : Attribute
     {
-        IEnumerable<IActor> FindTargets(IActor from, ITargetDefinition target);
+
     }
 }

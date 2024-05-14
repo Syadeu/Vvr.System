@@ -22,11 +22,13 @@
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using Vvr.Controller.Actor;
+using Vvr.Controller.Provider;
 using Vvr.Model;
+using Vvr.Provider;
 
 namespace Vvr.Controller.Skill
 {
-    public interface ISkill
+    public interface ISkill : IConnector<ITargetProvider>
     {
         [PublicAPI]
         void         Clear();

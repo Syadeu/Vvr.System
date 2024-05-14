@@ -27,7 +27,6 @@ using System.Threading;
 using Cathei.BakingSheet.Internal;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
-using UnityEngine;
 using UnityEngine.Assertions;
 using Vvr.Controller.Condition;
 using Vvr.Provider;
@@ -209,8 +208,6 @@ namespace Vvr.Controller.Session
 
         public void Register<TProvider>(TProvider provider) where TProvider : IProvider
         {
-            Assert.IsFalse(ReferenceEquals(this, provider), "cannot register self");
-
             Type pType = typeof(TProvider);
             pType = Vvr.Provider.Provider.ExtractType(pType);
 
@@ -285,8 +282,6 @@ namespace Vvr.Controller.Session
 
         void IChildSessionConnector.Register(Type pType, IProvider provider)
         {
-            Assert.IsFalse(ReferenceEquals(this, provider), "cannot register self");
-
             $"[Session: {Type.FullName}] Connectors {ConnectorTypes.Length}".ToLog();
             m_ConnectedProviders[pType] = provider;
             for (var i = 0; i < ConnectorTypes.Length; i++)
@@ -350,7 +345,6 @@ namespace Vvr.Controller.Session
         /// <param name="provider">The provider to connect observers to.</param>
         private void ConnectObservers(Type providerType, IProvider provider)
         {
-            Assert.IsFalse(ReferenceEquals(this, provider), "cannot connect self");
             if (!m_ConnectorWrappers.TryGetValue(providerType, out var list)) return;
 
             foreach (var wr in list)

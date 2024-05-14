@@ -22,6 +22,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using Cysharp.Threading.Tasks;
 using UnityEngine.Assertions;
 
@@ -88,6 +89,9 @@ namespace Vvr.Provider
         {
             Type t = typeof(TProvider);
             t = ExtractType(t);
+
+            EvaluateType(t);
+
             if (!s_Providers.TryAdd(t, p))
                 throw new InvalidOperationException("Multiple provider is not allowed");
 
@@ -114,18 +118,35 @@ namespace Vvr.Provider
         {
             Type t = typeof(TProvider);
             t = ExtractType(t);
-            s_Providers.Remove(t);
 
-            if (s_Observers.TryGetValue(t, out var list))
+            EvaluateType(t);
+
+            if (s_Providers.Remove(t))
             {
-                foreach (var item in list)
+                if (s_Observers.TryGetValue(t, out var list))
                 {
-                    item.action.Invoke(null);
+                    foreach (var item in list)
+                    {
+                        item.action.Invoke(null);
+                    }
                 }
             }
 
             $"[Provider] {VvrTypeHelper.ToString(t)} unregistered".ToLog();
             return this;
+        }
+
+        private static void EvaluateType(Type providerType)
+        {
+            Assert.IsNotNull(providerType);
+
+            if (VvrTypeHelper.TypeOf<IProvider>.Type == providerType)
+                throw new InvalidOperationException("Input was base provider type");
+
+            var localAtt = providerType.GetCustomAttribute<LocalProviderAttribute>();
+            if (localAtt != null)
+                throw new InvalidOperationException(
+                    $"Local provider should not interact with global provider. {providerType.FullName}");
         }
 
         /// <summary>
@@ -137,6 +158,9 @@ namespace Vvr.Provider
         {
             Type t = typeof(T);
             t = ExtractType(t);
+
+            EvaluateType(t);
+
             while (!s_Providers.ContainsKey(t))
             {
                 await UniTask.Yield();
@@ -166,6 +190,9 @@ namespace Vvr.Provider
         {
             Type t = typeof(T);
             t = ExtractType(t);
+
+            EvaluateType(t);
+
             while (!s_Providers.ContainsKey(t))
             {
                 await UniTask.Yield();
@@ -209,6 +236,9 @@ namespace Vvr.Provider
         {
             Type t = typeof(T);
             t = ExtractType(t);
+
+            EvaluateType(t);
+
             if (s_Providers.TryGetValue(t, out var p))
             {
                 c.Connect((T)p);
@@ -246,6 +276,8 @@ namespace Vvr.Provider
         {
             Type t = typeof(T);
             t = ExtractType(t);
+
+            EvaluateType(t);
 
             if (!s_Observers.TryGetValue(t, out var list)) return this;
 

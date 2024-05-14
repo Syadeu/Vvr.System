@@ -23,6 +23,7 @@ using JetBrains.Annotations;
 using Vvr.Controller.Abnormal;
 using Vvr.Controller.Asset;
 using Vvr.Controller.Condition;
+using Vvr.Controller.Passive;
 using Vvr.Controller.Skill;
 using Vvr.Controller.Stat;
 using Vvr.Model;
@@ -35,6 +36,7 @@ namespace Vvr.Controller.Actor
         string DataID { get; }
 
         IStatValueStack Stats    { get; }
+        IPassive        Passive  { get; }
         IAbnormal       Abnormal { get; }
         ISkill          Skill    { get; }
 

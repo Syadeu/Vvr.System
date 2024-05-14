@@ -44,6 +44,9 @@ namespace Vvr.Controller.Session.World
 
         private ActorProvider m_ActorProvider;
 
+        private readonly Dictionary<Hash, int>            m_ExecutionCount = new();
+        private          IEnumerable<GameConfigSheet.Row> m_Configs;
+
         public override string DisplayName => nameof(DefaultWorld);
 
         public IActorProvider ActorProvider => m_ActorProvider;
@@ -88,54 +91,58 @@ namespace Vvr.Controller.Session.World
             // TODO: temp
             if (e is not IActor target) return;
 
-            $"[World] Update configs :{target} :{condition}: {m_Configs.Count()}".ToLog();
             foreach (var config in m_Configs)
             {
                 // Prevent infinite loop
                 await UniTask.Yield();
 
-                // Check lifecycle condition
-                if (config.Lifecycle.Condition != 0)
-                {
-                    Assert.IsNotNull(m_StateProvider, "m_StateProvider != null");
+                if (!EvaluateActorConfig(config, target, out int executedCount)) continue;
 
-                    if (!m_StateProvider.Resolve(config.Lifecycle.Condition, target, config.Lifecycle.Value))
-                        continue;
-                }
+                $"[World] execute config : {target.DisplayName} : {condition}, {value}".ToLog();
 
-                Assert.IsFalse(target.Disposed);
-                Assert.IsNotNull(target.ConditionResolver);
-                if (!target.ConditionResolver[(Model.Condition)config.Evaluation.Condition](config.Evaluation.Value)) continue;
-
-                $"[World] Evaluation completed {condition} == {config.Evaluation.Condition}".ToLog();
-
-                if (!target.ConditionResolver[config.Execution.Condition](config.Execution.Value))
-                    continue;
-
-                $"[World] Execution condition completed {condition} == {config.Execution.Condition}".ToLog();
-
-                // Check probability
-                if (!ProbabilityResolver.Get().Resolve(config.Evaluation.Probability))
-                {
-                    continue;
-                }
-
-                Hash hash = e.GetHash();
-                m_ExecutionCount.TryGetValue(hash, out int count);
-
-                // Exceed max execution count
-                if (0 <= config.Evaluation.MaxCount)
-                {
-                    if (config.Evaluation.MaxCount < count + 1)
-                    {
-                        continue;
-                    }
-
-                    m_ExecutionCount[hash] = ++count;
-                }
-
+                m_ExecutionCount[target.GetHash()] = ++executedCount;
                 await ExecuteMethod(target, config.Execution.Method);
             }
+        }
+
+        private bool EvaluateActorConfig(GameConfigSheet.Row config, IActor target, out int executedCount)
+        {
+            executedCount = 0;
+
+            // Check lifecycle condition
+            if (config.Lifecycle.Condition != 0)
+            {
+                Assert.IsNotNull(m_StateProvider, "m_StateProvider != null");
+
+                if (!m_StateProvider.Resolve(config.Lifecycle.Condition, target, config.Lifecycle.Value))
+                    return false;
+            }
+
+            Assert.IsFalse(target.Disposed);
+            Assert.IsNotNull(target.ConditionResolver);
+            if (!target.ConditionResolver[(Model.Condition)config.Evaluation.Condition](config.Evaluation.Value))
+                return false;
+
+            // $"[World] Evaluation completed {condition} == {config.Evaluation.Condition}".ToLog();
+
+            if (!target.ConditionResolver[config.Execution.Condition](config.Execution.Value))
+                return false;
+
+            // $"[World] Execution condition completed {condition} == {config.Execution.Condition}".ToLog();
+
+            // Check probability
+            if (!ProbabilityResolver.Get().Resolve(config.Evaluation.Probability))
+            {
+                return false;
+            }
+
+            Hash hash = target.GetHash();
+            m_ExecutionCount.TryGetValue(hash, out executedCount);
+
+            // Exceed max execution count
+            if (0 > config.Evaluation.MaxCount) return true;
+
+            return config.Evaluation.MaxCount >= executedCount + 1;
         }
 
         void IConnector<IStateConditionProvider>.Connect(IStateConditionProvider t)
@@ -147,9 +154,6 @@ namespace Vvr.Controller.Session.World
         {
             m_StateProvider = null;
         }
-
-        private readonly Dictionary<Hash, int>            m_ExecutionCount = new();
-        private          IEnumerable<GameConfigSheet.Row> m_Configs;
 
         void IConnector<IGameConfigProvider>.Connect(IGameConfigProvider t)
         {

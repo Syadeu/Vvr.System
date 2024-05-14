@@ -26,6 +26,7 @@ using Vvr.Provider;
 
 namespace Vvr.Controller.Provider
 {
+    [LocalProvider]
     public interface IStageProvider : IProvider
     {
         IReadOnlyActorList Timeline     { get; }

@@ -68,7 +68,7 @@ namespace Vvr.Controller.Skill
         }
 
         private AsyncLazy<IActorDataProvider> m_DataProvider;
-        private AsyncLazy<ITargetProvider>    m_TargetProvider;
+        private ITargetProvider    m_TargetProvider;
 
         private readonly List<Value> m_Values = new();
 
@@ -82,7 +82,6 @@ namespace Vvr.Controller.Skill
             Owner = o;
 
             m_DataProvider   = Vvr.Provider.Provider.Static.GetLazyAsync<IActorDataProvider>();
-            m_TargetProvider = Vvr.Provider.Provider.Static.GetLazyAsync<ITargetProvider>();
         }
         public void Dispose()
         {
@@ -117,8 +116,10 @@ namespace Vvr.Controller.Skill
         {
             Assert.IsNotNull(data);
             Assert.IsTrue(Owner.ConditionResolver[Model.Condition.IsActorTurn](null));
+            Assert.IsFalse(m_Values.Any(x=>x.skill == data),
+                $"Skill {data.Id} already queued but trying to queue another one. {m_Values.Count}");
 
-            $"{Owner.Owner}:{Owner.GetInstanceID()} SKILL QUEUED {data.Id}".ToLog();
+            $"[Skill:{Owner.DisplayName}]: SKILL QUEUED {data.Id}, {m_Values.Count}".ToLog();
 
             var value = new Value(data, specifiedTarget);
 
@@ -133,12 +134,12 @@ namespace Vvr.Controller.Skill
             // Check cooltime
             if (m_SkillCooltimes.ContainsKey(value.hash))
             {
-                $"[Skill:{Owner.Owner}:{Owner.GetInstanceID()}] Skill({value.skill.Id}) is in cooltime {m_SkillCooltimes[value.hash]}"
+                $"[Skill:{Owner.DisplayName}:{Owner.GetInstanceID()}] Skill({value.skill.Id}) is in cooltime {m_SkillCooltimes[value.hash]}"
                     .ToLog();
                 return;
             }
 
-            $"[Skill:{Owner.Owner}:{Owner.GetInstanceID()}] Skill start {value.skill.Id}".ToLog();
+            $"[Skill:{Owner.DisplayName}:{Owner.GetInstanceID()}] Skill start {value.skill.Id}".ToLog();
 
             await trigger.Execute(Model.Condition.OnSkillStart, value.skill.Id);
 
@@ -182,8 +183,7 @@ namespace Vvr.Controller.Skill
             else
             {
                 int count          = 0;
-                var targetProvider = await m_TargetProvider;
-                foreach (var target in targetProvider.FindTargets(Owner, value))
+                foreach (var target in m_TargetProvider.FindTargets(Owner, value))
                 {
                     // If target count exceed its capability
                     if (value.skill.Definition.TargetCount <= count++) break;
@@ -193,7 +193,7 @@ namespace Vvr.Controller.Skill
             }
 
             RegisterCooltime(value);
-            $"[Skill:{Owner.Owner}:{Owner.GetInstanceID()}] Skill({value.skill.Id}) cooltime: {m_SkillCooltimes[value.hash]}".ToLog();
+            $"[Skill:{Owner.DisplayName}:{Owner.GetInstanceID()}] Skill({value.skill.Id}) cooltime: {m_SkillCooltimes[value.hash]}".ToLog();
         }
 
         async UniTask ExecuteSkillTarget(ConditionTrigger trigger, Value value, IActor target)
@@ -309,7 +309,7 @@ namespace Vvr.Controller.Skill
 
             if (!Owner.ConditionResolver[Model.Condition.IsActorTurn](null))
             {
-                $"22. not this actor turn. skip {Owner.DisplayName}".ToLog();
+                // $"22. not this actor turn. skip {Owner.DisplayName}".ToLog();
                 return;
             }
 
@@ -322,12 +322,25 @@ namespace Vvr.Controller.Skill
                 await trigger.Execute(Model.Condition.OnSkillCasting, e.skill.Id);
 
                 // If time completed, execute
-                if (e.delayedExecutionTime > 0) continue;
+                if (e.delayedExecutionTime > 0)
+                {
+                    $"[Skill:{Owner.DisplayName}] {e.skill.Id} time left {e.delayedExecutionTime}".ToLog();
+                    continue;
+                }
 
                 await ExecuteSkillBody(trigger, e);
 
                 m_Values.RemoveAt(i--);
             }
+        }
+
+        void IConnector<ITargetProvider>.Connect(ITargetProvider t)
+        {
+            m_TargetProvider = t;
+        }
+        void IConnector<ITargetProvider>.Disconnect()
+        {
+            m_TargetProvider = null;
         }
     }
 }

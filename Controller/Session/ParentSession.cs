@@ -30,6 +30,10 @@ using Vvr.Provider;
 
 namespace Vvr.Controller.Session
 {
+    /// <summary>
+    /// Represents an abstract parent session that can create and manage child sessions.
+    /// </summary>
+    /// <typeparam name="TSessionData">The type of session data stored in the parent session.</typeparam>
     public abstract class ParentSession<TSessionData>
         : ChildSession<TSessionData>, IParentSession,
             IGameSessionCallback
@@ -78,6 +82,10 @@ namespace Vvr.Controller.Session
             m_ChildSessions.Remove(session);
         }
 
+        /// <summary>
+        /// Closes all child sessions and clears the list of child sessions.
+        /// </summary>
+        /// <returns>A UniTask representing the asynchronous operation of closing all child sessions.</returns>
         [PublicAPI]
         public async UniTask CloseAllSessions()
         {

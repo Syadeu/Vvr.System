@@ -30,6 +30,9 @@ using Vvr.Provider;
 
 namespace Vvr.Controller.Session
 {
+    /// <summary>
+    /// RootSession is an abstract class that serves as the base class for all root session implementations in the Vvr.Controller.Session namespace.
+    /// </summary>
     public abstract class RootSession
         : ChildSession<RootSession.RootData>, IParentSession,
         IGameSessionCallback, IDisposable
@@ -82,6 +85,10 @@ namespace Vvr.Controller.Session
             m_ChildSessions.Remove(session);
         }
 
+        /// <summary>
+        /// Closes all child sessions within the root session.
+        /// </summary>
+        /// <returns>A UniTask representing the asynchronous operation</returns>
         [PublicAPI]
         public async UniTask CloseAllSessions()
         {

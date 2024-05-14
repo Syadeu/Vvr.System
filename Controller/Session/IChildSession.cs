@@ -25,6 +25,9 @@ using Vvr.Provider;
 
 namespace Vvr.Controller.Session
 {
+    /// <summary>
+    /// Represents a child session.
+    /// </summary>
     public interface IChildSession : IGameSessionBase, ISessionTarget
     {
         /// <summary>

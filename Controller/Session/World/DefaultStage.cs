@@ -227,11 +227,8 @@ namespace Vvr.Controller.Session.World
         protected override async UniTask OnInitialize(IParentSession session, SessionData data)
         {
             Vvr.Provider.Provider.Static
-                .Register<ITargetProvider>(this)
                 .Register<IStateConditionProvider>(this)
                 .Register<IGameMethodProvider>(this);
-
-            // await MPC.Provider.Provider.Static.ConnectAsync<IActorProvider>(this);
 
             m_ViewProvider         = Vvr.Provider.Provider.Static.GetLazyAsync<IEventViewProvider>();
             m_InputControlProvider = Vvr.Provider.Provider.Static.GetLazyAsync<IInputControlProvider>();
@@ -240,16 +237,17 @@ namespace Vvr.Controller.Session.World
             m_EnemyId = Owner.Issue;
 
             m_AssetController.Connect<AssetLoadTaskProvider>(data.stage.Assets);
+
+            Register<ITargetProvider>(this);
         }
 
         protected override UniTask OnReserve()
         {
+            Unregister<ITargetProvider>();
+
             Vvr.Provider.Provider.Static
-                .Unregister<ITargetProvider>(this)
                 .Unregister<IStateConditionProvider>(this)
                 .Unregister<IGameMethodProvider>(this);
-
-            // MPC.Provider.Provider.Static.Disconnect<IActorProvider>(this);
 
             m_AssetController.Dispose();
 
@@ -347,26 +345,18 @@ namespace Vvr.Controller.Session.World
             AddActorsInOrderWithSpeed(5);
             ObjectObserver<ActorList>.ChangedEvent(m_Timeline);
 
-            foreach (var item in m_PlayerField)
+            foreach (var item in m_PlayerField
+                         .Concat<RuntimeActor>(m_HandActors)
+                         .Concat(m_EnemyField)
+                     )
             {
                 using var trigger = ConditionTrigger.Push(item.owner, ConditionTrigger.Game);
                 await trigger.Execute(Model.Condition.OnBattleStart, Data.stage.Id);
 
                 item.owner.ConnectTime();
-            }
-            foreach (var item in m_HandActors)
-            {
-                using var trigger = ConditionTrigger.Push(item.owner, ConditionTrigger.Game);
-                await trigger.Execute(Model.Condition.OnBattleStart, Data.stage.Id);
 
-                item.owner.ConnectTime();
-            }
-            foreach (var item in m_EnemyField)
-            {
-                using var trigger = ConditionTrigger.Push(item.owner, ConditionTrigger.Game);
-                await trigger.Execute(Model.Condition.OnBattleStart, Data.stage.Id);
-
-                item.owner.ConnectTime();
+                Connect<ITargetProvider>(item.owner.Skill);
+                Connect<ITargetProvider>(item.owner.Passive);
             }
 
             while (m_Timeline.Count > 0 && m_PlayerField.Count > 0 && m_EnemyField.Count > 0)
@@ -412,30 +402,15 @@ namespace Vvr.Controller.Session.World
                 ObjectObserver<ActorList>.ChangedEvent(m_Timeline);
             }
 
-            foreach (var item in m_PlayerField)
+            foreach (var item in m_PlayerField
+                         .Concat<RuntimeActor>(m_HandActors)
+                         .Concat(m_EnemyField))
             {
                 using var trigger = ConditionTrigger.Push(item.owner, ConditionTrigger.Game);
                 await trigger.Execute(Model.Condition.OnBattleEnd, Data.stage.Id);
 
-                item.owner.DisconnectTime();
-                item.owner.Skill.Clear();
-                item.owner.Abnormal.Clear();
-            }
-
-            foreach (var item in m_HandActors)
-            {
-                using var trigger = ConditionTrigger.Push(item.owner, ConditionTrigger.Game);
-                await trigger.Execute(Model.Condition.OnBattleEnd, Data.stage.Id);
-
-                item.owner.DisconnectTime();
-                item.owner.Skill.Clear();
-                item.owner.Abnormal.Clear();
-            }
-
-            foreach (var item in m_EnemyField)
-            {
-                using var trigger = ConditionTrigger.Push(item.owner, ConditionTrigger.Game);
-                await trigger.Execute(Model.Condition.OnBattleEnd, Data.stage.Id);
+                Disconnect<ITargetProvider>(item.owner.Skill);
+                Disconnect<ITargetProvider>(item.owner.Passive);
 
                 item.owner.DisconnectTime();
                 item.owner.Skill.Clear();
