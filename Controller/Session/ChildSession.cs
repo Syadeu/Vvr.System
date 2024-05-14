@@ -26,6 +26,7 @@ using System.Reflection;
 using System.Threading;
 using Cathei.BakingSheet.Internal;
 using Cysharp.Threading.Tasks;
+using JetBrains.Annotations;
 using UnityEngine;
 using UnityEngine.Assertions;
 using Vvr.Controller.Condition;
@@ -37,15 +38,19 @@ namespace Vvr.Controller.Session
     public abstract class ChildSession<TSessionData> : IChildSession, IChildSessionConnector
         where TSessionData : ISessionData
     {
-        private Type   m_Type;
-        private Type[] m_ConnectorTypes;
+        private          Type                        m_Type;
+        private          Type[]                      m_ConnectorTypes;
+        private readonly Dictionary<Type, IProvider> m_ConnectedProviders = new();
 
         private CancellationTokenSource m_InitializeToken;
 
         private ConditionResolver m_ConditionResolver;
 
-        protected internal Type Type => (m_Type ??= GetType());
-        protected internal Type[] ConnectorTypes
+        // IProvider[] IChildSessionConnector.ConnectedProviders => m_ConnectedProviders;
+        protected internal IReadOnlyDictionary<Type, IProvider> ConnectedProviders => m_ConnectedProviders;
+
+        protected Type Type => (m_Type ??= GetType());
+        protected Type[] ConnectorTypes
         {
             get
             {
@@ -65,6 +70,7 @@ namespace Vvr.Controller.Session
         public          Owner  Owner       { get; private set; }
         public abstract string DisplayName { get; }
 
+        [PublicAPI]
         public IParentSession Root
         {
             get
@@ -78,7 +84,9 @@ namespace Vvr.Controller.Session
                 return current;
             }
         }
+        [PublicAPI]
         public IParentSession Parent { get; private set; }
+        [PublicAPI]
         public TSessionData   Data   { get; private set; }
 
         public IReadOnlyConditionResolver ConditionResolver => m_ConditionResolver;
@@ -151,15 +159,27 @@ namespace Vvr.Controller.Session
 
         protected virtual void Connect(ConditionResolver conditionResolver) {}
 
-        private IProvider[] m_ConnectedProviders;
+        public void Connect<TProvider>(TProvider provider) where TProvider : IProvider
+        {
+            Type pType = typeof(TProvider);
+            pType = MPC.Provider.Provider.ExtractType(pType);
 
-        IProvider[] IChildSessionConnector.ConnectedProviders => m_ConnectedProviders;
+            IChildSessionConnector t = this;
+            t.Connect(pType, provider);
+        }
 
+        public void Disconnect<TProvider>() where TProvider : IProvider
+        {
+            Type pType = typeof(TProvider);
+            pType = MPC.Provider.Provider.ExtractType(pType);
+
+            IChildSessionConnector t = this;
+            t.Disconnect(pType);
+        }
         void IChildSessionConnector.Connect(Type pType, IProvider provider)
         {
-            m_ConnectedProviders ??= new IProvider[ConnectorTypes.Length];
-
             $"[Session: {Type.FullName}] Connectors {ConnectorTypes.Length}".ToLog();
+            m_ConnectedProviders[pType] = provider;
             for (var i = 0; i < ConnectorTypes.Length; i++)
             {
                 var connectorType = ConnectorTypes[i];
@@ -172,10 +192,10 @@ namespace Vvr.Controller.Session
                 }
 
                 ConnectorReflectionUtils.Connect(connectorType, this, provider);
-                m_ConnectedProviders[i] = provider;
-                $"[Session:{Type.FullName}] Connected {pType.FullName}".ToLog();
                 break;
             }
+
+            $"[Session:{Type.FullName}] Connected {pType.FullName}".ToLog();
 
             if (this is not IParentSession parentSession)
             {
@@ -193,13 +213,13 @@ namespace Vvr.Controller.Session
         {
             if (m_ConnectedProviders == null) return;
 
+            m_ConnectedProviders.Remove(pType);
             for (var i = 0; i < ConnectorTypes.Length; i++)
             {
                 var connectorType = ConnectorTypes[i];
                 if (connectorType.GetGenericArguments()[0] != pType) continue;
 
                 ConnectorReflectionUtils.Disconnect(connectorType, this);
-                m_ConnectedProviders[i] = null;
                 $"[Session:{Type.FullName}] Disconnected {pType.FullName}".ToLog();
                 break;
             }
@@ -220,7 +240,7 @@ namespace Vvr.Controller.Session
 
     internal interface IChildSessionConnector
     {
-        IProvider[] ConnectedProviders { get; }
+        // IProvider[] ConnectedProviders { get; }
 
         void Connect(Type pType, IProvider provider);
         void Disconnect(Type pType);

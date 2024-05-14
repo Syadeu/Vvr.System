@@ -20,6 +20,7 @@
 #endregion
 
 using Cysharp.Threading.Tasks;
+using JetBrains.Annotations;
 using UnityEngine.Scripting;
 using Vvr.MPC.Provider;
 
@@ -30,5 +31,10 @@ namespace Vvr.Controller.Session
     {
         UniTask Initialize(Owner owner);
         UniTask Reserve();
+
+        [PublicAPI]
+        void Connect<TProvider>(TProvider provider) where TProvider : IProvider;
+        [PublicAPI]
+        void Disconnect<TProvider>() where TProvider : IProvider;
     }
 }

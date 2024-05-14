@@ -22,7 +22,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using UnityEngine.Assertions;
@@ -32,13 +31,11 @@ using Vvr.MPC.Provider;
 namespace Vvr.Controller.Session
 {
     public abstract class ParentSession<TSessionData>
-        : ChildSession<TSessionData>, IParentSession, IGameSessionCallback,
-            IParentSessionConnector
-
+        : ChildSession<TSessionData>, IParentSession,
+            IGameSessionCallback
         where TSessionData : ISessionData
     {
         private readonly List<IChildSession> m_ChildSessions  = new();
-
 
         public  IReadOnlyList<IChildSession> ChildSessions => m_ChildSessions;
 
@@ -49,6 +46,7 @@ namespace Vvr.Controller.Session
             return base.OnReserve();
         }
 
+        [PublicAPI]
         [MustUseReturnValue]
         public async UniTask<TChildSession> CreateSession<TChildSession>(ISessionData data)
             where TChildSession : IChildSession
@@ -60,17 +58,13 @@ namespace Vvr.Controller.Session
 
             IChildSessionConnector t = this;
 
-            if (t.ConnectedProviders != null &&
-                session is IChildSessionConnector sessionConnector)
+            if (session is IChildSessionConnector sessionConnector)
             {
                 $"[Session: {Type.FullName}] Chain connector to {childType.FullName}".ToLog();
-                for (int i = 0; i < t.ConnectedProviders.Length; i++)
+                foreach (var item in ConnectedProviders)
                 {
-                    var provider = t.ConnectedProviders[i];
-                    if (provider == null) continue;
-
-                    var pType = ConnectorTypes[i];
-                    sessionConnector.Connect(pType.GetGenericArguments()[0], provider);
+                    var pType = item.Key;
+                    sessionConnector.Connect(pType, item.Value);
                 }
             }
             else $"[Session: {Type.FullName}] No connector for {childType.FullName}".ToLog();
@@ -81,7 +75,6 @@ namespace Vvr.Controller.Session
             await OnCreateSession(session);
 
             await session.Initialize(this, data);
-
             return session;
         }
         async UniTask IGameSessionCallback.OnSessionClosed(IGameSessionBase child)
@@ -92,74 +85,7 @@ namespace Vvr.Controller.Session
             m_ChildSessions.Remove(session);
         }
 
-        public void Connect<TProvider>(TProvider provider) where TProvider : IProvider
-        {
-            Type pType = typeof(TProvider);
-            pType = MPC.Provider.Provider.ExtractType(pType);
-
-            IChildSessionConnector t = this;
-            t.Connect(pType, provider);
-        }
-        public void Disconnect<TProvider>() where TProvider : IProvider
-        {
-            Type pType = typeof(TProvider);
-            pType = MPC.Provider.Provider.ExtractType(pType);
-
-            IChildSessionConnector t = this;
-            t.Disconnect(pType);
-        }
-
         protected virtual UniTask OnCreateSession(IChildSession session) => UniTask.CompletedTask;
         protected virtual UniTask OnSessionClosed(IChildSession session) => UniTask.CompletedTask;
-    }
-
-    public interface IParentSessionConnector
-    {
-        void Connect<TProvider>(TProvider provider) where TProvider : IProvider;
-    }
-
-    internal static class ConnectorReflectionUtils
-    {
-        struct ConnectorImpl : IProvider, IConnector<ConnectorImpl>
-        {
-            public void Connect(ConnectorImpl t)
-            {
-                throw new NotImplementedException();
-            }
-
-            public void Disconnect()
-            {
-                throw new NotImplementedException();
-            }
-        }
-
-        public static void Connect(Type connectorType, object connector, object value)
-        {
-            var methodInfo = connectorType.GetMethod(
-                nameof(IConnector<ConnectorImpl>.Connect),
-                BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
-
-            if (methodInfo == null)
-            {
-                $"{connectorType} not found".ToLogError();
-                return;
-            }
-
-            methodInfo.Invoke(connector, new object[] { value });
-        }
-        public static void Disconnect(Type connectorType, object connector)
-        {
-            var methodInfo = connectorType.GetMethod(
-                nameof(IConnector<ConnectorImpl>.Disconnect),
-                BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
-
-            if (methodInfo == null)
-            {
-                $"{connectorType} not found".ToLogError();
-                return;
-            }
-
-            methodInfo.Invoke(connector, null);
-        }
     }
 }

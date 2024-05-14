@@ -43,6 +43,4 @@ namespace Vvr.MPC.Provider
         /// </summary>
         void Disconnect();
     }
-
-
 }

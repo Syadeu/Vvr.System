@@ -59,11 +59,15 @@ namespace Vvr.Controller.Session.World
 
             ConditionTrigger.OnEventExecutedAsync += OnEventExecutedAsync;
 
+            Connect(ActorProvider);
+
             // TODO: skip map load
             DefaultMap = await CreateSession<DefaultMap>(default);
         }
         protected override UniTask OnReserve()
         {
+            Disconnect<IActorProvider>();
+
             m_ActorProvider.Dispose();
 
             MPC.Provider.Provider.Static.Disconnect<IStateConditionProvider>(this);
@@ -151,23 +155,6 @@ namespace Vvr.Controller.Session.World
         void IConnector<IGameConfigProvider>.Disconnect()
         {
             m_ConfigProvider = null;
-        }
-
-        protected override UniTask OnCreateSession(IChildSession session)
-        {
-            if (session is IParentSessionConnector sessionConnector)
-            {
-                sessionConnector.Connect(ActorProvider);
-            }
-            return base.OnCreateSession(session);
-        }
-        protected override UniTask OnSessionClosed(IChildSession session)
-        {
-            if (session is IParentSessionConnector actorProvider)
-            {
-                // actorProvider.Disconnect();
-            }
-            return base.OnSessionClosed(session);
         }
     }
     partial class DefaultWorld : ITimeUpdate
