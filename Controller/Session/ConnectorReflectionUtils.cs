@@ -30,6 +30,27 @@ namespace Vvr.Controller.Session
     /// </summary>
     internal static class ConnectorReflectionUtils
     {
+        public struct Wrapper : IEquatable<Wrapper>
+        {
+            public readonly uint              hash;
+            public readonly Action<IProvider> setter;
+
+            public Wrapper(uint h)
+            {
+                hash   = h;
+                setter = null;
+            }
+            public Wrapper(uint h, Action<IProvider> t)
+            {
+                hash   = h;
+                setter = t;
+            }
+
+            public bool Equals(Wrapper other)
+            {
+                return hash == other.hash;
+            }
+        }
         struct ConnectorImpl : IProvider, IConnector<ConnectorImpl>
         {
             public void Connect(ConnectorImpl t)

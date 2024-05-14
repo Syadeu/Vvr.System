@@ -220,7 +220,7 @@ namespace Vvr.Provider
                 s_Observers[t] = list;
             }
 
-            uint hash = unchecked((uint)c.GetHashCode());
+            uint hash = unchecked((uint)c.GetHashCode() ^ FNV1a32.Calculate(t.AssemblyQualifiedName));
             Assert.IsFalse(list.Contains(new Observer(){hash = hash}));
 
             list.Add(new Observer
@@ -247,12 +247,11 @@ namespace Vvr.Provider
             Type t = typeof(T);
             t = ExtractType(t);
 
+            if (!s_Observers.TryGetValue(t, out var list)) return this;
+
             c.Disconnect();
-            if (s_Observers.TryGetValue(t, out var list))
-            {
-                uint hash = unchecked((uint)c.GetHashCode());
-                list.Remove(new Observer() { hash = hash });
-            }
+            uint hash = unchecked((uint)c.GetHashCode() ^ FNV1a32.Calculate(t.AssemblyQualifiedName));
+            list.Remove(new Observer() { hash = hash });
 
             return this;
         }

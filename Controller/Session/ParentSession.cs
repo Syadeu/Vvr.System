@@ -61,7 +61,7 @@ namespace Vvr.Controller.Session
                 foreach (var item in ConnectedProviders)
                 {
                     var pType = item.Key;
-                    sessionConnector.Connect(pType, item.Value);
+                    sessionConnector.Register(pType, item.Value);
                 }
             }
             else $"[Session: {Type.FullName}] No connector for {childType.FullName}".ToLog();

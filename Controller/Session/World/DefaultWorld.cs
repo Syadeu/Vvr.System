@@ -59,14 +59,14 @@ namespace Vvr.Controller.Session.World
 
             ConditionTrigger.OnEventExecutedAsync += OnEventExecutedAsync;
 
-            Connect(ActorProvider);
+            Register(ActorProvider);
 
             // TODO: skip map load
             DefaultMap = await CreateSession<DefaultMap>(default);
         }
         protected override UniTask OnReserve()
         {
-            Disconnect<IActorProvider>();
+            Unregister<IActorProvider>();
 
             m_ActorProvider.Dispose();
 

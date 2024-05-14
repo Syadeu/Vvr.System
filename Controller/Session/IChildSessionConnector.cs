@@ -38,7 +38,7 @@ namespace Vvr.Controller.Session
         /// This method connects the specified provider interface to the session for internal use within the ChildSession class.
         /// It is used to establish communication between the session and the provider.
         /// </remarks>
-        void Connect(Type pType, IProvider provider);
+        void Register(Type pType, IProvider provider);
         /// <summary>
         /// Disconnects the provider interface from the session.
         /// </summary>
@@ -46,6 +46,6 @@ namespace Vvr.Controller.Session
         /// <remarks>
         /// This method disconnects the specified provider interface from the session. It is used to terminate communication between the session and the provider.
         /// </remarks>
-        void Disconnect(Type pType);
+        void Unregister(Type pType);
     }
 }

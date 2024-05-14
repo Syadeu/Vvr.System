@@ -148,7 +148,7 @@ namespace Vvr.Controller.Session
             Data   = data != null ? (TSessionData)data : default;
 
             m_ConditionResolver = Condition.ConditionResolver.Create(this, parent.ConditionResolver);
-            Connect(m_ConditionResolver);
+            Register(m_ConditionResolver);
 
             m_InitializeToken = new();
 
@@ -208,23 +208,23 @@ namespace Vvr.Controller.Session
         [PublicAPI]
         protected virtual UniTask OnReserve() => UniTask.CompletedTask;
 
-        protected virtual void Connect(ConditionResolver conditionResolver) {}
+        protected virtual void Register(ConditionResolver conditionResolver) {}
 
-        public void Connect<TProvider>(TProvider provider) where TProvider : IProvider
+        public void Register<TProvider>(TProvider provider) where TProvider : IProvider
         {
             Type pType = typeof(TProvider);
             pType = Vvr.Provider.Provider.ExtractType(pType);
 
             IChildSessionConnector t = this;
-            t.Connect(pType, provider);
+            t.Register(pType, provider);
         }
-        public void Disconnect<TProvider>() where TProvider : IProvider
+        public void Unregister<TProvider>() where TProvider : IProvider
         {
             Type pType = typeof(TProvider);
             pType = Vvr.Provider.Provider.ExtractType(pType);
 
             IChildSessionConnector t = this;
-            t.Disconnect(pType);
+            t.Unregister(pType);
         }
 
         public TProvider GetProvider<TProvider>() where TProvider : class, IProvider
@@ -244,7 +244,44 @@ namespace Vvr.Controller.Session
             return result;
         }
 
-        void IChildSessionConnector.Connect(Type pType, IProvider provider)
+        private readonly Dictionary<Type, LinkedList<ConnectorReflectionUtils.Wrapper>>
+            m_ConnectorWrappers = new();
+
+        public void Connect<TProvider>(IConnector<TProvider> c) where TProvider : IProvider
+        {
+            Type t = typeof(TProvider);
+            t = Vvr.Provider.Provider.ExtractType(t);
+
+            if (!m_ConnectorWrappers.TryGetValue(t, out var list))
+            {
+                list                   = new();
+                m_ConnectorWrappers[t] = list;
+            }
+
+            uint hash = unchecked((uint)c.GetHashCode() ^ FNV1a32.Calculate(t.AssemblyQualifiedName));
+
+            Assert.IsFalse(list.Contains(new(hash)));
+            ConnectorReflectionUtils.Wrapper
+                wr = new(hash, x =>
+                {
+                    if (x == null) c.Disconnect();
+                    else c.Connect((TProvider)x);
+                });
+            list.AddLast(wr);
+        }
+        public void Disconnect<TProvider>(IConnector<TProvider> c) where TProvider : IProvider
+        {
+            Type t = typeof(TProvider);
+            t = Vvr.Provider.Provider.ExtractType(t);
+
+            if (!m_ConnectorWrappers.TryGetValue(t, out var list)) return;
+
+            c.Disconnect();
+            uint hash = unchecked((uint)c.GetHashCode() ^ FNV1a32.Calculate(t.AssemblyQualifiedName));
+            list.Remove(new ConnectorReflectionUtils.Wrapper(hash));
+        }
+
+        void IChildSessionConnector.Register(Type pType, IProvider provider)
         {
             $"[Session: {Type.FullName}] Connectors {ConnectorTypes.Length}".ToLog();
             m_ConnectedProviders[pType] = provider;
@@ -263,6 +300,13 @@ namespace Vvr.Controller.Session
                 break;
             }
 
+            if (m_ConnectorWrappers.TryGetValue(pType, out var list))
+            {
+                foreach (var wr in list)
+                {
+                    wr.setter(provider);
+                }
+            }
             $"[Session:{Type.FullName}] Connected {pType.FullName}".ToLog();
 
             if (this is not IParentSession parentSession)
@@ -273,22 +317,32 @@ namespace Vvr.Controller.Session
             {
                 if (childSession is not IChildSessionConnector c) continue;
 
-                c.Connect(pType, provider);
+                c.Register(pType, provider);
             }
         }
-        void IChildSessionConnector.Disconnect(Type pType)
+        void IChildSessionConnector.Unregister(Type pType)
         {
             if (m_ConnectedProviders == null) return;
 
-            m_ConnectedProviders.Remove(pType);
-            for (var i = 0; i < ConnectorTypes.Length; i++)
+            if (m_ConnectedProviders.Remove(pType))
             {
-                var connectorType = ConnectorTypes[i];
-                if (connectorType.GetGenericArguments()[0] != pType) continue;
+                for (var i = 0; i < ConnectorTypes.Length; i++)
+                {
+                    var connectorType = ConnectorTypes[i];
+                    if (connectorType.GetGenericArguments()[0] != pType) continue;
 
-                ConnectorReflectionUtils.Disconnect(connectorType, this);
-                $"[Session:{Type.FullName}] Disconnected {pType.FullName}".ToLog();
-                break;
+                    ConnectorReflectionUtils.Disconnect(connectorType, this);
+                    $"[Session:{Type.FullName}] Disconnected {pType.FullName}".ToLog();
+                    break;
+                }
+
+                if (m_ConnectorWrappers.TryGetValue(pType, out var list))
+                {
+                    foreach (var wr in list)
+                    {
+                        wr.setter(null);
+                    }
+                }
             }
 
             if (this is not IParentSession parentSession)
@@ -300,7 +354,7 @@ namespace Vvr.Controller.Session
             {
                 if (childSession is not IChildSessionConnector c) continue;
 
-                c.Disconnect(pType);
+                c.Unregister(pType);
             }
         }
     }
