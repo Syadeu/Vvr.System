@@ -19,7 +19,7 @@
 
 #endregion
 
-namespace Vvr.MPC.Provider
+namespace Vvr.Provider
 {
     /// <summary>
     /// Represents a base provider interface for all other providers.

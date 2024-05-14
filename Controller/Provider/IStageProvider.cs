@@ -22,7 +22,7 @@
 using Cysharp.Threading.Tasks;
 using Vvr.Controller.Actor;
 using Vvr.Controller.Session.World;
-using Vvr.MPC.Provider;
+using Vvr.Provider;
 
 namespace Vvr.Controller.Provider
 {

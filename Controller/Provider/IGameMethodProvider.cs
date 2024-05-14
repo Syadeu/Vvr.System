@@ -20,7 +20,7 @@
 #endregion
 
 using Vvr.Controller.GameMethod;
-using Vvr.MPC.Provider;
+using Vvr.Provider;
 
 namespace Vvr.Controller.Provider
 {

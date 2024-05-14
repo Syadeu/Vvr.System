@@ -26,7 +26,6 @@ using UnityEngine.Assertions;
 using Vvr.Controller.Actor;
 using Vvr.Controller.Provider;
 using Vvr.Model;
-using Vvr.MPC.Provider;
 
 namespace Vvr.Controller.Passive
 {
@@ -62,7 +61,7 @@ namespace Vvr.Controller.Passive
         {
             Owner = o;
 
-            m_TargetProvider = MPC.Provider.Provider.Static.GetLazyAsync<ITargetProvider>();
+            m_TargetProvider = Vvr.Provider.Provider.Static.GetLazyAsync<ITargetProvider>();
         }
         public void Dispose()
         {

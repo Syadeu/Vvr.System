@@ -27,7 +27,7 @@ using JetBrains.Annotations;
 using UnityEngine.Assertions;
 using Vvr.Buffer;
 using Vvr.Model;
-using Vvr.MPC.Provider;
+using Vvr.Provider;
 
 namespace Vvr.Controller.Condition
 {

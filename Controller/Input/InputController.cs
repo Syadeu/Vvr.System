@@ -28,7 +28,7 @@ using UnityEngine.UI;
 using Vvr.Controller.Actor;
 using Vvr.Controller.Condition;
 using Vvr.Controller.Session.World;
-using Vvr.MPC.Provider;
+using Vvr.Provider;
 
 namespace Vvr.Controller.Input
 {
@@ -85,12 +85,12 @@ namespace Vvr.Controller.Input
 
         public InputControlController Register()
         {
-            MPC.Provider.Provider.Static.Register<IInputControlProvider>(this);
+            Vvr.Provider.Provider.Static.Register<IInputControlProvider>(this);
             return this;
         }
         public InputControlController Unregister()
         {
-            MPC.Provider.Provider.Static.Unregister<IInputControlProvider>(this);
+            Vvr.Provider.Provider.Static.Unregister<IInputControlProvider>(this);
             return this;
         }
 

@@ -22,7 +22,7 @@
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using UnityEngine.Scripting;
-using Vvr.MPC.Provider;
+using Vvr.Provider;
 
 namespace Vvr.Controller.Session
 {

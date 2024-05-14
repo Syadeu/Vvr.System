@@ -26,7 +26,7 @@ using Vvr.Controller.Condition;
 using Vvr.Controller.Skill;
 using Vvr.Controller.Stat;
 using Vvr.Model;
-using Vvr.MPC.Provider;
+using Vvr.Provider;
 
 namespace Vvr.Controller.Actor
 {

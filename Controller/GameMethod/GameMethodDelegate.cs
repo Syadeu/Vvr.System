@@ -18,7 +18,7 @@
 #endregion
 
 using Cysharp.Threading.Tasks;
-using Vvr.MPC.Provider;
+using Vvr.Provider;
 
 namespace Vvr.Controller.GameMethod
 {

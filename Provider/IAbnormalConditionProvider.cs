@@ -21,7 +21,7 @@
 
 using Vvr.Model;
 
-namespace Vvr.MPC.Provider
+namespace Vvr.Provider
 {
     /// <summary>
     /// Condition provider for only resolving abnormal.

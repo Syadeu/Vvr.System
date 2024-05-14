@@ -29,7 +29,7 @@ using UnityEngine.Assertions;
 using Vvr.Controller.Actor;
 using Vvr.Controller.Stat;
 using Vvr.Model;
-using Vvr.MPC.Provider;
+using Vvr.Provider;
 
 namespace Vvr.Controller.Condition
 {
@@ -165,7 +165,7 @@ namespace Vvr.Controller.Condition
         {
             Assert.IsFalse(Disposed);
 
-            MPC.Provider.Provider.Static
+            Vvr.Provider.Provider.Static
                 .Connect<IEventConditionProvider>(this)
                 .Connect<IStateConditionProvider>(this);
 
@@ -176,7 +176,7 @@ namespace Vvr.Controller.Condition
         {
             Assert.IsFalse(Disposed);
 
-            MPC.Provider.Provider.Static
+            Vvr.Provider.Provider.Static
                 .Disconnect<IEventConditionProvider>(this)
                 .Disconnect<IStateConditionProvider>(this);
             return this;

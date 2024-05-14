@@ -24,7 +24,7 @@ using System.Buffers;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using Vvr.Model;
-using Vvr.MPC.Provider;
+using Vvr.Provider;
 
 namespace Vvr.Controller.Condition
 {

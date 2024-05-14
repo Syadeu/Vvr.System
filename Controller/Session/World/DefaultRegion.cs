@@ -26,7 +26,7 @@ using Vvr.Controller.Actor;
 using Vvr.Controller.Condition;
 using Vvr.Controller.Provider;
 using Vvr.Model;
-using Vvr.MPC.Provider;
+using Vvr.Provider;
 
 namespace Vvr.Controller.Session.World
 {

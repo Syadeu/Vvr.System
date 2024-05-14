@@ -22,7 +22,7 @@
 using Vvr.Model;
 using Vvr.Model.Stat;
 
-namespace Vvr.MPC.Provider
+namespace Vvr.Provider
 {
     public interface IStatConditionProvider : IProvider
     {

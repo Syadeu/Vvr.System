@@ -21,7 +21,7 @@
 
 using System;
 using System.Reflection;
-using Vvr.MPC.Provider;
+using Vvr.Provider;
 
 namespace Vvr.Controller.Session
 {

@@ -35,13 +35,13 @@ namespace Vvr.Controller.Provider
 
         public ActorDataProvider Register()
         {
-            MPC.Provider.Provider.Static.Register(this);
+            Vvr.Provider.Provider.Static.Register(this);
             return this;
         }
 
         public ActorDataProvider Unregister()
         {
-            MPC.Provider.Provider.Static.Unregister(this);
+            Vvr.Provider.Provider.Static.Unregister(this);
             return this;
         }
 

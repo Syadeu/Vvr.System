@@ -33,7 +33,7 @@ using Vvr.Controller.Input;
 using Vvr.Controller.Provider;
 using Vvr.Model;
 using Vvr.Model.Stat;
-using Vvr.MPC.Provider;
+using Vvr.Provider;
 using Vvr.UI.Observer;
 
 namespace Vvr.Controller.Session.World
@@ -226,15 +226,15 @@ namespace Vvr.Controller.Session.World
 
         protected override async UniTask OnInitialize(IParentSession session, SessionData data)
         {
-            MPC.Provider.Provider.Static
+            Vvr.Provider.Provider.Static
                 .Register<ITargetProvider>(this)
                 .Register<IStateConditionProvider>(this)
                 .Register<IGameMethodProvider>(this);
 
             // await MPC.Provider.Provider.Static.ConnectAsync<IActorProvider>(this);
 
-            m_ViewProvider         = MPC.Provider.Provider.Static.GetLazyAsync<IEventViewProvider>();
-            m_InputControlProvider = MPC.Provider.Provider.Static.GetLazyAsync<IInputControlProvider>();
+            m_ViewProvider         = Vvr.Provider.Provider.Static.GetLazyAsync<IEventViewProvider>();
+            m_InputControlProvider = Vvr.Provider.Provider.Static.GetLazyAsync<IInputControlProvider>();
             m_AssetController      = new(this);
 
             m_EnemyId = Owner.Issue;
@@ -244,7 +244,7 @@ namespace Vvr.Controller.Session.World
 
         protected override UniTask OnReserve()
         {
-            MPC.Provider.Provider.Static
+            Vvr.Provider.Provider.Static
                 .Unregister<ITargetProvider>(this)
                 .Unregister<IStateConditionProvider>(this)
                 .Unregister<IGameMethodProvider>(this);

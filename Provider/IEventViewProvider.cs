@@ -22,7 +22,7 @@
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 
-namespace Vvr.MPC.Provider
+namespace Vvr.Provider
 {
     public interface IEventViewProvider : IProvider
     {

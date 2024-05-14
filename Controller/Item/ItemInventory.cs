@@ -26,7 +26,7 @@ using Vvr.Controller.Provider;
 using Vvr.Controller.Stat;
 using Vvr.Model;
 using Vvr.Model.Stat;
-using Vvr.MPC.Provider;
+using Vvr.Provider;
 
 namespace Vvr.Controller.Item
 {

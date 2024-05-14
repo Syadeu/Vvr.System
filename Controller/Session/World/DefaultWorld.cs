@@ -28,7 +28,7 @@ using Vvr.Controller.Actor;
 using Vvr.Controller.Condition;
 using Vvr.Controller.Provider;
 using Vvr.Model;
-using Vvr.MPC.Provider;
+using Vvr.Provider;
 
 namespace Vvr.Controller.Session.World
 {
@@ -52,8 +52,8 @@ namespace Vvr.Controller.Session.World
         {
             m_ActorProvider = new();
 
-            MPC.Provider.Provider.Static.Connect<IStateConditionProvider>(this);
-            MPC.Provider.Provider.Static.Connect<IGameConfigProvider>(this);
+            Vvr.Provider.Provider.Static.Connect<IStateConditionProvider>(this);
+            Vvr.Provider.Provider.Static.Connect<IGameConfigProvider>(this);
 
             TimeController.Register(this);
 
@@ -70,8 +70,8 @@ namespace Vvr.Controller.Session.World
 
             m_ActorProvider.Dispose();
 
-            MPC.Provider.Provider.Static.Disconnect<IStateConditionProvider>(this);
-            MPC.Provider.Provider.Static.Disconnect<IGameConfigProvider>(this);
+            Vvr.Provider.Provider.Static.Disconnect<IStateConditionProvider>(this);
+            Vvr.Provider.Provider.Static.Disconnect<IGameConfigProvider>(this);
 
             TimeController.Unregister(this);
 
@@ -165,7 +165,7 @@ namespace Vvr.Controller.Session.World
     {
         private async UniTask ExecuteMethod(IEventTarget o, Model.GameMethod method)
         {
-            var methodProvider = await MPC.Provider.Provider.Static.GetAsync<IGameMethodProvider>();
+            var methodProvider = await Vvr.Provider.Provider.Static.GetAsync<IGameMethodProvider>();
             await methodProvider.Resolve(method)(o);
         }
 

@@ -31,7 +31,7 @@ using Vvr.Controller.Condition;
 using Vvr.Controller.Provider;
 using Vvr.Model;
 using Vvr.Model.Stat;
-using Vvr.MPC.Provider;
+using Vvr.Provider;
 
 namespace Vvr.Controller.Skill
 {
@@ -81,8 +81,8 @@ namespace Vvr.Controller.Skill
         {
             Owner = o;
 
-            m_DataProvider   = MPC.Provider.Provider.Static.GetLazyAsync<IActorDataProvider>();
-            m_TargetProvider = MPC.Provider.Provider.Static.GetLazyAsync<ITargetProvider>();
+            m_DataProvider   = Vvr.Provider.Provider.Static.GetLazyAsync<IActorDataProvider>();
+            m_TargetProvider = Vvr.Provider.Provider.Static.GetLazyAsync<ITargetProvider>();
         }
         public void Dispose()
         {
@@ -146,7 +146,7 @@ namespace Vvr.Controller.Skill
 
             if (value.skill.Presentation.SelfEffect.IsValid())
             {
-                IEventViewProvider viewProvider = await MPC.Provider.Provider.Static.GetAsync<IEventViewProvider>();
+                IEventViewProvider viewProvider = await Vvr.Provider.Provider.Static.GetAsync<IEventViewProvider>();
                 Transform          view         = await viewProvider.Resolve(Owner);
 
                 var effectPool = GameObjectPool.Get(value.skill.Presentation.SelfEffect);
@@ -203,7 +203,7 @@ namespace Vvr.Controller.Skill
 
             // Cache effect position
             // because target can be destroyed during this skill execution (ex. actor is dead)
-            IEventViewProvider viewProvider = await MPC.Provider.Provider.Static.GetAsync<IEventViewProvider>();
+            IEventViewProvider viewProvider = await Vvr.Provider.Provider.Static.GetAsync<IEventViewProvider>();
             Vector3            viewPosition;
             {
                 Transform view = await viewProvider.Resolve(target);

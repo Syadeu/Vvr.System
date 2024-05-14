@@ -25,7 +25,7 @@ using System.Text.RegularExpressions;
 using Vvr.Model;
 using Vvr.Model.Stat;
 
-namespace Vvr.MPC.Provider
+namespace Vvr.Provider
 {
     /// <summary>
     /// Global stat provider

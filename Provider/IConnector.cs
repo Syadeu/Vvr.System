@@ -19,12 +19,9 @@
 
 #endregion
 
-using System;
-using System.Reflection;
-using UnityEngine.Assertions;
 using UnityEngine.Scripting;
 
-namespace Vvr.MPC.Provider
+namespace Vvr.Provider
 {
     /// <summary>
     /// Base connector for connects <see cref="Provider"/>

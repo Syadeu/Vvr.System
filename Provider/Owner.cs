@@ -21,7 +21,7 @@
 
 using System;
 
-namespace Vvr.MPC.Provider
+namespace Vvr.Provider
 {
     public struct Owner
     {

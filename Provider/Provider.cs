@@ -25,7 +25,7 @@ using System.Linq;
 using Cysharp.Threading.Tasks;
 using UnityEngine.Assertions;
 
-namespace Vvr.MPC.Provider
+namespace Vvr.Provider
 {
     /// <summary>
     /// Global provider that provides all <see cref="IProvider"/> to requesters.
@@ -61,7 +61,7 @@ namespace Vvr.MPC.Provider
         private static readonly Dictionary<Type, List<Observer>> s_Observers = new();
 
         /// <summary>
-        /// Extracts the base interface of a given type that inherits from <see cref="Vvr.MPC.Provider.IProvider"/>.
+        /// Extracts the base interface of a given type that inherits from <see cref="IProvider"/>.
         /// </summary>
         /// <param name="t">The type to extract the base interface from.</param>
         /// <returns>The base interface of the given type.</returns>
@@ -159,7 +159,7 @@ namespace Vvr.MPC.Provider
         /// <summary>
         /// Asynchronous operation that waits until the target provider has resolved and connects the given connector to the provider.
         /// </summary>
-        /// <typeparam name="T">The type of the provider that the connector connects to. Must implement <see cref="Vvr.MPC.Provider.IProvider"/>.</typeparam>
+        /// <typeparam name="T">The type of the provider that the connector connects to. Must implement <see cref="IProvider"/>.</typeparam>
         /// <param name="c">The connector instance that needs to be connected to the provider.</param>
         /// <returns>A <see cref="UniTask{T}"/> representing the asynchronous operation. The task will complete with the resolved provider instance.</returns>
         public async UniTask<T> ConnectAsync<T>(IConnector<T> c) where T : IProvider

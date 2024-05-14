@@ -19,7 +19,7 @@
 
 #endregion
 
-namespace Vvr.MPC.Provider
+namespace Vvr.Provider
 {
     /// <summary>
     /// Represents an event target.

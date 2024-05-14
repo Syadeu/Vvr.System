@@ -25,7 +25,7 @@ using Cysharp.Threading.Tasks;
 using UnityEngine;
 using Vvr.Controller.Actor;
 using Vvr.Model;
-using Vvr.MPC.Provider;
+using Vvr.Provider;
 
 namespace Vvr.Controller.Provider
 {
@@ -70,7 +70,7 @@ namespace Vvr.Controller.Provider
 
         public ActorProvider()
         {
-            m_DataProvider = MPC.Provider.Provider.Static.GetLazyAsync<IActorDataProvider>();
+            m_DataProvider = Vvr.Provider.Provider.Static.GetLazyAsync<IActorDataProvider>();
         }
 
         public void Dispose()

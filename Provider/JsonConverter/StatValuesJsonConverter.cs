@@ -25,7 +25,7 @@ using Newtonsoft.Json.Linq;
 using UnityEngine.Scripting;
 using Vvr.Model.Stat;
 
-namespace Vvr.MPC.Provider.JsonConverter
+namespace Vvr.Provider.JsonConverter
 {
     [Preserve]
     internal sealed class StatValuesJsonConverter : JsonConverter<StatValues>

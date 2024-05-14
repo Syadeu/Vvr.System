@@ -30,7 +30,7 @@ using JetBrains.Annotations;
 using UnityEngine;
 using UnityEngine.Assertions;
 using Vvr.Controller.Condition;
-using Vvr.MPC.Provider;
+using Vvr.Provider;
 
 namespace Vvr.Controller.Session
 {
@@ -213,7 +213,7 @@ namespace Vvr.Controller.Session
         public void Connect<TProvider>(TProvider provider) where TProvider : IProvider
         {
             Type pType = typeof(TProvider);
-            pType = MPC.Provider.Provider.ExtractType(pType);
+            pType = Vvr.Provider.Provider.ExtractType(pType);
 
             IChildSessionConnector t = this;
             t.Connect(pType, provider);
@@ -221,7 +221,7 @@ namespace Vvr.Controller.Session
         public void Disconnect<TProvider>() where TProvider : IProvider
         {
             Type pType = typeof(TProvider);
-            pType = MPC.Provider.Provider.ExtractType(pType);
+            pType = Vvr.Provider.Provider.ExtractType(pType);
 
             IChildSessionConnector t = this;
             t.Disconnect(pType);

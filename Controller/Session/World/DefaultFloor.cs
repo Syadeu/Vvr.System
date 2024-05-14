@@ -27,7 +27,7 @@ using Vvr.Controller.Actor;
 using Vvr.Controller.Condition;
 using Vvr.Controller.Provider;
 using Vvr.Model;
-using Vvr.MPC.Provider;
+using Vvr.Provider;
 using Vvr.UI.Observer;
 
 namespace Vvr.Controller.Session.World
@@ -73,7 +73,7 @@ namespace Vvr.Controller.Session.World
 
             ObjectObserver<DefaultFloor>.Get(this).EnsureContainer();
 
-            m_ViewProvider = MPC.Provider.Provider.Static.GetLazyAsync<IEventViewProvider>();
+            m_ViewProvider = Vvr.Provider.Provider.Static.GetLazyAsync<IEventViewProvider>();
 
             return base.OnInitialize(session, data);
         }

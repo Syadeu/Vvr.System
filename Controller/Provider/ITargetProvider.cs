@@ -22,7 +22,7 @@
 using System.Collections.Generic;
 using Vvr.Controller.Actor;
 using Vvr.Controller.Skill;
-using Vvr.MPC.Provider;
+using Vvr.Provider;
 
 namespace Vvr.Controller.Provider
 {

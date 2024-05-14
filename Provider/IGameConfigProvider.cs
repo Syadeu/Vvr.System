@@ -22,7 +22,7 @@
 using System.Collections.Generic;
 using Vvr.Model;
 
-namespace Vvr.MPC.Provider
+namespace Vvr.Provider
 {
     public interface IGameConfigProvider : IProvider
     {
