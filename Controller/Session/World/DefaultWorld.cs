@@ -42,10 +42,16 @@ namespace Vvr.Controller.Session.World
         private IGameConfigProvider      m_ConfigProvider;
         private IStateConditionProvider m_StateProvider;
 
+        private ActorProvider m_ActorProvider;
+
         public override string DisplayName => nameof(DefaultWorld);
+
+        public IActorProvider ActorProvider => m_ActorProvider;
 
         protected override async UniTask OnInitialize()
         {
+            m_ActorProvider = new();
+
             MPC.Provider.Provider.Static.Connect<IStateConditionProvider>(this);
             MPC.Provider.Provider.Static.Connect<IGameConfigProvider>(this);
 
@@ -58,6 +64,8 @@ namespace Vvr.Controller.Session.World
         }
         protected override UniTask OnReserve()
         {
+            m_ActorProvider.Dispose();
+
             MPC.Provider.Provider.Static.Disconnect<IStateConditionProvider>(this);
             MPC.Provider.Provider.Static.Disconnect<IGameConfigProvider>(this);
 
@@ -140,10 +148,26 @@ namespace Vvr.Controller.Session.World
             m_ConfigProvider = t;
             m_Configs = m_ConfigProvider[MapType.Global];
         }
-
         void IConnector<IGameConfigProvider>.Disconnect()
         {
             m_ConfigProvider = null;
+        }
+
+        protected override UniTask OnCreateSession(IChildSession session)
+        {
+            if (session is IParentSessionConnector sessionConnector)
+            {
+                sessionConnector.Connect(ActorProvider);
+            }
+            return base.OnCreateSession(session);
+        }
+        protected override UniTask OnSessionClosed(IChildSession session)
+        {
+            if (session is IParentSessionConnector actorProvider)
+            {
+                // actorProvider.Disconnect();
+            }
+            return base.OnSessionClosed(session);
         }
     }
     partial class DefaultWorld : ITimeUpdate

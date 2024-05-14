@@ -21,6 +21,7 @@
 
 using System;
 using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 using UnityEngine.Assertions;
 using Vvr.Controller.Actor;
 using Vvr.Controller.Provider;
@@ -53,13 +54,21 @@ namespace Vvr.Controller.Passive
 
         private IActor Owner { get; }
 
-        private ITargetProvider m_TargetProvider;
+        private AsyncLazy<ITargetProvider> m_TargetProvider;
 
         private readonly List<Value> m_Values = new();
 
         private PassiveController(IActor o)
         {
             Owner = o;
+
+            m_TargetProvider = MPC.Provider.Provider.Static.GetLazyAsync<ITargetProvider>();
+        }
+        public void Dispose()
+        {
+            m_Values.Clear();
+
+            m_TargetProvider = null;
         }
 
         public void Add(PassiveSheet.Row data)
@@ -86,27 +95,6 @@ namespace Vvr.Controller.Passive
             }
 
             m_Values[index] = boxed;
-        }
-
-        public void Dispose()
-        {
-            m_Values.Clear();
-
-            m_TargetProvider = null;
-        }
-    }
-
-    partial class PassiveController : IConnector<ITargetProvider>
-    {
-        void IConnector<ITargetProvider>.Connect(ITargetProvider t)
-        {
-            Assert.IsNotNull(t);
-            Assert.IsNull(m_TargetProvider);
-            m_TargetProvider = t;
-        }
-        void IConnector<ITargetProvider>.Disconnect()
-        {
-            m_TargetProvider = null;
         }
     }
 }

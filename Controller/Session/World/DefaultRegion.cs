@@ -24,13 +24,15 @@ using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using Vvr.Controller.Actor;
 using Vvr.Controller.Condition;
+using Vvr.Controller.Provider;
 using Vvr.Model;
 using Vvr.MPC.Provider;
 
 namespace Vvr.Controller.Session.World
 {
     [ParentSession(typeof(DefaultMap))]
-    public class DefaultRegion : ParentSession<DefaultRegion.SessionData>
+    public class DefaultRegion : ParentSession<DefaultRegion.SessionData>,
+        IConnector<IActorProvider>
     {
         public struct SessionData : ISessionData
         {
@@ -81,6 +83,15 @@ namespace Vvr.Controller.Session.World
                 currentStage = currentStage.NextStage.Ref;
                 await UniTask.Yield();
             } while (currentStage != null);
+        }
+
+        void IConnector<IActorProvider>.Connect(IActorProvider t)
+        {
+
+        }
+
+        void IConnector<IActorProvider>.Disconnect()
+        {
         }
     }
 }

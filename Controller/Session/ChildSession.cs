@@ -19,10 +19,14 @@
 
 #endregion
 
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Threading;
 using Cathei.BakingSheet.Internal;
 using Cysharp.Threading.Tasks;
+using UnityEngine;
 using UnityEngine.Assertions;
 using Vvr.Controller.Condition;
 using Vvr.MPC.Provider;
@@ -30,16 +34,50 @@ using Vvr.MPC.Provider;
 namespace Vvr.Controller.Session
 {
     [Preserve, UnityEngine.Scripting.RequireDerived]
-    public abstract class ChildSession<TSessionData> : IChildSession
+    public abstract class ChildSession<TSessionData> : IChildSession, IChildSessionConnector
         where TSessionData : ISessionData
     {
+        private Type   m_Type;
+        private Type[] m_ConnectorTypes;
+
         private CancellationTokenSource m_InitializeToken;
 
         private ConditionResolver m_ConditionResolver;
 
+        protected internal Type Type => (m_Type ??= GetType());
+        protected internal Type[] ConnectorTypes
+        {
+            get
+            {
+                if (m_ConnectorTypes == null)
+                {
+                    var tp = typeof(IConnector<>);
+                    m_ConnectorTypes =
+                        Type.GetInterfaces()
+                            .Where(x=>x.IsGenericType && x.GetGenericTypeDefinition() == tp)
+                            .ToArray();
+                }
+
+                return m_ConnectorTypes;
+            }
+        }
+
         public          Owner  Owner       { get; private set; }
         public abstract string DisplayName { get; }
 
+        public IParentSession Root
+        {
+            get
+            {
+                IParentSession current = Parent;
+                while (current is IChildSession { Parent: not null } childSession)
+                {
+                    current = childSession.Parent;
+                }
+
+                return current;
+            }
+        }
         public IParentSession Parent { get; private set; }
         public TSessionData   Data   { get; private set; }
 
@@ -112,5 +150,79 @@ namespace Vvr.Controller.Session
         protected virtual UniTask OnReserve() => UniTask.CompletedTask;
 
         protected virtual void Connect(ConditionResolver conditionResolver) {}
+
+        private IProvider[] m_ConnectedProviders;
+
+        IProvider[] IChildSessionConnector.ConnectedProviders => m_ConnectedProviders;
+
+        void IChildSessionConnector.Connect(Type pType, IProvider provider)
+        {
+            m_ConnectedProviders ??= new IProvider[ConnectorTypes.Length];
+
+            $"[Session: {Type.FullName}] Connectors {ConnectorTypes.Length}".ToLog();
+            for (var i = 0; i < ConnectorTypes.Length; i++)
+            {
+                var connectorType = ConnectorTypes[i];
+                // $"[Session:{Type.FullName}] Found {connectorType.FullName}".ToLog();
+                if (connectorType.GetGenericArguments()[0] != pType)
+                {
+                    $"{connectorType.GetGenericArguments()[0].AssemblyQualifiedName} != {pType.AssemblyQualifiedName}"
+                        .ToLog();
+                    continue;
+                }
+
+                ConnectorReflectionUtils.Connect(connectorType, this, provider);
+                m_ConnectedProviders[i] = provider;
+                $"[Session:{Type.FullName}] Connected {pType.FullName}".ToLog();
+                break;
+            }
+
+            if (this is not IParentSession parentSession)
+            {
+                return;
+            }
+            foreach (var childSession in parentSession.ChildSessions)
+            {
+                if (childSession is not IChildSessionConnector c) continue;
+
+                c.Connect(pType, provider);
+            }
+        }
+
+        void IChildSessionConnector.Disconnect(Type pType)
+        {
+            if (m_ConnectedProviders == null) return;
+
+            for (var i = 0; i < ConnectorTypes.Length; i++)
+            {
+                var connectorType = ConnectorTypes[i];
+                if (connectorType.GetGenericArguments()[0] != pType) continue;
+
+                ConnectorReflectionUtils.Disconnect(connectorType, this);
+                m_ConnectedProviders[i] = null;
+                $"[Session:{Type.FullName}] Disconnected {pType.FullName}".ToLog();
+                break;
+            }
+
+            if (this is not IParentSession parentSession)
+            {
+                return;
+            }
+
+            foreach (var childSession in parentSession.ChildSessions)
+            {
+                if (childSession is not IChildSessionConnector c) continue;
+
+                c.Disconnect(pType);
+            }
+        }
+    }
+
+    internal interface IChildSessionConnector
+    {
+        IProvider[] ConnectedProviders { get; }
+
+        void Connect(Type pType, IProvider provider);
+        void Disconnect(Type pType);
     }
 }

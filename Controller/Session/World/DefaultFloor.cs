@@ -33,7 +33,8 @@ using Vvr.UI.Observer;
 namespace Vvr.Controller.Session.World
 {
  	[ParentSession(typeof(DefaultRegion), true)]
-    public partial class DefaultFloor : ParentSession<DefaultFloor.SessionData>
+    public partial class DefaultFloor : ParentSession<DefaultFloor.SessionData>,
+        IConnector<IActorProvider>
     {
         public struct SessionData : ISessionData
         {
@@ -166,6 +167,13 @@ namespace Vvr.Controller.Session.World
             await trigger.Execute(Model.Condition.OnFloorEnded, cachedStartStageId);
 
             return floorResult;
+        }
+
+        void IConnector<IActorProvider>.Connect(IActorProvider t)
+        {
+        }
+        void IConnector<IActorProvider>.Disconnect()
+        {
         }
     }
     partial class DefaultFloor : IStageProvider

@@ -19,12 +19,18 @@
 
 #endregion
 
+using System;
+using System.Reflection;
+using UnityEngine.Assertions;
+using UnityEngine.Scripting;
+
 namespace Vvr.MPC.Provider
 {
     /// <summary>
     /// Base connector for connects <see cref="Provider"/>
     /// </summary>
     /// <typeparam name="T"></typeparam>
+    [RequireImplementors]
     public interface IConnector<in T> where T : IProvider
     {
         /// <summary>
@@ -37,4 +43,6 @@ namespace Vvr.MPC.Provider
         /// </summary>
         void Disconnect();
     }
+
+
 }

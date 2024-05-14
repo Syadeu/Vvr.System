@@ -27,15 +27,22 @@ namespace Vvr.Controller.Session.World
 {
     public static class GameWorld
     {
-        internal static IWorldSession s_WorldSession;
+        public static IWorldSession World { get; private set; }
 
         public static async UniTask<TWorldSession> GetOrCreate<TWorldSession>(Owner owner)
             where TWorldSession : IWorldSession
         {
+            if (World is TWorldSession w)
+            {
+                return w;
+            }
+
+            if (World != null) throw new NotImplementedException();
+
             var world = (TWorldSession)Activator.CreateInstance(typeof(TWorldSession));
             await world.Initialize(owner);
 
-            s_WorldSession = world;
+            World = world;
 
             return world;
         }

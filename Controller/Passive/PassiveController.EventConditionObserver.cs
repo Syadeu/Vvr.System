@@ -66,6 +66,7 @@ namespace Vvr.Controller.Passive
                 e.passive.conclusionTarget, e.passive.conclusionPosition
             );
 
+            var targetProvider = await m_TargetProvider;
             switch (e.passive.conclusionType)
             {
                 case PassiveSheet.ConclusionType.Skill:
@@ -76,7 +77,7 @@ namespace Vvr.Controller.Passive
                         return;
                     }
 
-                    foreach (var target in m_TargetProvider.FindTargets(Owner, targetDef))
+                    foreach (var target in targetProvider.FindTargets(Owner, targetDef))
                     {
                         if (!target.ConditionResolver[e.passive.executeCondition](e.passive.executeValue)) continue;
 
@@ -92,7 +93,7 @@ namespace Vvr.Controller.Passive
                         return;
                     }
 
-                    foreach (var target in m_TargetProvider.FindTargets(Owner, targetDef))
+                    foreach (var target in targetProvider.FindTargets(Owner, targetDef))
                     {
                         if (!target.ConditionResolver[e.passive.executeCondition](e.passive.executeValue)) continue;
 

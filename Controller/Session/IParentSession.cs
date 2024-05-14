@@ -19,11 +19,13 @@
 
 #endregion
 
+using System.Collections.Generic;
 using Vvr.Controller.Session.World;
 
 namespace Vvr.Controller.Session
 {
     public interface IParentSession : IGameSessionBase, ISessionTarget
     {
+        IReadOnlyList<IChildSession> ChildSessions { get; }
     }
 }

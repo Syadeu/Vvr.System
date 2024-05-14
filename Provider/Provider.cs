@@ -60,7 +60,7 @@ namespace Vvr.MPC.Provider
         private static readonly Dictionary<Type, IProvider>      s_Providers = new();
         private static readonly Dictionary<Type, List<Observer>> s_Observers = new();
 
-        private static Type ExtractType(Type t)
+        public static Type ExtractType(Type t)
         {
             if (!VvrTypeHelper.InheritsFrom<IProvider>(t))
                 throw new InvalidOperationException();

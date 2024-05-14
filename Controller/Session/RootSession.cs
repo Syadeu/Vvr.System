@@ -37,7 +37,8 @@ namespace Vvr.Controller.Session
         public          Owner  Owner       { get; private set; }
         public abstract string DisplayName { get; }
 
-        public IReadOnlyConditionResolver ConditionResolver => m_ConditionResolver;
+        public IReadOnlyList<IChildSession> ChildSessions     => m_ChildSessions;
+        public IReadOnlyConditionResolver   ConditionResolver => m_ConditionResolver;
 
         public bool Disposed { get; private set; }
 
@@ -97,13 +98,15 @@ namespace Vvr.Controller.Session
             return session;
         }
         protected virtual UniTask OnCreateSession(IChildSession session) => UniTask.CompletedTask;
+        protected virtual UniTask OnSessionClosed(IChildSession session) => UniTask.CompletedTask;
 
-        UniTask IGameSessionCallback.OnSessionClosed(IGameSessionBase child)
+        async UniTask IGameSessionCallback.OnSessionClosed(IGameSessionBase child)
         {
             IChildSession session = (IChildSession)child;
-            m_ChildSessions.Remove(session);
 
-            return UniTask.CompletedTask;
+            await OnSessionClosed(session);
+
+            m_ChildSessions.Remove(session);
         }
 
         protected virtual void Connect(ConditionResolver conditionResolver)

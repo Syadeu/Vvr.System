@@ -20,11 +20,13 @@
 #endregion
 
 using Cysharp.Threading.Tasks;
+using Vvr.Controller.Provider;
+using Vvr.MPC.Provider;
 
 namespace Vvr.Controller.Session.World
 {
     [ParentSession(typeof(DefaultWorld))]
-    public class DefaultMap : ParentSession<DefaultMap.Data>
+    public class DefaultMap : ParentSession<DefaultMap.Data>, IConnector<IActorProvider>
     {
         public struct Data : ISessionData
         {
@@ -40,6 +42,14 @@ namespace Vvr.Controller.Session.World
         {
             // TODO: skip region load
             DefaultRegion = await CreateSession<DefaultRegion>(default);
+        }
+
+        public void Connect(IActorProvider t)
+        {
+
+        }
+        public void Disconnect()
+        {
         }
     }
 }

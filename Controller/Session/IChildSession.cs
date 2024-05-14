@@ -26,6 +26,8 @@ namespace Vvr.Controller.Session
 {
     public interface IChildSession : IGameSessionBase,  ISessionTarget
     {
+        IParentSession Parent { get; }
+
         UniTask Initialize(IParentSession parent, ISessionData data);
     }
 }

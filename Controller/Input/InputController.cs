@@ -74,7 +74,7 @@ namespace Vvr.Controller.Input
         }
         public void Dispose()
         {
-            m_CancellationTokenSource.Cancel();
+            m_CancellationTokenSource?.Cancel();
 
             Unregister();
 

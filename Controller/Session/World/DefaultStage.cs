@@ -40,7 +40,7 @@ namespace Vvr.Controller.Session.World
 {
     [ParentSession(typeof(DefaultFloor), true), Preserve]
     public partial class DefaultStage : ChildSession<DefaultStage.SessionData>,
-        IConnector<IEventTargetProvider>
+        IConnector<IActorProvider>
     {
         private class ActorList : List<RuntimeActor>, IReadOnlyActorList
         {
@@ -200,7 +200,7 @@ namespace Vvr.Controller.Session.World
             }
         }
 
-        private IEventTargetProvider             m_EventTargetProvider;
+        private IActorProvider             m_ActorProvider;
         private AsyncLazy<IEventViewProvider>    m_ViewProvider;
         private AsyncLazy<IInputControlProvider> m_InputControlProvider;
 
@@ -231,7 +231,7 @@ namespace Vvr.Controller.Session.World
                 .Register<IStateConditionProvider>(this)
                 .Register<IGameMethodProvider>(this);
 
-            await MPC.Provider.Provider.Static.ConnectAsync<IEventTargetProvider>(this);
+            // await MPC.Provider.Provider.Static.ConnectAsync<IActorProvider>(this);
 
             m_ViewProvider         = MPC.Provider.Provider.Static.GetLazyAsync<IEventViewProvider>();
             m_InputControlProvider = MPC.Provider.Provider.Static.GetLazyAsync<IInputControlProvider>();
@@ -249,7 +249,7 @@ namespace Vvr.Controller.Session.World
                 .Unregister<IStateConditionProvider>(this)
                 .Unregister<IGameMethodProvider>(this);
 
-            MPC.Provider.Provider.Static.Disconnect<IEventTargetProvider>(this);
+            // MPC.Provider.Provider.Static.Disconnect<IActorProvider>(this);
 
             m_AssetController.Dispose();
 
@@ -302,7 +302,7 @@ namespace Vvr.Controller.Session.World
                 {
                     foreach (var data in Data.players)
                     {
-                        IActor target = m_EventTargetProvider.Resolve(data).CreateInstance();
+                        IActor target = m_ActorProvider.Resolve(data).CreateInstance();
                         target.Initialize(Data.playerId, data);
 
                         RuntimeActor runtimeActor = new(target, data)
@@ -327,7 +327,7 @@ namespace Vvr.Controller.Session.World
             for (int i = 0; i < Data.actors.Length; i++)
             {
                 ActorSheet.Row data   = Data.actors[i];
-                IActor         target = m_EventTargetProvider.Resolve(data).CreateInstance();
+                IActor         target = m_ActorProvider.Resolve(data).CreateInstance();
                 target.Initialize(m_EnemyId, data);
 
                 RuntimeActor runtimeActor = new(target, data)
@@ -598,14 +598,14 @@ namespace Vvr.Controller.Session.World
             }
         }
 
-        void IConnector<IEventTargetProvider>.Connect(IEventTargetProvider t)
+        void IConnector<IActorProvider>.Connect(IActorProvider t)
         {
-            Assert.IsNull(m_EventTargetProvider);
-            m_EventTargetProvider = t;
+            Assert.IsNull(m_ActorProvider);
+            m_ActorProvider = t;
         }
-        void IConnector<IEventTargetProvider>.Disconnect()
+        void IConnector<IActorProvider>.Disconnect()
         {
-            m_EventTargetProvider = null;
+            m_ActorProvider = null;
         }
     }
 }
