@@ -32,6 +32,9 @@ namespace Vvr.Model
         Addictive,
         Subtract,
 
+        Multiplier,
+        Divide,
+
         AddMultiplier,
         SubMultiplier,
         AddDivide,
@@ -43,15 +46,16 @@ namespace Vvr.Model
     public static class MethodHelper
     {
         public static readonly MethodImplDelegate
-            Override      = (_, value) => value,
+            Override      = (_,      value) => value,
             Addictive     = (source, value) => source + value,
             Subtract      = (source, value) => source - value,
+            Multiplier    = (source, value) => source * value,
+            Divide        = (source, value) => source / value,
             AddMultiplier = (source, value) => source + source * value,
             SubMultiplier = (source, value) => source - source * value,
             AddDivide     = (source, value) => source + source / value,
             SubDivide     = (source, value) => source - source / value,
-            Log           = Mathf.Log
-            ;
+            Log           = Mathf.Log;
 
         public static MethodImplDelegate ToDelegate(this Method method)
         {
@@ -61,6 +65,11 @@ namespace Vvr.Model
                     return Addictive;
                 case Method.Subtract:
                     return Subtract;
+
+                case Method.Multiplier:
+                    return Multiplier;
+                case Method.Divide:
+                    return Divide;
 
                 case Method.AddMultiplier:
                     return AddMultiplier;

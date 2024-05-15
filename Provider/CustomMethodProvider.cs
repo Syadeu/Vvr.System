@@ -81,9 +81,12 @@ namespace Vvr.Controller.CustomMethod
         class MethodValue : Element
         {
             public readonly MethodImplDelegate method;
+            public readonly short             methodType;
+
             public MethodValue(string r, Method m) : base(r)
             {
-                method = m.ToDelegate();
+                method     = m.ToDelegate();
+                methodType = (short)((short)m < (short)Method.Multiplier ? 0 : 1);
             }
 
             public float Resolve(IReadOnlyStatValues stats, float prev, float next)
@@ -114,6 +117,14 @@ namespace Vvr.Controller.CustomMethod
                             resolvedValues.Push(v.Resolve(stats));
                             break;
                         case MethodValue m:
+                            while (methods.TryPeek(out var e) &&
+                                   e.methodType >= m.methodType)
+                            {
+                                float operand2 = resolvedValues.Pop();
+                                float operand1 = resolvedValues.Pop();
+                                float result   = methods.Pop().Resolve(stats, operand1, operand2);
+                                resolvedValues.Push(result);
+                            }
                             methods.Push(m);
                             break;
                     }
