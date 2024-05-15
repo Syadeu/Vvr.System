@@ -5,13 +5,61 @@ Copyright 2024 Syadeu. All rights reserved*
 
 ------
 
-이 시스템은 MVPC, Model, View, Provider, Controller(Presenter) 으로 설계되었습니다. 
+이 시스템은 MVPC, `Model`, `View`, `Provider`, `Controller(Presenter)` 으로 설계되었습니다. 
 
-Model은 게임에서의 가장 기초적인 데이터를 다루고 있습니다. 예를 들어, [AbnormalSheet](Model/AbnormalSheet.cs)와 같이 기획에서 구성된 데이터를 기초 가공하여 저장합니다.
+`Model`은 게임에서의 가장 기초적인 데이터를 다루고 있습니다. 예를 들어, [AbnormalSheet](Model/AbnormalSheet.cs)와 같이 기획에서 구성된 데이터를 기초 가공하여 저장합니다.
 
-Provider는 Model에게서 제공받은 데이터를 Controller에게 공급합니다.
+`Provider`는 Model에게서 제공받은 데이터를 `Controller`에게 공급합니다.
 
-Controller는 최종적으로 데이터를 가공하여 View에게 제공합니다.
+`Controller`는 최종적으로 데이터를 가공하여 `View`에게 제공합니다.
+
+그리고 이 모든 자원을 최대한으로 활용하는 `Session` 을 통해 생성된 자원들을 관리합니다.
+
+------
+
+## Session
+
+이 시스템을 기반으로하는 게임은 세션을 통해 관리됩니다. 세션의 종류는 크게 3가지로 나뉘며, 각 종류에 맞는 역할을 부여받습니다.
+
+#### [ParentSession](Controller/Session/ParentSession.cs)
+
+관리하는 하위 세션(`ChildSession`)들을 통해 게임의 동작을 조정하거나, 다른 세션들로부터 정보를 집합하거나, 게임 상태를 업데이트 하는 등의 역할을 수행하게 됩니다.  예를 들어, 실제 게임에서 `ParentSession`은 게임의 한 라운드나 레벨, 게임 플레이 세션 등을 나타낼 수 있으며, 그 아래의 `ChildSession`들은 라운드나 레벨에서 발생하는 각각의 이벤트나 액션 등을 나타내게 됩니다. 
+
+`ParentSession`의 주요 역할 및 특징은 다음과 같습니다.    
+
+1. **세션 계층 관리**: `ParentSession` 객체는 하위 세션(`ChildSession`)들의 집합을 관리합니다. 이를 통해 세션 간의 계층적인 관계를 형성하고 게임의 복잡한 흐름을 관리할 수 있습니다.   
+2. **하위 세션 관리**: 하위 세션을 추가, 제거, 관리하는 역할을 수행합니다. 또한, 각 하위 세션의 상태를 관찰하고 그에 따라 알맞은 동작을 취하게 됩니다.
+3. **계층적 세션 관리**: 게임의 복잡한 흐름을 관리하기 위해 `ParentSession`은 자신의 하위에 또 다른 `ParentSession`을 가질 수도 있습니다. 이를 통해 세션 사이의 계층적인 관계를 구축하고, 복잡한 게임 로직을 여러 세션 사이로 나누어 관리할 수 있습니다.
+4. **게임 상태 통합**: 하위 세션들의 상태를 집합하여 게임의 전반적인 상태를 나타낼 수 있습니다. 예를 들어, 여러 라운드의 결과를 통합해서 게임의 최종 승자를 결정하는 등의 역할을 수행합니다.        
+5. **세션 생명주기 관리**:  세션의 생명주기의 시작과 끝을 관리합니다. 세션의 초기화, 진행, 종료등의 생명주기 단계를 제어하고 각 단계에서 필요한 동작을 수행하거나 이벤트를 발생시킵니다.        
+6. **세션 데이터 관리**: 연결된 데이터를 관리할 수 있습니다. `ParentSession`의 데이터는 특정 세션 별로 필요한 정보를 유지하고 업데이트합니다. 예를 들어, 게임 라운드의 경우 회차, 처치 횟수, 사용한 아이템 등의 정보가 이 데이터에 포함될 수 있습니다. 이 데이터는 `ParentSession`의 동작 결정에 중요한 역할을 하거나, 게임 UI에 표시될 수 있습니다.
+7. **이벤트 전파**: `ParentSession`은 시스템 내에서 발생하는 이벤트를 하위 세션에 전파하는 역할을 수행합니다. 이를 통해 하위 세션에서 해당 이벤트를 바탕으로  필요한 로직을 처리할 수 있게 됩니다. 이렇게 이벤트 전파를 통해 `ParentSession` `ChildSession` 간에 커뮤니케이션을 가능하게 합니다.      
+8. **세션 평가**: `ParentSession`은 종종 하위 세션의 성공 여부나 결과를 평가하는 역할을 수행합니다. 이를 통해 게임의 메타 레벨에서 중요한 결정을 내릴 수 있게 됩니다. 예를 들어, 게임의 각 라운드에 대한 성공 여부를 평가하고, 그 결과에 따라 게임의 전체 결과나 다음 단계를 결정하는 등의 역할을 수행하게 됩니다.       
+
+간단히 말하면, `ParentSession`은 아키텍처 설계 원칙 중 하나인 '컴포지션 오버 인헤리턴스(Composition over Inheritance)'를 따르는 객체지향 디자인 패턴입니다. 이 패턴은 재사용과 유지보수를 더 용이하게 하는 동시에, 시스템의 각 부분을 더 독립적으로 만들어 주어 시스템 중 하나의 부분에 문제가 생겨도 전체 시스템에 영향을 끼치지 않게 합니다. 
+
+#### [ChildSession](Controller/Session/ChildSession.cs)
+
+`ChildSession`은 `ParentSession`의 하위 계층에 속하는 세션 객체로, 게임의 작은 단위 동작이나 상황에 대응합니다. `ParentSession`이 통합적이고 큰 영역의 컨텍스트나 상태를 관리하는 반면, `ChildSession`은 그보다 작고 구체적인 개념을 나타내는 상황에 초점을 맞춥니다.
+
+예를 들어, `ParentSession`이 게임의 전체 라운드를 관리한다면, `ChildSession`은 게임 플레이 상황 중에 발생하는 각각의 이벤트, 예를 들어 플레이어의 특정 행동, 아이템의 사용, 몬스터와의 교전 등을 나타낼 수 있습니다.    
+
+ `ChildSession`의 주요 역할 및 특징은 다음과 같습니다:    
+
+1. **세션 생명주기 관리**: `ChildSession`은 자신이 담당하는 작은 단위의 세션 생명주기를 관리합니다. 이것은 일반적으로           세션의 시작, 진행, 종료 등의 단계를 포함합니다. 각각의 단계에서 필요한 로직을 수행하거나 이벤트를 발생시킵니다.        
+2. **세부 게임 상태 관리**: ChildSession`은 더 세부적인 게임 상태를 나타내며 관리합니다. 예를 들어, 플레이어의 특정 행동에서의 결과, 아이템 사용에 따른 게임 상태 변화, 몬스터와의 교전 결과 등을 나타내게 됩니다.
+3. **이벤트 리스닝 및 처리**: `ChildSession`은 `ParentSession`으로부터 전달받은 이벤트를 리스닝하고, 어떤 행동을 취할지 결정합니다. 이것은 어떤 특정 행동의 결과, 아이템의 사용, 일정 시간이 경과하는 등의 특정 조건에 반응하는 로직을 수행할 때 유용합니다.        
+4. **데이터 제공**: `ChildSession`은 `ParentSession`이 필요로 하는 데이터를 제공합니다. 이는 `ParentSession`이 전반적인 게임 상태를 관리하는데 필요한 정보를 제공하게 됩니다.  
+
+#### [RootSession](Controller/Session/RootSession.cs)
+
+최상단 세션입니다. 직접적으로 연결된 자식에 대해서만 관리할 권한과 의무를 갖습니다.
+
+이 세션의 구조를 사용하여 World를 구성하고, 하위 구조를 설계할 수 있습니다. 아래는 현재 기본으로 구성한 세션의 구조입니다.
+
+[DefaultWorld](Controller/Session/World/DefaultWorld.cs) -> [DefaultMap](Controller/Session/World/DefaultMap.cs) -> [DefaultRegion](Controller/Session/World/DefaultRegion.cs) -> [DefaultFloor](Controller/Session/World/DefaultFloor.cs) -> [DefaultStage](Controller/Session/World/DefaultStage.cs)
+
+World는 [GameWorld](Controller/Session/World/GameWorld.cs)를 통해 생성될 수 있으며, 각 계층 구조에 맞게 생성되어야합니다.
 
 ------
 
@@ -24,7 +72,7 @@ Excel sheet를 기반으로 설계하여 기획자의 요구사항을 맞추고,
 | Condition       | Value | Probability | ClearAllStacks | 1             | 2    | 3    |
 | OnAbnormalAdded |       | 100         | FALSE          | S0000         |      |      |
 
-위는 이상현상을 관리하는 데이터 시트 중 일부입니다. AbnormalChain 은 기획 필요에 의해 3개를 초과하는 값이 필요하더라도 프로그래머의 개입없이 행을 추가하기만 하면 자동으로 확장되는 구조를 갖고 있습니다. 
+위는 이상현상을 관리하는 데이터 시트 중 일부입니다. `AbnormalChain` 은 기획 필요에 의해 3개를 초과하는 값이 필요하더라도 프로그래머의 개입없이 행을 추가하기만 하면 자동으로 확장되는 구조를 갖고 있습니다. 
 
 | Duration  |      | TimeCondition |      |        |
 | --------- | ---- | ------------- | ---- | ------ |
@@ -40,7 +88,7 @@ Excel sheet를 기반으로 설계하여 기획자의 요구사항을 맞추고,
 
 다음과 같이 아무 패시브를 갖고있고, 손에 들고있다면 지속시간이 차감될 수 있다는 의미로 만들어질 수 있습니다.
 
-이러한 [Condition](Model/Condition.cs)(이하 조건)들은 시스템 내에서 시간 단위로 관리되며. 조건은 게임의 볼륨에 따라 매우 많이 증가할 수 있어(+64개 그 이상) Bitmask 형태를 고려하지 않았으므로, 추가적인 그룹 구조가 필요하였습니다. 이를 해결하기 위해 [ConditionQuery](Model/ConditionQuery.cs)를 설계하여 발생한 이벤트들을 최대 64개 단위로 묶어 Controller가 이를 확인할 수 있습니다.
+이러한 [Condition](Model/Condition.cs)(이하 조건)들은 시스템 내에서 시간 단위로 관리되며. 조건은 게임의 볼륨에 따라 매우 많이 증가할 수 있어(+64개 그 이상) Bitmask 형태를 고려하지 않았으므로, 추가적인 그룹 구조가 필요하였습니다. 이를 해결하기 위해 [ConditionQuery](Model/ConditionQuery.cs)를 설계하여 발생한 이벤트들을 최대 64개 단위로 묶어 `Controller`가 이를 확인할 수 있습니다.
 
 조건들은 순차 정수로 정의되어 비트 마스킹이 불가능하기 때문에 여러 조건들을 한번에 검사하는 것은 이것만으로는 불가능합니다. 이를 일일이 검사하는 것은 무의미한 시간낭비이고, 연산 낭비에 속하기 때문에 비트 마스킹을 가능하도록 하는 쿼리를 여러 연산자를 오버로딩하여 알맞게 사용할 수 있도록 설계하였습니다.
 
@@ -130,9 +178,9 @@ public void Test_4()
 
 Stat(이하 스탯)또한 기획 필요로 인해 새로운 스탯이 추가되어도 이를 별도 스탯 데이터 시트에 추가하고, 해당 ID 를 입력하면 게임 내에서 동적으로 해결되도록 설계하였습니다. 이를 가능하게 하기 위해 시트에서 값을 가져오는 [UnresolvedStatValues](Model/Stat/UnresolvedStatValues.cs)와 스탯 데이터 시트를 통해 해결된 값들을 담는 [StatValues](Model/Stat/StatValues.cs)로 설계되었습니다.
 
-스탯은 최대 64개를 기획자가 개발할 수 있도록 설계되었으며, 이때 시스템에서 직접 개입하는 스탯에 대해서는 [StatType](Model/Stat/StatType.cs)으로 관리하며, 중요 시스템에서 사용되는 스탯 값이 아닌 스탯 값들은 Unknown 스탯 값으로 구분되어 long 값을 통해 시스템에서 동적으로 추론하여 스탯을 참조하고 할당합니다.
+스탯은 최대 64개를 기획자가 개발할 수 있도록 설계되었으며, 이때 시스템에서 직접 개입하는 스탯에 대해서는 [StatType](Model/Stat/StatType.cs)으로 관리하며, 중요 시스템에서 사용되는 스탯 값이 아닌 스탯 값들은 `Unknown` 스탯 값으로 구분되어 long 값을 통해 시스템에서 동적으로 추론하여 스탯을 참조하고 할당합니다.
 
-중요 스탯 이외는 프로그래머가 인지하지 못하는 값으로 시스템에 존재하므로, 연산을 위해 다양한 Operator 를 추가하였습니다. [StatValues](Model/Stat/StatValues.cs)는 존재하는 스탯만을 위한 배열을 생성하는데 (예를 들어 HP | MP = 길이 2의 배열) 이를 각 코드에서 프로그래머가 제어하는 것은 대단히 위험하고 복잡한 작업이 될 것입니다.
+중요 스탯 이외는 프로그래머가 인지하지 못하는 값으로 시스템에 존재하므로, 연산을 위해 다양한 Operator 를 추가하였습니다. [StatValues](Model/Stat/StatValues.cs)는 존재하는 스탯만을 위한 배열을 생성하는데 (예를 들어 `HP | MP` = 길이 2의 배열) 이를 각 코드에서 프로그래머가 제어하는 것은 대단히 위험하고 복잡한 작업이 될 것입니다.
 
 ```C#
 public static StatValues operator |(StatValues x, StatType t)
@@ -254,46 +302,71 @@ public void PlusOperatorTest_3()
 
 ## Provider
 
-[Provider](Provider/Provider.cs)는 값을 제공받고, 연결된 모든 [IConnector](Provider/IConnector.cs)에게 값을 제공하는 역할을 합니다. Model로부터 데이터를 받으면 즉시 연결된 모든 Connector(대부분 Controller)에게 값을 전달하는 방식과, 필요에 의해 값을 제공받을 수 있는 Lazy(지연 제공)로 구분됩니다.
+[Provider](Provider/Provider.cs)는 값을 제공받고, 연결된 모든 [IConnector](Provider/IConnector.cs)에게 값을 제공하는 역할을 합니다. `Model`로부터 데이터를 받으면 즉시 연결된 모든 `Connector`(대부분 `Controller`)에게 값을 전달하는 방식과, 필요에 의해 값을 제공받을 수 있는 `Lazy`(지연 제공)로 구분됩니다.
 
-이벤트 객체를 직접적으로 알고있거나, 조건에 대해 제공할 의무가 있는 Controller를 위해 설계되었습니다. [DefaultStage](Controller/Session/World/DefaultStage.cs)(이하 스테이지) 객체는 스테이지에 대한 모든 액터에 대해 제공할 의무가 있는 설계상 가장 하위 Session(이하 세션)입니다. 그래서 스테이지 객체는 [IGameMethodProvider](Controller/Provider/IGameMethodProvider.cs), [ITargetProvider](Controller/Provider/ITargetProvider.cs), [IStateConditionProvider](Provider/IStateConditionProvider.cs)를 상속받고, 요청에 맞는 각 메서드를 제공합니다. 예를 들어, [GameConfigSheet](Model/GameConfigSheet.cs)에서 정의된 조건에 맞는 메서드를 생성하여 반환합니다.
+`Provider` 구조체는 서비스 로케이터 패턴을 구현합니다. `IProvider` 인터페이스를 구현하는 객체를 등록하고, 이들을 관리하게 됩니다. 관리되는 `IProvider`들은 `Type`을 통해 식별되고, `Register`, `Unregister`, `GetAsync`, `ConnectAsync`, `Connect`, `Disconnect` 등의 메소드를 통해 접근하고 조작할 수 있습니다. 
+
+1. **코드 간 결합도를 낮춤**: 서비스를 사용하는 클라이언트는 서비스 로케이터를 통해 서비스를 얻기 때문에, 원하는 서비스의 실제           구현에 대해 알 필요가 없습니다. 이를 통해 코드 간 결합도를 낮춤으로써 유지 보수성과 확장성을 높일 수 있습니다.        
+2. **서비스 교체의 용이성**: 서비스 로케이터에 서비스를 등록할 때 어떠한 인터페이스를 구현하는 지에 대한 정보만 있으면 되므로,           특정 서비스의 구현을 교체하거나 변경하는 것이 용이합니다.        
+3. **다양한 서비스 라이프사이클 관리**: 서비스 로케이터는 서비스의 라이프사이클도 관리할 수 있습니다. 이를 통해 싱글턴, 프로토타입 등 다양한 라이프사이클을 가진 서비스들을 동일한 방식으로 관리할 수 있습니다.        
+
+이벤트 객체를 직접적으로 알고있거나, 조건에 대해 제공할 의무가 있는 `Controller`를 위해 설계되었습니다. [DefaultStage](Controller/Session/World/DefaultStage.cs)(이하 스테이지) 객체는 스테이지에 대한 모든 액터에 대해 제공할 의무가 있는 설계상 가장 하위 `Session`(이하 세션)입니다. 예를 들어, [GameConfigSheet](Model/GameConfigSheet.cs)에서 정의된 조건에 맞는 메서드를 생성하여 반환합니다.
 
 ```C#
-GameMethodImplDelegate IGameMethodProvider.Resolve(GameMethod method)
+GameMethodImplDelegate IGameMethodProvider.Resolve(Model.GameMethod method)
 {
-  if (method == GameMethod.Destroy)
+  if (method == Model.GameMethod.Destroy)
   {
-    return async e =>
-    {
-      if (m_DestroyProcessing) return;
-      if (e is not IActor x) return;
+    return GameMethod_Destroy;
+  }
 
-      m_DestroyProcessing = true;
-      using (var trigger = ConditionTrigger.Push(x, nameof(GameMethod)))
-      {
-        await trigger.Execute(Condition.OnActorDead, null);
-      }
-
-      var field = x.ConditionResolver[Condition.IsPlayerActor](null) ? m_PlayerField : m_EnemyField;
-      int index = field.FindIndex(e => e.owner == x);
-      if (index < 0)
-      {
-        $"{index} not found in field {x.ConditionResolver[Condition.IsPlayerActor](null)}".ToLogError();
-        return;
-      }
-
-      RuntimeActor actor = field[index];
-
-      $"Actor {actor.owner.DisplayName} is dead {actor.owner.Stats[StatType.HP]}".ToLog();
-
-      await Delete(field, actor);
-      m_DestroyProcessing = false;
-    };
+  if (method == Model.GameMethod.ExecuteBehaviorTree)
+  {
+    return GameMethod_ExecuteBehaviorTree;
   }
 
   throw new NotImplementedException();
 }
+
+private async UniTask GameMethod_Destroy(IEventTarget e, IReadOnlyList<string> parameters)
+{
+  if (e is not IActor x) return;
+
+  // m_DestroyProcessing = true;
+  using (var trigger = ConditionTrigger.Push(x, nameof(Model.GameMethod)))
+  {
+    await trigger.Execute(Model.Condition.OnBattleEnd, null);
+    await trigger.Execute(Model.Condition.OnActorDead, null);
+  }
+
+  var field = x.ConditionResolver[Model.Condition.IsPlayerActor](null) ? m_PlayerField : m_EnemyField;
+  int index = field.FindIndex(e => e.owner == x);
+  if (index < 0)
+  {
+    $"{index} not found in field {x.ConditionResolver[Model.Condition.IsPlayerActor](null)}".ToLogError();
+    return;
+  }
+
+  RuntimeActor actor = field[index];
+
+  $"Actor {actor.owner.DisplayName} is dead {actor.owner.Stats[StatType.HP]}".ToLog();
+
+  Assert.IsFalse(Disposed);
+  await Delete(field, actor);
+}
 ```
+
+이 메소드를 상속받은 `DefaultStage` 는 `LocalProviderAttribute` 를 상속받은 `IGameMethodProvider` 를 구현하고 있습니다. 
+
+```c#
+[LocalProvider]
+public interface IGameMethodProvider : IProvider
+{
+    GameMethodImplDelegate Resolve(Model.GameMethod method);
+}
+```
+
+
 
 ### EventTarget
 
@@ -317,7 +390,7 @@ public interface IEventTarget
 
 ## Controller
 
-Controller는 시스템 내에서 최종적인 데이터 가공이 이루어지고, 실제 View 에게 공급하는 역할을 합니다. 사용자에 의해 정의된 모든 이벤트 주체는 [IEventTarget](Provider/IEventTarget.cs)을 통해 모든 조건들에 대해 검사할 수 있으며, 사용자에 의해 정의된 플레이어 객체 [IActor](Controller/Actor/IActor.cs)(이하 액터) 만을 위한 조건도 존재합니다. 이는 조건을 제공하는 Controller에서 Provider에게 해당 조건을 제공하고, [SkillController](Controller/Skill/SkillController.cs), [AbnormalController](Controller/Abnormal/AbnormalController.cs), [PassiveController](Controller/Passive/PassiveController.cs)등에서 조건들에 대해 [ConditionTrigger](Controller/Condition/ConditionTrigger.cs)로 공급하게 합니다.
+`Controller`는 시스템 내에서 최종적인 데이터 가공이 이루어지고, 실제 `View`에게 공급하는 역할을 합니다. 사용자에 의해 정의된 모든 이벤트 주체는 [IEventTarget](Provider/IEventTarget.cs)을 통해 모든 조건들에 대해 검사할 수 있으며, 사용자에 의해 정의된 플레이어 객체 [IActor](Controller/Actor/IActor.cs)(이하 액터) 만을 위한 조건도 존재합니다. 이는 조건을 제공하는 `Controller`에서 `Provider`에게 해당 조건을 제공하고, [SkillController](Controller/Skill/SkillController.cs), [AbnormalController](Controller/Abnormal/AbnormalController.cs), [PassiveController](Controller/Passive/PassiveController.cs)등에서 조건들에 대해 [ConditionTrigger](Controller/Condition/ConditionTrigger.cs)로 공급하게 합니다.
 
 ### ConditionTrigger
 
@@ -341,9 +414,9 @@ public static bool Any(IEventTarget target, Condition condition, string value)
 }
 ```
 
-공급받은 value 값은 시트에서 정의된 value 값이거나, OnHit(이 경우, value 값은 히트된 데미지를 의미)와 같이 시스템에서 발생하는 이벤트의 값 입니다. 
+공급받은 `value`값은 시트에서 정의된 `value`값이거나, `OnHit`(이 경우, `value`값은 히트된 데미지를 의미)와 같이 시스템에서 발생하는 이벤트의 값 입니다. 
 
-소멸자 패턴을 활용하여 이벤트 객체에 대한 전체 Scope(이하 스코프)를 생성하고, 해당 스코프 내에서는 그 이벤트 객체에 대한 조건임을 명시합니다.
+소멸자 패턴을 활용하여 이벤트 객체에 대한 전체 `Scope`(이하 스코프)를 생성하고, 해당 스코프 내에서는 그 이벤트 객체에 대한 조건임을 명시합니다.
 
 ```c#
 public static ConditionTrigger Push(IEventTarget target, string displayName = null)
@@ -387,7 +460,7 @@ using (var trigger = ConditionTrigger.Push(currentRuntimeActor.owner, ConditionT
 
 ### ConditionResolver
 
-Provider 구조체는 전역에 대해 제공할 의무가 있다면, [ConditionResolver](Controller/Condition/ConditionResolver.cs)는 지역에 대해서만 제공할 의무가 있는 객체입니다. 즉, 모든 이벤트 객체는 [ConditionResolver](Controller/Condition/ConditionResolver.cs)를 소유할 수 있으며, 자신에 대한 값을 제공하는 [IProvider](Provider/IProvider.cs)들을 연결하여 한번에 값을 해결할 수 있습니다.
+`Provider` 구조체는 전역에 대해 제공할 의무가 있다면, [ConditionResolver](Controller/Condition/ConditionResolver.cs)는 지역에 대해서만 제공할 의무가 있는 객체입니다. 즉, 모든 이벤트 객체는 [ConditionResolver](Controller/Condition/ConditionResolver.cs)를 소유할 수 있으며, 자신에 대한 값을 제공하는 [IProvider](Provider/IProvider.cs)들을 연결하여 한번에 값을 해결할 수 있습니다.
 
 만약, 소유한 이벤트 객체가 액터이고, 액터임으로 스탯을 보유한다고 가정할 때, 이 [ConditionResolver](Controller/Condition/ConditionResolver.cs)를 통해 특정 스탯에 대해 값을 해결 할 수 있습니다.
 
@@ -437,7 +510,7 @@ public static StatValueSetterDelegate GetSetMethod(StatType t)
 }
 ```
 
-스탯 타입(프로그램에 정의되지 않은 값도 가능)으로 해당 스탯 타입으로 연결하는 델리게이트를 얻을 수 있고, 이것을 통해 각 Controller의 기능 수행부분은 스탯이 무엇인지 알지못해도 알맞는 스탯에 대해 연산을 수행할 수 있습니다.
+스탯 타입(프로그램에 정의되지 않은 값도 가능)으로 해당 스탯 타입으로 연결하는 델리게이트를 얻을 수 있고, 이것을 통해 각 `Controller`의 기능 수행부분은 스탯이 무엇인지 알지못해도 알맞는 스탯에 대해 연산을 수행할 수 있습니다.
 
 ```C#
 void IStatModifier.UpdateValues(in IReadOnlyStatValues originalStats, ref StatValues stats)
@@ -456,26 +529,4 @@ void IStatModifier.UpdateValues(in IReadOnlyStatValues originalStats, ref StatVa
     m_IsDirty = false;
 }
 ```
-
-### Session
-
-이 시스템을 기반으로하는 게임은 세션을 통해 관리됩니다. 세션의 종류는 크게 3가지로 나뉘며, 각 종류에 맞는 역할을 부여받습니다.
-
-#### [ChildSession](Controller/Session/ChildSession.cs)
-
-최하위 세션입니다. 자식 세션은 다른 자식을 가지거나 다른 세션에 대해 관리할 권한이 없습니다.
-
-#### [ParentSession](Controller/Session/ParentSession.cs)
-
-부모 세션은 다른 자식을 갖고, 관리할 권한과 의무를 갖습니다.
-
-#### [RootSession](Controller/Session/RootSession.cs)
-
-최상단 세션입니다. 직접적으로 연결된 자식에 대해서만 관리할 권한과 의무를 갖습니다.
-
-이 세션의 구조를 사용하여 World를 구성하고, 하위 구조를 설계할 수 있습니다. 아래는 현재 기본으로 구성한 세션의 구조입니다.
-
-[DefaultWorld](Controller/Session/World/DefaultWorld.cs) -> [DefaultMap](Controller/Session/World/DefaultMap.cs) -> [DefaultRegion](Controller/Session/World/DefaultRegion.cs) -> [DefaultFloor](Controller/Session/World/DefaultFloor.cs) -> [DefaultStage](Controller/Session/World/DefaultStage.cs)
-
-World는 [GameWorld](Controller/Session/World/GameWorld.cs)를 통해 생성될 수 있으며, 각 계층 구조에 맞게 생성되어야합니다. 이와 같은 설계를 갖게된 것은 각 세션 Depth 에 맞춰서 설정된 이상현상을 부여할 수 있기 때문인데, 예를 들어 어떤 패시브는 Region(이하 지역)내에서만 활성화되는 기획일 수 있기 때문입니다. 이 경우, Floor, Stage와 상관없이 해당 지역의 세션에 액터가 존재한다면 활성화될 수 있습니다.
 
