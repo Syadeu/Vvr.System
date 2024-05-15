@@ -21,7 +21,7 @@ Copyright 2024 Syadeu. All rights reserved*
 
 이 시스템을 기반으로하는 게임은 세션을 통해 관리됩니다. 세션의 종류는 크게 3가지로 나뉘며, 각 종류에 맞는 역할을 부여받습니다.
 
-#### [ParentSession](Controller/Session/ParentSession.cs)
+### [ParentSession](Controller/Session/ParentSession.cs)
 
 관리하는 하위 세션(`ChildSession`)들을 통해 게임의 동작을 조정하거나, 다른 세션들로부터 정보를 집합하거나, 게임 상태를 업데이트 하는 등의 역할을 수행하게 됩니다.  예를 들어, 실제 게임에서 `ParentSession`은 게임의 한 라운드나 레벨, 게임 플레이 세션 등을 나타낼 수 있으며, 그 아래의 `ChildSession`들은 라운드나 레벨에서 발생하는 각각의 이벤트나 액션 등을 나타내게 됩니다. 
 
@@ -38,7 +38,7 @@ Copyright 2024 Syadeu. All rights reserved*
 
 간단히 말하면, `ParentSession`은 아키텍처 설계 원칙 중 하나인 '컴포지션 오버 인헤리턴스(Composition over Inheritance)'를 따르는 객체지향 디자인 패턴입니다. 이 패턴은 재사용과 유지보수를 더 용이하게 하는 동시에, 시스템의 각 부분을 더 독립적으로 만들어 주어 시스템 중 하나의 부분에 문제가 생겨도 전체 시스템에 영향을 끼치지 않게 합니다. 
 
-#### [ChildSession](Controller/Session/ChildSession.cs)
+### [ChildSession](Controller/Session/ChildSession.cs)
 
 `ChildSession`은 `ParentSession`의 하위 계층에 속하는 세션 객체로, 게임의 작은 단위 동작이나 상황에 대응합니다. `ParentSession`이 통합적이고 큰 영역의 컨텍스트나 상태를 관리하는 반면, `ChildSession`은 그보다 작고 구체적인 개념을 나타내는 상황에 초점을 맞춥니다.
 
@@ -51,7 +51,7 @@ Copyright 2024 Syadeu. All rights reserved*
 3. **이벤트 리스닝 및 처리**: `ChildSession`은 `ParentSession`으로부터 전달받은 이벤트를 리스닝하고, 어떤 행동을 취할지 결정합니다. 이것은 어떤 특정 행동의 결과, 아이템의 사용, 일정 시간이 경과하는 등의 특정 조건에 반응하는 로직을 수행할 때 유용합니다.        
 4. **데이터 제공**: `ChildSession`은 `ParentSession`이 필요로 하는 데이터를 제공합니다. 이는 `ParentSession`이 전반적인 게임 상태를 관리하는데 필요한 정보를 제공하게 됩니다.  
 
-#### [RootSession](Controller/Session/RootSession.cs)
+### [RootSession](Controller/Session/RootSession.cs)
 
 최상단 세션입니다. 직접적으로 연결된 자식에 대해서만 관리할 권한과 의무를 갖습니다.
 
