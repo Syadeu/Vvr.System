@@ -22,6 +22,7 @@
 using System;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
+using UnityEngine.Assertions;
 using Vvr.Model;
 using Vvr.Provider;
 
@@ -55,6 +56,8 @@ namespace Vvr.Controller.Session.World
 
         public static void RegisterConfigs(GameConfigSheet sheet)
         {
+            Assert.IsNull(s_GameConfigProvider);
+
             s_GameConfigProvider = Vvr.Provider.GameConfigProvider.Construct(sheet);
             Vvr.Provider.Provider.Static.Register<IGameConfigProvider>(s_GameConfigProvider);
         }

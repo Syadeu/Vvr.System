@@ -17,10 +17,11 @@
 // File created : 2024, 05, 12 20:05
 #endregion
 
+using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using Vvr.Provider;
 
 namespace Vvr.Controller.GameMethod
 {
-    public delegate UniTask GameMethodImplDelegate(IEventTarget target);
+    public delegate UniTask GameMethodImplDelegate(IEventTarget target, IReadOnlyList<string> parameters);
 }

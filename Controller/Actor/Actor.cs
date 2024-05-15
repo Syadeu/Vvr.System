@@ -20,6 +20,8 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -27,6 +29,7 @@ using UnityEngine.Assertions;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using Vvr.Controller.Abnormal;
 using Vvr.Controller.Asset;
+using Vvr.Controller.BehaviorTree;
 using Vvr.Controller.Condition;
 using Vvr.Controller.Item;
 using Vvr.Controller.Passive;
@@ -58,6 +61,7 @@ namespace Vvr.Controller.Actor
         private PassiveController          m_PassiveController;
         private SkillController            m_SkillController;
         private ItemInventory              m_ItemInventory;
+        private BehaviorTreeController     m_BehaviorTreeController;
         private AssetController<AssetType> m_AssetController;
 
         public Owner  Owner       { get; private set; }
@@ -101,11 +105,12 @@ namespace Vvr.Controller.Actor
 
             m_Stats = new StatValueStack(this, ta.Stats);
 
-            m_ItemInventory      = ItemInventory.GetOrCreate(this);
-            m_ConditionResolver  = global::Vvr.Controller.Condition.ConditionResolver.Create(this);
-            m_AbnormalController = AbnormalController.Create(this);
-            m_PassiveController  = PassiveController.Create(this);
-            m_SkillController    = SkillController.Create(this);
+            m_ItemInventory          = ItemInventory.GetOrCreate(this);
+            m_ConditionResolver      = global::Vvr.Controller.Condition.ConditionResolver.Create(this);
+            m_AbnormalController     = AbnormalController.Create(this);
+            m_PassiveController      = PassiveController.Create(this);
+            m_SkillController        = SkillController.Create(this);
+            m_BehaviorTreeController = new(this);
 
             m_AssetController = new AssetController<AssetType>(this);
 
@@ -135,7 +140,7 @@ namespace Vvr.Controller.Actor
         }
         public void Teardown()
         {
-            DisconnectTime();
+            ((IActor)this).DisconnectTime();
 
             m_ConditionResolver
                 .Disconnect()
@@ -146,26 +151,34 @@ namespace Vvr.Controller.Actor
             m_AbnormalController?.Dispose();
             m_PassiveController?.Dispose();
             m_SkillController?.Dispose();
+            m_BehaviorTreeController?.Dispose();
             m_ItemInventory?.Dispose();
 
-            m_ConditionResolver  = null;
-            m_AbnormalController = null;
-            m_PassiveController  = null;
-            m_SkillController    = null;
-            m_ItemInventory      = null;
+            m_ConditionResolver      = null;
+            m_AbnormalController     = null;
+            m_PassiveController      = null;
+            m_SkillController        = null;
+            m_BehaviorTreeController = null;
+            m_ItemInventory          = null;
 
             Initialized = false;
         }
 
-        public void ConnectTime()
+        void IActor.ConnectTime()
         {
             TimeController.Register(m_SkillController);
             TimeController.Register(m_AbnormalController);
         }
-        public void DisconnectTime()
+
+        void IActor.DisconnectTime()
         {
             TimeController.Unregister(m_SkillController);
             TimeController.Unregister(m_AbnormalController);
+        }
+
+        async UniTask IBehaviorTarget.Execute(IReadOnlyList<string> parameters)
+        {
+
         }
 
         public void Reset()

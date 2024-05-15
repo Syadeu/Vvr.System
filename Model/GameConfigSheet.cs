@@ -77,10 +77,11 @@ namespace Vvr.Model
         }
         public sealed class Row : SheetRow
         {
-            [UsedImplicitly] public Definition Definition { get; private set; }
-            [UsedImplicitly] public Lifecycle  Lifecycle  { get; private set; }
-            [UsedImplicitly] public Evaluation Evaluation { get; private set; }
-            [UsedImplicitly] public Execution  Execution  { get; private set; }
+            [UsedImplicitly] public Definition   Definition { get; private set; }
+            [UsedImplicitly] public Lifecycle    Lifecycle  { get; private set; }
+            [UsedImplicitly] public Evaluation   Evaluation { get; private set; }
+            [UsedImplicitly] public Execution    Execution  { get; private set; }
+            [UsedImplicitly] public List<string> Parameters { get; private set; }
         }
 
         [UsedImplicitly]

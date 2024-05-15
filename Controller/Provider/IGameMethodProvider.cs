@@ -19,11 +19,13 @@
 
 #endregion
 
+using System.Collections.Generic;
 using Vvr.Controller.GameMethod;
 using Vvr.Provider;
 
 namespace Vvr.Controller.Provider
 {
+    [LocalProvider]
     public interface IGameMethodProvider : IProvider
     {
         GameMethodImplDelegate Resolve(Model.GameMethod method);

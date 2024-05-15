@@ -28,6 +28,7 @@ namespace Vvr.Model
     {
         None = 0,
 
-        Destroy
+        Destroy,
+        ExecuteBehaviorTree
     }
 }

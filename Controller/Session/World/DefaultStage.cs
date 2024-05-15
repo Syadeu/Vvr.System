@@ -190,8 +190,7 @@ namespace Vvr.Controller.Session.World
         protected override async UniTask OnInitialize(IParentSession session, SessionData data)
         {
             Vvr.Provider.Provider.Static
-                .Register<IStateConditionProvider>(this)
-                .Register<IGameMethodProvider>(this);
+                .Register<IStateConditionProvider>(this);
 
             m_ViewProvider         = Vvr.Provider.Provider.Static.GetLazyAsync<IEventViewProvider>();
             m_InputControlProvider = Vvr.Provider.Provider.Static.GetLazyAsync<IInputControlProvider>();
@@ -209,8 +208,7 @@ namespace Vvr.Controller.Session.World
             Unregister<ITargetProvider>();
 
             Vvr.Provider.Provider.Static
-                .Unregister<IStateConditionProvider>(this)
-                .Unregister<IGameMethodProvider>(this);
+                .Unregister<IStateConditionProvider>(this);
 
             m_AssetController.Dispose();
 

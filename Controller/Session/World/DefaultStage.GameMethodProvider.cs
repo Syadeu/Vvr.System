@@ -20,11 +20,16 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
+using UnityEngine.Assertions;
 using Vvr.Controller.Actor;
+using Vvr.Controller.BehaviorTree;
 using Vvr.Controller.Condition;
 using Vvr.Controller.GameMethod;
 using Vvr.Controller.Provider;
 using Vvr.Model.Stat;
+using Vvr.Provider;
 
 namespace Vvr.Controller.Session.World
 {
@@ -36,41 +41,49 @@ namespace Vvr.Controller.Session.World
         {
             if (method == Model.GameMethod.Destroy)
             {
-                return async e =>
-                {
-                    // if (m_DestroyProcessing) return;
-                    if (e is not IActor x) return;
+                return GameMethod_Destroy;
+            }
 
-                    // m_DestroyProcessing = true;
-                    using (var trigger = ConditionTrigger.Push(x, nameof(Model.GameMethod)))
-                    {
-                        await trigger.Execute(Model.Condition.OnBattleEnd, null);
-                        await trigger.Execute(Model.Condition.OnActorDead, null);
-                    }
-
-                    var field = x.ConditionResolver[Model.Condition.IsPlayerActor](null) ? m_PlayerField : m_EnemyField;
-                    int index = field.FindIndex(e => e.owner == x);
-                    if (index < 0)
-                    {
-                        $"{index} not found in field {x.ConditionResolver[Model.Condition.IsPlayerActor](null)}".ToLogError();
-                        return;
-                    }
-
-                    RuntimeActor actor = field[index];
-
-                    $"Actor {actor.owner.DisplayName} is dead {actor.owner.Stats[StatType.HP]}".ToLog();
-
-                    await Delete(field, actor);
-
-                    // m_Timeline.Clear();
-                    // AddActorsInOrderWithSpeed(5);
-                    // ObjectObserver<ActorList>.ChangedEvent(m_Timeline);
-
-                    // m_DestroyProcessing = false;
-                };
+            if (method == Model.GameMethod.ExecuteBehaviorTree)
+            {
+                return GameMethod_ExecuteBehaviorTree;
             }
 
             throw new NotImplementedException();
+        }
+
+        private async UniTask GameMethod_Destroy(IEventTarget e, IReadOnlyList<string> parameters)
+        {
+            if (e is not IActor x) return;
+
+            // m_DestroyProcessing = true;
+            using (var trigger = ConditionTrigger.Push(x, nameof(Model.GameMethod)))
+            {
+                await trigger.Execute(Model.Condition.OnBattleEnd, null);
+                await trigger.Execute(Model.Condition.OnActorDead, null);
+            }
+
+            var field = x.ConditionResolver[Model.Condition.IsPlayerActor](null) ? m_PlayerField : m_EnemyField;
+            int index = field.FindIndex(e => e.owner == x);
+            if (index < 0)
+            {
+                $"{index} not found in field {x.ConditionResolver[Model.Condition.IsPlayerActor](null)}".ToLogError();
+                return;
+            }
+
+            RuntimeActor actor = field[index];
+
+            $"Actor {actor.owner.DisplayName} is dead {actor.owner.Stats[StatType.HP]}".ToLog();
+
+            Assert.IsFalse(Disposed);
+            await Delete(field, actor);
+        }
+
+        async UniTask GameMethod_ExecuteBehaviorTree(IEventTarget e, IReadOnlyList<string> parameters)
+        {
+            if (e is not IBehaviorTarget b) throw new InvalidOperationException();
+
+            await b.Execute(parameters);
         }
     }
 }

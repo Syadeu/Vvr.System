@@ -101,7 +101,7 @@ namespace Vvr.Controller.Session.World
                 $"[World] execute config : {target.DisplayName} : {condition}, {value}".ToLog();
 
                 m_ExecutionCount[target.GetHash()] = ++executedCount;
-                await ExecuteMethod(target, config.Execution.Method);
+                await ExecuteMethod(target, config.Execution.Method, config.Parameters);
             }
         }
 
@@ -168,10 +168,11 @@ namespace Vvr.Controller.Session.World
     }
     partial class DefaultWorld : ITimeUpdate
     {
-        private async UniTask ExecuteMethod(IEventTarget o, Model.GameMethod method)
+        private async UniTask ExecuteMethod(IEventTarget o, Model.GameMethod method, IReadOnlyList<string> parameters)
         {
-            var methodProvider = await Vvr.Provider.Provider.Static.GetAsync<IGameMethodProvider>();
-            await methodProvider.Resolve(method)(o);
+            // var methodProvider = await Vvr.Provider.Provider.Static.GetAsync<IGameMethodProvider>();
+            var methodProvider = GetProvider<IGameMethodProvider>();
+            await methodProvider.Resolve(method)(o, parameters);
         }
 
         async UniTask ITimeUpdate.OnUpdateTime(int currentTime, int deltaTime)

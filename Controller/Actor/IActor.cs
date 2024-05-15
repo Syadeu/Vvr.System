@@ -22,6 +22,7 @@
 using JetBrains.Annotations;
 using Vvr.Controller.Abnormal;
 using Vvr.Controller.Asset;
+using Vvr.Controller.BehaviorTree;
 using Vvr.Controller.Condition;
 using Vvr.Controller.Passive;
 using Vvr.Controller.Skill;
@@ -31,7 +32,7 @@ using Vvr.Provider;
 
 namespace Vvr.Controller.Actor
 {
-    public interface IActor : IConditionTarget
+    public interface IActor : IConditionTarget, IBehaviorTarget
     {
         string DataID { get; }
 
