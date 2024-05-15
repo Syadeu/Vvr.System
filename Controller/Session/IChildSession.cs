@@ -49,11 +49,11 @@ namespace Vvr.Controller.Session
         IParentSession Parent { get; }
 
         /// <summary>
-        /// Gets the provider of the specified type.
+        /// Recursively gets the provider of the specified type.
         /// </summary>
         /// <typeparam name="TProvider">The type of the provider to retrieve.</typeparam>
         /// <returns>The provider of the specified type if it exists, otherwise null.</returns>
         [PublicAPI]
-        TProvider GetProvider<TProvider>() where TProvider : class, IProvider;
+        TProvider GetProviderRecursive<TProvider>() where TProvider : class, IProvider;
     }
 }

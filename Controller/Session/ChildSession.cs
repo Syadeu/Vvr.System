@@ -229,7 +229,7 @@ namespace Vvr.Controller.Session
             t.Unregister(pType);
         }
 
-        public TProvider GetProvider<TProvider>() where TProvider : class, IProvider
+        public TProvider GetProviderRecursive<TProvider>() where TProvider : class, IProvider
         {
             if (this is TProvider p) return p;
 
@@ -238,7 +238,7 @@ namespace Vvr.Controller.Session
             {
                 foreach (var s in parentSession.ChildSessions)
                 {
-                    result = s.GetProvider<TProvider>();
+                    result = s.GetProviderRecursive<TProvider>();
                     if (result != null) break;
                 }
             }

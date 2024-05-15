@@ -163,7 +163,7 @@ namespace Vvr.Controller.Session.World
     {
         private async UniTask ExecuteMethod(IEventTarget o, Model.GameMethod method, IReadOnlyList<string> parameters)
         {
-            var methodProvider = GetProvider<IGameMethodProvider>();
+            var methodProvider = GetProviderRecursive<IGameMethodProvider>();
             await methodProvider.Resolve(method)(o, parameters);
         }
 

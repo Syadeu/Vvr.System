@@ -316,7 +316,7 @@ public void PlusOperatorTest_3()
 2. **서비스 교체의 용이성**: 서비스 로케이터에 서비스를 등록할 때 어떠한 인터페이스를 구현하는 지에 대한 정보만 있으면 되므로,           특정 서비스의 구현을 교체하거나 변경하는 것이 용이합니다.        
 3. **다양한 서비스 라이프사이클 관리**: 서비스 로케이터는 서비스의 라이프사이클도 관리할 수 있습니다. 이를 통해 싱글턴, 프로토타입 등 다양한 라이프사이클을 가진 서비스들을 동일한 방식으로 관리할 수 있습니다.        
 
-`IProvider` 인터페이스는 이벤트 객체를 직접적으로 알고있거나, 조건에 대해 제공할 의무가 있는 `Controller`를 위해 설계되었습니다. [DefaultStage](Controller/Session/World/DefaultStage.cs)(이하 스테이지) 객체는 스테이지에 대한 모든 액터에 대해 제공할 의무가 있는 설계상 가장 하위 `Session`(이하 세션)입니다. 예를 들어, [GameConfigSheet](Model/GameConfigSheet.cs)에서 정의된 조건에 맞는 메서드를 생성하여 반환합니다.
+`IProvider` 인터페이스는 이벤트 객체를 직접적으로 알고있거나, 조건에 대해 제공할 의무가 있는 `Controller`를 위해 설계되었습니다. [DefaultStage](Controller/Session/World/DefaultStage.cs) 객체는 스테이지에 대한 모든 액터에 대해 제공할 의무가 있는 설계상 가장 하위 `Session`입니다. 예를 들어, [GameConfigSheet](Model/GameConfigSheet.cs)에서 정의된 조건에 맞는 메서드를 생성하여 반환합니다.
 
 ```C#
 GameMethodImplDelegate IGameMethodProvider.Resolve(Model.GameMethod method)
@@ -372,7 +372,7 @@ public interface IGameMethodProvider : IProvider
 }
 ```
 
-로컬로 마킹된 `IProvider`는 전역 `Provider`를 통해 공급될 수 없습니다. 상위 객체로부터 의존성을 주입받거나, 상위 객체로 부터 하위 객체의 구현을 모르더라도 사용할 수 있게 합니다. `DefaultStage` 는 `IConnector<IActorProvider>` 인터페이스를 상속받아 상위 세션으로부터 `IActorProvider`에 대한 의존성 주입을 하고 있습니다. 여기서 상위 세션인 `DefaultWorld` 는 `IActorProvider` 를 구현하고 등록하고 있습니다. 
+로컬로 마킹된 `IProvider`는 전역 `Provider`를 통해 공급될 수 없고, 상위 객체로부터 의존성을 주입받아야합니다. `DefaultStage` 는 `IConnector<IActorProvider>` 인터페이스를 상속받아 상위 세션으로부터 `IActorProvider`에 대한 의존성 주입을 하고 있습니다. 여기서 상위 세션인 `DefaultWorld` 는 `IActorProvider` 를 구현하고 등록하고 있습니다. 
 
 ```c#
 public partial class DefaultWorld : RootSession, IWorldSession,
@@ -381,7 +381,7 @@ public partial class DefaultWorld : RootSession, IWorldSession,
         IActorProvider
 ```
 
-상위 세션이 `IProvider`를 가지고 있다면 하위 세션이 생성될 때 생성된 세션에 대해 해당 `IProvider`에 대한 의존성을 검사하고 주입합니다.
+상위 세션이 `IProvider`를 가지고 있다면 하위 세션이 생성될 때 생성된 세션에 대해 해당 `IProvider`에 대한 의존성을 검사하고 주입합니다. 또한, 상위 세션은 자신과 하위 세션에 대해 `IProvider`에 대해 검사하고 반환받을 수 있습니다.
 
 ### EventTarget
 
