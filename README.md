@@ -79,7 +79,7 @@ Excel sheet를 기반으로 설계하여 기획자의 요구사항을 맞추고,
 | DelayTime | Time | 1             | 2    | 3      |
 |           | 10   | Always        | AND  | Always |
 
-지속시간에 대한 제어도 프로그래머의 별도 개입없이 가능하도록 설계되었습니다. TimeCondition 또한 동적으로 배열이 할당될 수 있으며, OR, AND 게이트 사용으로 게임의 필수 컨디션들을 연산할 수 있습니다.
+지속시간에 대한 제어도 프로그래머의 별도 개입없이 가능하도록 설계되었습니다. `TimeCondition` 또한 동적으로 배열이 할당될 수 있으며, `OR`, `AND` 게이트 사용으로 게임의 필수 컨디션들을 연산할 수 있습니다.
 
 | TimeCondition |      |          |
 | ------------- | ---- | -------- |
@@ -366,7 +366,7 @@ public interface IGameMethodProvider : IProvider
 }
 ```
 
-로컬로 마킹된 `IProvider`는 전역 `Provider`를 통해 공급될 수 없고, 각 객체의 상위 객체로부터 의존성을 주입받거나, 상위 객체로 부터 하위 객체의 구현을 모르더라도 사용할 수 있게 합니다. `DefaultStage` 는 `IConnector<IActorProvider>` 인터페이스를 상속받아 상위 세션으로부터 `IActorProvider`에 대한 의존성 주입을 하고 있습니다. 여기서 상위 세션인 `DefaultWorld` 는 `IActorProvider` 를 구현하고 등록하고 있습니다. 
+로컬로 마킹된 `IProvider`는 전역 `Provider`를 통해 공급될 수 없습니다. 상위 객체로부터 의존성을 주입받거나, 상위 객체로 부터 하위 객체의 구현을 모르더라도 사용할 수 있게 합니다. `DefaultStage` 는 `IConnector<IActorProvider>` 인터페이스를 상속받아 상위 세션으로부터 `IActorProvider`에 대한 의존성 주입을 하고 있습니다. 여기서 상위 세션인 `DefaultWorld` 는 `IActorProvider` 를 구현하고 등록하고 있습니다. 
 
 ```c#
 public IActorProvider ActorProvider => m_ActorProvider;

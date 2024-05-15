@@ -35,7 +35,8 @@ namespace Vvr.Controller.Session.World
     [Preserve]
     public partial class DefaultWorld : RootSession, IWorldSession,
         IConnector<IStateConditionProvider>,
-        IConnector<IGameConfigProvider>
+        IConnector<IGameConfigProvider>,
+        IActorProvider
     {
         public DefaultMap     DefaultMap { get; private set; }
 
@@ -60,15 +61,11 @@ namespace Vvr.Controller.Session.World
 
             ConditionTrigger.OnEventExecutedAsync += OnEventExecutedAsync;
 
-            Register(ActorProvider);
-
             // TODO: skip map load
             DefaultMap = await CreateSession<DefaultMap>(default);
         }
         protected override UniTask OnReserve()
         {
-            Unregister<IActorProvider>();
-
             m_ActorProvider.Dispose();
 
             Vvr.Provider.Provider.Static.Disconnect<IStateConditionProvider>(this);
@@ -161,6 +158,8 @@ namespace Vvr.Controller.Session.World
         {
             m_Configs = null;
         }
+
+        IActor IActorProvider.Resolve(ActorSheet.Row data) => m_ActorProvider.Resolve(data);
     }
     partial class DefaultWorld : ITimeUpdate
     {
