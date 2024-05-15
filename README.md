@@ -381,7 +381,7 @@ public partial class DefaultWorld : RootSession, IWorldSession,
         IActorProvider
 ```
 
-상위 세션이 `IProvider`를 가지고 있다면 하위 세션이 생성될 때 생성된 세션에 대해 해당 `IProvider`에 대한 의존성을 검사하고 주입합니다. 또한, 상위 세션은 자신과 하위 세션에 대해 `IProvider`에 대해 검사하고 반환받을 수 있습니다.
+상위 세션이 `IProvider`를 가지고 있다면 하위 세션이 생성될 때 생성된 세션에 대해 해당 `IProvider`에 대한 의존성을 검사하고 주입합니다. 또한, 상위 세션은 하위 세션에 대해 `IProvider`에 대해 검사하고 반환받을 수 있습니다.
 
 ### EventTarget
 

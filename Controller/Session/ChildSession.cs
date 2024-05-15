@@ -231,7 +231,8 @@ namespace Vvr.Controller.Session
 
         public TProvider GetProviderRecursive<TProvider>() where TProvider : class, IProvider
         {
-            if (this is TProvider p) return p;
+            // XXX: Possible destroying system design
+            // if (this is TProvider p) return p;
 
             TProvider result = null;
             if (this is IParentSession parentSession)
