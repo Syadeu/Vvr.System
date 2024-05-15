@@ -32,9 +32,7 @@ namespace Vvr.Controller.Session.World
     {
         private static GameConfigProvider s_GameConfigProvider;
 
-        public static IWorldSession       World              { get; private set; }
-
-        public static IGameConfigProvider GameConfigProvider => s_GameConfigProvider;
+        public static IWorldSession World { get; private set; }
 
         public static async UniTask<TWorldSession> GetOrCreate<TWorldSession>(Owner owner)
             where TWorldSession : IWorldSession
@@ -51,6 +49,11 @@ namespace Vvr.Controller.Session.World
 
             World = world;
 
+            if (s_GameConfigProvider != null)
+            {
+                World.Register(s_GameConfigProvider);
+            }
+
             return world;
         }
 
@@ -59,7 +62,7 @@ namespace Vvr.Controller.Session.World
             Assert.IsNull(s_GameConfigProvider);
 
             s_GameConfigProvider = Vvr.Provider.GameConfigProvider.Construct(sheet);
-            Vvr.Provider.Provider.Static.Register<IGameConfigProvider>(s_GameConfigProvider);
+            World?.Register<IGameConfigProvider>(s_GameConfigProvider);
         }
     }
 }

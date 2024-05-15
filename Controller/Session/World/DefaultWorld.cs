@@ -39,7 +39,6 @@ namespace Vvr.Controller.Session.World
     {
         public DefaultMap     DefaultMap { get; private set; }
 
-        private IGameConfigProvider      m_ConfigProvider;
         private IStateConditionProvider m_StateProvider;
 
         private ActorProvider m_ActorProvider;
@@ -56,7 +55,6 @@ namespace Vvr.Controller.Session.World
             m_ActorProvider = new();
 
             Vvr.Provider.Provider.Static.Connect<IStateConditionProvider>(this);
-            Vvr.Provider.Provider.Static.Connect<IGameConfigProvider>(this);
 
             TimeController.Register(this);
 
@@ -74,7 +72,6 @@ namespace Vvr.Controller.Session.World
             m_ActorProvider.Dispose();
 
             Vvr.Provider.Provider.Static.Disconnect<IStateConditionProvider>(this);
-            Vvr.Provider.Provider.Static.Disconnect<IGameConfigProvider>(this);
 
             TimeController.Unregister(this);
 
@@ -158,19 +155,17 @@ namespace Vvr.Controller.Session.World
 
         void IConnector<IGameConfigProvider>.Connect(IGameConfigProvider t)
         {
-            m_ConfigProvider = t;
-            m_Configs = m_ConfigProvider[MapType.Global];
+            m_Configs = t[MapType.Global];
         }
         void IConnector<IGameConfigProvider>.Disconnect()
         {
-            m_ConfigProvider = null;
+            m_Configs = null;
         }
     }
     partial class DefaultWorld : ITimeUpdate
     {
         private async UniTask ExecuteMethod(IEventTarget o, Model.GameMethod method, IReadOnlyList<string> parameters)
         {
-            // var methodProvider = await Vvr.Provider.Provider.Static.GetAsync<IGameMethodProvider>();
             var methodProvider = GetProvider<IGameMethodProvider>();
             await methodProvider.Resolve(method)(o, parameters);
         }
