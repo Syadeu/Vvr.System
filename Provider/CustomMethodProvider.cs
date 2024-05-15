@@ -66,11 +66,11 @@ namespace Vvr.Controller.CustomMethod
 
             public override float Resolve(IReadOnlyStatValues stats) => value;
         }
-        class ReferenceValue : Variable
+        class StatReferenceValue : Variable
         {
             public readonly StatType valueReference;
 
-            public ReferenceValue(string r, StatType v) : base(r)
+            public StatReferenceValue(string r, StatType v) : base(r)
             {
                 valueReference = v;
             }
@@ -162,7 +162,10 @@ namespace Vvr.Controller.CustomMethod
                 {
                     if (refValues.TryGetValue(entry, out var refVal))
                     {
-                        elements.Add(new ReferenceValue(entry, StatProvider.Static[refVal.Id]));
+                        if (StatProvider.Static.TryGetType(refVal.Id, out var statType))
+                            elements.Add(new StatReferenceValue(entry, statType));
+                        else
+                            throw new NotImplementedException();
                     }
                     else
                         elements.Add(new RawValue(entry, float.Parse(entry)));

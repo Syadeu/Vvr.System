@@ -61,6 +61,11 @@ namespace Vvr.Provider
             }
         }
 
+        public bool TryGetType(string id, out StatType result)
+        {
+            return m_Map.TryGetValue(id, out result);
+        }
+
         bool IStatConditionProvider.Resolve(
             IReadOnlyStatValues centerStats,
             IReadOnlyStatValues stats, OperatorCondition condition, string value)

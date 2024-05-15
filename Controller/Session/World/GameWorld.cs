@@ -20,14 +20,20 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
+using Vvr.Model;
 using Vvr.Provider;
 
 namespace Vvr.Controller.Session.World
 {
     public static class GameWorld
     {
-        public static IWorldSession World { get; private set; }
+        private static GameConfigProvider s_GameConfigProvider;
+
+        public static IWorldSession       World              { get; private set; }
+
+        public static IGameConfigProvider GameConfigProvider => s_GameConfigProvider;
 
         public static async UniTask<TWorldSession> GetOrCreate<TWorldSession>(Owner owner)
             where TWorldSession : IWorldSession
@@ -45,6 +51,12 @@ namespace Vvr.Controller.Session.World
             World = world;
 
             return world;
+        }
+
+        public static void RegisterConfigs(GameConfigSheet sheet)
+        {
+            s_GameConfigProvider = Vvr.Provider.GameConfigProvider.Construct(sheet);
+            Vvr.Provider.Provider.Static.Register<IGameConfigProvider>(s_GameConfigProvider);
         }
     }
 }

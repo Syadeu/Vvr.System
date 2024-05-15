@@ -19,6 +19,7 @@
 
 #endregion
 
+using System;
 using System.Collections.Generic;
 using Vvr.Model;
 
@@ -27,5 +28,45 @@ namespace Vvr.Provider
     public interface IGameConfigProvider : IProvider
     {
         IEnumerable<GameConfigSheet.Row> this[MapType t] { get; }
+    }
+
+    public sealed class GameConfigProvider : IGameConfigProvider
+    {
+        public static GameConfigProvider Construct(GameConfigSheet sheet)
+        {
+            Dictionary<MapType, LinkedList<GameConfigSheet.Row>> configs = new();
+            foreach (var item in sheet)
+            {
+                if (!configs.TryGetValue(item.Lifecycle.Map, out var list))
+                {
+                    list                        = new();
+                    configs[item.Lifecycle.Map] = list;
+                }
+
+                list.AddLast(item);
+            }
+
+            return new GameConfigProvider(configs);
+        }
+
+        private readonly Dictionary<MapType, LinkedList<GameConfigSheet.Row>> m_Configs;
+
+        IEnumerable<GameConfigSheet.Row> IGameConfigProvider.this[MapType t]
+        {
+            get
+            {
+                if (!m_Configs.TryGetValue(t, out var list))
+                {
+                    return Array.Empty<GameConfigSheet.Row>();
+                }
+
+                return list;
+            }
+        }
+
+        private GameConfigProvider(Dictionary<MapType, LinkedList<GameConfigSheet.Row>> c)
+        {
+            m_Configs = c;
+        }
     }
 }
