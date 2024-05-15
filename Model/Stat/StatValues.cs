@@ -30,7 +30,7 @@ using UnityEngine.Assertions;
 namespace Vvr.Model.Stat
 {
     public delegate float StatValueGetterDelegate(in IReadOnlyStatValues stat);
-    public delegate void StatValueSetterDelegate(in StatValues stat, float value);
+    public delegate void StatValueSetterDelegate(ref StatValues stat, float value);
 
     /// <summary>
     /// Represents a struct that holds a collection of Actor stat values.
@@ -66,7 +66,7 @@ namespace Vvr.Model.Stat
         {
             if (!s_CachedSetter.TryGetValue(t, out var d))
             {
-                d              = (in StatValues x, float value) => x.SetValue(t, value);
+                d              = (ref StatValues x, float value) => x.SetValue(t, value);
                 s_CachedSetter[t] = d;
             }
 

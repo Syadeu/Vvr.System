@@ -65,7 +65,7 @@ namespace Vvr.Controller.Abnormal
                 int length = e.updateCount;
                 for (int i = 0; i < length; i++)
                 {
-                    e.abnormal.setter(stats, e.abnormal.method(
+                    e.abnormal.setter(ref stats, e.abnormal.method(
                         e.abnormal.getter(stats),
                         e.abnormal.value
                     ));

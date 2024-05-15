@@ -502,10 +502,8 @@ public ConditionResolver Connect(IStatValueStack stats, IStatConditionProvider p
 
 ```C#
 public delegate float StatValueGetterDelegate(in IReadOnlyStatValues stat);
-public delegate void StatValueSetterDelegate(in StatValues stat, float value);
-```
+public delegate void StatValueSetterDelegate(ref StatValues stat, float value);
 
-```C#
 public static StatValueGetterDelegate GetGetMethod(StatType t)
 {
     if (!s_CachedGetter.TryGetValue(t, out var d))
@@ -517,34 +515,34 @@ public static StatValueGetterDelegate GetGetMethod(StatType t)
 }
 public static StatValueSetterDelegate GetSetMethod(StatType t)
 {
-    if (!s_CachedSetter.TryGetValue(t, out var d))
-    {
-        d              = (in StatValues x, float value) => x.SetValue(t, value);
-        s_CachedSetter[t] = d;
-    }
+  if (!s_CachedSetter.TryGetValue(t, out var d))
+  {
+    d              = (ref StatValues x, float value) => x.SetValue(t, value);
+    s_CachedSetter[t] = d;
+  }
 
-    return d;
+  return d;
 }
 ```
 
 스탯 타입(프로그램에 정의되지 않은 값도 가능)으로 해당 스탯 타입으로 연결하는 델리게이트를 얻을 수 있고, 이것을 통해 각 `Controller`의 기능 수행 부분은 스탯이 무엇인지 알지못해도 알맞는 스탯에 대해 연산을 수행할 수 있습니다.
 
 ```C#
- void IStatModifier.UpdateValues(in IReadOnlyStatValues originalStats, ref StatValues stats)
- {
-   foreach (Value e in m_Values.OrderBy(ValueMethodOrderComparer.Selector, ValueMethodOrderComparer.Static))
-   {
-     int length = e.updateCount;
-     for (int i = 0; i < length; i++)
-     {
-       e.abnormal.setter(stats, e.abnormal.method(
-         e.abnormal.getter(stats),
-         e.abnormal.value
-       ));
-     }
-   }
-   m_IsDirty = false;
- }
+void IStatModifier.UpdateValues(in IReadOnlyStatValues originalStats, ref StatValues stats)
+{
+  foreach (Value e in m_Values.OrderBy(ValueMethodOrderComparer.Selector, ValueMethodOrderComparer.Static))
+  {
+    int length = e.updateCount;
+    for (int i = 0; i < length; i++)
+    {
+      e.abnormal.setter(ref stats, e.abnormal.method(
+        e.abnormal.getter(stats),
+        e.abnormal.value
+      ));
+    }
+  }
+  m_IsDirty = false;
+}
 ```
 
 이것은 개방-폐쇄 원칙(Open-Closed Principle, OCP)을 적용한 것으로, 메서드의 모든 부분이 추상화에 의존하고 있기 때문입니다. 실제로 참조하고 있는 `Value`의 `setter`와 `getter`는 `StatValues`에서 캐시된 델리게이트를 전달받고 있습니다.
