@@ -185,6 +185,7 @@ namespace Vvr.Controller.Condition
             Vvr.Provider.Provider.Static
                 .Disconnect<IEventConditionProvider>(this)
                 .Disconnect<IStateConditionProvider>(this);
+            Connected = false;
             return this;
         }
 
