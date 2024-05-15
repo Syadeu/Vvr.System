@@ -31,6 +31,12 @@ namespace Vvr.Controller.Session
     /// </summary>
     public interface IChildSession : IGameSessionBase, ISessionTarget
     {
+        /// <summary>
+        /// Represents the type of the session.
+        /// </summary>
+        /// <remarks>
+        /// The session type is obtained by calling the Type property of the implementing class.
+        /// </remarks>
         public Type Type { get; }
 
         /// <summary>
