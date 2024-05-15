@@ -557,7 +557,7 @@ public RuntimeAbnormal(AbnormalSheet.Row d)
 {
   // ....
   getter     = StatValues.GetGetMethod(targetStat);
-	setter     = StatValues.GetSetMethod(targetStat);
+  setter     = StatValues.GetSetMethod(targetStat);
   // ....
 }
 ```
