@@ -399,7 +399,9 @@ public interface IEventTarget
 }
 ```
 
-[Owner](Provider/Owner.cs)를 통해 각 클라이언트를 구분하거나 AI 를 구분지을 수 있습니다.
+이 시스템으로 관리되는 모든 이벤트 객체는 `IEventTarget` 을 상속받습니다. 이는 의존성 역전 원칙(Dependency Inversion Principle, DIP)에 따른 것으로, 각 인터페이스를 사용하는 클래스는 구체적인 구현물이 아닌 추상화에 의존하며, 각 구현 클래스는 이 인터페이스를 구현함으로써 상세 사항이 추상화를 향해 의존하게 됩니다. 이로 인해 각 클래스와 모듈 사이의 결합도는 낮아지고, 재사용성과 테스트 용이성은 증가하게 됩니다. 또한 이는 시스템 구성 요소 간의 유연한 상호 작용을 가능하게 하여 변화에 더 잘 적응하고 확장할 수 있는 소프트웨어 디자인을 가능하게 합니다.    
+
+`IEventTarget`은 공통 속성으로 `DisplayName`와 `Disposed`, [Owner](Provider/Owner.cs)를 갖고있고, `Owner`를 통해 각 클라이언트를 구분하거나 AI 를 구분지을 수 있습니다.
 
 ------
 
@@ -409,7 +411,7 @@ public interface IEventTarget
 
 ### ConditionTrigger
 
-[ConditionTrigger](Controller/Condition/ConditionTrigger.cs)는 게임내 이벤트들에 대한 모든 조건에 대해 발생하였음을 알리는 Event Broadcaster 입니다. 
+[ConditionTrigger](Controller/Condition/ConditionTrigger.cs)는 Flyweight 디자인 패턴으로 설계된 게임내 이벤트들에 대한 모든 조건에 대해 발생하였음을 알리는 Event Broadcaster 입니다. 
 
 ```C#
 public static bool Any(IEventTarget target, Condition condition, string value)
