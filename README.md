@@ -308,7 +308,7 @@ public void PlusOperatorTest_3()
 
 ## Provider
 
-[Provider](Provider/Provider.cs)는 값을 제공받고, 연결된 모든 [IConnector](Provider/IConnector.cs)에게 값을 제공하는 역할을 합니다. `Model`로부터 데이터를 받으면 즉시 연결된 모든 `Connector`(대부분 `Controller`)에게 값을 전달하는 방식과, 필요에 의해 값을 제공받을 수 있는 `Lazy`(지연 제공)로 구분됩니다.
+[Provider](Provider/Provider.cs)는 값을 제공받고, 연결된 모든 [IConnector](Provider/IConnector.cs)에게 값을 제공하는 역할을 합니다. `Controller`로부터 데이터를 받으면 즉시 연결된 모든 `Connector`(대부분 `Controller`)에게 값을 전달하는 방식과, 필요에 의해 값을 제공받을 수 있는 `Lazy`(지연 제공)로 구분됩니다.
 
 `Provider` 구조체는 서비스 로케이터 패턴을 구현합니다. `IProvider` 인터페이스를 구현하는 객체를 등록하고, 이들을 관리하게 됩니다. 관리되는 `IProvider`들은 `Type`을 통해 식별되고, `Register`, `Unregister`, `GetAsync`, `ConnectAsync`, `Connect`, `Disconnect` 등의 메소드를 통해 접근하고 조작할 수 있습니다. 
 
