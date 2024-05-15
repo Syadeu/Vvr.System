@@ -49,8 +49,6 @@ namespace Vvr.Controller.Session.World
 
         public override string DisplayName => nameof(DefaultWorld);
 
-        public IActorProvider ActorProvider => m_ActorProvider;
-
         protected override async UniTask OnInitialize(IParentSession session, RootData data)
         {
             m_ActorProvider = new();

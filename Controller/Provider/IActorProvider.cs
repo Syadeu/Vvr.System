@@ -32,6 +32,7 @@ namespace Vvr.Controller.Provider
     /// <summary>
     /// Represents an actor provider.
     /// </summary>
+    [LocalProvider]
     public interface IActorProvider : IProvider
     {
         /// <summary>
