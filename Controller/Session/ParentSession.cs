@@ -82,11 +82,6 @@ namespace Vvr.Controller.Session
             m_ChildSessions.Remove(session);
         }
 
-        /// <summary>
-        /// Closes all child sessions and clears the list of child sessions.
-        /// </summary>
-        /// <returns>A UniTask representing the asynchronous operation of closing all child sessions.</returns>
-        [PublicAPI]
         public async UniTask CloseAllSessions()
         {
             foreach (var session in m_ChildSessions)
@@ -95,7 +90,6 @@ namespace Vvr.Controller.Session
             }
             m_ChildSessions.Clear();
         }
-
         public async UniTask<IChildSession> WaitUntilSessionAvailableAsync(Type sessionType)
         {
             IChildSession found;

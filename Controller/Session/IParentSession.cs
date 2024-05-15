@@ -38,6 +38,7 @@ namespace Vvr.Controller.Session
         /// <value>
         /// The list of child sessions.
         /// </value>
+        [PublicAPI]
         IReadOnlyList<IChildSession> ChildSessions { get; }
 
         /// <summary>
@@ -46,7 +47,7 @@ namespace Vvr.Controller.Session
         /// <typeparam name="TChildSession">The type of the child session to create.</typeparam>
         /// <param name="data">The session data for initializing the child session.</param>
         /// <returns>The created child session of type TChildSession.</returns>
-        [PublicAPI] [MustUseReturnValue]
+        [PublicAPI, MustUseReturnValue]
         UniTask<TChildSession> CreateSession<TChildSession>(ISessionData data) where TChildSession : IChildSession;
 
         /// <summary>
@@ -71,14 +72,21 @@ namespace Vvr.Controller.Session
         /// </summary>
         /// <param name="sessionType">The session type.</param>
         /// <returns>The child session of the specified session type, or null if not found.</returns>
-        [PublicAPI]
+        [PublicAPI, MustUseReturnValue]
         IChildSession GetSession(Type sessionType);
         /// <summary>
         /// Gets the child session of the specified session type.
         /// </summary>
         /// <typeparam name="TChildSession">The type of the child session to get.</typeparam>
         /// <returns>The child session of type TChildSession, or null if not found.</returns>
-        [PublicAPI]
+        [PublicAPI, MustUseReturnValue]
         TChildSession GetSession<TChildSession>() where TChildSession : class, IChildSession;
+
+        /// <summary>
+        /// Closes all child sessions and clears the list of child sessions.
+        /// </summary>
+        /// <returns>A UniTask representing the asynchronous operation of closing all child sessions.</returns>
+        [PublicAPI]
+        UniTask CloseAllSessions();
     }
 }

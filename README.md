@@ -59,13 +59,19 @@ Copyright 2024 Syadeu. All rights reserved*
 
 [DefaultWorld](Controller/Session/World/DefaultWorld.cs) -> [DefaultMap](Controller/Session/World/DefaultMap.cs) -> [DefaultRegion](Controller/Session/World/DefaultRegion.cs) -> [DefaultFloor](Controller/Session/World/DefaultFloor.cs) -> [DefaultStage](Controller/Session/World/DefaultStage.cs)
 
-World는 [GameWorld](Controller/Session/World/GameWorld.cs)를 통해 생성될 수 있으며, 각 계층 구조에 맞게 생성되어야합니다.
+World는 [GameWorld](Controller/Session/World/GameWorld.cs)를 통해 생성될 수 있으며, 각 계층 구조에 맞게 생성되어야합니다. `ParentSessionAttribute` 어트리뷰트 선언을 통해 특정 세션 부모를 강제할 수 있습니다. `DefaultStage` 는 상위 세션이 `DefaultFloor` 임을 가정하고 설계하였으므로 이를 적절히 알리기 위해 어트리뷰트를 선언할 수 있습니다.
+
+```C#
+[ParentSession(typeof(DefaultFloor), true), Preserve]
+public partial class DefaultStage : ChildSession<DefaultStage.SessionData>, IStageProvider,
+    IConnector<IActorProvider>
+```
 
 ------
 
 ## Model
 
-Excel sheet를 기반으로 설계하여 기획자의 요구사항을 맞추고, 게임내 다양한 요소들에 대해 직간접적인 조작이 가능하도록 설계되었습니다.
+ `Model`은 Excel sheet를 기반으로 설계하여 기획자의 요구사항을 맞추고, 게임내 다양한 요소들에 대해 직간접적인 조작이 가능하도록 설계되었습니다. 또한 최소한의 가공으로 원래의 데이터를 보존하도록하고, `Controller`에게 필요한 정보들을 주는 것을 목표로 합니다. `StatValues`, `ConditionQuery`, `StatType`, `Method` 등은 이러한 작업의 일환으로, 확정된 정보들을 전달할 수 있는 역할을 합니다.
 
 | Cancellation    |       |             |                | AbnormalChain |      |      |
 | --------------- | ----- | ----------- | -------------- | ------------- | ---- | ---- |
@@ -375,7 +381,7 @@ public partial class DefaultWorld : RootSession, IWorldSession,
         IActorProvider
 ```
 
-상위 세션이 `IProvider`를 가지고 있다면 하위 세션이 생성될 때, 상위 세션은 자동으로 하위 세션에 대해 의존성을 검사하고 주입합니다.
+상위 세션이 `IProvider`를 가지고 있다면 하위 세션이 생성될 때 생성된 세션에 대해 해당 `IProvider`에 대한 의존성을 검사하고 주입합니다.
 
 ### EventTarget
 
