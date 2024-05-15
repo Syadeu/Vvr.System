@@ -31,9 +31,10 @@ namespace Vvr.Model
         {
         }
 
-        [UsedImplicitly] public GameConfigSheet GameConfigTable { get; private set; }
-        [UsedImplicitly] public WalletSheet     WalletTable { get; private set; }
-        [UsedImplicitly] public StatSheet       StatTable   { get; private set; }
+        [UsedImplicitly] public GameConfigSheet   GameConfigTable   { get; private set; }
+        [UsedImplicitly] public CustomMethodSheet CustomMethodTable { get; private set; }
+        [UsedImplicitly] public WalletSheet       WalletTable       { get; private set; }
+        [UsedImplicitly] public StatSheet         StatTable         { get; private set; }
 
         [UsedImplicitly] public ActorSheet Actors { get; private set; }
         [UsedImplicitly] public StageSheet Stages { get; private set; }
@@ -45,12 +46,5 @@ namespace Vvr.Model
         [UsedImplicitly] public PassiveSheet  PassiveSheet  { get; private set; }
 
         [UsedImplicitly] public ItemSheet Items { get; private set; }
-
-        public override void PostLoad()
-        {
-            base.PostLoad();
-
-            "Pose load game data sheet".ToLog();
-        }
     }
 }

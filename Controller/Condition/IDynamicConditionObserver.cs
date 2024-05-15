@@ -23,6 +23,7 @@ using System;
 using System.Buffers;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
+using UnityEngine.Assertions;
 using Vvr.Model;
 using Vvr.Provider;
 
@@ -96,15 +97,19 @@ namespace Vvr.Controller.Condition
 
         async UniTask IConditionObserver.OnExecute(Model.Condition condition, string value)
         {
+            if (m_Parent.Disposed)
+                throw new ObjectDisposedException(nameof(ConditionResolver));
+
             int i = m_Filter.IndexOf(condition);
-            if (i < 0) return;
+            Assert.IsFalse(i < 0);
 
             await m_Delegates[i](m_Parent.Owner, value);
         }
 
         public void Dispose()
         {
-            m_Parent.Unsubscribe(this);
+            if (!m_Parent.Disposed)
+                m_Parent.Unsubscribe(this);
 
             ArrayPool<ConditionObserverDelegate>.Shared.Return(m_Delegates, true);
             m_Parent = null;

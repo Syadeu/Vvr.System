@@ -38,7 +38,7 @@ namespace Vvr.Controller.Session
     /// </summary>
     /// <typeparam name="TSessionData">The type of session data associated with the session.</typeparam>
     [Preserve, UnityEngine.Scripting.RequireDerived]
-    public abstract class ChildSession<TSessionData> : IChildSession, IChildSessionConnector
+    public abstract class ChildSession<TSessionData> : IChildSession, IChildSessionConnector, IDisposable
         where TSessionData : ISessionData
     {
         private          Type                        m_Type;
@@ -184,6 +184,12 @@ namespace Vvr.Controller.Session
             m_InitializeToken   = null;
 
             Disposed = true;
+            // TODO: recycling
+            ((IDisposable)this).Dispose();
+        }
+
+        void IDisposable.Dispose()
+        {
         }
 
         /// <summary>

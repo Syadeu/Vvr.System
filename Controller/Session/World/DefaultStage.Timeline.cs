@@ -25,6 +25,7 @@ using JetBrains.Annotations;
 using UnityEngine;
 using UnityEngine.Assertions;
 using Vvr.Controller.Actor;
+using Vvr.Controller.CustomMethod;
 using Vvr.Model;
 using Vvr.Model.Stat;
 
@@ -32,6 +33,18 @@ namespace Vvr.Controller.Session.World
 {
     partial class DefaultStage
     {
+        struct TimelineActor
+        {
+            public IActor actor;
+            public float  time;
+        }
+
+        // private readonly LinkedList<TimelineActor> m_Timeline = new();
+
+        private void CycleTimeline()
+        {
+
+        }
         private partial async UniTask Join(ActorList field, RuntimeActor actor)
         {
             field.Add(actor, ActorPositionComparer.Static);
@@ -44,7 +57,11 @@ namespace Vvr.Controller.Session.World
             pos.z              = isFront ? 1 : 0;
             view.localPosition = pos;
 
-            m_Queue.Enqueue(actor, actor.owner.Stats[StatType.SPD]);
+            m_Queue.Enqueue(
+                actor,
+                CustomMethodProvider.Static.Resolve(actor.owner.Stats, "TIMELINE")
+                // actor.owner.Stats[StatType.SPD]
+                );
         }
 
         private partial async UniTask Delete(ActorList field, RuntimeActor actor)
@@ -53,6 +70,16 @@ namespace Vvr.Controller.Session.World
             Assert.IsTrue(result);
 
             m_Queue.RemoveAll(e => e.owner == actor.owner);
+            // LinkedListNode<TimelineActor> current = m_Timeline.First;
+            // while (current != null)
+            // {
+            //     LinkedListNode<TimelineActor> next = current.Next;
+            //     if (current.Value.actor == actor.owner)
+            //     {
+            //         m_Timeline.Remove(current);
+            //     }
+            //     current = next;
+            // }
             for (int i = 0; i < m_Timeline.Count; i++)
             {
                 var e = m_Timeline[i];

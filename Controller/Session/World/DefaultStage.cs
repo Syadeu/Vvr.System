@@ -455,6 +455,7 @@ namespace Vvr.Controller.Session.World
         }
         public async UniTask SwapPlayerCard(int index)
         {
+            // Assert.IsTrue(m_Timeline.First.Value.actor.ConditionResolver[Model.Condition.IsPlayerActor](null));
             if (m_PlayerField.Count > 1)
             {
                 "Cant swap. already in progress".ToLog();

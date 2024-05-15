@@ -26,6 +26,8 @@ namespace Vvr.Provider
 {
     public interface IStatConditionProvider : IProvider
     {
+        StatType this[string t] { get; }
+
         bool Resolve(
             IReadOnlyStatValues centerStats,
             IReadOnlyStatValues stats, OperatorCondition condition, string value);

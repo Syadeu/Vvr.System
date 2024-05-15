@@ -27,12 +27,8 @@ namespace Vvr.Controller.Session
     /// RootSession is an abstract class that serves as the base class for all root session implementations in the Vvr.Controller.Session namespace.
     /// </summary>
     public abstract class RootSession
-        : ParentSession<RootSession.RootData>, IDisposable
+        : ParentSession<RootSession.RootData>
     {
         public struct RootData : ISessionData {}
-
-        public virtual void Dispose()
-        {
-        }
     }
 }
