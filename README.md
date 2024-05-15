@@ -369,23 +369,10 @@ public interface IGameMethodProvider : IProvider
 로컬로 마킹된 `IProvider`는 전역 `Provider`를 통해 공급될 수 없습니다. 상위 객체로부터 의존성을 주입받거나, 상위 객체로 부터 하위 객체의 구현을 모르더라도 사용할 수 있게 합니다. `DefaultStage` 는 `IConnector<IActorProvider>` 인터페이스를 상속받아 상위 세션으로부터 `IActorProvider`에 대한 의존성 주입을 하고 있습니다. 여기서 상위 세션인 `DefaultWorld` 는 `IActorProvider` 를 구현하고 등록하고 있습니다. 
 
 ```c#
-public IActorProvider ActorProvider => m_ActorProvider;
-
-protected override async UniTask OnInitialize(IParentSession session, RootData data)
-{
-    m_ActorProvider = new();
-
-    Vvr.Provider.Provider.Static.Connect<IStateConditionProvider>(this);
-
-    TimeController.Register(this);
-
-    ConditionTrigger.OnEventExecutedAsync += OnEventExecutedAsync;
-
-    Register(ActorProvider);
-
-    // TODO: skip map load
-    DefaultMap = await CreateSession<DefaultMap>(default);
-}
+public partial class DefaultWorld : RootSession, IWorldSession,
+        IConnector<IStateConditionProvider>,
+        IConnector<IGameConfigProvider>,
+        IActorProvider
 ```
 
 상위 세션이 `IProvider`를 가지고 있다면 하위 세션이 생성될 때, 상위 세션은 자동으로 하위 세션에 대해 의존성을 검사하고 주입합니다.
