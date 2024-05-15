@@ -19,12 +19,16 @@
 
 #endregion
 
+using System;
+using System.Buffers;
 using System.Collections.Generic;
+using System.Linq;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using UnityEngine;
 using UnityEngine.Assertions;
 using Vvr.Controller.Actor;
+using Vvr.Controller.Condition;
 using Vvr.Controller.CustomMethod;
 using Vvr.Model;
 using Vvr.Model.Stat;
@@ -33,20 +37,185 @@ namespace Vvr.Controller.Session.World
 {
     partial class DefaultStage
     {
-        struct TimelineActor
+        class TimelineQueue
         {
-            public IActor actor;
-            public float  time;
+            class Entry : IComparable<Entry>
+            {
+                public RuntimeActor   actor;
+                public int            index;
+
+                public float time => CustomMethodProvider.Static.Resolve(actor.owner.Stats, CustomMethodNames.TIMELINE);
+                public float timeOffset;
+
+                public int CompareTo(Entry other)
+                {
+                    float xx = time + timeOffset,
+                        yy = other.time + other.timeOffset;
+                    if (Mathf.Approximately(xx, yy))
+                    {
+                        return index.CompareTo(other.index);
+                    }
+
+                    if (xx < yy) return -1;
+                    return 1;
+                }
+            }
+
+            private readonly HashSet<int>  m_Actors = new();
+            private readonly SortedSet<Entry> m_Queue  = new();
+            private          int              m_Index;
+
+            public int Count => m_Queue.Count;
+
+            public int IndexOf(RuntimeActor actor)
+            {
+                foreach (var entry in m_Queue)
+                {
+                    if (ReferenceEquals(entry.actor, actor))
+                        return entry.index;
+                }
+
+                return -1;
+            }
+
+            public void Enqueue(RuntimeActor actor)
+            {
+                Assert.IsNotNull(actor);
+                if (!m_Actors.Add(actor.GetHashCode()))
+                    throw new InvalidOperationException("duplicated");
+
+                m_Queue.Add(new Entry()
+                {
+                    actor = actor,
+                    index = m_Index++,
+                });
+            }
+
+            public void InsertAfter(int index, RuntimeActor actor)
+            {
+                Assert.IsNotNull(actor);
+
+                if (!m_Actors.Add(actor.GetHashCode()))
+                    throw new InvalidOperationException("duplicated");
+
+                int     count   = m_Queue.Count;
+                var tempArr = ArrayPool<Entry>.Shared.Rent(count);
+                m_Queue.CopyTo(tempArr, 0);
+                m_Queue.Clear();
+                for (int i = 0; i < count; i++)
+                {
+                    var entry = tempArr[i];
+                    if (entry.index > index) entry.index++;
+
+                    m_Queue.Add(entry);
+                }
+                ArrayPool<Entry>.Shared.Return(tempArr, true);
+
+                m_Queue.Add(new Entry()
+                {
+                    actor = actor,
+                    index = index + 1,
+                });
+                m_Index++;
+            }
+            public RuntimeActor Dequeue()
+            {
+                if (m_Queue.Count == 0) throw new InvalidOperationException("queue empty");
+
+                var min = m_Queue.Min;
+                m_Queue.Remove(min);
+                min.timeOffset += min.time;
+                m_Queue.Add(min);
+
+                return min.actor;
+            }
+
+            public bool IsStartFrom(RuntimeActor actor)
+            {
+                var min = m_Queue.Min;
+                return ReferenceEquals(min.actor, actor);
+            }
+            public void StartFrom(RuntimeActor actor)
+            {
+                Assert.IsNotNull(actor);
+
+                if (IsStartFrom(actor)) return;
+
+                var targetEntry = m_Queue.FirstOrDefault(x => ReferenceEquals(x.actor, actor));
+                if (targetEntry == null)
+                    throw new InvalidOperationException("Actor not found.");
+
+                int count   = m_Queue.Count;
+                var tempArr = ArrayPool<Entry>.Shared.Rent(count);
+                m_Queue.CopyTo(tempArr, 0);
+                m_Queue.Clear();
+
+                int targetIndex = targetEntry.index;
+                for (int i = 0; i < count; i++)
+                {
+                    var entry = tempArr[i];
+                    if (ReferenceEquals(entry.actor, actor))
+                    {
+                        entry.index = 0;
+                    }
+                    else if (entry.index < targetIndex)
+                    {
+                        entry.index++;
+                    }
+
+                    m_Queue.Add(entry);
+                }
+
+                ArrayPool<Entry>.Shared.Return(tempArr, true);
+            }
+
+            public void Remove(RuntimeActor actor)
+            {
+                if (!m_Actors.Remove(actor.GetHashCode()))
+                    return;
+
+                m_Queue.RemoveWhere(x => ReferenceEquals(x.actor, actor));
+            }
+
+            public void Clear()
+            {
+                m_Actors.Clear();
+                m_Queue.Clear();
+                m_Index = 0;
+            }
         }
 
-        // private readonly LinkedList<TimelineActor> m_Timeline = new();
+        private readonly TimelineQueue m_TimelineQueue = new();
+        private readonly ActorList     m_Timeline      = new();
 
-        private void CycleTimeline()
+        private partial void DequeueTimeline()
         {
+            if (m_Timeline.Count > 0) m_Timeline.RemoveAt(0);
 
+            UpdateTimeline();
         }
+        private partial void UpdateTimeline()
+        {
+            const int maxTimelineCount = 5;
+
+            if (m_Timeline.Count > 0 && !m_TimelineQueue.IsStartFrom(m_Timeline[0]))
+            {
+                m_TimelineQueue.StartFrom(m_Timeline[0]);
+                for (int i = m_Timeline.Count - 1; i >= 1; i--)
+                {
+                    m_Timeline.RemoveAt(i);
+                }
+            }
+
+            while (m_TimelineQueue.Count > 0 && m_Timeline.Count < maxTimelineCount)
+            {
+                m_Timeline.Add(m_TimelineQueue.Dequeue());
+            }
+        }
+
         private partial async UniTask Join(ActorList field, RuntimeActor actor)
         {
+            Assert.IsFalse(field.Contains(actor));
             field.Add(actor, ActorPositionComparer.Static);
 
             var viewProvider = await m_ViewProvider;
@@ -57,11 +226,20 @@ namespace Vvr.Controller.Session.World
             pos.z              = isFront ? 1 : 0;
             view.localPosition = pos;
 
-            m_Queue.Enqueue(
-                actor,
-                CustomMethodProvider.Static.Resolve(actor.owner.Stats, "TIMELINE")
-                // actor.owner.Stats[StatType.SPD]
-                );
+            m_TimelineQueue.Enqueue(actor);
+        }
+        private partial async UniTask JoinAfter(RuntimeActor target, ActorList field, RuntimeActor actor)
+        {
+            Assert.IsFalse(field.Contains(actor));
+            field.Add(actor, ActorPositionComparer.Static);
+
+            int index = m_TimelineQueue.IndexOf(target);
+            m_TimelineQueue.InsertAfter(index, actor);
+
+            using (var trigger = ConditionTrigger.Push(actor.owner, ConditionTrigger.Game))
+            {
+                await trigger.Execute(Model.Condition.OnTagIn, null);
+            }
         }
 
         private partial async UniTask Delete(ActorList field, RuntimeActor actor)
@@ -69,29 +247,31 @@ namespace Vvr.Controller.Session.World
             bool result = field.Remove(actor);
             Assert.IsTrue(result);
 
-            m_Queue.RemoveAll(e => e.owner == actor.owner);
-            // LinkedListNode<TimelineActor> current = m_Timeline.First;
-            // while (current != null)
-            // {
-            //     LinkedListNode<TimelineActor> next = current.Next;
-            //     if (current.Value.actor == actor.owner)
-            //     {
-            //         m_Timeline.Remove(current);
-            //     }
-            //     current = next;
-            // }
+            await RemoveFromTimeline(actor);
+            await RemoveFromQueue(actor);
+
+            var viewProvider = await m_ViewProvider;
+            await viewProvider.Release(actor.owner);
+            actor.owner.Release();
+
+            UpdateTimeline();
+        }
+        private partial async UniTask RemoveFromQueue(RuntimeActor actor)
+        {
+            m_TimelineQueue.Remove(actor);
+        }
+        private partial async UniTask RemoveFromTimeline(RuntimeActor actor, int preserveCount = 0)
+        {
             for (int i = 0; i < m_Timeline.Count; i++)
             {
                 var e = m_Timeline[i];
                 if (e.owner != actor.owner) continue;
 
+                if (0 < preserveCount--) continue;
+
                 m_Timeline.RemoveAt(i);
                 i--;
             }
-
-            var viewProvider = await m_ViewProvider;
-            await viewProvider.Release(actor.owner);
-            actor.owner.Release();
         }
 
         [MustUseReturnValue]

@@ -107,6 +107,7 @@ namespace Vvr.Controller.Session.World
 
         private bool EvaluateActorConfig(GameConfigSheet.Row config, IActor target, out int executedCount)
         {
+            Assert.IsNotNull(config);
             executedCount = 0;
 
             // Check lifecycle condition

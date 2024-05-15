@@ -104,7 +104,7 @@ namespace Vvr.Controller.CustomMethod
                 }
 
                 Stack<float>       resolvedValues = new();
-                Queue<MethodValue> methods        = new();
+                Stack<MethodValue> methods        = new();
 
                 foreach (var element in this)
                 {
@@ -114,12 +114,12 @@ namespace Vvr.Controller.CustomMethod
                             resolvedValues.Push(v.Resolve(stats));
                             break;
                         case MethodValue m:
-                            methods.Enqueue(m);
+                            methods.Push(m);
                             break;
                     }
                 }
 
-                while (methods.TryDequeue(out var method))
+                while (methods.TryPop(out var method))
                 {
                     if (resolvedValues.Count < 2)
                         throw new InvalidOperationException("Variable is not enough");
@@ -136,7 +136,7 @@ namespace Vvr.Controller.CustomMethod
 
         private CustomMethodSheet m_Sheet;
 
-        private readonly Dictionary<string, MethodBody> m_Methods = new();
+        private readonly Dictionary<int, MethodBody> m_Methods = new();
 
         private CustomMethodProvider(CustomMethodSheet t)
         {
@@ -179,12 +179,13 @@ namespace Vvr.Controller.CustomMethod
             return elements;
         }
 
-        public float Resolve(IReadOnlyStatValues stats, string method)
+        public float Resolve(IReadOnlyStatValues stats, CustomMethodNames method)
         {
-            if (!m_Methods.TryGetValue(method, out var body))
+            int hash = method.GetHashCode();
+            if (!m_Methods.TryGetValue(hash, out var body))
             {
-                body              = Create(m_Sheet[method]);
-                m_Methods[method] = body;
+                body              = Create(m_Sheet[method.ToString()]);
+                m_Methods[hash] = body;
             }
 
             float result = body.Execute(stats);
@@ -195,6 +196,6 @@ namespace Vvr.Controller.CustomMethod
     public interface ICustomMethodProvider
     {
         [PublicAPI]
-        float Resolve(IReadOnlyStatValues stats, string method);
+        float Resolve(IReadOnlyStatValues stats, CustomMethodNames method);
     }
 }

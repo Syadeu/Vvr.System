@@ -131,58 +131,24 @@ namespace Vvr.Controller.Session.World
                 return xx > yy ? 1 : 0;
             }
         }
-        public sealed class RuntimeActor : IComparable<RuntimeActor>, IEquatable<RuntimeActor>, IRuntimeActor
+        public sealed class RuntimeActor : IRuntimeActor
         {
             public readonly IActor         owner;
             public readonly ActorSheet.Row data;
 
-            public int  time;
-            public bool removeRequested;
+            public bool tagOutRequested;
 
-            public RuntimeActor(RuntimeActor x, int t)
+            public RuntimeActor(RuntimeActor x)
             {
                 owner = x.owner;
                 data  = x.data;
-
-                time = t;
             }
             public RuntimeActor(IActor o, ActorSheet.Row d)
             {
                 owner = o;
                 data  = d;
 
-                time            = (int)o.Stats[StatType.SPD];
-                removeRequested = false;
-            }
-
-            public int CompareTo(RuntimeActor other)
-            {
-                float xx = owner.Stats[StatType.SPD],
-                    yy   = other.owner.Stats[StatType.SPD];
-
-                if (Mathf.Approximately(xx, yy))
-                {
-                    if (time < other.time) return -1;
-                    return 1;
-                }
-
-                if (xx < yy) return 1;
-                return -1;
-            }
-
-            public bool Equals(RuntimeActor other)
-            {
-                return Equals(owner, other.owner);
-            }
-
-            public override bool Equals(object obj)
-            {
-                return obj is RuntimeActor other && Equals(other);
-            }
-
-            public override int GetHashCode()
-            {
-                return (owner != null ? owner.GetHashCode() : 0);
+                tagOutRequested = false;
             }
 
             IActor IRuntimeActor.  Owner => owner;
@@ -205,9 +171,6 @@ namespace Vvr.Controller.Session.World
         private AsyncLazy<IInputControlProvider> m_InputControlProvider;
 
         private AssetController<AssetType> m_AssetController;
-
-        private readonly PriorityQueue<RuntimeActor> m_Queue    = new();
-        private readonly ActorList     m_Timeline = new();
 
         private Owner m_EnemyId;
 
@@ -258,8 +221,9 @@ namespace Vvr.Controller.Session.World
             m_HandActors.Clear();
             m_PlayerField.Clear();
             m_EnemyField.Clear();
-            m_Queue.Clear();
+
             m_Timeline.Clear();
+            m_TimelineQueue.Clear();
 
             return base.OnReserve();
         }
@@ -342,7 +306,7 @@ namespace Vvr.Controller.Session.World
 
             TimeController.ResetTime();
 
-            AddActorsInOrderWithSpeed(5);
+            UpdateTimeline();
             ObjectObserver<ActorList>.ChangedEvent(m_Timeline);
 
             foreach (var item in m_PlayerField
@@ -364,20 +328,29 @@ namespace Vvr.Controller.Session.World
                 $"Timeline count {m_Timeline.Count}".ToLog();
 
                 m_ResetEvent = new();
-                RuntimeActor currentRuntimeActor  = m_Timeline[0];
-                Assert.IsFalse(currentRuntimeActor.owner.Disposed);
+                RuntimeActor current  = m_Timeline[0];
+                Assert.IsFalse(current.owner.Disposed);
 
-                using (var trigger = ConditionTrigger.Push(currentRuntimeActor.owner, ConditionTrigger.Game))
+                using (var trigger = ConditionTrigger.Push(current.owner, ConditionTrigger.Game))
                 {
                     await trigger.Execute(Model.Condition.OnActorTurn, null);
                     await UniTask.WaitForSeconds(1f);
                     await TimeController.Next(1);
 
-                    ExecuteTurn(currentRuntimeActor).Forget();
+                    ExecuteTurn(current).Forget();
 
                     await m_ResetEvent.Task;
 
                     await trigger.Execute(Model.Condition.OnActorTurnEnd, null);
+
+                    // Tag out check
+                    if (current.tagOutRequested)
+                    {
+                        Assert.IsTrue(current.owner.ConditionResolver[Model.Condition.IsPlayerActor](null));
+
+                        m_PlayerField.Remove(current);
+                        m_HandActors.Add(current);
+                    }
                 }
 
                 // TODO: Should controlled by GameConfig?
@@ -396,9 +369,7 @@ namespace Vvr.Controller.Session.World
                     }
                 }
 
-                //
-                if (m_Timeline.Count > 0) m_Timeline.RemoveAt(0);
-                AddActorsInOrderWithSpeed(10);
+                DequeueTimeline();
                 ObjectObserver<ActorList>.ChangedEvent(m_Timeline);
             }
 
@@ -422,8 +393,14 @@ namespace Vvr.Controller.Session.World
             return new Result(GetCurrentPlayerActors(), GetCurrentEnemyActors());
         }
 
-        private partial UniTask Join(ActorList   field, RuntimeActor actor);
-        private partial UniTask Delete(ActorList field, RuntimeActor actor);
+        private partial UniTask Join(ActorList                  field,  RuntimeActor actor);
+        private partial UniTask JoinAfter(RuntimeActor          target, ActorList    field, RuntimeActor actor);
+        private partial UniTask Delete(ActorList                field,  RuntimeActor actor);
+        private partial UniTask RemoveFromQueue(RuntimeActor    actor);
+        private partial UniTask RemoveFromTimeline(RuntimeActor actor, int preserveCount = 0);
+
+        private partial void DequeueTimeline();
+        private partial void UpdateTimeline();
 
         // TODO: Test auto play method
         public async UniTask ExecuteTurn(RuntimeActor runtimeActor)
@@ -465,111 +442,39 @@ namespace Vvr.Controller.Session.World
             Assert.IsFalse(index < 0);
             Assert.IsTrue(index < m_HandActors.Count);
 
-            int currentTime = m_Timeline[0].time;
+            var temp = m_HandActors[index];
+            m_HandActors.RemoveAt(index);
+
             if (m_PlayerField.Count > 0)
             {
                 RuntimeActor currentFieldRuntimeActor = m_PlayerField[0];
+                currentFieldRuntimeActor.tagOutRequested = true;
 
-                m_Queue.RemoveAll(x => x.owner == currentFieldRuntimeActor.owner);
-                int found = 0;
-                for (int i = 0; i < m_Timeline.Count; i++)
-                {
-                    var e = m_Timeline[i];
-                    if (e.owner != currentFieldRuntimeActor.owner) continue;
+                await JoinAfter(currentFieldRuntimeActor, m_PlayerField, temp);
 
-                    if (found++ < 1)
-                    {
-                        e.removeRequested = true;
-                        m_Timeline[i]     = e;
-                        continue;
-                    }
+                await RemoveFromQueue(currentFieldRuntimeActor);
+                await RemoveFromTimeline(currentFieldRuntimeActor, 1);
 
-                    m_Timeline.RemoveAt(i);
-                    i--;
-                }
+                // using (var trigger = ConditionTrigger.Push(currentFieldRuntimeActor.owner, ConditionTrigger.Game))
+                // {
+                //     await trigger.Execute(Model.Condition.OnTagOut, null);
+                // }
+            }
+            else
+            {
+                await Join(m_PlayerField, temp);
+            }
 
-                using (var trigger = ConditionTrigger.Push(currentFieldRuntimeActor.owner, ConditionTrigger.Game))
-                {
-                    await trigger.Execute(Model.Condition.OnTagOut, null);
-                }
-                using (var trigger = ConditionTrigger.Push(m_HandActors[index].owner, ConditionTrigger.Game))
-                {
-                    await trigger.Execute(Model.Condition.OnTagIn, null);
-                }
+            using (var trigger = ConditionTrigger.Push(m_HandActors[index].owner, ConditionTrigger.Game))
+            {
+                await trigger.Execute(Model.Condition.OnTagIn, null);
             }
 
             // Swap
-            var temp = m_HandActors[index];
-            temp.time = currentTime;
-            m_HandActors.RemoveAt(index);
-            await Join(m_PlayerField, temp);
-
-            m_Timeline.Insert(1, temp);
-            // m_Timeline.Clear();
-            // AddActorsInOrderWithSpeed(5);
-
-            // if (IsInBattle)
-            {
-                // InsertActorInTimeline(
-                //     new RuntimeActor(temp, currentTime),
-                //     // temp.ToRuntimeActor(sheet, PlayerSystem.ActiveData.Id, m_LastOrder++, currentTime),
-                //     // Mathf.Max(1, found - 1)
-                //     5
-                //     );
-            }
+            UpdateTimeline();
 
             ObjectObserver<ActorList>.ChangedEvent(m_HandActors);
             ObjectObserver<ActorList>.ChangedEvent(m_Timeline);
-        }
-
-        private void InsertActorInTimeline(in RuntimeActor runtimeActor, int count)
-        {
-            if (count <= 0) return;
-
-            RuntimeActor lastRuntimeActor  = runtimeActor;
-            int targetTime = m_Timeline[0].time;
-            for (int i = 0; i < m_Timeline.Count && 0 < count; i++)
-            {
-                RuntimeActor e = m_Timeline[i];
-
-                if (targetTime < e.time)
-                {
-                    lastRuntimeActor = new RuntimeActor(lastRuntimeActor, targetTime);
-                    m_Timeline.Insert(i, lastRuntimeActor);
-
-                    $"Added {lastRuntimeActor.owner.DisplayName}, {lastRuntimeActor.removeRequested}".ToLog();
-                    targetTime += (int)runtimeActor.owner.Stats[StatType.SPD];
-                    count--;
-                    i++;
-                }
-            }
-
-            m_Queue.Enqueue(
-                new RuntimeActor(lastRuntimeActor, targetTime),
-                targetTime);
-        }
-        private void AddActorsInOrderWithSpeed(int count)
-        {
-            const int MAX_TIMELINE_COUNT = 5;
-
-            if (m_Queue.Count == 0) return;
-
-            int c = 0;
-            while (c < count && m_Timeline.Count < MAX_TIMELINE_COUNT)
-            {
-                var kvp = m_Queue.Dequeue();
-
-                m_Timeline.Add(new RuntimeActor(kvp.Key, (int)kvp.Value + 1));
-
-                float nextActionTime = kvp.Value + kvp.Key.owner.Stats[StatType.SPD];
-                m_Queue.Enqueue(
-                    new RuntimeActor(kvp.Key, (int)nextActionTime),
-                    nextActionTime);
-
-                c++;
-            }
-
-            // ObjectObserver<BattleTable>.ChangedEvent(this, nameof(Timeline));
         }
 
         private IEnumerable<CachedActor> GetCurrentPlayerActors()
