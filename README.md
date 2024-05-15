@@ -59,7 +59,7 @@ Copyright 2024 Syadeu. All rights reserved*
 
 [DefaultWorld](Controller/Session/World/DefaultWorld.cs) -> [DefaultMap](Controller/Session/World/DefaultMap.cs) -> [DefaultRegion](Controller/Session/World/DefaultRegion.cs) -> [DefaultFloor](Controller/Session/World/DefaultFloor.cs) -> [DefaultStage](Controller/Session/World/DefaultStage.cs)
 
-World는 [GameWorld](Controller/Session/World/GameWorld.cs)를 통해 생성될 수 있으며, 각 계층 구조에 맞게 생성되어야합니다. `ParentSessionAttribute` 어트리뷰트 선언을 통해 특정 세션 부모를 강제할 수 있습니다. `DefaultStage` 는 상위 세션이 `DefaultFloor` 임을 가정하고 설계하였으므로 이를 적절히 알리기 위해 어트리뷰트를 선언할 수 있습니다.
+World는 [GameWorld](Controller/Session/World/GameWorld.cs)를 통해 생성될 수 있으며, 각 계층 구조에 맞게 생성되어야합니다. [ParentSessionAttribute](Controller/Session/ParentSessionAttribute.cs) 어트리뷰트 선언을 통해 특정 세션 부모를 강제할 수 있습니다. `DefaultStage` 는 상위 세션이 `DefaultFloor` 임을 가정하고 설계하였으므로 이를 적절히 알리기 위해 어트리뷰트를 선언할 수 있습니다.
 
 ```C#
 [ParentSession(typeof(DefaultFloor), true), Preserve]
@@ -71,7 +71,7 @@ public partial class DefaultStage : ChildSession<DefaultStage.SessionData>, ISta
 
 ## Model
 
- `Model`은 Excel sheet를 기반으로 설계하여 기획자의 요구사항을 맞추고, 게임내 다양한 요소들에 대해 직간접적인 조작이 가능하도록 설계되었습니다. 또한 최소한의 가공으로 원래의 데이터를 보존하도록하고, `Controller`에게 필요한 정보들을 주는 것을 목표로 합니다. `StatValues`, `ConditionQuery`, `StatType`, `Method` 등은 이러한 작업의 일환으로, 확정된 정보들을 전달할 수 있는 역할을 합니다.
+ `Model`은 Excel sheet를 기반으로 설계하여 기획자의 요구사항을 맞추고, 게임내 다양한 요소들에 대해 직간접적인 조작이 가능하도록 설계되었습니다. 또한 최소한의 가공으로 원래의 데이터를 보존하도록하고, `Controller`에게 필요한 정보들을 주는 것을 목표로 합니다. [StatValues](Model/Stat/StatValues.cs), [ConditionQuery](Model/ConditionQuery.cs), [StatType](Model/Stat/StatType.cs), [Method](Model/Method.cs) 등은 이러한 작업의 일환으로, 확정된 정보들을 전달할 수 있는 역할을 합니다.
 
 | Cancellation    |       |             |                | AbnormalChain |      |      |
 | --------------- | ----- | ----------- | -------------- | ------------- | ---- | ---- |
@@ -308,9 +308,9 @@ public void PlusOperatorTest_3()
 
 ## Provider
 
-[Provider](Provider/Provider.cs)는 값을 제공받고, 연결된 모든 [IConnector](Provider/IConnector.cs)에게 값을 제공하는 역할을 합니다. `Controller`로부터 데이터를 받으면 즉시 연결된 모든 `Connector`(대부분 `Controller`)에게 값을 전달하는 방식과, 필요에 의해 값을 제공받을 수 있는 `Lazy`(지연 제공)로 구분됩니다.
+[Provider](Provider/Provider.cs)는 값을 제공받고, 연결된 모든 [IConnector](Provider/IConnector.cs)에게 값을 제공하는 역할을 합니다. `Controller`로부터 데이터를 받으면 즉시 연결된 모든 [IConnector](Provider/IConnector.cs)(대부분 `Controller`)에게 값을 전달하는 방식과, 필요에 의해 값을 제공받을 수 있는 `Lazy`(지연 제공)로 구분됩니다.
 
-`Provider` 구조체는 서비스 로케이터 패턴을 구현합니다. `IProvider` 인터페이스를 구현하는 객체를 등록하고, 이들을 관리하게 됩니다. 관리되는 `IProvider`들은 `Type`을 통해 식별되고, `Register`, `Unregister`, `GetAsync`, `ConnectAsync`, `Connect`, `Disconnect` 등의 메소드를 통해 접근하고 조작할 수 있습니다. 
+`Provider` 구조체는 서비스 로케이터 패턴을 구현합니다. [IProvider](Provider/IProvider.cs) 인터페이스를 구현하는 객체를 등록하고, 이들을 관리하게 됩니다. 관리되는 `IProvider`들은 `Type`을 통해 식별되고, `Register`, `Unregister`, `GetAsync`, `ConnectAsync`, `Connect`, `Disconnect` 등의 메소드를 통해 접근하고 조작할 수 있습니다. 
 
 1. **코드 간 결합도를 낮춤**: 서비스를 사용하는 클라이언트는 서비스 로케이터를 통해 서비스를 얻기 때문에, 원하는 서비스의 실제           구현에 대해 알 필요가 없습니다. 이를 통해 코드 간 결합도를 낮춤으로써 유지 보수성과 확장성을 높일 수 있습니다.        
 2. **서비스 교체의 용이성**: 서비스 로케이터에 서비스를 등록할 때 어떠한 인터페이스를 구현하는 지에 대한 정보만 있으면 되므로,           특정 서비스의 구현을 교체하거나 변경하는 것이 용이합니다.        
@@ -362,7 +362,7 @@ private async UniTask GameMethod_Destroy(IEventTarget e, IReadOnlyList<string> p
 }
 ```
 
-이 메소드를 상속받은 `DefaultStage` 는 `LocalProviderAttribute` 를 상속받은 `IGameMethodProvider` 를 구현하고 있습니다. 
+이 메소드를 상속받은 `DefaultStage` 는 [LocalProviderAttribute](Provider/LocalProviderAttribute.cs) 를 상속받은 [IGameMethodProvider](Controller/Provider/IGameMethodProvider.cs) 를 구현하고 있습니다. 
 
 ```c#
 [LocalProvider]
@@ -372,7 +372,7 @@ public interface IGameMethodProvider : IProvider
 }
 ```
 
-로컬로 마킹된 `IProvider`는 전역 `Provider`를 통해 공급될 수 없고, 상위 객체로부터 의존성을 주입받아야합니다. `DefaultStage` 는 `IConnector<IActorProvider>` 인터페이스를 상속받아 상위 세션으로부터 `IActorProvider`에 대한 의존성 주입을 하고 있습니다. 여기서 상위 세션인 `DefaultWorld` 는 `IActorProvider` 를 구현하고 등록하고 있습니다. 
+로컬로 마킹된 `IProvider`는 전역 `Provider`를 통해 공급될 수 없고, 상위 객체로부터 의존성을 주입받아야합니다. `DefaultStage` 는 `IConnector<IActorProvider>` 인터페이스를 상속받아 상위 세션으로부터 [IActorProvider](Controller/Provider/IActorProvider.cs)에 대한 의존성 주입을 하고 있습니다. 여기서 상위 세션인 `DefaultWorld` 는 `IActorProvider` 를 구현하고 등록하고 있습니다. 
 
 ```c#
 public partial class DefaultWorld : RootSession, IWorldSession,
@@ -471,7 +471,7 @@ using (var trigger = ConditionTrigger.Push(currentRuntimeActor.owner, ConditionT
 }
 ```
 
-해당 액터에 대한 조건임을 명시하고, 하위 모든 트리거에 대한 이벤트의 시작점이 해당 액터임을 명시합니다. 이는 액터의 행동 시간 중 다른 액터의 행동 또한 발생할 수 있기 때문인데, 예를 들어 스킬을 사용한 후, 피격당한 액터가 다시 반격을 하거나, 또는 그 이전에 OnHit 조건을 발생시킬수 있기 떄문에 모든 이벤트에 대해 소유자를 명시하여야합니다.
+해당 액터에 대한 조건임을 명시하고, 하위 모든 트리거에 대한 이벤트의 시작점이 해당 액터임을 명시합니다. 이는 액터의 행동 시간 중 다른 액터의 행동 또한 발생할 수 있기 때문인데, 예를 들어 스킬을 사용한 후, 피격당한 액터가 다시 반격을 하거나, 또는 그 이전에 `OnHit` 조건을 발생시킬수 있기 떄문에 모든 이벤트에 대해 소유자를 명시하여야합니다.
 
 이렇게 발생한 조건들에 대해, 그 조건을 소유(즉, 이 이벤트 객체의 시간내에서 조건이 발생한 적 있는지)를 검사할 수 있고, 그 외 필요한 모든 조건에 대해 검사할 수 있는 [ConditionResolver](Controller/Condition/ConditionResolver.cs)를 설계하였습니다.
 
@@ -527,23 +527,39 @@ public static StatValueSetterDelegate GetSetMethod(StatType t)
 }
 ```
 
-스탯 타입(프로그램에 정의되지 않은 값도 가능)으로 해당 스탯 타입으로 연결하는 델리게이트를 얻을 수 있고, 이것을 통해 각 `Controller`의 기능 수행부분은 스탯이 무엇인지 알지못해도 알맞는 스탯에 대해 연산을 수행할 수 있습니다.
+스탯 타입(프로그램에 정의되지 않은 값도 가능)으로 해당 스탯 타입으로 연결하는 델리게이트를 얻을 수 있고, 이것을 통해 각 `Controller`의 기능 수행 부분은 스탯이 무엇인지 알지못해도 알맞는 스탯에 대해 연산을 수행할 수 있습니다.
 
 ```C#
-void IStatModifier.UpdateValues(in IReadOnlyStatValues originalStats, ref StatValues stats)
+ void IStatModifier.UpdateValues(in IReadOnlyStatValues originalStats, ref StatValues stats)
+ {
+   foreach (Value e in m_Values.OrderBy(ValueMethodOrderComparer.Selector, ValueMethodOrderComparer.Static))
+   {
+     int length = e.updateCount;
+     for (int i = 0; i < length; i++)
+     {
+       e.abnormal.setter(stats, e.abnormal.method(
+         e.abnormal.getter(stats),
+         e.abnormal.value
+       ));
+     }
+   }
+   m_IsDirty = false;
+ }
+```
+
+이것은 개방-폐쇄 원칙(Open-Closed Principle, OCP)을 적용한 것으로, 메서드의 모든 부분이 추상화에 의존하고 있기 때문입니다. 실제로 참조하고 있는 `Value`의 `setter`와 `getter`는 `StatValues`에서 캐시된 델리게이트를 전달받고 있습니다.
+
+```C#
+public readonly StatValueGetterDelegate getter;
+public readonly StatValueSetterDelegate setter;
+
+public RuntimeAbnormal(AbnormalSheet.Row d)
 {
-    foreach (var e in m_Values.OrderBy(ValueMethodOrderComparer.Selector, ValueMethodOrderComparer.Static))
-    {
-        int length = e.updateCount;
-        for (int i = 0; i < length; i++)
-        {
-            e.abnormal.setter(stats, e.abnormal.method(
-                e.abnormal.getter(stats),
-                e.abnormal.value
-            ));
-        }
-    }
-    m_IsDirty = false;
+  // ....
+  getter     = StatValues.GetGetMethod(targetStat);
+	setter     = StatValues.GetSetMethod(targetStat);
+  // ....
 }
 ```
 
+이러한 방식은 주어진 상황에 따라 동적으로 필요한 메서드를 선택할 수 있도록 합니다. `StatValues`에서는 `GetGetMethod` 및 `GetSetMethod` 정적 메서드를 제공하여 특정 `StatType`에 대한 `getter`와 `setter`를 동적으로 가져옵니다. 이것은 핵심 `StatType`에 따라 스탯 값을 가져오거나 설정하는 방법을 선택할 수 있게 해줍니다. 이 접근 방식은 코드의 읽기 어려움을 약간 증가시킬 수 있지만, 이를 통해 동적 행동과 유연성을 증가시킬 수 있습니다,

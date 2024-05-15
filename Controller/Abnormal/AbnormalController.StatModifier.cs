@@ -60,7 +60,7 @@ namespace Vvr.Controller.Abnormal
 
         void IStatModifier.UpdateValues(in IReadOnlyStatValues originalStats, ref StatValues stats)
         {
-            foreach (var e in m_Values.OrderBy(ValueMethodOrderComparer.Selector, ValueMethodOrderComparer.Static))
+            foreach (Value e in m_Values.OrderBy(ValueMethodOrderComparer.Selector, ValueMethodOrderComparer.Static))
             {
                 int length = e.updateCount;
                 for (int i = 0; i < length; i++)
