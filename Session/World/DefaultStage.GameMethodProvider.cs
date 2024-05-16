@@ -62,17 +62,17 @@ namespace Vvr.Session.World
             }
 
             var field = x.ConditionResolver[Model.Condition.IsPlayerActor](null) ? m_PlayerField : m_EnemyField;
-            int index = field.FindIndex(e => e.owner == x);
+            int index = field.FindIndex(e => e.Owner == x);
             if (index < 0)
             {
                 $"{index} not found in field {x.ConditionResolver[Model.Condition.IsPlayerActor](null)}".ToLogError();
                 return;
             }
 
-            StageActor actor = field[index];
-            ReserveActor(actor);
+            IStageActor actor = field[index];
+            m_StageActorProvider.Reserve(actor);
 
-            $"Actor {actor.owner.DisplayName} is dead {actor.owner.Stats[StatType.HP]}".ToLog();
+            $"Actor {actor.Owner.DisplayName} is dead {actor.Owner.Stats[StatType.HP]}".ToLog();
 
             Assert.IsFalse(Disposed);
             await Delete(field, actor);

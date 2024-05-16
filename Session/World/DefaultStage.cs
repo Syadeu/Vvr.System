@@ -43,9 +43,10 @@ namespace Vvr.Session.World
     public partial class DefaultStage : ChildSession<DefaultStage.SessionData>,
         IStageProvider,
         IConnector<IActorProvider>,
+        IConnector<IStageActorProvider>,
         IConnector<IInputControlProvider>
     {
-        private class ActorList : List<StageActor>, IReadOnlyActorList
+        private class ActorList : List<IStageActor>, IReadOnlyActorList
         {
             CachedActor IReadOnlyList<CachedActor>.this[int index] => new CachedActor(this[index]);
 
@@ -58,7 +59,7 @@ namespace Vvr.Session.World
             {
                 for (int i = 0; i < Count; i++)
                 {
-                    if (this[i].owner.GetInstanceID().ToString() == instanceId)
+                    if (this[i].Owner.GetInstanceID().ToString() == instanceId)
                     {
                         actor = new CachedActor(this[i]);
                         return true;
@@ -142,6 +143,7 @@ namespace Vvr.Session.World
         }
 
         private IActorProvider                m_ActorProvider;
+        private IStageActorProvider           m_StageActorProvider;
         private IInputControlProvider         m_InputControlProvider;
         private AsyncLazy<IEventViewProvider> m_ViewProvider;
 
@@ -165,11 +167,10 @@ namespace Vvr.Session.World
         protected override UniTask OnInitialize(IParentSession session, SessionData data)
         {
             // This is required for injecting actors
-            Register<ITargetProvider>(this)
+            Parent.Register<ITargetProvider>(this)
                 .Register<IStateConditionProvider>(this)
                 .Register<IEventConditionProvider>(this)
-                ;
-            Parent.Register<IStageProvider>(this);
+                .Register<IStageProvider>(this);
 
             m_ViewProvider         = Vvr.Provider.Provider.Static.GetLazyAsync<IEventViewProvider>();
             m_AssetController      = new(data.stage.Assets);
@@ -183,16 +184,14 @@ namespace Vvr.Session.World
 
         protected override UniTask OnReserve()
         {
-            Unregister<ITargetProvider>()
+            Parent.Unregister<ITargetProvider>()
                 .Unregister<IStateConditionProvider>()
                 .Unregister<IEventConditionProvider>()
-                ;
-            Parent.Unregister<IStageProvider>();
+                .Unregister<IStageProvider>();
 
             Disconnect<IAssetProvider>(m_AssetController);
 
             m_ViewProvider         = null;
-            m_InputControlProvider = null;
             m_AssetController      = null;
 
             m_HandActors.Clear();
@@ -219,8 +218,7 @@ namespace Vvr.Session.World
                     Assert.IsNotNull(Data.prevPlayers);
                     foreach (var prevActor in Data.prevPlayers)
                     {
-                        StageActor runtimeActor = new(prevActor.Owner, prevActor.Data);
-                        InitializeActor(runtimeActor);
+                        IStageActor runtimeActor = m_StageActorProvider.Create(prevActor.Owner, prevActor.Data);
 
                         if (playerIndex != 0)
                         {
@@ -242,8 +240,7 @@ namespace Vvr.Session.World
                         IActor target = m_ActorProvider.Resolve(data.Data).CreateInstance();
                         target.Initialize(Owner, data.Data);
 
-                        StageActor runtimeActor = new(target, data.Data);
-                        InitializeActor(runtimeActor);
+                        IStageActor runtimeActor = m_StageActorProvider.Create(target, data.Data);
 
                         if (playerIndex != 0)
                         {
@@ -265,9 +262,8 @@ namespace Vvr.Session.World
                 IActor         target = m_ActorProvider.Resolve(data).CreateInstance();
                 target.Initialize(m_EnemyId, data);
 
-                StageActor runtimeActor = new(target, data);
+                IStageActor runtimeActor = m_StageActorProvider.Create(target, data);
 
-                InitializeActor(runtimeActor);
                 await Join(m_EnemyField, runtimeActor);
             }
 
@@ -281,11 +277,11 @@ namespace Vvr.Session.World
             // ObjectObserver<ActorList>.ChangedEvent(m_Timeline);
 
             foreach (var item in m_PlayerField
-                         .Concat<StageActor>(m_HandActors)
+                         .Concat<IStageActor>(m_HandActors)
                          .Concat(m_EnemyField)
                      )
             {
-                using var trigger = ConditionTrigger.Push(item.owner, ConditionTrigger.Game);
+                using var trigger = ConditionTrigger.Push(item.Owner, ConditionTrigger.Game);
                 await trigger.Execute(Model.Condition.OnBattleStart, Data.stage.Id);
             }
 
@@ -294,10 +290,10 @@ namespace Vvr.Session.World
                 $"Timeline count {m_Timeline.Count}".ToLog();
 
                 m_ResetEvent = new();
-                StageActor current  = m_Timeline[0];
-                Assert.IsFalse(current.owner.Disposed);
+                IStageActor current  = m_Timeline[0];
+                Assert.IsFalse(current.Owner.Disposed);
 
-                using (var trigger = ConditionTrigger.Push(current.owner, ConditionTrigger.Game))
+                using (var trigger = ConditionTrigger.Push(current.Owner, ConditionTrigger.Game))
                 {
                     await trigger.Execute(Model.Condition.OnActorTurn, null);
                     await UniTask.WaitForSeconds(1f);
@@ -310,12 +306,14 @@ namespace Vvr.Session.World
                     await trigger.Execute(Model.Condition.OnActorTurnEnd, null);
 
                     // Tag out check
-                    if (current.tagOutRequested)
+                    if (current.TagOutRequested)
                     {
-                        Assert.IsTrue(current.owner.ConditionResolver[Model.Condition.IsPlayerActor](null));
+                        Assert.IsTrue(current.Owner.ConditionResolver[Model.Condition.IsPlayerActor](null));
 
                         m_PlayerField.Remove(current);
                         m_HandActors.Add(current);
+
+                        current.TagOutRequested = false;
                     }
                 }
 
@@ -324,7 +322,7 @@ namespace Vvr.Session.World
                 {
                     // Find alive actor
                     var actor = m_HandActors
-                            .Where<StageActor>(x => x.owner.Stats[StatType.HP] > 0)
+                            .Where<IStageActor>(x => x.Owner.Stats[StatType.HP] > 0)
                         ;
                     if (actor.Any())
                     {
@@ -340,76 +338,52 @@ namespace Vvr.Session.World
             }
 
             foreach (var item in m_PlayerField
-                         .Concat<StageActor>(m_HandActors)
+                         .Concat<IStageActor>(m_HandActors)
                          .Concat(m_EnemyField))
             {
-                using var trigger = ConditionTrigger.Push(item.owner, ConditionTrigger.Game);
+                using var trigger = ConditionTrigger.Push(item.Owner, ConditionTrigger.Game);
                 await trigger.Execute(Model.Condition.OnBattleEnd, Data.stage.Id);
 
-                ReserveActor(item);
+                m_StageActorProvider.Reserve(item);
             }
 
             m_Timeline.Clear();
+            m_TimelineQueueProvider.Clear();
             "Stage end".ToLog();
             return new Result(GetCurrentPlayerActors(), GetCurrentEnemyActors());
         }
 
-        private void InitializeActor(IActor item)
-        {
-            item.ConnectTime();
-
-            Connect<IAssetProvider>(item.Assets)
-                .Connect<IActorDataProvider>(item.Skill)
-                .Connect<ITargetProvider>(item.Skill)
-                .Connect<ITargetProvider>(item.Passive)
-                .Connect<IEventConditionProvider>(item.ConditionResolver)
-                .Connect<IStateConditionProvider>(item.ConditionResolver);
-        }
-        private void ReserveActor(IActor item)
-        {
-            Disconnect<IAssetProvider>(item.Assets)
-                .Disconnect<IActorDataProvider>(item.Skill)
-                .Disconnect<ITargetProvider>(item.Skill)
-                .Disconnect<ITargetProvider>(item.Passive)
-                .Disconnect<IEventConditionProvider>(item.ConditionResolver)
-                .Disconnect<IStateConditionProvider>(item.ConditionResolver);
-
-            item.DisconnectTime();
-            item.Skill.Clear();
-            item.Abnormal.Clear();
-        }
-
-        private partial UniTask Join(ActorList                  field,  StageActor actor);
-        private partial UniTask JoinAfter(StageActor          target, ActorList    field, StageActor actor);
-        private partial UniTask Delete(ActorList                field,  StageActor actor);
-        private partial UniTask RemoveFromQueue(StageActor    actor);
-        private partial UniTask RemoveFromTimeline(StageActor actor, int preserveCount = 0);
+        private partial UniTask Join(ActorList                 field,  IStageActor actor);
+        private partial UniTask JoinAfter(IStageActor          target, ActorList   field, IStageActor actor);
+        private partial UniTask Delete(ActorList               field,  IStageActor actor);
+        private partial UniTask RemoveFromQueue(IStageActor    actor);
+        private partial UniTask RemoveFromTimeline(IStageActor actor, int preserveCount = 0);
 
         private partial void DequeueTimeline();
         private partial void UpdateTimeline();
 
         // TODO: Test auto play method
-        private async UniTask ExecuteTurn(StageActor runtimeActor)
+        private async UniTask ExecuteTurn(IStageActor runtimeActor)
         {
             // AI
-            if (!m_InputControlProvider.CanControl(runtimeActor.owner))
+            if (!m_InputControlProvider.CanControl(runtimeActor.Owner))
             {
                 "[Stage] AI control".ToLog();
-                int count = runtimeActor.data.Skills.Count;
-                var skill = runtimeActor.data.Skills[UnityEngine.Random.Range(0, count)].Ref;
+                int count = runtimeActor.Data.Skills.Count;
+                var skill = runtimeActor.Data.Skills[UnityEngine.Random.Range(0, count)].Ref;
 
-                await runtimeActor.owner.Skill.Queue(skill);
+                await runtimeActor.Owner.Skill.Queue(skill);
             }
             else
             {
                 "[Stage] player control".ToLog();
-                await m_InputControlProvider.TransferControl(runtimeActor.owner);
+                await m_InputControlProvider.TransferControl(runtimeActor.Owner);
             }
 
             m_ResetEvent.TrySetResult();
         }
 
-        private async UniTask SwapPlayerCard(StageActor d)
+        private async UniTask SwapPlayerCard(IStageActor d)
         {
             int index = m_HandActors.IndexOf(d);
             Assert.IsFalse(index < 0, "index < 0");
@@ -433,8 +407,8 @@ namespace Vvr.Session.World
 
             if (m_PlayerField.Count > 0)
             {
-                StageActor currentFieldRuntimeActor = m_PlayerField[0];
-                currentFieldRuntimeActor.tagOutRequested = true;
+                IStageActor currentFieldRuntimeActor = m_PlayerField[0];
+                currentFieldRuntimeActor.TagOutRequested = true;
 
                 await JoinAfter(currentFieldRuntimeActor, m_PlayerField, temp);
 
@@ -451,7 +425,7 @@ namespace Vvr.Session.World
                 await Join(m_PlayerField, temp);
             }
 
-            using (var trigger = ConditionTrigger.Push(m_HandActors[index].owner, ConditionTrigger.Game))
+            using (var trigger = ConditionTrigger.Push(m_HandActors[index].Owner, ConditionTrigger.Game))
             {
                 await trigger.Execute(Model.Condition.OnTagIn, null);
             }
@@ -501,8 +475,13 @@ namespace Vvr.Session.World
         }
         void IConnector<IInputControlProvider>.Disconnect(IInputControlProvider t)
         {
+            Assert.IsNotNull(m_InputControlProvider);
             Assert.IsTrue(ReferenceEquals(m_InputControlProvider, t));
             m_InputControlProvider = null;
         }
+
+
+        public void Connect(IStageActorProvider    t) => m_StageActorProvider = t;
+        public void Disconnect(IStageActorProvider t) => m_StageActorProvider = null;
     }
 }

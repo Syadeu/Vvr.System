@@ -82,20 +82,6 @@ namespace Vvr.Session
 
         public int Count => m_Queue.Count;
 
-        protected override UniTask OnInitialize(IParentSession session, SessionData data)
-        {
-            Parent.Register<ITimelineQueueProvider>(this);
-
-            return base.OnInitialize(session, data);
-        }
-
-        protected override UniTask OnReserve()
-        {
-            Parent.Unregister<ITimelineQueueProvider>();
-
-            return base.OnReserve();
-        }
-
         public int IndexOf(IActor actor)
         {
             foreach (var entry in m_Queue)

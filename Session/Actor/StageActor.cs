@@ -39,14 +39,12 @@ namespace Vvr.Session.Actor
         public readonly IActor         owner;
         public readonly ActorSheet.Row data;
 
-        public bool tagOutRequested;
+        public bool TagOutRequested { get; set; }
 
         public StageActor(IActor o, ActorSheet.Row d)
         {
             owner = o;
             data  = d;
-
-            tagOutRequested = false;
         }
 
         IActor IStageActor.        Owner       => owner;

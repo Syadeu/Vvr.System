@@ -36,7 +36,7 @@ namespace Vvr.Session.World
             {
                 case StateCondition.Always: return true;
                 case StateCondition.IsActorTurn:
-                    return m_Timeline[0].owner == target;
+                    return m_Timeline[0].Owner == target;
                 case StateCondition.IsInHand:
                     if (target.Owner == m_EnemyId) return false;
 

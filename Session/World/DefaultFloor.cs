@@ -66,14 +66,25 @@ namespace Vvr.Session.World
 
         public override string DisplayName => nameof(DefaultFloor);
 
-        protected override UniTask OnInitialize(IParentSession session, SessionData data)
+        protected override async UniTask OnInitialize(IParentSession session, SessionData data)
         {
             m_FloorStartEvent = new();
             m_StageStartEvent = new();
 
             m_ViewProvider = Vvr.Provider.Provider.Static.GetLazyAsync<IEventViewProvider>();
 
-            return base.OnInitialize(session, data);
+            // We dont need to manually close these sessions
+            // When this session close, child session also closed.
+            var timelineSession = await CreateSession<TimelineQueueSession>(default);
+            var assetSession    = await CreateSession<AssetSession>(default);
+
+            var stageActorCreateSession = await CreateSession<StageActorCreateSession>(default);
+
+            Register<ITimelineQueueProvider>(timelineSession)
+                .Register<IAssetProvider>(assetSession)
+                .Register<IStageActorProvider>(stageActorCreateSession);
+
+            await base.OnInitialize(session, data);
         }
 
         protected override UniTask OnReserve()
@@ -101,11 +112,6 @@ namespace Vvr.Session.World
             string cachedStartStageId = startStage.Value.Id;
             await trigger.Execute(Model.Condition.OnFloorStarted, cachedStartStageId);
 
-            // We dont need to manually close these sessions
-            // When this session close, child session also closed.
-            var timelineSession = await CreateSession<TimelineQueueSession>(default);
-            var assetSession    = await CreateSession<AssetSession>(default);
-
             while (startStage != null)
             {
                 DefaultStage.SessionData sessionData;
@@ -121,7 +127,6 @@ namespace Vvr.Session.World
                 }
 
                 m_CurrentStage = await CreateSession<DefaultStage>(sessionData);
-                m_CurrentStage.Register<IAssetProvider>(assetSession);
                 Parent.Register<IStageProvider>(m_CurrentStage);
 
                 if (!m_StageStartEvent.TrySetResult())
@@ -133,9 +138,6 @@ namespace Vvr.Session.World
                     await trigger.Execute(Model.Condition.OnStageStarted, sessionData.stage.Id);
                     stageResult = await m_CurrentStage.Start();
                     await trigger.Execute(Model.Condition.OnStageEnded, sessionData.stage.Id);
-
-                    // Clear timeline
-                    timelineSession.Clear();
 
                     var viewProvider = await m_ViewProvider;
                     foreach (var enemy in stageResult.enemyActors)

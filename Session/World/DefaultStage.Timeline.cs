@@ -62,13 +62,13 @@ namespace Vvr.Session.World
             }
         }
 
-        private partial async UniTask Join(ActorList field, StageActor actor)
+        private partial async UniTask Join(ActorList field, IStageActor actor)
         {
             Assert.IsFalse(field.Contains(actor));
             field.Add(actor, ActorPositionComparer.Static);
 
             var viewProvider = await m_ViewProvider;
-            var view         = await viewProvider.Resolve(actor.owner);
+            var view         = await viewProvider.Resolve(actor.Owner);
 
             bool    isFront = ResolvePosition(field, actor);
             Vector3 pos     = view.localPosition;
@@ -77,7 +77,7 @@ namespace Vvr.Session.World
 
             m_TimelineQueueProvider.Enqueue(actor);
         }
-        private partial async UniTask JoinAfter(StageActor target, ActorList field, StageActor actor)
+        private partial async UniTask JoinAfter(IStageActor target, ActorList field, IStageActor actor)
         {
             Assert.IsFalse(field.Contains(actor));
             field.Add(actor, ActorPositionComparer.Static);
@@ -86,13 +86,13 @@ namespace Vvr.Session.World
             m_TimelineQueueProvider.InsertAfter(
                 index, actor);
 
-            using (var trigger = ConditionTrigger.Push(actor.owner, ConditionTrigger.Game))
+            using (var trigger = ConditionTrigger.Push(actor.Owner, ConditionTrigger.Game))
             {
                 await trigger.Execute(Model.Condition.OnTagIn, null);
             }
         }
 
-        private partial async UniTask Delete(ActorList field, StageActor actor)
+        private partial async UniTask Delete(ActorList field, IStageActor actor)
         {
             bool result = field.Remove(actor);
             Assert.IsTrue(result);
@@ -101,21 +101,21 @@ namespace Vvr.Session.World
             await RemoveFromQueue(actor);
 
             var viewProvider = await m_ViewProvider;
-            await viewProvider.Release(actor.owner);
-            actor.owner.Release();
+            await viewProvider.Release(actor.Owner);
+            actor.Owner.Release();
 
             UpdateTimeline();
         }
-        private partial async UniTask RemoveFromQueue(StageActor actor)
+        private partial async UniTask RemoveFromQueue(IStageActor actor)
         {
             m_TimelineQueueProvider.Remove(actor);
         }
-        private partial async UniTask RemoveFromTimeline(StageActor actor, int preserveCount = 0)
+        private partial async UniTask RemoveFromTimeline(IStageActor actor, int preserveCount = 0)
         {
             for (int i = 0; i < m_Timeline.Count; i++)
             {
                 var e = m_Timeline[i];
-                if (e.owner != actor.owner) continue;
+                if (e.Owner != actor.Owner) continue;
 
                 if (0 < preserveCount--) continue;
 
@@ -125,7 +125,7 @@ namespace Vvr.Session.World
         }
 
         [MustUseReturnValue]
-        private bool ResolvePosition(IList<StageActor> field, IStageActor runtimeActor)
+        private bool ResolvePosition(IList<IStageActor> field, IStageActor runtimeActor)
         {
             int count = field.Count;
             // If no actor in the field, always front
@@ -133,7 +133,7 @@ namespace Vvr.Session.World
 
             // This because field list is ordered list by ActorPositionComparer.
             // If the first element is defensive(2), should direct comparison with given actor
-            if (field[0].data.Type == ActorSheet.ActorType.Defensive)
+            if (field[0].Data.Type == ActorSheet.ActorType.Defensive)
             {
                 int order = ActorPositionComparer.Static.Compare(runtimeActor, field[0]);
                 // If only actor is Offensive(0)
@@ -150,7 +150,7 @@ namespace Vvr.Session.World
             // If first is not defensive, should iterate all fields until higher order found
             for (int i = 0; i < count; i++)
             {
-                StageActor e    = field[i];
+                IStageActor e    = field[i];
                 int order = ActorPositionComparer.Static.Compare(runtimeActor, e);
                 if (order == 0) continue;
 
