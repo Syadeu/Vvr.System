@@ -354,29 +354,29 @@ namespace Vvr.Session.World
             return new Result(GetCurrentPlayerActors(), GetCurrentEnemyActors());
         }
 
-        private void InitializeActor(StageActor item)
+        private void InitializeActor(IActor item)
         {
-            item.owner.ConnectTime();
+            item.ConnectTime();
 
-            Connect<IAssetProvider>(item.owner.Assets);
-            Connect<IActorDataProvider>(item.owner.Skill);
-            Connect<ITargetProvider>(item.owner.Skill);
-            Connect<ITargetProvider>(item.owner.Passive);
-            Connect<IEventConditionProvider>(item.owner.ConditionResolver);
-            Connect<IStateConditionProvider>(item.owner.ConditionResolver);
+            Connect<IAssetProvider>(item.Assets)
+                .Connect<IActorDataProvider>(item.Skill)
+                .Connect<ITargetProvider>(item.Skill)
+                .Connect<ITargetProvider>(item.Passive)
+                .Connect<IEventConditionProvider>(item.ConditionResolver)
+                .Connect<IStateConditionProvider>(item.ConditionResolver);
         }
-        private void ReserveActor(StageActor item)
+        private void ReserveActor(IActor item)
         {
-            Disconnect<IAssetProvider>(item.owner.Assets);
-            Disconnect<IActorDataProvider>(item.owner.Skill);
-            Disconnect<ITargetProvider>(item.owner.Skill);
-            Disconnect<ITargetProvider>(item.owner.Passive);
-            Disconnect<IEventConditionProvider>(item.owner.ConditionResolver);
-            Disconnect<IStateConditionProvider>(item.owner.ConditionResolver);
+            Disconnect<IAssetProvider>(item.Assets)
+                .Disconnect<IActorDataProvider>(item.Skill)
+                .Disconnect<ITargetProvider>(item.Skill)
+                .Disconnect<ITargetProvider>(item.Passive)
+                .Disconnect<IEventConditionProvider>(item.ConditionResolver)
+                .Disconnect<IStateConditionProvider>(item.ConditionResolver);
 
-            item.owner.DisconnectTime();
-            item.owner.Skill.Clear();
-            item.owner.Abnormal.Clear();
+            item.DisconnectTime();
+            item.Skill.Clear();
+            item.Abnormal.Clear();
         }
 
         private partial UniTask Join(ActorList                  field,  StageActor actor);
