@@ -46,7 +46,7 @@ namespace Vvr.Session
         /// <typeparam name="TChildSession">The type of the child session to create.</typeparam>
         /// <param name="data">The session data for initializing the child session.</param>
         /// <returns>The created child session of type TChildSession.</returns>
-        [PublicAPI, MustUseReturnValue]
+        [PublicAPI]
         UniTask<TChildSession> CreateSession<TChildSession>(ISessionData data) where TChildSession : IChildSession;
 
         /// <summary>

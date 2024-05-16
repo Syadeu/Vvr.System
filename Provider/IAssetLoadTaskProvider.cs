@@ -22,7 +22,7 @@
 using System;
 using UnityEngine.ResourceManagement.AsyncOperations;
 
-namespace Vvr.Controller.Asset
+namespace Vvr.Provider
 {
     [UnityEngine.Scripting.RequireImplementors]
     public interface IAssetLoadTaskProvider<in TAssetType>

@@ -20,8 +20,8 @@
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
-using Vvr.Controller.Asset;
 using Vvr.Model;
+using Vvr.Provider;
 
 namespace Vvr.Session.World
 {

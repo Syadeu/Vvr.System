@@ -43,27 +43,14 @@ namespace Vvr.Session.Actor
 {
     internal class Actor : ScriptableObject, IActor, IInitialize<Owner, ActorSheet.Row>
     {
-        private struct AssetLoadTaskProvider : IAssetLoadTaskProvider<AssetType>
-        {
-            public AsyncOperationHandle Resolve(AssetType type, string path)
-            {
-                if (type == AssetType.CardPortrait)
-                {
-                    return Addressables.LoadAssetAsync<Sprite>(path);
-                }
-
-                throw new NotImplementedException($"{type}, {path}");
-            }
-        }
-
-        private StatValueStack             m_Stats;
-        private ConditionResolver          m_ConditionResolver;
-        private AbnormalController         m_AbnormalController;
-        private PassiveController          m_PassiveController;
-        private SkillController            m_SkillController;
-        private ItemInventory              m_ItemInventory;
-        private BehaviorTreeController     m_BehaviorTreeController;
-        private AssetController<AssetType> m_AssetController;
+        private StatValueStack                  m_Stats;
+        private ConditionResolver               m_ConditionResolver;
+        private AbnormalController              m_AbnormalController;
+        private PassiveController               m_PassiveController;
+        private SkillController                 m_SkillController;
+        private ItemInventory                   m_ItemInventory;
+        private BehaviorTreeController          m_BehaviorTreeController;
+        private AssetController<ActorAssetType> m_AssetController;
 
         public Owner  Owner       { get; private set; }
         public string DisplayName => DataID;
@@ -113,7 +100,7 @@ namespace Vvr.Session.Actor
             m_SkillController        = SkillController.Create(this);
             m_BehaviorTreeController = new(this);
 
-            m_AssetController = new AssetController<AssetType>(this);
+            m_AssetController = new AssetController<ActorAssetType>(this);
 
             m_Stats
                 .AddModifier(m_AbnormalController)
@@ -128,7 +115,7 @@ namespace Vvr.Session.Actor
                 .Subscribe(m_PassiveController)
                 ;
 
-            m_AssetController.Connect<AssetLoadTaskProvider>(ta.Assets);
+            m_AssetController.Connect<ActorAssetLoadTaskProvider>(ta.Assets);
 
             for (int i = 0; i < ta.Passive?.Count; i++)
             {

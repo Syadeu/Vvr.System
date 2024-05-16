@@ -42,7 +42,8 @@ namespace Vvr.Session.World
 {
     [ParentSession(typeof(DefaultFloor), true), Preserve]
     public partial class DefaultStage : ChildSession<DefaultStage.SessionData>, IStageProvider,
-        IConnector<IActorProvider>
+        IConnector<IActorProvider>,
+        IConnector<IInputControlProvider>
     {
         private class ActorList : List<StageActor>, IReadOnlyActorList
         {
@@ -146,9 +147,9 @@ namespace Vvr.Session.World
             }
         }
 
-        private IActorProvider             m_ActorProvider;
-        private AsyncLazy<IEventViewProvider>    m_ViewProvider;
-        private AsyncLazy<IInputControlProvider> m_InputControlProvider;
+        private IActorProvider                m_ActorProvider;
+        private IInputControlProvider         m_InputControlProvider;
+        private AsyncLazy<IEventViewProvider> m_ViewProvider;
 
         private AssetController<AssetType> m_AssetController;
 
@@ -171,12 +172,12 @@ namespace Vvr.Session.World
         {
             // This is required for injecting actors
             Register<ITargetProvider>(this);
+            Parent.Register<IStageProvider>(this);
 
             Vvr.Provider.Provider.Static
                 .Register<IStateConditionProvider>(this);
 
             m_ViewProvider         = Vvr.Provider.Provider.Static.GetLazyAsync<IEventViewProvider>();
-            m_InputControlProvider = Vvr.Provider.Provider.Static.GetLazyAsync<IInputControlProvider>();
             m_AssetController      = new(this);
 
             m_EnemyId = Owner.Issue;
@@ -187,6 +188,7 @@ namespace Vvr.Session.World
         protected override UniTask OnReserve()
         {
             Unregister<ITargetProvider>();
+            Parent.Unregister<IStageProvider>();
 
             Vvr.Provider.Provider.Static
                 .Unregister<IStateConditionProvider>(this);
@@ -385,9 +387,8 @@ namespace Vvr.Session.World
         // TODO: Test auto play method
         private async UniTask ExecuteTurn(StageActor runtimeActor)
         {
-            var inputControl = await m_InputControlProvider;
             // AI
-            if (!inputControl.CanControl(runtimeActor.owner))
+            if (!m_InputControlProvider.CanControl(runtimeActor.owner))
             {
                 "[Stage] AI control".ToLog();
                 int count = runtimeActor.data.Skills.Count;
@@ -398,7 +399,7 @@ namespace Vvr.Session.World
             else
             {
                 "[Stage] player control".ToLog();
-                await inputControl.TransferControl(runtimeActor.owner);
+                await m_InputControlProvider.TransferControl(runtimeActor.owner);
             }
 
             m_ResetEvent.TrySetResult();
@@ -487,6 +488,17 @@ namespace Vvr.Session.World
         {
             Assert.IsTrue(ReferenceEquals(m_ActorProvider, t));
             m_ActorProvider = null;
+        }
+
+        void IConnector<IInputControlProvider>.Connect(IInputControlProvider t)
+        {
+            Assert.IsNull(m_InputControlProvider);
+            m_InputControlProvider = t;
+        }
+        void IConnector<IInputControlProvider>.Disconnect(IInputControlProvider t)
+        {
+            Assert.IsTrue(ReferenceEquals(m_InputControlProvider, t));
+            m_InputControlProvider = null;
         }
     }
 }

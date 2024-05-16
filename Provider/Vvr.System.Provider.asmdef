@@ -7,9 +7,12 @@
 
     "Unity.Collections",
     "Unity.Mathematics",
+    "Unity.ResourceManager",
+    "Unity.Addressables",
 
     "BakingSheet",
 
-    "UniTask"
+    "UniTask",
+    "UniTask.Addressables"
   ]
 }

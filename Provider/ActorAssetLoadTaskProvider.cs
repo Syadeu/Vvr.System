@@ -26,7 +26,7 @@ using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using Vvr.Model;
 
-namespace Vvr.Controller.Asset
+namespace Vvr.Provider
 {
     [UsedImplicitly]
     public struct ActorAssetLoadTaskProvider : IAssetLoadTaskProvider<ActorAssetType>

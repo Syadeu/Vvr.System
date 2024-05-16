@@ -30,9 +30,13 @@ using Vvr.Provider;
 
 namespace Vvr.Controller.Input
 {
+    [Obsolete("", true)]
     public delegate bool InputControlPredicate(IEventTarget target);
+
+    [Obsolete("", true)]
     public delegate UniTask InputControlAction(IEventTarget target);
 
+    [Obsolete("", true)]
     public class InputControlController : IDisposable, IInputControlProvider
     {
         public struct Scope : IDisposable
@@ -123,13 +127,13 @@ namespace Vvr.Controller.Input
             }
         }
 
-        async UniTask IInputControlProvider.TransferControl(IEventTarget actor)
+        async UniTask IInputControlProvider.TransferControl(IEventTarget target)
         {
-            m_InputOwner              = actor;
+            m_InputOwner              = target;
             m_CancellationTokenSource = new();
             HasControl                = true;
 
-            OnGainControl_Impl(actor)
+            OnGainControl_Impl(target)
                 .Forget();
 
             "[Input] Wait for input".ToLog();
@@ -162,6 +166,7 @@ namespace Vvr.Controller.Input
         }
     }
 
+    [Obsolete("", true)]
     public static class InputControllerExtensions
     {
         public static InputControlController OnlyPlayerActor(this InputControlController t)
@@ -174,11 +179,5 @@ namespace Vvr.Controller.Input
             });
             return t;
         }
-    }
-
-    public interface IInputControlProvider : IProvider
-    {
-        bool    CanControl(IEventTarget target);
-        UniTask TransferControl(IEventTarget actor);
     }
 }

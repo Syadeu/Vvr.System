@@ -49,6 +49,13 @@ namespace Vvr.Session.World
 
         public override string DisplayName => nameof(DefaultRegion);
 
+        protected override async UniTask OnInitialize(IParentSession session, SessionData data)
+        {
+            await CreateSession<PlayerControlSession>(default);
+
+            await base.OnInitialize(session, data);
+        }
+
         public async UniTask Start(StageSheet sheet, Owner playerId, ActorSheet.Row[] playerData)
         {
             using var trigger = ConditionTrigger.Push(this, DisplayName);

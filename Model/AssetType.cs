@@ -27,4 +27,9 @@ namespace Vvr.Model
 
         BackgroundImage,
     }
+
+    public enum ActorAssetType : short
+    {
+        CardPortrait = AssetType.CardPortrait,
+    }
 }

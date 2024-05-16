@@ -308,8 +308,8 @@ namespace Vvr.Session
                 // $"[Session:{Type.FullName}] Found {connectorType.FullName}".ToLog();
                 if (connectorType.GetGenericArguments()[0] != pType)
                 {
-                    $"{connectorType.GetGenericArguments()[0].AssemblyQualifiedName} != {pType.AssemblyQualifiedName}"
-                        .ToLog();
+                    // $"{connectorType.GetGenericArguments()[0].AssemblyQualifiedName} != {pType.AssemblyQualifiedName}"
+                        // .ToLog();
                     continue;
                 }
 
@@ -410,7 +410,8 @@ namespace Vvr.Session
         [Conditional("DEVELOPMENT_BUILD")]
         protected virtual void EvaluateProviderRegistration(Type providerType, IProvider provider)
         {
-            if (m_ConnectedProviders.ContainsKey(providerType))
+            if (m_ConnectedProviders.TryGetValue(providerType, out var existing) &&
+                !ReferenceEquals(existing, provider))
                 throw new InvalidOperationException("Already registered.");
         }
 
