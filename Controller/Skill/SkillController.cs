@@ -218,7 +218,7 @@ namespace Vvr.Controller.Skill
                     case SkillSheet.Method.Damage:
                         target.Stats.Push<DamageProcessor>(
                             value.skill.Execution.TargetStat.Ref.ToStat(), dmg);
-                        await targetTrigger.Execute(Model.Condition.OnHit, $"{dmg}");
+                        await targetTrigger.Execute(Model.Condition.OnHit, null);
 
                         break;
                     case SkillSheet.Method.Default:
@@ -227,7 +227,7 @@ namespace Vvr.Controller.Skill
                         target.Stats.Push(
                             value.skill.Execution.TargetStat.Ref.ToStat(), dmg);
 
-                        await targetTrigger.Execute(Model.Condition.OnHit, $"{dmg}");
+                        await targetTrigger.Execute(Model.Condition.OnHit, null);
                         break;
                 }
             }

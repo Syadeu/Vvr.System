@@ -36,9 +36,7 @@ namespace Vvr.Controller.Condition
 {
     public delegate bool ConditionDelegate(string value);
 
-    public sealed class ConditionResolver : IReadOnlyConditionResolver, IDisposable,
-        IConnector<IEventConditionProvider>,
-        IConnector<IStateConditionProvider>
+    public sealed class ConditionResolver : IReadOnlyConditionResolver, IDisposable
     {
         public static readonly ConditionDelegate Always = _ => true;
         public static readonly ConditionDelegate False = _ => false;
@@ -84,8 +82,7 @@ namespace Vvr.Controller.Condition
                 if (m_Delegates == null ||
                     !m_Filter.Has(t))
                 {
-                    $"[Condition] Condition {t} is not connected.".ToLog();
-                    return False;
+                    throw new InvalidOperationException($"[Condition] Condition {t} is not connected.");
                 }
 
                 int i = m_Filter.IndexOf(t);
@@ -145,7 +142,6 @@ namespace Vvr.Controller.Condition
             }
         }
 
-        private bool Connected { get; set; }
         [PublicAPI]
         public bool Disposed  { get; private set; }
 
@@ -159,30 +155,6 @@ namespace Vvr.Controller.Condition
             : this(owner)
         {
             m_Parent = parent;
-        }
-
-        public ConditionResolver Connect()
-        {
-            if (Disposed)
-                throw new ObjectDisposedException(nameof(ConditionResolver));
-
-            Vvr.Provider.Provider.Static
-                .Connect<IEventConditionProvider>(this)
-                .Connect<IStateConditionProvider>(this);
-
-            Connected = true;
-            return this;
-        }
-        public ConditionResolver Disconnect()
-        {
-            if (Disposed)
-                throw new ObjectDisposedException(nameof(ConditionResolver));
-
-            Vvr.Provider.Provider.Static
-                .Disconnect<IEventConditionProvider>(this)
-                .Disconnect<IStateConditionProvider>(this);
-            Connected = false;
-            return this;
         }
 
         void IConnector<IEventConditionProvider>.Connect(IEventConditionProvider provider)
@@ -301,7 +273,6 @@ namespace Vvr.Controller.Condition
             if (Disposed)
                 throw new ObjectDisposedException(nameof(ConditionResolver));
 
-            if (Connected) Disconnect();
             if (m_Delegates != null)
                 ArrayPool<ConditionDelegate>.Shared.Return(m_Delegates, true);
             Disposed = true;

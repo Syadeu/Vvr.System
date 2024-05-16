@@ -22,7 +22,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using Vvr.Controller.Provider;
 using Vvr.Model;
 using Vvr.Provider;
 

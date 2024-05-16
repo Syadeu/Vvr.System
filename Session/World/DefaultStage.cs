@@ -168,9 +168,6 @@ namespace Vvr.Session.World
             Register<ITargetProvider>(this);
             Parent.Register<IStageProvider>(this);
 
-            Vvr.Provider.Provider.Static
-                .Register<IStateConditionProvider>(this);
-
             m_ViewProvider         = Vvr.Provider.Provider.Static.GetLazyAsync<IEventViewProvider>();
             m_AssetController      = new(this);
 
@@ -185,9 +182,6 @@ namespace Vvr.Session.World
         {
             Unregister<ITargetProvider>();
             Parent.Unregister<IStageProvider>();
-
-            Vvr.Provider.Provider.Static
-                .Unregister<IStateConditionProvider>(this);
 
             m_AssetController.Dispose();
 
@@ -298,6 +292,8 @@ namespace Vvr.Session.World
                 Connect<IActorDataProvider>(item.owner.Skill);
                 Connect<ITargetProvider>(item.owner.Skill);
                 Connect<ITargetProvider>(item.owner.Passive);
+                Connect<IEventConditionProvider>(item.owner.ConditionResolver);
+                Connect<IStateConditionProvider>(item.owner.ConditionResolver);
             }
 
             while (m_Timeline.Count > 0 && m_PlayerField.Count > 0 && m_EnemyField.Count > 0)
@@ -360,6 +356,8 @@ namespace Vvr.Session.World
                 Disconnect<IActorDataProvider>(item.owner.Skill);
                 Disconnect<ITargetProvider>(item.owner.Skill);
                 Disconnect<ITargetProvider>(item.owner.Passive);
+                Disconnect<IEventConditionProvider>(item.owner.ConditionResolver);
+                Disconnect<IStateConditionProvider>(item.owner.ConditionResolver);
 
                 item.owner.DisconnectTime();
                 item.owner.Skill.Clear();

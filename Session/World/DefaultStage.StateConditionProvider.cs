@@ -21,13 +21,14 @@
 
 using System;
 using System.Linq;
+using Vvr.Controller.Condition;
 using Vvr.Model;
 using Vvr.Provider;
 using Vvr.Session.Actor;
 
 namespace Vvr.Session.World
 {
-    partial class DefaultStage : IStateConditionProvider
+    partial class DefaultStage : IStateConditionProvider, IEventConditionProvider
     {
         bool IStateConditionProvider.Resolve(StateCondition condition, IEventTarget target, string value)
         {
@@ -45,6 +46,12 @@ namespace Vvr.Session.World
                 default:
                     throw new ArgumentOutOfRangeException(nameof(condition), condition, null);
             }
+        }
+        bool IEventConditionProvider.Resolve(EventCondition condition, IEventTarget target, string value)
+        {
+            if (condition == 0) throw new InvalidOperationException();
+
+            return ConditionTrigger.Any(target, (Condition)condition, value);
         }
     }
 }

@@ -23,6 +23,7 @@ using Vvr.Model;
 
 namespace Vvr.Provider
 {
+    [LocalProvider]
     public interface IEventConditionProvider : IProvider
     {
         bool Resolve(EventCondition condition, IEventTarget target, string value);

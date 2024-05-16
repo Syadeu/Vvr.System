@@ -23,7 +23,8 @@ using Vvr.Provider;
 
 namespace Vvr.Controller.Condition
 {
-    public interface IReadOnlyConditionResolver
+    public interface IReadOnlyConditionResolver : IConnector<IEventConditionProvider>,
+        IConnector<IStateConditionProvider>
     {
         IEventTarget Owner { get; }
 

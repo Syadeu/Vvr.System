@@ -76,6 +76,8 @@ namespace Vvr.Session.World
             Disconnect<IActorDataProvider>(actor.owner.Skill);
             Disconnect<ITargetProvider>(actor.owner.Skill);
             Disconnect<ITargetProvider>(actor.owner.Passive);
+            Disconnect<IEventConditionProvider>(actor.owner.ConditionResolver);
+            Disconnect<IStateConditionProvider>(actor.owner.ConditionResolver);
 
             $"Actor {actor.owner.DisplayName} is dead {actor.owner.Stats[StatType.HP]}".ToLog();
 

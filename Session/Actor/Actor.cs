@@ -107,7 +107,6 @@ namespace Vvr.Session.Actor
                 .AddModifier(m_ItemInventory);
 
             m_ConditionResolver
-                .Connect()
                 .Connect(m_AbnormalController)
                 .Connect(Stats, StatProvider.Static)
 
@@ -131,7 +130,6 @@ namespace Vvr.Session.Actor
             ((IActor)this).DisconnectTime();
 
             m_ConditionResolver
-                .Disconnect()
                 .Unsubscribe(m_AbnormalController)
                 .Unsubscribe(m_PassiveController);
 
