@@ -101,7 +101,10 @@ namespace Vvr.Session.World
             string cachedStartStageId = startStage.Value.Id;
             await trigger.Execute(Model.Condition.OnFloorStarted, cachedStartStageId);
 
+            // We dont need to manually close these sessions
+            // When this session close, child session also closed.
             var timelineSession = await CreateSession<TimelineQueueSession>(default);
+            var assetSession    = await CreateSession<AssetSession>(default);
 
             while (startStage != null)
             {
@@ -118,6 +121,7 @@ namespace Vvr.Session.World
                 }
 
                 m_CurrentStage = await CreateSession<DefaultStage>(sessionData);
+                m_CurrentStage.Register<IAssetProvider>(assetSession);
                 Parent.Register<IStageProvider>(m_CurrentStage);
 
                 if (!m_StageStartEvent.TrySetResult())
@@ -150,6 +154,7 @@ namespace Vvr.Session.World
                     prevPlayers.AddRange(stageResult.playerActors);
                 }
 
+                m_CurrentStage.Unregister<IAssetProvider>();
                 Parent.Unregister<IStageProvider>();
                 m_StageStartEvent = new();
                 await m_CurrentStage.Reserve();

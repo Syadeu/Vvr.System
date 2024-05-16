@@ -49,7 +49,7 @@ namespace Vvr.Session
         private readonly Dictionary<Type, LinkedList<ConnectorReflectionUtils.Wrapper>>
             m_ConnectorWrappers = new();
 
-        private CancellationTokenSource m_InitializeToken;
+        private CancellationTokenSource m_ReserveTokenSource;
 
         private ConditionResolver m_ConditionResolver;
 
@@ -118,6 +118,8 @@ namespace Vvr.Session
         /// </remarks>
         public bool Disposed { get; private set; }
 
+        protected CancellationToken ReserveToken => m_ReserveTokenSource.Token;
+
         UniTask IGameSessionBase.Initialize(Owner owner, IParentSession parent, ISessionData data)
         {
             Owner = owner;
@@ -132,10 +134,10 @@ namespace Vvr.Session
                 else Assert.AreEqual(att.Type, parent.GetType());
             }
 
-            if (m_InitializeToken != null)
+            if (m_ReserveTokenSource != null)
             {
-                m_InitializeToken.Cancel();
-                m_InitializeToken.Dispose();
+                m_ReserveTokenSource.Cancel();
+                m_ReserveTokenSource.Dispose();
             }
 
             Disposed = false;
@@ -146,10 +148,10 @@ namespace Vvr.Session
             m_ConditionResolver = Controller.Condition.ConditionResolver.Create(this, parent?.ConditionResolver);
             Register(m_ConditionResolver);
 
-            m_InitializeToken = new();
+            m_ReserveTokenSource = new();
 
             return OnInitialize(parent, Data)
-                .AttachExternalCancellation(m_InitializeToken.Token)
+                .AttachExternalCancellation(m_ReserveTokenSource.Token)
                 .SuppressCancellationThrow()
                 ;
         }
@@ -161,7 +163,7 @@ namespace Vvr.Session
         /// <returns>A UniTask representing the asynchronous operation.</returns>
         public async UniTask Reserve()
         {
-            m_InitializeToken.Cancel();
+            m_ReserveTokenSource.Cancel();
 
             await OnReserve();
 
@@ -176,13 +178,13 @@ namespace Vvr.Session
             m_ConnectedProviders.Clear();
             m_ConnectorWrappers.Clear();
 
-            m_InitializeToken.Dispose();
+            m_ReserveTokenSource.Dispose();
             m_ConditionResolver.Dispose();
 
             Parent              = null;
             Data                = default;
             m_ConditionResolver = null;
-            m_InitializeToken   = null;
+            m_ReserveTokenSource   = null;
 
             Disposed = true;
             // TODO: recycling
