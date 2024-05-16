@@ -73,6 +73,8 @@ namespace Vvr.Session.World
 
             StageActor actor = field[index];
 
+            actor.owner.DisconnectTime();
+
             Disconnect<IActorDataProvider>(actor.owner.Skill);
             Disconnect<ITargetProvider>(actor.owner.Skill);
             Disconnect<ITargetProvider>(actor.owner.Passive);
