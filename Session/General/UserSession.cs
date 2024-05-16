@@ -27,6 +27,7 @@ using Vvr.Controller.Actor;
 using Vvr.Model;
 using Vvr.Provider;
 using Vvr.Session.Actor;
+using Vvr.Session.Provider;
 
 namespace Vvr.Session
 {
@@ -97,12 +98,5 @@ namespace Vvr.Session
         {
             return m_CurrentActors;
         }
-    }
-
-    [LocalProvider]
-    public interface IPlayerActorProvider : IProvider
-    {
-        [PublicAPI]
-        IReadOnlyList<IActorData> GetCurrentTeam();
     }
 }
