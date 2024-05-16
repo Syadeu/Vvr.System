@@ -20,6 +20,8 @@
 #endregion
 
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using Vvr.Controller.Provider;
 using Vvr.Model;
 using Vvr.Provider;
@@ -42,5 +44,12 @@ namespace Vvr.Session.Provider
         public void Dispose()
         {
         }
+
+        public IEnumerator<ActorSheet.Row> GetEnumerator() => m_Sheet.GetEnumerator();
+        IEnumerator IEnumerable.           GetEnumerator() => ((IEnumerable)m_Sheet).GetEnumerator();
+
+        public int Count => m_Sheet.Count;
+
+        public ActorSheet.Row this[int index] => m_Sheet[index];
     }
 }

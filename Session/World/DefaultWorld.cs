@@ -60,6 +60,7 @@ namespace Vvr.Session.World
 
             ConditionTrigger.OnEventExecutedAsync += OnEventExecutedAsync;
 
+            await CreateSession<UserSession>(default);
             // TODO: skip map load
             DefaultMap = await CreateSession<DefaultMap>(default);
 

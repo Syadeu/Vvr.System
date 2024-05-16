@@ -19,12 +19,14 @@
 
 #endregion
 
+using System.Collections.Generic;
 using Vvr.Model;
 
 namespace Vvr.Provider
 {
     [LocalProvider]
-    public interface IActorDataProvider : IProvider
+    public interface IActorDataProvider : IProvider,
+        IReadOnlyList<ActorSheet.Row>
     {
         ActorSheet.Row Resolve(string key);
     }

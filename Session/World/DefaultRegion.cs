@@ -32,8 +32,8 @@ using Vvr.Session.Provider;
 namespace Vvr.Session.World
 {
     [ParentSession(typeof(DefaultMap))]
-    public class DefaultRegion : ParentSession<DefaultRegion.SessionData>
-        , IConnector<IActorProvider>
+    public class DefaultRegion : ParentSession<DefaultRegion.SessionData>,
+        IConnector<IPlayerActorProvider>
     {
         public struct SessionData : ISessionData
         {
@@ -47,6 +47,8 @@ namespace Vvr.Session.World
             }
         }
 
+        private IPlayerActorProvider m_PlayerActorProvider;
+
         public override string DisplayName => nameof(DefaultRegion);
 
         protected override async UniTask OnInitialize(IParentSession session, SessionData data)
@@ -56,7 +58,7 @@ namespace Vvr.Session.World
             await base.OnInitialize(session, data);
         }
 
-        public async UniTask Start(StageSheet sheet, Owner playerId, ActorSheet.Row[] playerData)
+        public async UniTask Start(StageSheet sheet)
         {
             using var trigger = ConditionTrigger.Push(this, DisplayName);
             // StageSheet.Row startStage = Data.sheet[Data.startStageId];
@@ -73,7 +75,7 @@ namespace Vvr.Session.World
                 {
                     var floor = await CreateSession<DefaultFloor>(new DefaultFloor.SessionData(list, aliveActors));
 
-                    DefaultFloor.Result result = await floor.Start(playerId, playerData);
+                    DefaultFloor.Result result = await floor.Start(m_PlayerActorProvider.GetCurrentTeam());
                     aliveActors = result.alivePlayerActors;
 
                     await floor.Reserve();
@@ -93,12 +95,7 @@ namespace Vvr.Session.World
             } while (currentStage != null);
         }
 
-        void IConnector<IActorProvider>.Connect(IActorProvider t)
-        {
-
-        }
-        void IConnector<IActorProvider>.Disconnect(IActorProvider t)
-        {
-        }
+        void IConnector<IPlayerActorProvider>.Connect(IPlayerActorProvider    t) => m_PlayerActorProvider = t;
+        void IConnector<IPlayerActorProvider>.Disconnect(IPlayerActorProvider t) => m_PlayerActorProvider = null;
     }
 }

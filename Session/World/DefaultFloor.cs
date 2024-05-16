@@ -85,7 +85,7 @@ namespace Vvr.Session.World
             return base.OnReserve();
         }
 
-        public async UniTask<Result> Start(Owner playerId, ActorSheet.Row[] playerData)
+        public async UniTask<Result> Start(IEnumerable<IActorData> playerData)
         {
             using var trigger = ConditionTrigger.Push(this, DisplayName);
 
@@ -108,12 +108,12 @@ namespace Vvr.Session.World
                 DefaultStage.SessionData sessionData;
                 if (prevPlayers.Count == 0)
                 {
-                    sessionData = new DefaultStage.SessionData(playerId, startStage.Value,
+                    sessionData = new DefaultStage.SessionData(startStage.Value,
                         playerData);
                 }
                 else
                 {
-                    sessionData = new DefaultStage.SessionData(playerId, startStage.Value,
+                    sessionData = new DefaultStage.SessionData(startStage.Value,
                         prevPlayers);
                 }
 

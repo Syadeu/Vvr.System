@@ -50,7 +50,7 @@ namespace Vvr.Session.Actor
         }
 
         IActor IStageActor.        Owner       => owner;
-        ActorSheet.Row IStageActor.Data        => data;
+        ActorSheet.Row IActorData.Data        => data;
 
         Owner IEventTarget. Owner       => owner.Owner;
         string IEventTarget.DisplayName => owner.DisplayName;

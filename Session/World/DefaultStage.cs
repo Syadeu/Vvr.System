@@ -86,28 +86,22 @@ namespace Vvr.Session.World
         }
         public struct SessionData : ISessionData
         {
-            public readonly Owner playerId;
-
             public readonly StageSheet.Row   stage;
             public readonly ActorSheet.Row[] actors;
 
             public readonly IEnumerable<CachedActor> prevPlayers;
-            public readonly IEnumerable<ActorSheet.Row> players;
+            public readonly IEnumerable<IActorData>  players;
 
-            public SessionData(Owner id, StageSheet.Row data, IEnumerable<CachedActor> p)
+            public SessionData(StageSheet.Row data, IEnumerable<CachedActor> p)
             {
-                playerId = id;
-
                 stage = data;
                 actors  = data.Actors.Select(x => x.Ref).ToArray();
 
                 prevPlayers = p;
                 players     = null;
             }
-            public SessionData(Owner id, StageSheet.Row data, IEnumerable<ActorSheet.Row> p)
+            public SessionData(StageSheet.Row data, IEnumerable<IActorData> p)
             {
-                playerId = id;
-
                 stage  = data;
                 actors   = data.Actors.Select(x => x.Ref).ToArray();
 
@@ -246,10 +240,10 @@ namespace Vvr.Session.World
                 {
                     foreach (var data in Data.players)
                     {
-                        IActor target = m_ActorProvider.Resolve(data).CreateInstance();
-                        target.Initialize(Data.playerId, data);
+                        IActor target = m_ActorProvider.Resolve(data.Data).CreateInstance();
+                        target.Initialize(Owner, data.Data);
 
-                        StageActor runtimeActor = new(target, data)
+                        StageActor runtimeActor = new(target, data.Data)
                         {
                             // time = time++
                         };
