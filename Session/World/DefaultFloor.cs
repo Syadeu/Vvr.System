@@ -59,8 +59,6 @@ namespace Vvr.Session.World
         }
 
         private DefaultStage            m_CurrentStage;
-        private UniTaskCompletionSource m_FloorStartEvent;
-        private UniTaskCompletionSource m_StageStartEvent;
 
         private AsyncLazy<IEventViewProvider> m_ViewProvider;
 
@@ -68,18 +66,15 @@ namespace Vvr.Session.World
 
         protected override async UniTask OnInitialize(IParentSession session, SessionData data)
         {
-            m_FloorStartEvent = new();
-            m_StageStartEvent = new();
-
             m_ViewProvider = Vvr.Provider.Provider.Static.GetLazyAsync<IEventViewProvider>();
 
             // We dont need to manually close these sessions
             // When this session close, child session also closed.
             var timelineSession = await CreateSession<TimelineQueueSession>(default);
             var assetSession    = await CreateSession<AssetSession>(default);
-
             var stageActorCreateSession = await CreateSession<StageActorCreateSession>(default);
 
+            // Register providers to inject child sessions.
             Register<ITimelineQueueProvider>(timelineSession)
                 .Register<IAssetProvider>(assetSession)
                 .Register<IStageActorProvider>(stageActorCreateSession);
@@ -89,8 +84,6 @@ namespace Vvr.Session.World
 
         protected override UniTask OnReserve()
         {
-            m_FloorStartEvent.TrySetResult();
-
             m_ViewProvider = null;
 
             return base.OnReserve();
@@ -100,7 +93,6 @@ namespace Vvr.Session.World
         {
             using var trigger = ConditionTrigger.Push(this, DisplayName);
 
-            m_FloorStartEvent.TrySetResult();
             Started = true;
 
             Result              floorResult = default;
@@ -128,12 +120,6 @@ namespace Vvr.Session.World
 
                 m_CurrentStage = await CreateSession<DefaultStage>(sessionData);
                 Parent.Register<IStageProvider>(m_CurrentStage);
-
-                if (!m_StageStartEvent.TrySetResult())
-                {
-                    "??".ToLogError();
-                }
-
                 {
                     await trigger.Execute(Model.Condition.OnStageStarted, sessionData.stage.Id);
                     stageResult = await m_CurrentStage.Start();
@@ -155,10 +141,7 @@ namespace Vvr.Session.World
                     prevPlayers.Clear();
                     prevPlayers.AddRange(stageResult.playerActors);
                 }
-
-                m_CurrentStage.Unregister<IAssetProvider>();
                 Parent.Unregister<IStageProvider>();
-                m_StageStartEvent = new();
                 await m_CurrentStage.Reserve();
 
                 "Stage cleared".ToLog();
