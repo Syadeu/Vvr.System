@@ -9,11 +9,11 @@ Copyright 2024 Syadeu. All rights reserved*
 
 `Model`은 게임에서의 가장 기초적인 데이터를 다루고 있습니다. 예를 들어, [AbnormalSheet](Model/AbnormalSheet.cs)와 같이 기획에서 구성된 데이터를 기초 가공하여 저장합니다.
 
-`Provider`는 `Model`, 또는 `Controller`에게서 제공받은 데이터를 `Controller`에게 공급합니다.
+`Provider`는 `Model`에게서 제공받은 데이터를 `Controller`에게 공급합니다. 그리고 `Controller`로부터 제공받은 정보를 `View`에 제공합니다.
 
 `Controller`는 최종적으로 데이터를 가공하여 `View`에게 제공합니다.
 
-그리고 이 모든 자원을 최대한으로 활용하는 `Session` 을 통해 생성된 자원들을 관리합니다.
+그리고 이 모든 `자원을` 최대한으로 활용하는 `Session` 을 통해 생성된 자원들을 관리합니다.
 
 ------
 
