@@ -29,7 +29,7 @@ Copyright 2024 Syadeu. All rights reserved*
 
 세션의 모든 구현은 객체 지향 설계 중 **SOLID** 원칙으로 코드 베이스에 엄격한 제한을 두고 있습니다. 실제로 개방-폐쇄 원칙(Open-Closed Principle, OCP)으로 세션을 상속받는 `DefaultWorld`는 인터페이스로 `IActorProvider`를 상속받고 있음에도 불구하고, 자기자신을 등록하고 있습니다. 이것은 외부에서 보기에는 다소 불합리하게 보일 수 있습니다. 그러나 이것은 객체 지향의 다형성 원칙을 이용한 것으로, 다른 부분에 자신을 세션이 아닌 `IActorProvider`로 취급할 수 있게 됩니다.
 
-세션이 `IActorProvider`의 역할을 하고 싶어할때 그리고 `IActorProvider` 의 인스턴스로서 작동하려고 할 때 효과적인 방법일 수 있습니다. 다시 말해서, 세션이 `IActorProvider` 인터페이스를 통해 노출하려는 일련의 작업을 결정할 수 있다는 것은 매우 강력한 도구입니다. 왜냐하면 자식 세션 **또한**, 부모에게 강한 의존성을 띄어서는 안되기 때문입니다. 이러한 의존성을 해결하기 위한 방법으로 독특한 방식의 DI 컨테이너가 세션만을 위해 설계되었습니다.
+세션이 `IActorProvider`의 역할을 하고 싶어할때 그리고 `IActorProvider` 의 인스턴스로서 작동하려고 할 때 효과적인 방법일 수 있습니다. 다시 말해서, 세션이 `IActorProvider` 인터페이스를 통해 노출하려는 일련의 작업을 결정할 수 있다는 것은 매우 강력한 도구입니다. 이것은 의존성 역전 원칙(Dependency Inversion Principle, DIP)에 의한 것으로, 자식 세션 또한, 부모에게 강한 의존성을 띄어서는 안되기 때문입니다. 이러한 의존성을 해결하기 위한 방법으로 독특한 방식의 DI 컨테이너가 세션만을 위해 설계되었습니다.
 
 ### [ParentSession](Session/ParentSession.cs)
 
