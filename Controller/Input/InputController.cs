@@ -26,8 +26,6 @@ using UnityEngine.Assertions;
 using UnityEngine.Events;
 using UnityEngine.UI;
 using Vvr.Controller.Actor;
-using Vvr.Controller.Condition;
-using Vvr.Controller.Session.World;
 using Vvr.Provider;
 
 namespace Vvr.Controller.Input

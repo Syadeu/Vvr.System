@@ -15,23 +15,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // 
-// File created : 2024, 05, 15 15:05
+// File created : 2024, 05, 10 15:05
 
 #endregion
 
-namespace Vvr.Provider
+namespace Vvr.Session
 {
-    public readonly ref struct CustomMethodNames
+    /// <summary>
+    /// Represents the session data for a game session.
+    /// </summary>
+    public interface ISessionData
     {
-        // ReSharper disable InconsistentNaming
-        public static CustomMethodNames TIMELINE => new(nameof(TIMELINE));
-        // ReSharper restore InconsistentNaming
 
-        private readonly string m_Name;
-
-        private CustomMethodNames(string m) => m_Name = m;
-
-        public override string ToString()    => m_Name;
-        public override int    GetHashCode() => unchecked((int)(uint)new Hash(m_Name));
     }
 }

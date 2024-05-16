@@ -1,0 +1,19 @@
+{
+  "name": "Vvr.System.Session",
+  "references": [
+    "Vvr",
+    "Vvr.System.Model",
+    "Vvr.System.Controller",
+    "Vvr.System.Provider",
+
+    "Unity.Mathematics",
+    "Unity.Collections",
+    "Unity.Addressables",
+    "Unity.ResourceManager",
+
+    "UniTask",
+    "UniTask.Addressables",
+
+    "BakingSheet"
+  ]
+}

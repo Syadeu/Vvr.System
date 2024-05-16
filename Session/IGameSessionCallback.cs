@@ -15,23 +15,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // 
-// File created : 2024, 05, 15 15:05
+// File created : 2024, 05, 10 20:05
 
 #endregion
 
-namespace Vvr.Provider
+using Cysharp.Threading.Tasks;
+
+namespace Vvr.Session
 {
-    public readonly ref struct CustomMethodNames
+    public interface IGameSessionCallback
     {
-        // ReSharper disable InconsistentNaming
-        public static CustomMethodNames TIMELINE => new(nameof(TIMELINE));
-        // ReSharper restore InconsistentNaming
-
-        private readonly string m_Name;
-
-        private CustomMethodNames(string m) => m_Name = m;
-
-        public override string ToString()    => m_Name;
-        public override int    GetHashCode() => unchecked((int)(uint)new Hash(m_Name));
+        /// <summary>
+        /// Executed from child session that child of this session has been closed.
+        /// </summary>
+        /// <param name="child"></param>
+        /// <returns></returns>
+        UniTask OnSessionClose(IGameSessionBase child);
     }
 }

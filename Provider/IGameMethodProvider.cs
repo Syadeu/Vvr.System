@@ -15,23 +15,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // 
-// File created : 2024, 05, 15 15:05
+// File created : 2024, 05, 11 19:05
 
 #endregion
 
+using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
+
 namespace Vvr.Provider
 {
-    public readonly ref struct CustomMethodNames
+    public delegate UniTask GameMethodImplDelegate(IEventTarget target, IReadOnlyList<string> parameters);
+
+    [LocalProvider]
+    public interface IGameMethodProvider : IProvider
     {
-        // ReSharper disable InconsistentNaming
-        public static CustomMethodNames TIMELINE => new(nameof(TIMELINE));
-        // ReSharper restore InconsistentNaming
-
-        private readonly string m_Name;
-
-        private CustomMethodNames(string m) => m_Name = m;
-
-        public override string ToString()    => m_Name;
-        public override int    GetHashCode() => unchecked((int)(uint)new Hash(m_Name));
+        GameMethodImplDelegate Resolve(Model.GameMethod method);
     }
 }

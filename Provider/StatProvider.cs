@@ -36,8 +36,10 @@ namespace Vvr.Provider
     /// </remarks>
     public sealed class StatProvider : IStatConditionProvider
     {
+        [Obsolete]
         public static  StatProvider Static { get; private set; }
 
+        [Obsolete]
         public static StatProvider GetOrCreate(StatSheet sheet)
         {
             Static ??= new StatProvider(sheet);
