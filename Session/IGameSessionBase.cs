@@ -39,7 +39,7 @@ namespace Vvr.Session
         /// <param name="parent">The parent session.</param>
         /// <param name="data">The session data.</param>
         /// <returns>A UniTask representing the completion of the initialization.</returns>
-        UniTask Initialize(Owner owner, IParentSession parent, ISessionData data);
+        UniTask Initialize(Owner owner, [CanBeNull] IParentSession parent, [CanBeNull] ISessionData data);
 
         /// <summary>
         /// Reserves the game session.
@@ -56,7 +56,7 @@ namespace Vvr.Session
         /// <typeparam name="TProvider">The type of the provider.</typeparam>
         /// <param name="provider">The provider instance to connect.</param>
         [PublicAPI]
-        IGameSessionBase Register<TProvider>(TProvider provider) where TProvider : IProvider;
+        IGameSessionBase Register<TProvider>([NotNull] TProvider provider) where TProvider : IProvider;
 
         /// <summary>
         /// Disconnects the specified provider from the game session.
@@ -82,7 +82,7 @@ namespace Vvr.Session
         /// <param name="c">The connector to connect.</param>
         /// <returns>void</returns>
         [PublicAPI]
-        IGameSessionBase Connect<TProvider>(IConnector<TProvider>    c) where TProvider : IProvider;
+        IGameSessionBase Connect<TProvider>([NotNull] IConnector<TProvider>    c) where TProvider : IProvider;
 
         /// <summary>
         /// Disconnects the specified provider from the game session.
@@ -90,6 +90,6 @@ namespace Vvr.Session
         /// <typeparam name="TProvider">The type of provider to disconnect.</typeparam>
         /// <param name="c">The connector of the provider.</param>
         [PublicAPI]
-        IGameSessionBase Disconnect<TProvider>(IConnector<TProvider> c) where TProvider : IProvider;
+        IGameSessionBase Disconnect<TProvider>([NotNull] IConnector<TProvider> c) where TProvider : IProvider;
     }
 }

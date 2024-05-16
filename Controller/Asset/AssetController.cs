@@ -17,88 +17,27 @@
 // File created : 2024, 05, 14 01:05
 #endregion
 
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
 using Cathei.BakingSheet.Unity;
-using Cysharp.Threading.Tasks;
-using UnityEngine.AddressableAssets;
-using UnityEngine.ResourceManagement.AsyncOperations;
 using Vvr.Model;
 using Vvr.Provider;
 
 namespace Vvr.Controller.Asset
 {
-    [Obsolete("Should load assets with AssetSession(IAssetProvider)")]
-    public class AssetController<TAssetType> : IAsset, IDisposable
-        where TAssetType : struct, IConvertible
+    public class AssetController : IAsset
     {
-        private readonly IEventTarget            m_Owner;
-        private CancellationTokenSource m_CancellationTokenSource;
+        private readonly IReadOnlyDictionary<AssetType, AddressablePath> m_AssetsPath;
 
-        private readonly Dictionary<TAssetType, AsyncLazy<UnityEngine.Object>> m_Assets;
+        public object this[AssetType t] => m_AssetsPath[t].FullPath;
 
-        private readonly LinkedList<AsyncOperationHandle> m_Handles = new();
+        public IAssetProvider AssetProvider { get; private set; }
 
-        public AsyncLazy<UnityEngine.Object> this[TAssetType t] => m_Assets[t];
-        AsyncLazy<UnityEngine.Object> IAsset.this[AssetType              t] => m_Assets[(TAssetType)(object)(short)t];
-
-        public AssetController(IEventTarget owner)
+        public AssetController(IReadOnlyDictionary<AssetType, AddressablePath> t)
         {
-            m_Owner                   = owner;
-            m_CancellationTokenSource = new();
-
-            m_Assets = new();
+            m_AssetsPath = t;
         }
 
-        public void Connect<TLoadProvider>(IReadOnlyDictionary<TAssetType, AddressablePath> t)
-            where TLoadProvider : IAssetLoadTaskProvider<TAssetType>
-        {
-            m_CancellationTokenSource ??= new();
-            foreach (var item in t)
-            {
-                m_Assets[item.Key] = UniTask.Lazy(
-                    async () =>
-                    {
-                        var loadTaskProvider = Activator.CreateInstance<TLoadProvider>();
-
-                        var handle = loadTaskProvider.Resolve(item.Key, item.Value.FullPath);
-                        while (!handle.IsDone)
-                        {
-                            await UniTask.Yield();
-                            if (m_CancellationTokenSource.IsCancellationRequested)
-                            {
-                                return null;
-                            }
-                        }
-
-                        m_Handles.AddLast(handle);
-                        return (UnityEngine.Object)handle.Result;
-                    }
-                );
-            }
-        }
-
-        public void Clear()
-        {
-            m_CancellationTokenSource.Cancel();
-
-            foreach (var handle in m_Handles)
-            {
-                Addressables.Release(handle);
-            }
-
-            m_Handles.Clear();
-            m_Assets.Clear();
-
-            m_CancellationTokenSource.Dispose();
-            m_CancellationTokenSource = null;
-        }
-
-        public void Dispose()
-        {
-            Clear();
-        }
+        void IConnector<IAssetProvider>.Connect(IAssetProvider    t) => AssetProvider = t;
+        void IConnector<IAssetProvider>.Disconnect(IAssetProvider t) => AssetProvider = null;
     }
 }

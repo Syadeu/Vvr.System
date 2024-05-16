@@ -24,6 +24,7 @@ using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
+using Vvr.Provider;
 using Vvr.Session.Provider;
 
 namespace Vvr.Session

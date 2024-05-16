@@ -145,7 +145,7 @@ namespace Vvr.Session.World
         private IInputControlProvider         m_InputControlProvider;
         private AsyncLazy<IEventViewProvider> m_ViewProvider;
 
-        private AssetController<AssetType> m_AssetController;
+        private AssetController m_AssetController;
 
         private Owner m_EnemyId;
 
@@ -165,25 +165,31 @@ namespace Vvr.Session.World
         protected override UniTask OnInitialize(IParentSession session, SessionData data)
         {
             // This is required for injecting actors
-            Register<ITargetProvider>(this);
+            Register<ITargetProvider>(this)
+                .Register<IStateConditionProvider>(this)
+                .Register<IEventConditionProvider>(this)
+                ;
             Parent.Register<IStageProvider>(this);
 
             m_ViewProvider         = Vvr.Provider.Provider.Static.GetLazyAsync<IEventViewProvider>();
-            m_AssetController      = new(this);
+            m_AssetController      = new(data.stage.Assets);
+
+            Connect<IAssetProvider>(m_AssetController);
 
             m_EnemyId = Owner.Issue;
-
-            m_AssetController.Connect<AssetLoadTaskProvider>(data.stage.Assets);
 
             return base.OnInitialize(session, data);
         }
 
         protected override UniTask OnReserve()
         {
-            Unregister<ITargetProvider>();
+            Unregister<ITargetProvider>()
+                .Unregister<IStateConditionProvider>()
+                .Unregister<IEventConditionProvider>()
+                ;
             Parent.Unregister<IStageProvider>();
 
-            m_AssetController.Dispose();
+            Disconnect<IAssetProvider>(m_AssetController);
 
             m_ViewProvider         = null;
             m_InputControlProvider = null;
@@ -210,12 +216,11 @@ namespace Vvr.Session.World
                 int playerIndex = 0;
                 if (Data.players == null)
                 {
+                    Assert.IsNotNull(Data.prevPlayers);
                     foreach (var prevActor in Data.prevPlayers)
                     {
-                        StageActor runtimeActor = new(prevActor.Owner, prevActor.Data)
-                        {
-                            // time = time++
-                        };
+                        StageActor runtimeActor = new(prevActor.Owner, prevActor.Data);
+                        InitializeActor(runtimeActor);
 
                         if (playerIndex != 0)
                         {
@@ -237,10 +242,8 @@ namespace Vvr.Session.World
                         IActor target = m_ActorProvider.Resolve(data.Data).CreateInstance();
                         target.Initialize(Owner, data.Data);
 
-                        StageActor runtimeActor = new(target, data.Data)
-                        {
-                            // time = time++
-                        };
+                        StageActor runtimeActor = new(target, data.Data);
+                        InitializeActor(runtimeActor);
 
                         if (playerIndex != 0)
                         {
@@ -262,11 +265,9 @@ namespace Vvr.Session.World
                 IActor         target = m_ActorProvider.Resolve(data).CreateInstance();
                 target.Initialize(m_EnemyId, data);
 
-                StageActor runtimeActor = new(target, data)
-                {
-                    // time = time++
-                };
+                StageActor runtimeActor = new(target, data);
 
+                InitializeActor(runtimeActor);
                 await Join(m_EnemyField, runtimeActor);
             }
 
@@ -286,14 +287,6 @@ namespace Vvr.Session.World
             {
                 using var trigger = ConditionTrigger.Push(item.owner, ConditionTrigger.Game);
                 await trigger.Execute(Model.Condition.OnBattleStart, Data.stage.Id);
-
-                item.owner.ConnectTime();
-
-                Connect<IActorDataProvider>(item.owner.Skill);
-                Connect<ITargetProvider>(item.owner.Skill);
-                Connect<ITargetProvider>(item.owner.Passive);
-                Connect<IEventConditionProvider>(item.owner.ConditionResolver);
-                Connect<IStateConditionProvider>(item.owner.ConditionResolver);
             }
 
             while (m_Timeline.Count > 0 && m_PlayerField.Count > 0 && m_EnemyField.Count > 0)
@@ -353,20 +346,37 @@ namespace Vvr.Session.World
                 using var trigger = ConditionTrigger.Push(item.owner, ConditionTrigger.Game);
                 await trigger.Execute(Model.Condition.OnBattleEnd, Data.stage.Id);
 
-                Disconnect<IActorDataProvider>(item.owner.Skill);
-                Disconnect<ITargetProvider>(item.owner.Skill);
-                Disconnect<ITargetProvider>(item.owner.Passive);
-                Disconnect<IEventConditionProvider>(item.owner.ConditionResolver);
-                Disconnect<IStateConditionProvider>(item.owner.ConditionResolver);
-
-                item.owner.DisconnectTime();
-                item.owner.Skill.Clear();
-                item.owner.Abnormal.Clear();
+                ReserveActor(item);
             }
 
             m_Timeline.Clear();
             "Stage end".ToLog();
             return new Result(GetCurrentPlayerActors(), GetCurrentEnemyActors());
+        }
+
+        private void InitializeActor(StageActor item)
+        {
+            item.owner.ConnectTime();
+
+            Connect<IAssetProvider>(item.owner.Assets);
+            Connect<IActorDataProvider>(item.owner.Skill);
+            Connect<ITargetProvider>(item.owner.Skill);
+            Connect<ITargetProvider>(item.owner.Passive);
+            Connect<IEventConditionProvider>(item.owner.ConditionResolver);
+            Connect<IStateConditionProvider>(item.owner.ConditionResolver);
+        }
+        private void ReserveActor(StageActor item)
+        {
+            Disconnect<IAssetProvider>(item.owner.Assets);
+            Disconnect<IActorDataProvider>(item.owner.Skill);
+            Disconnect<ITargetProvider>(item.owner.Skill);
+            Disconnect<ITargetProvider>(item.owner.Passive);
+            Disconnect<IEventConditionProvider>(item.owner.ConditionResolver);
+            Disconnect<IStateConditionProvider>(item.owner.ConditionResolver);
+
+            item.owner.DisconnectTime();
+            item.owner.Skill.Clear();
+            item.owner.Abnormal.Clear();
         }
 
         private partial UniTask Join(ActorList                  field,  StageActor actor);

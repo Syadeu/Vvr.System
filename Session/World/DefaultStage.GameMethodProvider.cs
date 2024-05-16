@@ -70,14 +70,7 @@ namespace Vvr.Session.World
             }
 
             StageActor actor = field[index];
-
-            actor.owner.DisconnectTime();
-
-            Disconnect<IActorDataProvider>(actor.owner.Skill);
-            Disconnect<ITargetProvider>(actor.owner.Skill);
-            Disconnect<ITargetProvider>(actor.owner.Passive);
-            Disconnect<IEventConditionProvider>(actor.owner.ConditionResolver);
-            Disconnect<IStateConditionProvider>(actor.owner.ConditionResolver);
+            ReserveActor(actor);
 
             $"Actor {actor.owner.DisplayName} is dead {actor.owner.Stats[StatType.HP]}".ToLog();
 

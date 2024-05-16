@@ -21,6 +21,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -43,14 +44,14 @@ namespace Vvr.Session.Actor
 {
     internal class Actor : ScriptableObject, IActor, IInitialize<Owner, ActorSheet.Row>
     {
-        private StatValueStack                  m_Stats;
-        private ConditionResolver               m_ConditionResolver;
-        private AbnormalController              m_AbnormalController;
-        private PassiveController               m_PassiveController;
-        private SkillController                 m_SkillController;
-        private ItemInventory                   m_ItemInventory;
-        private BehaviorTreeController          m_BehaviorTreeController;
-        private AssetController<ActorAssetType> m_AssetController;
+        private StatValueStack         m_Stats;
+        private ConditionResolver      m_ConditionResolver;
+        private AbnormalController     m_AbnormalController;
+        private PassiveController      m_PassiveController;
+        private SkillController        m_SkillController;
+        private ItemInventory          m_ItemInventory;
+        private BehaviorTreeController m_BehaviorTreeController;
+        private AssetController        m_AssetController;
 
         public Owner  Owner       { get; private set; }
         public string DisplayName => DataID;
@@ -100,7 +101,7 @@ namespace Vvr.Session.Actor
             m_SkillController        = new SkillController(this);
             m_BehaviorTreeController = new BehaviorTreeController(this);
 
-            m_AssetController = new AssetController<ActorAssetType>(this);
+            m_AssetController = new AssetController(ta.Assets);
 
             m_Stats
                 .AddModifier(m_AbnormalController)
@@ -113,8 +114,6 @@ namespace Vvr.Session.Actor
                 .Subscribe(m_AbnormalController)
                 .Subscribe(m_PassiveController)
                 ;
-
-            m_AssetController.Connect<ActorAssetLoadTaskProvider>(ta.Assets);
 
             for (int i = 0; i < ta.Passive?.Count; i++)
             {

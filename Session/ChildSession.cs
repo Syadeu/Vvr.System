@@ -255,9 +255,12 @@ namespace Vvr.Session
 
         public IGameSessionBase Connect<TProvider>(IConnector<TProvider> c) where TProvider : IProvider
         {
+            Assert.IsNotNull(c);
             Assert.IsFalse(ReferenceEquals(this, c), "cannot connect self");
             Type t = typeof(TProvider);
             t = Vvr.Provider.Provider.ExtractType(t);
+
+            Assert.IsNotNull(t);
 
             if (!m_ConnectorWrappers.TryGetValue(t, out var list))
             {

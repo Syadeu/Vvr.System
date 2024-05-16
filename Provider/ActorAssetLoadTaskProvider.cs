@@ -28,6 +28,7 @@ using Vvr.Model;
 
 namespace Vvr.Provider
 {
+    [Obsolete("", true)]
     [UsedImplicitly]
     public struct ActorAssetLoadTaskProvider : IAssetLoadTaskProvider<ActorAssetType>
     {

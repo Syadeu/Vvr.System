@@ -21,9 +21,8 @@
 
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
-using Vvr.Provider;
 
-namespace Vvr.Session.Provider
+namespace Vvr.Provider
 {
     /// <summary>
     /// Represents an asset provider interface used to load assets asynchronously.

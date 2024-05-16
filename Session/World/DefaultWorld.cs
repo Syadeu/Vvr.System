@@ -54,8 +54,6 @@ namespace Vvr.Session.World
         {
             m_ActorProvider = new();
 
-            Vvr.Provider.Provider.Static.Connect<IStateConditionProvider>(this);
-
             TimeController.Register(this);
 
             ConditionTrigger.OnEventExecutedAsync += OnEventExecutedAsync;
@@ -72,8 +70,6 @@ namespace Vvr.Session.World
             Unregister<IActorProvider>();
 
             m_ActorProvider.Dispose();
-
-            Vvr.Provider.Provider.Static.Disconnect<IStateConditionProvider>(this);
 
             TimeController.Unregister(this);
 

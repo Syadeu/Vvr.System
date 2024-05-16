@@ -19,15 +19,14 @@
 
 #endregion
 
-using System;
-using Cysharp.Threading.Tasks;
 using Vvr.Model;
+using Vvr.Provider;
 
 namespace Vvr.Controller.Asset
 {
-    [Obsolete("Should load assets with AssetSession(IAssetProvider)")]
-    public interface IAsset
+    public interface IAsset : IConnector<IAssetProvider>
     {
-        AsyncLazy<UnityEngine.Object> this[AssetType t] { get; }
+        object this[AssetType t] { get; }
+        IAssetProvider AssetProvider { get; }
     }
 }

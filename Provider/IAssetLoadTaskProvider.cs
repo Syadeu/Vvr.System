@@ -24,6 +24,7 @@ using UnityEngine.ResourceManagement.AsyncOperations;
 
 namespace Vvr.Provider
 {
+    [Obsolete("", true)]
     [UnityEngine.Scripting.RequireImplementors]
     public interface IAssetLoadTaskProvider<in TAssetType>
         where TAssetType : struct, IConvertible

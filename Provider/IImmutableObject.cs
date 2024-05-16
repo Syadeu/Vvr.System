@@ -21,7 +21,7 @@
 
 using JetBrains.Annotations;
 
-namespace Vvr.Session
+namespace Vvr.Provider
 {
     /// <summary>
     /// Represents an immutable object.
