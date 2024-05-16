@@ -93,12 +93,12 @@ namespace Vvr.Session.Actor
 
             m_Stats = new StatValueStack(this, ta.Stats);
 
-            m_ItemInventory          = ItemInventory.GetOrCreate(this);
-            m_ConditionResolver      = global::Vvr.Controller.Condition.ConditionResolver.Create(this);
-            m_AbnormalController     = AbnormalController.Create(this);
-            m_PassiveController      = PassiveController.Create(this);
-            m_SkillController        = SkillController.Create(this);
-            m_BehaviorTreeController = new(this);
+            m_ItemInventory          = new ItemInventory(this);
+            m_ConditionResolver      = new ConditionResolver(this);
+            m_AbnormalController     = new AbnormalController(this);
+            m_PassiveController      = new PassiveController(this);
+            m_SkillController        = new SkillController(this);
+            m_BehaviorTreeController = new BehaviorTreeController(this);
 
             m_AssetController = new AssetController<ActorAssetType>(this);
 

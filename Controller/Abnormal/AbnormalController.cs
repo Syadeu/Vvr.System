@@ -37,11 +37,6 @@ namespace Vvr.Controller.Abnormal
 {
     public sealed partial class AbnormalController : IAbnormal, IDisposable
     {
-        public static AbnormalController Create(IActor o)
-        {
-            return new(o);
-        }
-
         struct Value : IComparable<Value>, IReadOnlyRuntimeAbnormal
         {
             public CryptoFloat     delayDuration, duration;
@@ -73,7 +68,7 @@ namespace Vvr.Controller.Abnormal
         public IActor Owner { get; }
         public int    Count => m_Values.Count;
 
-        private AbnormalController(IActor owner)
+        public AbnormalController(IActor owner)
         {
             Owner  = owner;
 

@@ -32,11 +32,6 @@ namespace Vvr.Controller.Passive
 {
     public sealed partial class PassiveController : IPassive, IDisposable
     {
-        public static PassiveController Create(IActor o)
-        {
-            return new PassiveController(o);
-        }
-
         struct Value : IComparable<Value>
         {
             public RuntimePassive    passive;
@@ -58,7 +53,7 @@ namespace Vvr.Controller.Passive
 
         private readonly List<Value> m_Values = new();
 
-        private PassiveController(IActor o)
+        public PassiveController(IActor o)
         {
             Owner = o;
         }

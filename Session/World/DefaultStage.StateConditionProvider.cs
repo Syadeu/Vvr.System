@@ -20,8 +20,10 @@
 #endregion
 
 using System;
+using System.Linq;
 using Vvr.Model;
 using Vvr.Provider;
+using Vvr.Session.Actor;
 
 namespace Vvr.Session.World
 {
@@ -37,12 +39,7 @@ namespace Vvr.Session.World
                 case StateCondition.IsInHand:
                     if (target.Owner == m_EnemyId) return false;
 
-                    foreach (var actor in m_HandActors)
-                    {
-                        if (actor.owner == target) return true;
-                    }
-
-                    return false;
+                    return m_HandActors.Any<IStageActor>(x => x.Owner == target);
                 case StateCondition.IsPlayerActor:
                     return target.Owner != m_EnemyId;
                 default:

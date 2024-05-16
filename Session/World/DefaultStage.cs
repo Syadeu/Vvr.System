@@ -40,7 +40,8 @@ using Vvr.UI.Observer;
 namespace Vvr.Session.World
 {
     [ParentSession(typeof(DefaultFloor), true), Preserve]
-    public partial class DefaultStage : ChildSession<DefaultStage.SessionData>, IStageProvider,
+    public partial class DefaultStage : ChildSession<DefaultStage.SessionData>,
+        IStageProvider,
         IConnector<IActorProvider>,
         IConnector<IInputControlProvider>
     {

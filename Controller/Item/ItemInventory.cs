@@ -32,50 +32,22 @@ namespace Vvr.Controller.Item
 {
     public sealed partial class ItemInventory : IItemProvider, IDisposable
     {
-        private static readonly Dictionary<Hash, ItemInventory>
-            s_CachedController = new();
-
-        public static ItemInventory Get(IEventTarget o)
-        {
-            Hash hash = o.GetHash();
-            return s_CachedController[hash];
-        }
-
-        public static ItemInventory GetOrCreate(IEventTarget    o)
-        {
-#if UNITY_EDITOR
-            if (o is UnityEngine.Object uo &&
-                uo == null)
-            {
-                throw new InvalidOperationException();
-            }
-#endif
-
-            Hash hash = o.GetHash();
-            if (!s_CachedController.TryGetValue(hash, out var r))
-            {
-                r = new ItemInventory(hash, o);
-                s_CachedController[hash] = r;
-            }
-
-            return r;
-        }
-
-        private readonly Hash         m_Hash;
         private readonly IEventTarget m_Owner;
         private readonly IItem[]      m_Equipments = new IItem[6];
         private readonly List<IItem>  m_Items      = new();
 
-        private ItemInventory(Hash hash, IEventTarget owner)
+        private bool Disposed { get; set; }
+
+        public ItemInventory(IEventTarget owner)
         {
-            m_Hash  = hash;
             m_Owner = owner;
         }
         public void Dispose()
         {
             Array.Clear(m_Equipments, 0, m_Equipments.Length);
             m_Items.Clear();
-            s_CachedController.Remove(m_Hash);
+
+            Disposed = true;
         }
 
         public void Add(ItemSheet.Row item)

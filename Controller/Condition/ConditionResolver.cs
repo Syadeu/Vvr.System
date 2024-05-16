@@ -43,10 +43,6 @@ namespace Vvr.Controller.Condition
         public static readonly ConditionDelegate Always = _ => true;
         public static readonly ConditionDelegate False = _ => false;
 
-        public static ConditionResolver Create(IEventTarget o)
-        {
-            return new(o);
-        }
         public static ConditionResolver Create(IEventTarget o, IReadOnlyConditionResolver parent)
         {
             return new(o, parent);
@@ -155,7 +151,7 @@ namespace Vvr.Controller.Condition
 
         public IEventTarget Owner { get; }
 
-        private ConditionResolver(IEventTarget owner)
+        public ConditionResolver(IEventTarget owner)
         {
             Owner = owner;
         }

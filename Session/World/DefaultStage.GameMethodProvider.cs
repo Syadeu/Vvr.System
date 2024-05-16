@@ -35,8 +35,6 @@ namespace Vvr.Session.World
 {
     partial class DefaultStage : IGameMethodProvider
     {
-        // private bool m_DestroyProcessing;
-
         GameMethodImplDelegate IGameMethodProvider.Resolve(Model.GameMethod method)
         {
             if (method == Model.GameMethod.Destroy)
@@ -54,9 +52,9 @@ namespace Vvr.Session.World
 
         private async UniTask GameMethod_Destroy(IEventTarget e, IReadOnlyList<string> parameters)
         {
-            if (e is not IActor x) return;
+            if (e is not IActor x)
+                throw new InvalidOperationException("target is not actor");
 
-            // m_DestroyProcessing = true;
             using (var trigger = ConditionTrigger.Push(x, nameof(Model.GameMethod)))
             {
                 await trigger.Execute(Model.Condition.OnBattleEnd, null);

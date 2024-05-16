@@ -24,6 +24,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Cathei.BakingSheet;
 using Cysharp.Threading.Tasks;
+using JetBrains.Annotations;
 using UnityEngine;
 using UnityEngine.Assertions;
 using Vvr.Controller.Actor;
@@ -37,15 +38,6 @@ namespace Vvr.Controller.Skill
 {
     public sealed partial class SkillController : ITimeUpdate, IDisposable, ISkill
     {
-        public static SkillController Create(IActor o)
-        {
-            return new SkillController(o);
-        }
-
-        struct SkillData
-        {
-            public readonly SkillSheet.Row data;
-        }
         struct Value : ITargetDefinition
         {
             public readonly Hash           hash;
@@ -76,8 +68,9 @@ namespace Vvr.Controller.Skill
         private readonly Dictionary<Hash, float> m_SkillCooltimes    = new();
 
         private IActor Owner { get; }
+        private bool Disposed { get; set; }
 
-        private SkillController(IActor o)
+        public SkillController(IActor o)
         {
             Owner = o;
         }
@@ -87,6 +80,8 @@ namespace Vvr.Controller.Skill
 
             m_DataProvider   = null;
             m_TargetProvider = null;
+
+            Disposed = true;
         }
 
         public void Clear()
@@ -332,22 +327,34 @@ namespace Vvr.Controller.Skill
 
         void IConnector<ITargetProvider>.Connect(ITargetProvider t)
         {
+            if (Disposed)
+                throw new ObjectDisposedException(nameof(SkillController));
+
             Assert.IsNull(m_TargetProvider);
             m_TargetProvider = t;
         }
         void IConnector<ITargetProvider>.Disconnect(ITargetProvider t)
         {
+            if (Disposed)
+                throw new ObjectDisposedException(nameof(SkillController));
+
             Assert.IsTrue(ReferenceEquals(m_TargetProvider, t));
             m_TargetProvider = null;
         }
 
         void IConnector<IActorDataProvider>.Connect(IActorDataProvider t)
         {
+            if (Disposed)
+                throw new ObjectDisposedException(nameof(SkillController));
+
             Assert.IsNull(m_DataProvider);
             m_DataProvider = t;
         }
         void IConnector<IActorDataProvider>.Disconnect(IActorDataProvider t)
         {
+            if (Disposed)
+                throw new ObjectDisposedException(nameof(SkillController));
+
             Assert.IsTrue(ReferenceEquals(m_DataProvider, t));
             m_DataProvider = null;
         }
