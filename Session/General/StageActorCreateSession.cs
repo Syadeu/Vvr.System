@@ -25,6 +25,7 @@ using Vvr.Controller.Provider;
 using Vvr.Model;
 using Vvr.Provider;
 using Vvr.Session.Actor;
+using Vvr.Session.Provider;
 using Vvr.Session.World;
 
 namespace Vvr.Session
@@ -68,14 +69,5 @@ namespace Vvr.Session
             item.Skill.Clear();
             item.Abnormal.Clear();
         }
-    }
-
-    [LocalProvider]
-    public interface IStageActorProvider : IProvider
-    {
-        [PublicAPI]
-        IStageActor Create(IActor actor, ActorSheet.Row data);
-        [PublicAPI]
-        void        Reserve(IActor item);
     }
 }
