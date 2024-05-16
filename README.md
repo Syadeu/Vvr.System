@@ -33,7 +33,7 @@ Copyright 2024 Syadeu. All rights reserved*
 
 왜냐하면 자식 세션 **또한**, 부모에게 강한 의존성을 띄어서는 안되기 때문입니다. 이러한 의존성을 해결하기 위한 방법으로 독특한 방식의 DI 컨테이너가 세션만을 위해 설계되었습니다.
 
-### [ParentSession](Controller/Session/ParentSession.cs)
+### [ParentSession](Session/ParentSession.cs)
 
 관리하는 하위 세션(`ChildSession`)들을 통해 게임의 동작을 조정하거나, 다른 세션들로부터 정보를 집합하거나, 게임 상태를 업데이트 하는 등의 역할을 수행하게 됩니다.  예를 들어, 실제 게임에서 `ParentSession`은 게임의 한 라운드나 레벨, 게임 플레이 세션 등을 나타낼 수 있으며, 그 아래의 `ChildSession`들은 라운드나 레벨에서 발생하는 각각의 이벤트나 액션 등을 나타내게 됩니다. 
 
@@ -50,7 +50,7 @@ Copyright 2024 Syadeu. All rights reserved*
 
 간단히 말하면, `ParentSession`은 아키텍처 설계 원칙 중 하나인 '컴포지션 오버 인헤리턴스(Composition over Inheritance)'를 따르는 객체지향 디자인 패턴입니다. 이 패턴은 재사용과 유지보수를 더 용이하게 하는 동시에, 시스템의 각 부분을 더 독립적으로 만들어 주어 시스템 중 하나의 부분에 문제가 생겨도 전체 시스템에 영향을 끼치지 않게 합니다. 
 
-### [ChildSession](Controller/Session/ChildSession.cs)
+### [ChildSession](Session/ChildSession.cs)
 
 `ChildSession`은 `ParentSession`의 하위 계층에 속하는 세션 객체로, 게임의 작은 단위 동작이나 상황에 대응합니다. `ParentSession`이 통합적이고 큰 영역의 컨텍스트나 상태를 관리하는 반면, `ChildSession`은 그보다 작고 구체적인 개념을 나타내는 상황에 초점을 맞춥니다.
 
@@ -63,15 +63,15 @@ Copyright 2024 Syadeu. All rights reserved*
 3. **이벤트 리스닝 및 처리**: `ChildSession`은 `ParentSession`으로부터 전달받은 이벤트를 리스닝하고, 어떤 행동을 취할지 결정합니다. 이것은 어떤 특정 행동의 결과, 아이템의 사용, 일정 시간이 경과하는 등의 특정 조건에 반응하는 로직을 수행할 때 유용합니다.        
 4. **데이터 제공**: `ChildSession`은 `ParentSession`이 필요로 하는 데이터를 제공합니다. 이는 `ParentSession`이 전반적인 게임 상태를 관리하는데 필요한 정보를 제공하게 됩니다.  
 
-### [RootSession](Controller/Session/RootSession.cs)
+### [RootSession](Session/RootSession.cs)
 
 최상단 세션입니다. 직접적으로 연결된 자식에 대해서만 관리할 권한과 의무를 갖습니다.
 
 이 세션의 구조를 사용하여 World를 구성하고, 하위 구조를 설계할 수 있습니다. 아래는 현재 기본으로 구성한 세션의 구조입니다.
 
-[DefaultWorld](Controller/Session/World/DefaultWorld.cs) -> [DefaultMap](Controller/Session/World/DefaultMap.cs) -> [DefaultRegion](Controller/Session/World/DefaultRegion.cs) -> [DefaultFloor](Controller/Session/World/DefaultFloor.cs) -> [DefaultStage](Controller/Session/World/DefaultStage.cs)
+[DefaultWorld](Session/World/DefaultWorld.cs) -> [DefaultMap](Session/World/DefaultMap.cs) -> [DefaultRegion](Session/World/DefaultRegion.cs) -> [DefaultFloor](Session/World/DefaultFloor.cs) -> [DefaultStage](Session/World/DefaultStage.cs)
 
-World는 [GameWorld](Controller/Session/World/GameWorld.cs)를 통해 생성될 수 있으며, 각 계층 구조에 맞게 생성되어야합니다. [ParentSessionAttribute](Controller/Session/ParentSessionAttribute.cs) 어트리뷰트 선언을 통해 특정 세션 부모를 강제할 수 있습니다. `DefaultStage` 는 상위 세션이 `DefaultFloor` 임을 가정하고 설계하였으므로 이를 적절히 알리기 위해 어트리뷰트를 선언할 수 있습니다.
+World는 [GameWorld](Session/World/GameWorld.cs)를 통해 생성될 수 있으며, 각 계층 구조에 맞게 생성되어야합니다. [ParentSessionAttribute](Session/ParentSessionAttribute.cs) 어트리뷰트 선언을 통해 특정 세션 부모를 강제할 수 있습니다. `DefaultStage` 는 상위 세션이 `DefaultFloor` 임을 가정하고 설계하였으므로 이를 적절히 알리기 위해 어트리뷰트를 선언할 수 있습니다.
 
 ```C#
 [ParentSession(typeof(DefaultFloor), true), Preserve]
@@ -328,7 +328,7 @@ public void PlusOperatorTest_3()
 2. **서비스 교체의 용이성**: 서비스 로케이터에 서비스를 등록할 때 어떠한 인터페이스를 구현하는 지에 대한 정보만 있으면 되므로,           특정 서비스의 구현을 교체하거나 변경하는 것이 용이합니다.        
 3. **다양한 서비스 라이프사이클 관리**: 서비스 로케이터는 서비스의 라이프사이클도 관리할 수 있습니다. 이를 통해 싱글턴, 프로토타입 등 다양한 라이프사이클을 가진 서비스들을 동일한 방식으로 관리할 수 있습니다.        
 
-`IProvider` 인터페이스는 이벤트 객체를 직접적으로 알고있거나, 조건에 대해 제공할 의무가 있는 `Controller`를 위해 설계되었습니다. [DefaultStage](Controller/Session/World/DefaultStage.cs) 객체는 스테이지에 대한 모든 액터에 대해 제공할 의무가 있는 설계상 가장 하위 `Session`입니다. 예를 들어, [GameConfigSheet](Model/GameConfigSheet.cs)에서 정의된 조건에 맞는 메서드를 생성하여 반환합니다.
+`IProvider` 인터페이스는 이벤트 객체를 직접적으로 알고있거나, 조건에 대해 제공할 의무가 있는 `Controller`를 위해 설계되었습니다. [DefaultStage](Session/World/DefaultStage.cs) 객체는 스테이지에 대한 모든 액터에 대해 제공할 의무가 있는 설계상 가장 하위 `Session`입니다. 예를 들어, [GameConfigSheet](Model/GameConfigSheet.cs)에서 정의된 조건에 맞는 메서드를 생성하여 반환합니다.
 
 ```C#
 GameMethodImplDelegate IGameMethodProvider.Resolve(Model.GameMethod method)
@@ -374,7 +374,7 @@ private async UniTask GameMethod_Destroy(IEventTarget e, IReadOnlyList<string> p
 }
 ```
 
-이 메소드를 상속받은 `DefaultStage` 는 [LocalProviderAttribute](Provider/LocalProviderAttribute.cs) 를 상속받은 [IGameMethodProvider](Controller/Provider/IGameMethodProvider.cs) 를 구현하고 있습니다. 
+이 메소드를 상속받은 `DefaultStage` 는 [LocalProviderAttribute](Provider/LocalProviderAttribute.cs) 를 상속받은 [IGameMethodProvider](Provider/IGameMethodProvider.cs) 를 구현하고 있습니다. 
 
 ```c#
 [LocalProvider]
@@ -384,7 +384,7 @@ public interface IGameMethodProvider : IProvider
 }
 ```
 
-로컬로 마킹된 `IProvider`는 전역 `Provider`를 통해 공급될 수 없고, 상위 객체로부터 의존성을 주입받아야합니다. `DefaultStage` 는 `IConnector<IActorProvider>` 인터페이스를 상속받아 상위 세션으로부터 [IActorProvider](Controller/Provider/IActorProvider.cs)에 대한 의존성 주입을 하고 있습니다. 여기서 상위 세션인 `DefaultWorld` 는 `IActorProvider` 를 구현하고 등록하고 있습니다. 
+로컬로 마킹된 `IProvider`는 전역 `Provider`를 통해 공급될 수 없고, 상위 객체로부터 의존성을 주입받아야합니다. `DefaultStage` 는 `IConnector<IActorProvider>` 인터페이스를 상속받아 상위 세션으로부터 [IActorProvider](Session/Provider/IActorProvider.cs)에 대한 의존성 주입을 하고 있습니다. 여기서 상위 세션인 `DefaultWorld` 는 `IActorProvider` 를 구현하고 등록하고 있습니다. 
 
 ```c#
 public partial class DefaultWorld : RootSession, IWorldSession,
