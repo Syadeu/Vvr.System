@@ -62,6 +62,7 @@ namespace Vvr.Controller.Session.World
             // TODO: skip map load
             DefaultMap = await CreateSession<DefaultMap>(default);
 
+            // Because following OCP
             Register<IActorProvider>(this);
         }
         protected override UniTask OnReserve()

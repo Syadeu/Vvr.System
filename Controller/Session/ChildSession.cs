@@ -213,21 +213,25 @@ namespace Vvr.Controller.Session
 
         protected virtual void Register(ConditionResolver conditionResolver) {}
 
-        public void Register<TProvider>(TProvider provider) where TProvider : IProvider
+        public IGameSessionBase Register<TProvider>(TProvider provider) where TProvider : IProvider
         {
             Type pType = typeof(TProvider);
             pType = Vvr.Provider.Provider.ExtractType(pType);
 
             IChildSessionConnector t = this;
             t.Register(pType, provider);
+
+            return this;
         }
-        public void Unregister<TProvider>() where TProvider : IProvider
+        public IGameSessionBase Unregister<TProvider>() where TProvider : IProvider
         {
             Type pType = typeof(TProvider);
             pType = Vvr.Provider.Provider.ExtractType(pType);
 
             IChildSessionConnector t = this;
             t.Unregister(pType);
+
+            return this;
         }
 
         public TProvider GetProviderRecursive<TProvider>() where TProvider : class, IProvider
@@ -248,7 +252,7 @@ namespace Vvr.Controller.Session
             return result;
         }
 
-        public void Connect<TProvider>(IConnector<TProvider> c) where TProvider : IProvider
+        public IGameSessionBase Connect<TProvider>(IConnector<TProvider> c) where TProvider : IProvider
         {
             Assert.IsFalse(ReferenceEquals(this, c), "cannot connect self");
             Type t = typeof(TProvider);
@@ -273,19 +277,23 @@ namespace Vvr.Controller.Session
             {
                 c.Connect((TProvider)provider);
             }
+
+            return this;
         }
-        public void Disconnect<TProvider>(IConnector<TProvider> c) where TProvider : IProvider
+        public IGameSessionBase Disconnect<TProvider>(IConnector<TProvider> c) where TProvider : IProvider
         {
             Type t = typeof(TProvider);
             t = Vvr.Provider.Provider.ExtractType(t);
 
-            if (!m_ConnectorWrappers.TryGetValue(t, out var list)) return;
+            if (!m_ConnectorWrappers.TryGetValue(t, out var list)) return this;
 
             if (m_ConnectedProviders.TryGetValue(t, out var provider))
                 c.Disconnect((TProvider)provider);
 
             uint hash = unchecked((uint)c.GetHashCode() ^ FNV1a32.Calculate(t.AssemblyQualifiedName));
             list.Remove(new ConnectorReflectionUtils.Wrapper(hash));
+
+            return this;
         }
 
         void IChildSessionConnector.Register(Type pType, IProvider provider)
