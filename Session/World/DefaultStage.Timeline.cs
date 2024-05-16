@@ -32,10 +32,10 @@ using Vvr.Session.Provider;
 
 namespace Vvr.Session.World
 {
-    partial class DefaultStage : IConnector<ITimelineProvider>
+    partial class DefaultStage : IConnector<ITimelineQueueProvider>
     {
         private readonly ActorList         m_Timeline      = new();
-        private          ITimelineProvider m_TimelineProvider;
+        private          ITimelineQueueProvider m_TimelineQueueProvider;
 
         private partial void DequeueTimeline()
         {
@@ -47,18 +47,18 @@ namespace Vvr.Session.World
         {
             const int maxTimelineCount = 5;
 
-            if (m_Timeline.Count > 0 && !m_TimelineProvider.IsStartFrom(m_Timeline[0]))
+            if (m_Timeline.Count > 0 && !m_TimelineQueueProvider.IsStartFrom(m_Timeline[0]))
             {
-                m_TimelineProvider.StartFrom(m_Timeline[0]);
+                m_TimelineQueueProvider.StartFrom(m_Timeline[0]);
                 for (int i = m_Timeline.Count - 1; i >= 1; i--)
                 {
                     m_Timeline.RemoveAt(i);
                 }
             }
 
-            while (m_TimelineProvider.Count > 0 && m_Timeline.Count < maxTimelineCount)
+            while (m_TimelineQueueProvider.Count > 0 && m_Timeline.Count < maxTimelineCount)
             {
-                m_Timeline.Add((StageActor)m_TimelineProvider.Dequeue());
+                m_Timeline.Add((StageActor)m_TimelineQueueProvider.Dequeue());
             }
         }
 
@@ -75,15 +75,15 @@ namespace Vvr.Session.World
             pos.z              = isFront ? 1 : 0;
             view.localPosition = pos;
 
-            m_TimelineProvider.Enqueue(actor);
+            m_TimelineQueueProvider.Enqueue(actor);
         }
         private partial async UniTask JoinAfter(StageActor target, ActorList field, StageActor actor)
         {
             Assert.IsFalse(field.Contains(actor));
             field.Add(actor, ActorPositionComparer.Static);
 
-            int index = m_TimelineProvider.IndexOf(target);
-            m_TimelineProvider.InsertAfter(
+            int index = m_TimelineQueueProvider.IndexOf(target);
+            m_TimelineQueueProvider.InsertAfter(
                 index, actor);
 
             using (var trigger = ConditionTrigger.Push(actor.owner, ConditionTrigger.Game))
@@ -108,7 +108,7 @@ namespace Vvr.Session.World
         }
         private partial async UniTask RemoveFromQueue(StageActor actor)
         {
-            m_TimelineProvider.Remove(actor);
+            m_TimelineQueueProvider.Remove(actor);
         }
         private partial async UniTask RemoveFromTimeline(StageActor actor, int preserveCount = 0)
         {
@@ -172,16 +172,16 @@ namespace Vvr.Session.World
             return true;
         }
 
-        void IConnector<ITimelineProvider>.Connect(ITimelineProvider t)
+        void IConnector<ITimelineQueueProvider>.Connect(ITimelineQueueProvider t)
         {
-            Assert.IsNull(m_TimelineProvider);
-            m_TimelineProvider = t;
+            Assert.IsNull(m_TimelineQueueProvider);
+            m_TimelineQueueProvider = t;
         }
 
-        void IConnector<ITimelineProvider>.Disconnect(ITimelineProvider t)
+        void IConnector<ITimelineQueueProvider>.Disconnect(ITimelineQueueProvider t)
         {
-            Assert.IsTrue(ReferenceEquals(m_TimelineProvider, t));
-            m_TimelineProvider = null;
+            Assert.IsTrue(ReferenceEquals(m_TimelineQueueProvider, t));
+            m_TimelineQueueProvider = null;
         }
     }
 }

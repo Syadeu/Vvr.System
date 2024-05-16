@@ -34,15 +34,15 @@ using Vvr.Session.Provider;
 namespace Vvr.Session
 {
     [UsedImplicitly]
-    public class TimelineSession : ChildSession<TimelineSession.SessionData>,
-        ITimelineProvider,
+    public class TimelineQueueSession : ChildSession<TimelineQueueSession.SessionData>,
+        ITimelineQueueProvider,
         IConnector<ICustomMethodProvider>
     {
         public struct SessionData : ISessionData
         {
         }
 
-        public override string DisplayName => nameof(TimelineSession);
+        public override string DisplayName => nameof(TimelineQueueSession);
 
         private class Entry : IComparable<Entry>
         {
@@ -84,14 +84,14 @@ namespace Vvr.Session
 
         protected override UniTask OnInitialize(IParentSession session, SessionData data)
         {
-            Parent.Register<ITimelineProvider>(this);
+            Parent.Register<ITimelineQueueProvider>(this);
 
             return base.OnInitialize(session, data);
         }
 
         protected override UniTask OnReserve()
         {
-            Parent.Unregister<ITimelineProvider>();
+            Parent.Unregister<ITimelineQueueProvider>();
 
             return base.OnReserve();
         }

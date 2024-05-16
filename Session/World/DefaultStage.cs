@@ -168,7 +168,7 @@ namespace Vvr.Session.World
         public IReadOnlyActorList PlayerField => m_PlayerField;
         public IReadOnlyActorList EnemyField  => m_EnemyField;
 
-        protected override async UniTask OnInitialize(IParentSession session, SessionData data)
+        protected override UniTask OnInitialize(IParentSession session, SessionData data)
         {
             // This is required for injecting actors
             Register<ITargetProvider>(this);
@@ -183,6 +183,8 @@ namespace Vvr.Session.World
             m_EnemyId = Owner.Issue;
 
             m_AssetController.Connect<AssetLoadTaskProvider>(data.stage.Assets);
+
+            return base.OnInitialize(session, data);
         }
 
         protected override UniTask OnReserve()

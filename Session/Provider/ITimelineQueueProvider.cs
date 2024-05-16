@@ -26,7 +26,7 @@ using Vvr.Provider;
 namespace Vvr.Session.Provider
 {
     [LocalProvider]
-    public interface ITimelineProvider : IProvider
+    public interface ITimelineQueueProvider : IProvider
     {
         [PublicAPI]
         int Count { get; }

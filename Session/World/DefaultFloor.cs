@@ -101,7 +101,7 @@ namespace Vvr.Session.World
             string cachedStartStageId = startStage.Value.Id;
             await trigger.Execute(Model.Condition.OnFloorStarted, cachedStartStageId);
 
-            var timelineSession = await CreateSession<TimelineSession>(default);
+            var timelineSession = await CreateSession<TimelineQueueSession>(default);
 
             while (startStage != null)
             {
