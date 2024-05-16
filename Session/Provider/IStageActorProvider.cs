@@ -27,12 +27,26 @@ using Vvr.Session.Actor;
 
 namespace Vvr.Session.Provider
 {
+    /// <summary>
+    /// Interface for providing stage actor instances.
+    /// </summary>
     [LocalProvider]
     public interface IStageActorProvider : IProvider
     {
+        /// <summary>
+        /// Creates a stage actor instance by initializing and configuring it with the provided actor and data.
+        /// </summary>
+        /// <param name="actor">The actor to create a stage actor from.</param>
+        /// <param name="data">The data used to configure the stage actor.</param>
+        /// <returns>The created stage actor instance.</returns>
         [PublicAPI]
         IStageActor Create(IActor actor, ActorSheet.Row data);
+
+        /// <summary>
+        /// Reserves a stage actor for reuse by disconnecting and clearing its connections and resetting its state.
+        /// </summary>
+        /// <param name="item">The stage actor to reserve.</param>
         [PublicAPI]
-        void        Reserve(IActor item);
+        void        Reserve(IStageActor item);
     }
 }

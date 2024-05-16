@@ -25,6 +25,9 @@ using Vvr.Provider;
 
 namespace Vvr.Session.Provider
 {
+    /// <summary>
+    /// Represents a timeline queue provider.
+    /// </summary>
     [LocalProvider]
     public interface ITimelineQueueProvider : IProvider
     {

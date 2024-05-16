@@ -37,12 +37,19 @@ namespace Vvr.Session.World
         private readonly ActorList         m_Timeline      = new();
         private          ITimelineQueueProvider m_TimelineQueueProvider;
 
+        /// <summary>
+        /// Dequeues the first actor from the timeline and updates it.
+        /// </summary>
         private partial void DequeueTimeline()
         {
             if (m_Timeline.Count > 0) m_Timeline.RemoveAt(0);
 
             UpdateTimeline();
         }
+
+        /// <summary>
+        /// Updates the timeline by checking the current state and adding or removing actors as necessary.
+        /// </summary>
         private partial void UpdateTimeline()
         {
             const int maxTimelineCount = 5;
@@ -62,6 +69,12 @@ namespace Vvr.Session.World
             }
         }
 
+        /// <summary>
+        /// Joins an actor to the specified field in the stage.
+        /// </summary>
+        /// <param name="field">The field in the stage where the actor will be joined.</param>
+        /// <param name="actor">The actor to be joined.</param>
+        /// <returns>A UniTask representing the asynchronous operation.</returns>
         private partial async UniTask Join(ActorList field, IStageActor actor)
         {
             Assert.IsFalse(field.Contains(actor));
@@ -77,6 +90,14 @@ namespace Vvr.Session.World
 
             m_TimelineQueueProvider.Enqueue(actor);
         }
+
+        /// <summary>
+        /// Adds an actor to the specified field after a target actor in the timeline queue.
+        /// </summary>
+        /// <param name="target">The target actor after which the actor should be added.</param>
+        /// <param name="field">The field to which the actor should be added.</param>
+        /// <param name="actor">The actor to be added.</param>
+        /// <returns>A <see cref="UniTask"/> representing the asynchronous operation.</returns>
         private partial async UniTask JoinAfter(IStageActor target, ActorList field, IStageActor actor)
         {
             Assert.IsFalse(field.Contains(actor));
@@ -92,6 +113,12 @@ namespace Vvr.Session.World
             }
         }
 
+        /// <summary>
+        /// Deletes an actor from the actor list and performs necessary cleanup operations.
+        /// </summary>
+        /// <param name="field">The actor list from which to delete the actor.</param>
+        /// <param name="actor">The actor to delete.</param>
+        /// <returns>A <see cref="UniTask"/> representing the asynchronous operation.</returns>
         private partial async UniTask Delete(ActorList field, IStageActor actor)
         {
             bool result = field.Remove(actor);
@@ -106,10 +133,23 @@ namespace Vvr.Session.World
 
             UpdateTimeline();
         }
+
+        /// <summary>
+        /// Removes the specified actor from the queue.
+        /// </summary>
+        /// <param name="actor">The actor to remove from the queue.</param>
+        /// <returns>A <see cref="UniTask"/> representing the asynchronous removal of the actor from the queue.</returns>
         private partial async UniTask RemoveFromQueue(IStageActor actor)
         {
             m_TimelineQueueProvider.Remove(actor);
         }
+
+        /// <summary>
+        /// Removes the specified actor from the timeline.
+        /// </summary>
+        /// <param name="actor">The actor to be removed from the timeline.</param>
+        /// <param name="preserveCount">The number of actors to preserve after removing the specified actor from the timeline. Default is 0.</param>
+        /// <returns>A <see cref="UniTask"/> representing the asynchronous operation.</returns>
         private partial async UniTask RemoveFromTimeline(IStageActor actor, int preserveCount = 0)
         {
             for (int i = 0; i < m_Timeline.Count; i++)
@@ -177,7 +217,6 @@ namespace Vvr.Session.World
             Assert.IsNull(m_TimelineQueueProvider);
             m_TimelineQueueProvider = t;
         }
-
         void IConnector<ITimelineQueueProvider>.Disconnect(ITimelineQueueProvider t)
         {
             Assert.IsTrue(ReferenceEquals(m_TimelineQueueProvider, t));

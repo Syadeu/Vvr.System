@@ -147,7 +147,7 @@ namespace Vvr.Session.World
         private IInputControlProvider         m_InputControlProvider;
         private AsyncLazy<IEventViewProvider> m_ViewProvider;
 
-        private AssetController m_AssetController;
+        private AssetController m_StageAssetController;
 
         private Owner m_EnemyId;
 
@@ -172,10 +172,14 @@ namespace Vvr.Session.World
                 .Register<IEventConditionProvider>(this)
                 .Register<IStageProvider>(this);
 
+            // TODO: remove outside view provider
             m_ViewProvider         = Vvr.Provider.Provider.Static.GetLazyAsync<IEventViewProvider>();
-            m_AssetController      = new(data.stage.Assets);
+            m_StageAssetController      = new(data.stage.Assets);
 
-            Connect<IAssetProvider>(m_AssetController);
+            // Connects stage asset to asset provider.
+            // This makes use injected asset container from parent.
+            // Which stages can share assets within same floor session.
+            Connect<IAssetProvider>(m_StageAssetController);
 
             m_EnemyId = Owner.Issue;
 
@@ -184,15 +188,18 @@ namespace Vvr.Session.World
 
         protected override UniTask OnReserve()
         {
+            // While this session feeds multiple providers to parent session
+            // These will not release after this session closed.
+            // So we need to manually remove from parent session.
             Parent.Unregister<ITargetProvider>()
                 .Unregister<IStateConditionProvider>()
                 .Unregister<IEventConditionProvider>()
                 .Unregister<IStageProvider>();
 
-            Disconnect<IAssetProvider>(m_AssetController);
+            Disconnect<IAssetProvider>(m_StageAssetController);
 
             m_ViewProvider         = null;
-            m_AssetController      = null;
+            m_StageAssetController      = null;
 
             m_HandActors.Clear();
             m_PlayerField.Clear();
@@ -479,7 +486,6 @@ namespace Vvr.Session.World
             Assert.IsTrue(ReferenceEquals(m_InputControlProvider, t));
             m_InputControlProvider = null;
         }
-
 
         public void Connect(IStageActorProvider    t) => m_StageActorProvider = t;
         public void Disconnect(IStageActorProvider t) => m_StageActorProvider = null;

@@ -56,7 +56,7 @@ namespace Vvr.Session
 
             return result;
         }
-        public void Reserve(IActor item)
+        public void Reserve(IStageActor item)
         {
             Disconnect<IAssetProvider>(item.Assets)
                 .Disconnect<IActorDataProvider>(item.Skill)
