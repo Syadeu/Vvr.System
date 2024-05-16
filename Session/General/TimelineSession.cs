@@ -24,17 +24,18 @@ using System.Buffers;
 using System.Collections.Generic;
 using System.Linq;
 using Cysharp.Threading.Tasks;
+using JetBrains.Annotations;
 using UnityEngine;
 using UnityEngine.Assertions;
-using Vvr.Controller;
 using Vvr.Controller.Actor;
 using Vvr.Provider;
 using Vvr.Session.Provider;
 
-namespace Vvr.Session.World
+namespace Vvr.Session
 {
+    [UsedImplicitly]
     public class TimelineSession : ChildSession<TimelineSession.SessionData>,
-        ITimelineProvider, ITimeUpdate,
+        ITimelineProvider,
         IConnector<ICustomMethodProvider>
     {
         public struct SessionData : ISessionData
@@ -224,14 +225,6 @@ namespace Vvr.Session.World
         {
             Assert.IsTrue(ReferenceEquals(m_CustomMethodProvider, t));
             m_CustomMethodProvider = null;
-        }
-
-        async UniTask ITimeUpdate.OnUpdateTime(int currentTime, int deltaTime)
-        {
-
-        }
-        async UniTask ITimeUpdate.OnEndUpdateTime()
-        {
         }
     }
 }
