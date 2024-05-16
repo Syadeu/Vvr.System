@@ -36,7 +36,6 @@ namespace Vvr.Provider
     /// </remarks>
     public sealed class StatProvider : IStatConditionProvider
     {
-        [Obsolete]
         public static  StatProvider Static { get; private set; }
 
         [Obsolete]
