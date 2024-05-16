@@ -101,6 +101,8 @@ namespace Vvr.Session.World
             string cachedStartStageId = startStage.Value.Id;
             await trigger.Execute(Model.Condition.OnFloorStarted, cachedStartStageId);
 
+            var timelineSession = await CreateSession<TimelineSession>(default);
+
             while (startStage != null)
             {
                 DefaultStage.SessionData sessionData;
@@ -127,6 +129,9 @@ namespace Vvr.Session.World
                     await trigger.Execute(Model.Condition.OnStageStarted, sessionData.stage.Id);
                     stageResult = await m_CurrentStage.Start();
                     await trigger.Execute(Model.Condition.OnStageEnded, sessionData.stage.Id);
+
+                    // Clear timeline
+                    timelineSession.Clear();
 
                     var viewProvider = await m_ViewProvider;
                     foreach (var enemy in stageResult.enemyActors)

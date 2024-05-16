@@ -30,28 +30,28 @@ namespace Vvr.Session
     /// </summary>
     internal static class ConnectorReflectionUtils
     {
-        public struct Wrapper : IEquatable<Wrapper>
+        public readonly struct Wrapper : IEquatable<Wrapper>
         {
-            public readonly uint              hash;
-            public readonly Action<IProvider> connect;
-            public readonly Action<IProvider> disconnect;
+            private readonly uint              m_Hash;
+            public readonly  Action<IProvider> connect;
+            public readonly  Action<IProvider> disconnect;
 
             public Wrapper(uint h)
             {
-                hash       = h;
+                m_Hash       = h;
                 connect    = null;
                 disconnect = null;
             }
             public Wrapper(uint h, Action<IProvider> con, Action<IProvider> discon)
             {
-                hash       = h;
+                m_Hash       = h;
                 connect    = con;
                 disconnect = discon;
             }
 
             public bool Equals(Wrapper other)
             {
-                return hash == other.hash;
+                return m_Hash == other.m_Hash;
             }
         }
         struct ConnectorImpl : IProvider, IConnector<ConnectorImpl>

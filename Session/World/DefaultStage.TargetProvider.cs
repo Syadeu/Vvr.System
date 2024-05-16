@@ -51,7 +51,7 @@ namespace Vvr.Session.World
                 "target is ally".ToLog();
                 var field       = m_EnemyId != from.Owner ? m_PlayerField : m_EnemyField;
                 int     count       = field.Count;
-                var     cachedArray = ArrayPool<IRuntimeActor>.Shared.Rent(count);
+                var     cachedArray = ArrayPool<IStageActor>.Shared.Rent(count);
                 field.CopyTo(cachedArray);
                 if (target.Position == SkillSheet.Position.Random)
                 {
@@ -83,7 +83,7 @@ namespace Vvr.Session.World
                     yield return actorData.Owner;
                 }
 
-                ArrayPool<IRuntimeActor>.Shared.Return(cachedArray, true);
+                ArrayPool<IStageActor>.Shared.Return(cachedArray, true);
             }
 
             if ((target.Target & SkillSheet.Target.Enemy) == SkillSheet.Target.Enemy)
@@ -91,7 +91,7 @@ namespace Vvr.Session.World
                 "target is enemy".ToLog();
                 var field = m_EnemyId != from.Owner ? m_EnemyField : m_PlayerField;
                 int count       = field.Count;
-                var cachedArray = ArrayPool<IRuntimeActor>.Shared.Rent(count);
+                var cachedArray = ArrayPool<IStageActor>.Shared.Rent(count);
                 field.CopyTo(cachedArray);
 
                 for (int i = 0; i < count; i++)
@@ -101,7 +101,7 @@ namespace Vvr.Session.World
                     yield return actorData.Owner;
                 }
 
-                ArrayPool<IRuntimeActor>.Shared.Return(cachedArray, true);
+                ArrayPool<IStageActor>.Shared.Return(cachedArray, true);
             }
         }
     }

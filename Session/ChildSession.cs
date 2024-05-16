@@ -236,8 +236,7 @@ namespace Vvr.Session
 
         public TProvider GetProviderRecursive<TProvider>() where TProvider : class, IProvider
         {
-            // XXX: Possible destroying system design
-            // if (this is TProvider p) return p;
+            if (this is TProvider p) return p;
 
             TProvider result = null;
             if (this is IParentSession parentSession)
@@ -291,7 +290,8 @@ namespace Vvr.Session
                 c.Disconnect((TProvider)provider);
 
             uint hash = unchecked((uint)c.GetHashCode() ^ FNV1a32.Calculate(t.AssemblyQualifiedName));
-            list.Remove(new ConnectorReflectionUtils.Wrapper(hash));
+            bool result = list.Remove(new ConnectorReflectionUtils.Wrapper(hash));
+            Assert.IsTrue(result);
 
             return this;
         }

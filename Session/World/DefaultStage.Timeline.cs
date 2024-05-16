@@ -35,165 +35,10 @@ using Vvr.Session.Provider;
 
 namespace Vvr.Session.World
 {
-    partial class DefaultStage : IConnector<ICustomMethodProvider>
+    partial class DefaultStage : IConnector<ITimelineProvider>
     {
-        class TimelineQueue
-        {
-            class Entry : IComparable<Entry>
-            {
-                public readonly CustomMethodDelegate m_Method;
-
-                public RuntimeActor   actor;
-                public int            index;
-
-                public float time => m_Method(actor.owner.Stats);
-                public float timeOffset;
-
-                public Entry(CustomMethodDelegate m)
-                {
-                    m_Method = m;
-                }
-
-                public int CompareTo(Entry other)
-                {
-                    float xx = time + timeOffset,
-                        yy = other.time + other.timeOffset;
-                    if (Mathf.Approximately(xx, yy))
-                    {
-                        return index.CompareTo(other.index);
-                    }
-
-                    if (xx < yy) return -1;
-                    return 1;
-                }
-            }
-
-            private readonly HashSet<int>  m_Actors = new();
-            private readonly SortedSet<Entry> m_Queue  = new();
-            private          int              m_Index;
-
-            public int Count => m_Queue.Count;
-
-            public int IndexOf(RuntimeActor actor)
-            {
-                foreach (var entry in m_Queue)
-                {
-                    if (ReferenceEquals(entry.actor, actor))
-                        return entry.index;
-                }
-
-                return -1;
-            }
-
-            public void Enqueue(CustomMethodDelegate method, RuntimeActor actor)
-            {
-                Assert.IsNotNull(actor);
-                if (!m_Actors.Add(actor.GetHashCode()))
-                    throw new InvalidOperationException("duplicated");
-
-                m_Queue.Add(new Entry(method)
-                {
-                    actor = actor,
-                    index = m_Index++,
-                });
-            }
-
-            public void InsertAfter(CustomMethodDelegate method, int index, RuntimeActor actor)
-            {
-                Assert.IsNotNull(actor);
-
-                if (!m_Actors.Add(actor.GetHashCode()))
-                    throw new InvalidOperationException("duplicated");
-
-                int     count   = m_Queue.Count;
-                var tempArr = ArrayPool<Entry>.Shared.Rent(count);
-                m_Queue.CopyTo(tempArr, 0);
-                m_Queue.Clear();
-                for (int i = 0; i < count; i++)
-                {
-                    var entry = tempArr[i];
-                    if (entry.index > index) entry.index++;
-
-                    m_Queue.Add(entry);
-                }
-                ArrayPool<Entry>.Shared.Return(tempArr, true);
-
-                m_Queue.Add(new Entry(method)
-                {
-                    actor = actor,
-                    index = index + 1,
-                });
-                m_Index++;
-            }
-            public RuntimeActor Dequeue()
-            {
-                if (m_Queue.Count == 0) throw new InvalidOperationException("queue empty");
-
-                var min = m_Queue.Min;
-                m_Queue.Remove(min);
-                min.timeOffset += min.time;
-                m_Queue.Add(min);
-
-                return min.actor;
-            }
-
-            public bool IsStartFrom(RuntimeActor actor)
-            {
-                var min = m_Queue.Min;
-                return ReferenceEquals(min.actor, actor);
-            }
-            public void StartFrom(RuntimeActor actor)
-            {
-                Assert.IsNotNull(actor);
-
-                if (IsStartFrom(actor)) return;
-
-                var targetEntry = m_Queue.FirstOrDefault(x => ReferenceEquals(x.actor, actor));
-                if (targetEntry == null)
-                    throw new InvalidOperationException("Actor not found.");
-
-                int count   = m_Queue.Count;
-                var tempArr = ArrayPool<Entry>.Shared.Rent(count);
-                m_Queue.CopyTo(tempArr, 0);
-                m_Queue.Clear();
-
-                int targetIndex = targetEntry.index;
-                for (int i = 0; i < count; i++)
-                {
-                    var entry = tempArr[i];
-                    if (ReferenceEquals(entry.actor, actor))
-                    {
-                        entry.index = 0;
-                    }
-                    else if (entry.index < targetIndex)
-                    {
-                        entry.index++;
-                    }
-
-                    m_Queue.Add(entry);
-                }
-
-                ArrayPool<Entry>.Shared.Return(tempArr, true);
-            }
-
-            public void Remove(RuntimeActor actor)
-            {
-                if (!m_Actors.Remove(actor.GetHashCode()))
-                    return;
-
-                m_Queue.RemoveWhere(x => ReferenceEquals(x.actor, actor));
-            }
-
-            public void Clear()
-            {
-                m_Actors.Clear();
-                m_Queue.Clear();
-                m_Index = 0;
-            }
-        }
-
-        private readonly TimelineQueue m_TimelineQueue = new();
-        private readonly ActorList     m_Timeline      = new();
+        private readonly ActorList         m_Timeline      = new();
+        private          ITimelineProvider m_TimelineProvider;
 
         private partial void DequeueTimeline()
         {
@@ -205,22 +50,22 @@ namespace Vvr.Session.World
         {
             const int maxTimelineCount = 5;
 
-            if (m_Timeline.Count > 0 && !m_TimelineQueue.IsStartFrom(m_Timeline[0]))
+            if (m_Timeline.Count > 0 && !m_TimelineProvider.IsStartFrom(m_Timeline[0]))
             {
-                m_TimelineQueue.StartFrom(m_Timeline[0]);
+                m_TimelineProvider.StartFrom(m_Timeline[0]);
                 for (int i = m_Timeline.Count - 1; i >= 1; i--)
                 {
                     m_Timeline.RemoveAt(i);
                 }
             }
 
-            while (m_TimelineQueue.Count > 0 && m_Timeline.Count < maxTimelineCount)
+            while (m_TimelineProvider.Count > 0 && m_Timeline.Count < maxTimelineCount)
             {
-                m_Timeline.Add(m_TimelineQueue.Dequeue());
+                m_Timeline.Add((StageActor)m_TimelineProvider.Dequeue());
             }
         }
 
-        private partial async UniTask Join(ActorList field, RuntimeActor actor)
+        private partial async UniTask Join(ActorList field, StageActor actor)
         {
             Assert.IsFalse(field.Contains(actor));
             field.Add(actor, ActorPositionComparer.Static);
@@ -233,16 +78,15 @@ namespace Vvr.Session.World
             pos.z              = isFront ? 1 : 0;
             view.localPosition = pos;
 
-            m_TimelineQueue.Enqueue(m_CustomMethodProvider[CustomMethodNames.TIMELINE], actor);
+            m_TimelineProvider.Enqueue(actor);
         }
-        private partial async UniTask JoinAfter(RuntimeActor target, ActorList field, RuntimeActor actor)
+        private partial async UniTask JoinAfter(StageActor target, ActorList field, StageActor actor)
         {
             Assert.IsFalse(field.Contains(actor));
             field.Add(actor, ActorPositionComparer.Static);
 
-            int index = m_TimelineQueue.IndexOf(target);
-            m_TimelineQueue.InsertAfter(
-                m_CustomMethodProvider[CustomMethodNames.TIMELINE],
+            int index = m_TimelineProvider.IndexOf(target);
+            m_TimelineProvider.InsertAfter(
                 index, actor);
 
             using (var trigger = ConditionTrigger.Push(actor.owner, ConditionTrigger.Game))
@@ -251,7 +95,7 @@ namespace Vvr.Session.World
             }
         }
 
-        private partial async UniTask Delete(ActorList field, RuntimeActor actor)
+        private partial async UniTask Delete(ActorList field, StageActor actor)
         {
             bool result = field.Remove(actor);
             Assert.IsTrue(result);
@@ -265,11 +109,11 @@ namespace Vvr.Session.World
 
             UpdateTimeline();
         }
-        private partial async UniTask RemoveFromQueue(RuntimeActor actor)
+        private partial async UniTask RemoveFromQueue(StageActor actor)
         {
-            m_TimelineQueue.Remove(actor);
+            m_TimelineProvider.Remove(actor);
         }
-        private partial async UniTask RemoveFromTimeline(RuntimeActor actor, int preserveCount = 0)
+        private partial async UniTask RemoveFromTimeline(StageActor actor, int preserveCount = 0)
         {
             for (int i = 0; i < m_Timeline.Count; i++)
             {
@@ -284,7 +128,7 @@ namespace Vvr.Session.World
         }
 
         [MustUseReturnValue]
-        private bool ResolvePosition(IList<RuntimeActor> field, IRuntimeActor runtimeActor)
+        private bool ResolvePosition(IList<StageActor> field, IStageActor runtimeActor)
         {
             int count = field.Count;
             // If no actor in the field, always front
@@ -309,7 +153,7 @@ namespace Vvr.Session.World
             // If first is not defensive, should iterate all fields until higher order found
             for (int i = 0; i < count; i++)
             {
-                RuntimeActor e    = field[i];
+                StageActor e    = field[i];
                 int order = ActorPositionComparer.Static.Compare(runtimeActor, e);
                 if (order == 0) continue;
 
@@ -331,18 +175,16 @@ namespace Vvr.Session.World
             return true;
         }
 
-        private ICustomMethodProvider m_CustomMethodProvider;
-
-        void IConnector<ICustomMethodProvider>.Connect(ICustomMethodProvider t)
+        void IConnector<ITimelineProvider>.Connect(ITimelineProvider t)
         {
-            Assert.IsNull(m_CustomMethodProvider);
-            m_CustomMethodProvider = t;
+            Assert.IsNull(m_TimelineProvider);
+            m_TimelineProvider = t;
         }
 
-        void IConnector<ICustomMethodProvider>.Disconnect(ICustomMethodProvider t)
+        void IConnector<ITimelineProvider>.Disconnect(ITimelineProvider t)
         {
-            Assert.IsTrue(ReferenceEquals(m_CustomMethodProvider, t));
-            m_CustomMethodProvider = null;
+            Assert.IsTrue(ReferenceEquals(m_TimelineProvider, t));
+            m_TimelineProvider = null;
         }
     }
 }

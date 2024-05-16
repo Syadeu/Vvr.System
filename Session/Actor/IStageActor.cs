@@ -24,18 +24,18 @@ using Vvr.Model;
 
 namespace Vvr.Session.Actor
 {
-    internal interface IRuntimeActor
+    public interface IStageActor
     {
         IActor         Owner { get; }
         ActorSheet.Row Data  { get; }
     }
 
-    public struct CachedActor : IRuntimeActor
+    public struct CachedActor : IStageActor
     {
         public IActor         Owner { get; }
         public ActorSheet.Row Data  { get; }
 
-        internal CachedActor(IRuntimeActor d)
+        internal CachedActor(IStageActor d)
         {
             Owner = d.Owner;
             Data  = d.Data;

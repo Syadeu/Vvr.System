@@ -29,6 +29,7 @@ using Vvr.Controller.Condition;
 using Vvr.Controller.Provider;
 using Vvr.Model.Stat;
 using Vvr.Provider;
+using Vvr.Session.Actor;
 
 namespace Vvr.Session.World
 {
@@ -70,7 +71,11 @@ namespace Vvr.Session.World
                 return;
             }
 
-            RuntimeActor actor = field[index];
+            StageActor actor = field[index];
+
+            Disconnect<IActorDataProvider>(actor.owner.Skill);
+            Disconnect<ITargetProvider>(actor.owner.Skill);
+            Disconnect<ITargetProvider>(actor.owner.Passive);
 
             $"Actor {actor.owner.DisplayName} is dead {actor.owner.Stats[StatType.HP]}".ToLog();
 

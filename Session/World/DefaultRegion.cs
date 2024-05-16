@@ -90,7 +90,6 @@ namespace Vvr.Session.World
         {
 
         }
-
         void IConnector<IActorProvider>.Disconnect(IActorProvider t)
         {
         }

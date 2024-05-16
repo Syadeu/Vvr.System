@@ -36,6 +36,7 @@ using Vvr.Model.Stat;
 using Vvr.Provider;
 using Vvr.Session.Actor;
 using Vvr.Session.Provider;
+using Vvr.UI.Observer;
 
 namespace Vvr.Session.World
 {
@@ -43,13 +44,13 @@ namespace Vvr.Session.World
     public partial class DefaultStage : ChildSession<DefaultStage.SessionData>, IStageProvider,
         IConnector<IActorProvider>
     {
-        private class ActorList : List<RuntimeActor>, IReadOnlyActorList
+        private class ActorList : List<StageActor>, IReadOnlyActorList
         {
             CachedActor IReadOnlyList<CachedActor>.this[int index] => new CachedActor(this[index]);
 
             public ActorList() : base()
             {
-                // ObjectObserver<ActorList>.Get(this).EnsureContainer();
+                ObjectObserver<ActorList>.Get(this).EnsureContainer();
             }
 
             public bool TryGetActor(string instanceId, out CachedActor actor)
@@ -67,7 +68,7 @@ namespace Vvr.Session.World
                 return false;
             }
 
-            public void CopyTo(IRuntimeActor[] array)
+            public void CopyTo(IStageActor[] array)
             {
                 for (int i = 0; i < Count; i++)
                 {
@@ -114,12 +115,12 @@ namespace Vvr.Session.World
             }
         }
 
-        struct ActorPositionComparer : IComparer<IRuntimeActor>
+        struct ActorPositionComparer : IComparer<IStageActor>
         {
-            public static readonly Func<IRuntimeActor, IRuntimeActor>      Selector = x => x;
-            public static readonly IComparer<IRuntimeActor> Static   = default(ActorPositionComparer);
+            public static readonly Func<IStageActor, IStageActor>      Selector = x => x;
+            public static readonly IComparer<IStageActor> Static   = default(ActorPositionComparer);
 
-            public int Compare(IRuntimeActor x, IRuntimeActor y)
+            public int Compare(IStageActor x, IStageActor y)
             {
                 if (x == null && y == null) return 0;
                 if (x == null) return 1;
@@ -132,29 +133,7 @@ namespace Vvr.Session.World
                 return xx > yy ? 1 : 0;
             }
         }
-        public sealed class RuntimeActor : IRuntimeActor
-        {
-            public readonly IActor         owner;
-            public readonly ActorSheet.Row data;
 
-            public bool tagOutRequested;
-
-            public RuntimeActor(RuntimeActor x)
-            {
-                owner = x.owner;
-                data  = x.data;
-            }
-            public RuntimeActor(IActor o, ActorSheet.Row d)
-            {
-                owner = o;
-                data  = d;
-
-                tagOutRequested = false;
-            }
-
-            IActor IRuntimeActor.  Owner => owner;
-            ActorSheet.Row IRuntimeActor.Data  => data;
-        }
         public struct Result
         {
             public readonly IEnumerable<CachedActor> playerActors;
@@ -190,6 +169,9 @@ namespace Vvr.Session.World
 
         protected override async UniTask OnInitialize(IParentSession session, SessionData data)
         {
+            // This is required for injecting actors
+            Register<ITargetProvider>(this);
+
             Vvr.Provider.Provider.Static
                 .Register<IStateConditionProvider>(this);
 
@@ -200,8 +182,6 @@ namespace Vvr.Session.World
             m_EnemyId = Owner.Issue;
 
             m_AssetController.Connect<AssetLoadTaskProvider>(data.stage.Assets);
-
-            Register<ITargetProvider>(this);
         }
 
         protected override UniTask OnReserve()
@@ -222,7 +202,6 @@ namespace Vvr.Session.World
             m_EnemyField.Clear();
 
             m_Timeline.Clear();
-            m_TimelineQueue.Clear();
 
             return base.OnReserve();
         }
@@ -241,7 +220,7 @@ namespace Vvr.Session.World
                 {
                     foreach (var prevActor in Data.prevPlayers)
                     {
-                        RuntimeActor runtimeActor = new(prevActor.Owner, prevActor.Data)
+                        StageActor runtimeActor = new(prevActor.Owner, prevActor.Data)
                         {
                             // time = time++
                         };
@@ -266,7 +245,7 @@ namespace Vvr.Session.World
                         IActor target = m_ActorProvider.Resolve(data).CreateInstance();
                         target.Initialize(Data.playerId, data);
 
-                        RuntimeActor runtimeActor = new(target, data)
+                        StageActor runtimeActor = new(target, data)
                         {
                             // time = time++
                         };
@@ -291,7 +270,7 @@ namespace Vvr.Session.World
                 IActor         target = m_ActorProvider.Resolve(data).CreateInstance();
                 target.Initialize(m_EnemyId, data);
 
-                RuntimeActor runtimeActor = new(target, data)
+                StageActor runtimeActor = new(target, data)
                 {
                     // time = time++
                 };
@@ -309,7 +288,7 @@ namespace Vvr.Session.World
             // ObjectObserver<ActorList>.ChangedEvent(m_Timeline);
 
             foreach (var item in m_PlayerField
-                         .Concat<RuntimeActor>(m_HandActors)
+                         .Concat<StageActor>(m_HandActors)
                          .Concat(m_EnemyField)
                      )
             {
@@ -328,7 +307,7 @@ namespace Vvr.Session.World
                 $"Timeline count {m_Timeline.Count}".ToLog();
 
                 m_ResetEvent = new();
-                RuntimeActor current  = m_Timeline[0];
+                StageActor current  = m_Timeline[0];
                 Assert.IsFalse(current.owner.Disposed);
 
                 using (var trigger = ConditionTrigger.Push(current.owner, ConditionTrigger.Game))
@@ -358,7 +337,7 @@ namespace Vvr.Session.World
                 {
                     // Find alive actor
                     var actor = m_HandActors
-                            .Where<RuntimeActor>(x => x.owner.Stats[StatType.HP] > 0)
+                            .Where<StageActor>(x => x.owner.Stats[StatType.HP] > 0)
                         ;
                     if (actor.Any())
                     {
@@ -374,7 +353,7 @@ namespace Vvr.Session.World
             }
 
             foreach (var item in m_PlayerField
-                         .Concat<RuntimeActor>(m_HandActors)
+                         .Concat<StageActor>(m_HandActors)
                          .Concat(m_EnemyField))
             {
                 using var trigger = ConditionTrigger.Push(item.owner, ConditionTrigger.Game);
@@ -394,17 +373,17 @@ namespace Vvr.Session.World
             return new Result(GetCurrentPlayerActors(), GetCurrentEnemyActors());
         }
 
-        private partial UniTask Join(ActorList                  field,  RuntimeActor actor);
-        private partial UniTask JoinAfter(RuntimeActor          target, ActorList    field, RuntimeActor actor);
-        private partial UniTask Delete(ActorList                field,  RuntimeActor actor);
-        private partial UniTask RemoveFromQueue(RuntimeActor    actor);
-        private partial UniTask RemoveFromTimeline(RuntimeActor actor, int preserveCount = 0);
+        private partial UniTask Join(ActorList                  field,  StageActor actor);
+        private partial UniTask JoinAfter(StageActor          target, ActorList    field, StageActor actor);
+        private partial UniTask Delete(ActorList                field,  StageActor actor);
+        private partial UniTask RemoveFromQueue(StageActor    actor);
+        private partial UniTask RemoveFromTimeline(StageActor actor, int preserveCount = 0);
 
         private partial void DequeueTimeline();
         private partial void UpdateTimeline();
 
         // TODO: Test auto play method
-        public async UniTask ExecuteTurn(RuntimeActor runtimeActor)
+        private async UniTask ExecuteTurn(StageActor runtimeActor)
         {
             var inputControl = await m_InputControlProvider;
             // AI
@@ -425,13 +404,14 @@ namespace Vvr.Session.World
             m_ResetEvent.TrySetResult();
         }
 
-        public async UniTask SwapPlayerCard(RuntimeActor d)
+        private async UniTask SwapPlayerCard(StageActor d)
         {
             int index = m_HandActors.IndexOf(d);
             Assert.IsFalse(index < 0, "index < 0");
             await SwapPlayerCard(index);
         }
-        public async UniTask SwapPlayerCard(int index)
+
+        private async UniTask SwapPlayerCard(int index)
         {
             // Assert.IsTrue(m_Timeline.First.Value.actor.ConditionResolver[Model.Condition.IsPlayerActor](null));
             if (m_PlayerField.Count > 1)
@@ -448,7 +428,7 @@ namespace Vvr.Session.World
 
             if (m_PlayerField.Count > 0)
             {
-                RuntimeActor currentFieldRuntimeActor = m_PlayerField[0];
+                StageActor currentFieldRuntimeActor = m_PlayerField[0];
                 currentFieldRuntimeActor.tagOutRequested = true;
 
                 await JoinAfter(currentFieldRuntimeActor, m_PlayerField, temp);
