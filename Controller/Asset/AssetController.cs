@@ -30,6 +30,7 @@ using Vvr.Provider;
 
 namespace Vvr.Controller.Asset
 {
+    [Obsolete("Should load assets with AssetSession(IAssetProvider)")]
     public class AssetController<TAssetType> : IAsset, IDisposable
         where TAssetType : struct, IConvertible
     {
