@@ -31,25 +31,77 @@ namespace Vvr.Session.Provider
     [LocalProvider]
     public interface ITimelineQueueProvider : IProvider
     {
+        /// <summary>
+        /// Gets the number of elements in the timeline queue.
+        /// </summary>
+        /// <remarks>
+        /// This property represents the number of elements currently stored in the timeline queue.
+        /// </remarks>
         [PublicAPI]
         int Count { get; }
 
+        /// <summary>
+        /// Finds the index of the specified actor in the timeline queue.
+        /// </summary>
+        /// <param name="actor">The actor to search for.</param>
+        /// <returns>
+        /// The index of the specified actor in the timeline queue. If the actor is not found,
+        /// -1 is returned.
+        /// </returns>
         [PublicAPI]
         int IndexOf(IActor actor);
 
+        /// <summary>
+        /// Adds the specified actor to the timeline queue.
+        /// </summary>
+        /// <param name="actor">The actor to add to the timeline queue.</param>
         [PublicAPI]
         void   Enqueue(IActor  actor);
+
+        /// <summary>
+        /// Inserts an actor after the specified index in the timeline queue.
+        /// </summary>
+        /// <param name="index">The index after which to insert the actor.</param>
+        /// <param name="actor">The actor to insert.</param>
         [PublicAPI]
         void   InsertAfter(int index, IActor actor);
+
+        /// <summary>
+        /// Removes and returns the first actor in the timeline queue.
+        /// </summary>
+        /// <returns>
+        /// The first actor in the timeline queue.
+        /// </returns>
         [PublicAPI]
         IActor Dequeue();
+
+        /// <summary>
+        /// Determines whether the given actor is the starting actor in the timeline queue.
+        /// </summary>
+        /// <param name="actor">The actor to check.</param>
+        /// <returns>
+        /// <c>true</c> if the given actor is the starting actor in the timeline queue; otherwise, <c>false</c>.
+        /// </returns>
         [PublicAPI]
         bool   IsStartFrom(IActor actor);
+
+        /// <summary>
+        /// Sets the starting point of the timeline queue to the specified actor.
+        /// </summary>
+        /// <param name="actor">The actor to set as the starting point of the timeline queue.</param>
         [PublicAPI]
         void   StartFrom(IActor   actor);
+
+        /// <summary>
+        /// Removes the specified actor from the timeline queue.
+        /// </summary>
+        /// <param name="actor">The actor to be removed from the queue.</param>
         [PublicAPI]
         void   Remove(IActor      actor);
 
+        /// <summary>
+        /// Clears the timeline queue, removing all actors from it.
+        /// </summary>
         [PublicAPI]
         void   Clear();
     }
