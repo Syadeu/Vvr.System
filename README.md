@@ -13,7 +13,7 @@ Copyright 2024 Syadeu. All rights reserved*
 
 `Controller`는 최종적으로 데이터를 가공하여 `View`에게 제공합니다.
 
-그리고 이 모든 `자원을` 최대한으로 활용하는 `Session` 을 통해 생성된 자원들을 관리합니다.
+그리고 이 모든 자원을 최대한으로 활용하는 `Session` 을 통해 생성된 자원들을 관리합니다.
 
 ------
 
