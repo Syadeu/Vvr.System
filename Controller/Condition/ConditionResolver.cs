@@ -203,7 +203,7 @@ namespace Vvr.Controller.Condition
                 this[(Model.Condition)condition] = x => provider.Resolve(condition, Owner, x);
             }
         }
-        void IConnector<IEventConditionProvider>.Disconnect()
+        void IConnector<IEventConditionProvider>.Disconnect(IEventConditionProvider provider)
         {
             if (Disposed)
                 throw new ObjectDisposedException(nameof(ConditionResolver));
@@ -232,7 +232,7 @@ namespace Vvr.Controller.Condition
                 this[(Model.Condition)condition] = x => t.Resolve(condition, Owner, x);
             }
         }
-        void IConnector<IStateConditionProvider>.Disconnect()
+        void IConnector<IStateConditionProvider>.Disconnect(IStateConditionProvider t)
         {
             if (Disposed)
                 throw new ObjectDisposedException(nameof(ConditionResolver));

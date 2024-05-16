@@ -24,7 +24,7 @@ using Vvr.Model;
 
 namespace Vvr.Controller.Provider
 {
-    public sealed class ActorDataProvider : IActorDataProvider, IDisposable
+    internal sealed class ActorDataProvider : IActorDataProvider, IDisposable
     {
         private readonly ActorSheet m_Sheet;
 
@@ -32,19 +32,6 @@ namespace Vvr.Controller.Provider
         {
             m_Sheet = sheet;
         }
-
-        public ActorDataProvider Register()
-        {
-            Vvr.Provider.Provider.Static.Register(this);
-            return this;
-        }
-
-        public ActorDataProvider Unregister()
-        {
-            Vvr.Provider.Provider.Static.Unregister(this);
-            return this;
-        }
-
         public ActorSheet.Row Resolve(string key)
         {
             return m_Sheet[key];
@@ -52,7 +39,6 @@ namespace Vvr.Controller.Provider
 
         public void Dispose()
         {
-            Unregister();
         }
     }
 }

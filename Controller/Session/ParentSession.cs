@@ -130,6 +130,15 @@ namespace Vvr.Controller.Session
             return GetSession(typeof(TChildSession)) as TChildSession;
         }
 
+        protected sealed override void EvaluateProviderRegistration(Type providerType, IProvider provider)
+        {
+            if (m_ChildSessions.Any(x => ReferenceEquals(x, provider)))
+                throw new InvalidOperationException(
+                    $"Child session({Type.FullName}) trying to register {providerType.FullName} to their parent({Parent.GetType().FullName}). This is not allowed");
+
+            base.EvaluateProviderRegistration(providerType, provider);
+        }
+
         protected sealed override void OnProviderRegistered(Type providerType, IProvider provider)
         {
             foreach (var childSession in ChildSessions)

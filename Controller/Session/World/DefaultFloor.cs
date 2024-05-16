@@ -118,7 +118,7 @@ namespace Vvr.Controller.Session.World
                 }
 
                 m_CurrentStage = await CreateSession<DefaultStage>(sessionData);
-                Parent.Register<IStageProvider>(m_CurrentStage);
+                // Parent.Register<IStageProvider>(m_CurrentStage);
 
                 if (!m_StageStartEvent.TrySetResult())
                 {
@@ -147,7 +147,7 @@ namespace Vvr.Controller.Session.World
                     prevPlayers.AddRange(stageResult.playerActors);
                 }
 
-                Parent.Unregister<IStageProvider>();
+                // Parent.Unregister<IStageProvider>();
                 m_StageStartEvent = new();
                 await m_CurrentStage.Reserve();
 
@@ -171,7 +171,7 @@ namespace Vvr.Controller.Session.World
         void IConnector<IActorProvider>.Connect(IActorProvider t)
         {
         }
-        void IConnector<IActorProvider>.Disconnect()
+        void IConnector<IActorProvider>.Disconnect(IActorProvider t)
         {
         }
     }

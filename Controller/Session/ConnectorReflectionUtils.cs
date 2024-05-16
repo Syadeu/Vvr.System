@@ -33,17 +33,20 @@ namespace Vvr.Controller.Session
         public struct Wrapper : IEquatable<Wrapper>
         {
             public readonly uint              hash;
-            public readonly Action<IProvider> setter;
+            public readonly Action<IProvider> connect;
+            public readonly Action<IProvider> disconnect;
 
             public Wrapper(uint h)
             {
-                hash   = h;
-                setter = null;
+                hash       = h;
+                connect    = null;
+                disconnect = null;
             }
-            public Wrapper(uint h, Action<IProvider> t)
+            public Wrapper(uint h, Action<IProvider> con, Action<IProvider> discon)
             {
-                hash   = h;
-                setter = t;
+                hash       = h;
+                connect    = con;
+                disconnect = discon;
             }
 
             public bool Equals(Wrapper other)
@@ -58,7 +61,7 @@ namespace Vvr.Controller.Session
                 throw new NotImplementedException();
             }
 
-            public void Disconnect()
+            public void Disconnect(ConnectorImpl t)
             {
                 throw new NotImplementedException();
             }
@@ -89,7 +92,8 @@ namespace Vvr.Controller.Session
         /// </summary>
         /// <param name="connectorType">The type of the connector.</param>
         /// <param name="connector">The connector object.</param>
-        public static void Disconnect(Type connectorType, object connector)
+        /// <param name="value"></param>
+        public static void Disconnect(Type connectorType, object connector, object value)
         {
             var methodInfo = connectorType.GetMethod(
                 nameof(IConnector<ConnectorImpl>.Disconnect),
@@ -100,7 +104,7 @@ namespace Vvr.Controller.Session
                 throw new InvalidOperationException($"{connectorType} not found");
             }
 
-            methodInfo.Invoke(connector, null);
+            methodInfo.Invoke(connector, new object[] { value });
         }
     }
 }

@@ -317,6 +317,7 @@ namespace Vvr.Controller.Session.World
 
                 item.owner.ConnectTime();
 
+                Connect<IActorDataProvider>(item.owner.Skill);
                 Connect<ITargetProvider>(item.owner.Skill);
                 Connect<ITargetProvider>(item.owner.Passive);
             }
@@ -378,6 +379,7 @@ namespace Vvr.Controller.Session.World
                 using var trigger = ConditionTrigger.Push(item.owner, ConditionTrigger.Game);
                 await trigger.Execute(Model.Condition.OnBattleEnd, Data.stage.Id);
 
+                Disconnect<IActorDataProvider>(item.owner.Skill);
                 Disconnect<ITargetProvider>(item.owner.Skill);
                 Disconnect<ITargetProvider>(item.owner.Passive);
 
@@ -500,8 +502,9 @@ namespace Vvr.Controller.Session.World
             Assert.IsNull(m_ActorProvider);
             m_ActorProvider = t;
         }
-        void IConnector<IActorProvider>.Disconnect()
+        void IConnector<IActorProvider>.Disconnect(IActorProvider t)
         {
+            Assert.IsTrue(ReferenceEquals(m_ActorProvider, t));
             m_ActorProvider = null;
         }
     }

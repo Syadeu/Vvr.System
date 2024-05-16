@@ -36,7 +36,8 @@ namespace Vvr.Provider
         struct Observer : IEquatable<Observer>
         {
             public uint              hash;
-            public Action<IProvider> action;
+            public Action<IProvider> connect;
+            public Action<IProvider> disconnect;
 
             public bool Equals(Observer other)
             {
@@ -52,7 +53,10 @@ namespace Vvr.Provider
             {
                 unchecked
                 {
-                    return (hash.GetHashCode() * 397) ^ (action != null ? action.GetHashCode() : 0);
+                    return (hash.GetHashCode() * 397)
+                           ^ (connect    != null ? connect.GetHashCode() : 0)
+                           ^ (disconnect != null ? disconnect.GetHashCode() : 0)
+                           ;
                 }
             }
         }
@@ -99,7 +103,7 @@ namespace Vvr.Provider
             {
                 foreach (var item in list)
                 {
-                    item.action.Invoke(p);
+                    item.connect.Invoke(p);
                 }
             }
 
@@ -127,7 +131,7 @@ namespace Vvr.Provider
                 {
                     foreach (var item in list)
                     {
-                        item.action.Invoke(null);
+                        item.disconnect.Invoke(p);
                     }
                 }
             }
@@ -213,11 +217,8 @@ namespace Vvr.Provider
             list.Add(new Observer
             {
                 hash = hash,
-                action = x =>
-                {
-                    if (x == null) c.Disconnect();
-                    else c.Connect((T)x);
-                }
+                disconnect = x => c.Disconnect((T)x),
+                connect = x => c.Connect((T)x)
             });
 
             return p;
@@ -255,12 +256,9 @@ namespace Vvr.Provider
 
             list.Add(new Observer
             {
-                hash   = hash,
-                action = x =>
-                {
-                    if (x == null) c.Disconnect();
-                    else c.Connect((T)x);
-                }
+                hash       = hash,
+                disconnect = x => c.Disconnect((T)x),
+                connect    = x => c.Connect((T)x)
             });
 
             return this;
@@ -281,7 +279,9 @@ namespace Vvr.Provider
 
             if (!s_Observers.TryGetValue(t, out var list)) return this;
 
-            c.Disconnect();
+            if (s_Providers.TryGetValue(t, out var p))
+                c.Disconnect((T)p);
+
             uint hash = unchecked((uint)c.GetHashCode() ^ FNV1a32.Calculate(t.AssemblyQualifiedName));
             list.Remove(new Observer() { hash = hash });
 

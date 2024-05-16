@@ -67,7 +67,7 @@ namespace Vvr.Controller.Skill
             public SkillSheet.Position Position => skill.Definition.Position;
         }
 
-        private AsyncLazy<IActorDataProvider> m_DataProvider;
+        private IActorDataProvider m_DataProvider;
         private ITargetProvider    m_TargetProvider;
 
         private readonly List<Value> m_Values = new();
@@ -80,8 +80,6 @@ namespace Vvr.Controller.Skill
         private SkillController(IActor o)
         {
             Owner = o;
-
-            m_DataProvider   = Vvr.Provider.Provider.Static.GetLazyAsync<IActorDataProvider>();
         }
         public void Dispose()
         {
@@ -100,14 +98,12 @@ namespace Vvr.Controller.Skill
 
         public async UniTask<int> GetSkillCount()
         {
-            var dataProvider = await m_DataProvider;
-            var data         = dataProvider.Resolve(Owner.DataID);
+            var data         = m_DataProvider.Resolve(Owner.DataID);
             return data.Skills.Count(x => x.Ref != null);
         }
         public async UniTask Queue(int index)
         {
-            var dataProvider = await m_DataProvider;
-            var data = dataProvider.Resolve(Owner.DataID);
+            var data = m_DataProvider.Resolve(Owner.DataID);
             await Queue(data.Skills[index].Ref);
         }
 
@@ -336,11 +332,24 @@ namespace Vvr.Controller.Skill
 
         void IConnector<ITargetProvider>.Connect(ITargetProvider t)
         {
+            Assert.IsNull(m_TargetProvider);
             m_TargetProvider = t;
         }
-        void IConnector<ITargetProvider>.Disconnect()
+        void IConnector<ITargetProvider>.Disconnect(ITargetProvider t)
         {
+            Assert.IsTrue(ReferenceEquals(m_TargetProvider, t));
             m_TargetProvider = null;
+        }
+
+        void IConnector<IActorDataProvider>.Connect(IActorDataProvider t)
+        {
+            Assert.IsNull(m_DataProvider);
+            m_DataProvider = t;
+        }
+        void IConnector<IActorDataProvider>.Disconnect(IActorDataProvider t)
+        {
+            Assert.IsTrue(ReferenceEquals(m_DataProvider, t));
+            m_DataProvider = null;
         }
     }
 }

@@ -25,7 +25,8 @@ using Vvr.Provider;
 
 namespace Vvr.Controller.Provider
 {
-    internal interface IActorDataProvider : IProvider
+    [LocalProvider]
+    public interface IActorDataProvider : IProvider
     {
         ActorSheet.Row Resolve(string key);
     }

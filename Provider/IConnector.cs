@@ -38,6 +38,6 @@ namespace Vvr.Provider
         /// <summary>
         /// Method when T has been disconnected.
         /// </summary>
-        void Disconnect();
+        void Disconnect(T t);
     }
 }

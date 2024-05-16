@@ -26,7 +26,8 @@ using Vvr.Provider;
 namespace Vvr.Controller.Session.World
 {
     [ParentSession(typeof(DefaultWorld))]
-    public class DefaultMap : ParentSession<DefaultMap.Data>, IConnector<IActorProvider>
+    public class DefaultMap : ParentSession<DefaultMap.Data>
+        // , IConnector<IActorProvider>
     {
         public struct Data : ISessionData
         {
@@ -44,12 +45,12 @@ namespace Vvr.Controller.Session.World
             DefaultRegion = await CreateSession<DefaultRegion>(default);
         }
 
-        public void Connect(IActorProvider t)
-        {
-
-        }
-        public void Disconnect()
-        {
-        }
+        // public void Connect(IActorProvider t)
+        // {
+        //
+        // }
+        // public void Disconnect()
+        // {
+        // }
     }
 }

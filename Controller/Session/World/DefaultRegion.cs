@@ -31,8 +31,8 @@ using Vvr.Provider;
 namespace Vvr.Controller.Session.World
 {
     [ParentSession(typeof(DefaultMap))]
-    public class DefaultRegion : ParentSession<DefaultRegion.SessionData>,
-        IConnector<IActorProvider>
+    public class DefaultRegion : ParentSession<DefaultRegion.SessionData>
+        , IConnector<IActorProvider>
     {
         public struct SessionData : ISessionData
         {
@@ -90,7 +90,7 @@ namespace Vvr.Controller.Session.World
 
         }
 
-        void IConnector<IActorProvider>.Disconnect()
+        void IConnector<IActorProvider>.Disconnect(IActorProvider t)
         {
         }
     }

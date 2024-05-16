@@ -28,7 +28,7 @@ using Vvr.Provider;
 
 namespace Vvr.Controller.Skill
 {
-    public interface ISkill : IConnector<ITargetProvider>
+    public interface ISkill : IConnector<ITargetProvider>, IConnector<IActorDataProvider>
     {
         [PublicAPI]
         void         Clear();

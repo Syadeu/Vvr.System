@@ -61,9 +61,13 @@ namespace Vvr.Controller.Session.World
 
             // TODO: skip map load
             DefaultMap = await CreateSession<DefaultMap>(default);
+
+            Register<IActorProvider>(this);
         }
         protected override UniTask OnReserve()
         {
+            Unregister<IActorProvider>();
+
             m_ActorProvider.Dispose();
 
             Vvr.Provider.Provider.Static.Disconnect<IStateConditionProvider>(this);
@@ -140,20 +144,24 @@ namespace Vvr.Controller.Session.World
 
         void IConnector<IStateConditionProvider>.Connect(IStateConditionProvider t)
         {
+            Assert.IsNull(m_StateProvider);
             m_StateProvider = t;
         }
 
-        void IConnector<IStateConditionProvider>.Disconnect()
+        void IConnector<IStateConditionProvider>.Disconnect(IStateConditionProvider t)
         {
+            Assert.IsTrue(ReferenceEquals(m_StateProvider, t));
             m_StateProvider = null;
         }
 
         void IConnector<IGameConfigProvider>.Connect(IGameConfigProvider t)
         {
+            Assert.IsNull(m_Configs);
             m_Configs = t[MapType.Global];
         }
-        void IConnector<IGameConfigProvider>.Disconnect()
+        void IConnector<IGameConfigProvider>.Disconnect(IGameConfigProvider t)
         {
+            Assert.IsTrue(ReferenceEquals(m_Configs, t[MapType.Global]));
             m_Configs = null;
         }
 

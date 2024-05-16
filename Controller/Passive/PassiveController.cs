@@ -97,10 +97,12 @@ namespace Vvr.Controller.Passive
 
         void IConnector<ITargetProvider>.Connect(ITargetProvider t)
         {
+            Assert.IsNull(m_TargetProvider);
             m_TargetProvider = t;
         }
-        void IConnector<ITargetProvider>.Disconnect()
+        void IConnector<ITargetProvider>.Disconnect(ITargetProvider t)
         {
+            Assert.IsTrue(ReferenceEquals(m_TargetProvider, t));
             m_TargetProvider = null;
         }
     }

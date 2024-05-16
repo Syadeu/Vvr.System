@@ -21,6 +21,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
@@ -263,11 +264,9 @@ namespace Vvr.Controller.Session
 
             Assert.IsFalse(list.Contains(new(hash)));
             ConnectorReflectionUtils.Wrapper
-                wr = new(hash, x =>
-                {
-                    if (x == null) c.Disconnect();
-                    else c.Connect((TProvider)x);
-                });
+                wr = new(hash,
+                    x => c.Connect((TProvider)x),
+                    x => c.Disconnect((TProvider)x));
             list.AddLast(wr);
 
             if (m_ConnectedProviders.TryGetValue(t, out var provider))
@@ -282,13 +281,17 @@ namespace Vvr.Controller.Session
 
             if (!m_ConnectorWrappers.TryGetValue(t, out var list)) return;
 
-            c.Disconnect();
+            if (m_ConnectedProviders.TryGetValue(t, out var provider))
+                c.Disconnect((TProvider)provider);
+
             uint hash = unchecked((uint)c.GetHashCode() ^ FNV1a32.Calculate(t.AssemblyQualifiedName));
             list.Remove(new ConnectorReflectionUtils.Wrapper(hash));
         }
 
         void IChildSessionConnector.Register(Type pType, IProvider provider)
         {
+            EvaluateProviderRegistration(pType, provider);
+
             $"[Session: {Type.FullName}] Connectors {ConnectorTypes.Length}".ToLog();
             m_ConnectedProviders[pType] = provider;
             for (var i = 0; i < ConnectorTypes.Length; i++)
@@ -315,14 +318,14 @@ namespace Vvr.Controller.Session
         {
             if (m_ConnectedProviders == null) return;
 
-            if (m_ConnectedProviders.Remove(pType))
+            if (m_ConnectedProviders.Remove(pType, out var provider))
             {
                 for (var i = 0; i < ConnectorTypes.Length; i++)
                 {
                     var connectorType = ConnectorTypes[i];
                     if (connectorType.GetGenericArguments()[0] != pType) continue;
 
-                    ConnectorReflectionUtils.Disconnect(connectorType, this);
+                    ConnectorReflectionUtils.Disconnect(connectorType, this, provider);
                     $"[Session:{Type.FullName}] Disconnected {pType.FullName}".ToLog();
                     break;
                 }
@@ -356,7 +359,7 @@ namespace Vvr.Controller.Session
 
             foreach (var wr in list)
             {
-                wr.setter(provider);
+                wr.connect(provider);
             }
         }
 
@@ -368,9 +371,11 @@ namespace Vvr.Controller.Session
         {
             if (!m_ConnectorWrappers.TryGetValue(providerType, out var list)) return;
 
+            if (!m_ConnectedProviders.TryGetValue(providerType, out var provider)) return;
+
             foreach (var wr in list)
             {
-                wr.setter(null);
+                wr.disconnect(provider);
             }
         }
         /// <summary>
@@ -379,16 +384,26 @@ namespace Vvr.Controller.Session
         /// </summary>
         private void DisconnectAllObservers()
         {
-            foreach (var list in m_ConnectorWrappers.Values)
+            foreach (var list in m_ConnectorWrappers)
             {
-                foreach (var wr in list)
+                if (!m_ConnectedProviders.TryGetValue(list.Key, out var provider)) continue;
+
+                foreach (var wr in list.Value)
                 {
-                    wr.setter(null);
+                    wr.disconnect(provider);
                 }
-                list.Clear();
+                list.Value.Clear();
             }
 
             m_ConnectorWrappers.Clear();
+        }
+
+        [Conditional("UNITY_EDITOR")]
+        [Conditional("DEVELOPMENT_BUILD")]
+        protected virtual void EvaluateProviderRegistration(Type providerType, IProvider provider)
+        {
+            if (m_ConnectedProviders.ContainsKey(providerType))
+                throw new InvalidOperationException("Already registered.");
         }
 
         /// <summary>

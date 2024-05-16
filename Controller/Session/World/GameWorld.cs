@@ -23,6 +23,7 @@ using System;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using UnityEngine.Assertions;
+using Vvr.Controller.Provider;
 using Vvr.Model;
 using Vvr.Provider;
 
@@ -31,6 +32,7 @@ namespace Vvr.Controller.Session.World
     public static class GameWorld
     {
         private static GameConfigProvider s_GameConfigProvider;
+        private static ActorDataProvider  s_ActorDataProvider;
 
         public static IWorldSession World { get; private set; }
 
@@ -51,12 +53,23 @@ namespace Vvr.Controller.Session.World
 
             if (s_GameConfigProvider != null)
             {
-                World.Register(s_GameConfigProvider);
+                World.Register<IGameConfigProvider>(s_GameConfigProvider);
+            }
+            if (s_ActorDataProvider != null)
+            {
+                World.Register<IActorDataProvider>(s_ActorDataProvider);
             }
 
             return world;
         }
 
+        public static void RegisterActorData(ActorSheet sheet)
+        {
+            Assert.IsNull(s_ActorDataProvider);
+
+            s_ActorDataProvider = new(sheet);
+            World?.Register<IActorDataProvider>(s_ActorDataProvider);
+        }
         public static void RegisterConfigs(GameConfigSheet sheet)
         {
             Assert.IsNull(s_GameConfigProvider);
