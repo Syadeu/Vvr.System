@@ -376,7 +376,7 @@ namespace Vvr.Session.World
             {
                 "[Stage] AI control".ToLog();
                 int count = runtimeActor.Skills.Count;
-                var skill = runtimeActor.Skills[UnityEngine.Random.Range(0, count)].Ref;
+                var skill = runtimeActor.Skills[UnityEngine.Random.Range(0, count)];
 
                 await runtimeActor.Owner.Skill.Queue(skill);
             }

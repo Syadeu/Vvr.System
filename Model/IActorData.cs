@@ -32,8 +32,8 @@ namespace Vvr.Model
         int                  Population { get; }
 
         IReadOnlyStatValues           Stats   { get; }
-        IReadOnlyList<PassiveSheet.Reference> Passive { get; }
-        IReadOnlyList<SkillSheet.Reference>    Skills { get; }
+        IReadOnlyList<PassiveSheet.Row> Passive { get; }
+        IReadOnlyList<SkillSheet.Row>    Skills { get; }
         Dictionary<AssetType, AddressablePath> Assets { get; }
     }
 }

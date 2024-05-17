@@ -117,9 +117,9 @@ namespace Vvr.Session.Actor
 
             for (int i = 0; i < ta.Passive?.Count; i++)
             {
-                if (ta.Passive[i].Ref == null) continue;
+                if (ta.Passive[i] == null) continue;
 
-                m_PassiveController.Add(ta.Passive[i].Ref);
+                m_PassiveController.Add(ta.Passive[i]);
             }
 
             Initialized = true;

@@ -21,6 +21,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Net.NetworkInformation;
 using Cathei.BakingSheet;
 using Cathei.BakingSheet.Unity;
 using JetBrains.Annotations;
@@ -57,8 +59,19 @@ namespace Vvr.Model
 
             [UsedImplicitly] public Dictionary<AssetType, AddressablePath> Assets { get; private set; }
 
-            IReadOnlyList<PassiveSheet.Reference> IActorData.Passive => Passive;
-            IReadOnlyList<SkillSheet.Reference> IActorData.Skills => Skills;
+            private PassiveSheet.Row[] m_Passive;
+            private SkillSheet.Row[] m_Skills;
+
+            IReadOnlyList<PassiveSheet.Row> IActorData.Passive => m_Passive;
+            IReadOnlyList<SkillSheet.Row> IActorData.  Skills  => m_Skills;
+
+            public override void PostLoad(SheetConvertingContext context)
+            {
+                base.PostLoad(context);
+
+                m_Passive = Passive.Select(x => x.Ref).ToArray();
+                m_Skills  = Skills.Select(x => x.Ref).ToArray();
+            }
         }
 
         public ActorSheet()

@@ -20,7 +20,6 @@
 #endregion
 
 using System.Collections.Generic;
-using Cathei.BakingSheet;
 using Cathei.BakingSheet.Unity;
 using Vvr.Controller.Actor;
 using Vvr.Model;
@@ -49,8 +48,8 @@ namespace Vvr.Session.Actor
         int IActorData.                 Population => data.Population;
         IReadOnlyStatValues IActorData. Stats      => data.Stats;
 
-        IReadOnlyList<Sheet<string, PassiveSheet.Row>.Reference> IActorData.Passive => ((IActorData)data).Passive;
-        IReadOnlyList<Sheet<string, SkillSheet.Row>.Reference> IActorData.Skills => ((IActorData)data).Skills;
+        IReadOnlyList<PassiveSheet.Row> IActorData.Passive => data.Passive;
+        IReadOnlyList<SkillSheet.Row> IActorData.  Skills  => data.Skills;
 
         Dictionary<AssetType, AddressablePath> IActorData.Assets => data.Assets;
     }
