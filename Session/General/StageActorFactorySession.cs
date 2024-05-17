@@ -19,6 +19,9 @@
 
 #endregion
 
+using System;
+using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using Vvr.Controller.Actor;
 using Vvr.Controller.Provider;
@@ -39,31 +42,118 @@ namespace Vvr.Session
         {
         }
 
+        private sealed class StageActor : IStageActor
+        {
+            public IActor     Owner           { get; }
+            public IActorData Data            { get; }
+            public bool       TagOutRequested { get; set; }
+
+            public StageActor(IActor o, IActorData d)
+            {
+                Owner = o;
+                Data  = d;
+            }
+
+            void IConnector<IAssetProvider>.Connect(IAssetProvider t)
+            {
+                Owner.Assets.Connect(t);
+            }
+
+            void IConnector<IAssetProvider>.Disconnect(IAssetProvider t)
+            {
+                Owner.Assets.Disconnect(t);
+            }
+
+            void IConnector<ITargetProvider>.Connect(ITargetProvider t)
+            {
+                Owner.Skill.Connect(t);
+                Owner.Passive.Connect(t);
+            }
+
+            void IConnector<ITargetProvider>.Disconnect(ITargetProvider t)
+            {
+                Owner.Skill.Disconnect(t);
+                Owner.Passive.Disconnect(t);
+            }
+
+            void IConnector<IActorDataProvider>.Connect(IActorDataProvider t)
+            {
+                Owner.Skill.Connect(t);
+            }
+
+            void IConnector<IActorDataProvider>.Disconnect(IActorDataProvider t)
+            {
+                Owner.Skill.Disconnect(t);
+            }
+
+            void IConnector<IEventConditionProvider>.Connect(IEventConditionProvider t)
+            {
+                Owner.ConditionResolver.Connect(t);
+            }
+
+            void IConnector<IEventConditionProvider>.Disconnect(IEventConditionProvider t)
+            {
+                Owner.ConditionResolver.Disconnect(t);
+            }
+
+            void IConnector<IStateConditionProvider>.Connect(IStateConditionProvider t)
+            {
+                Owner.ConditionResolver.Connect(t);
+            }
+
+            void IConnector<IStateConditionProvider>.Disconnect(IStateConditionProvider t)
+            {
+                Owner.ConditionResolver.Disconnect(t);
+            }
+        }
+
+        private readonly List<StageActor> m_Created = new();
+
         public override string DisplayName => nameof(StageActorFactorySession);
+
+        protected override UniTask OnReserve()
+        {
+            for (int i = m_Created.Count - 1; i >= 0; i--)
+            {
+                var e = m_Created[i];
+                DisconnectActor(e);
+            }
+            m_Created.Clear();
+
+            return base.OnReserve();
+        }
 
         public IStageActor Create(IActor actor, IActorData data)
         {
             StageActor result = new StageActor(actor, data);
-            IActor     item   = result.owner;
-            Connect<IAssetProvider>(item.Assets)
-                .Connect<IActorDataProvider>(item.Skill)
-                .Connect<ITargetProvider>(item.Skill)
-                .Connect<ITargetProvider>(item.Passive)
-                .Connect<IEventConditionProvider>(item.ConditionResolver)
-                .Connect<IStateConditionProvider>(item.ConditionResolver);
+            IActor     item   = result.Owner;
+            Connect<IAssetProvider>(result)
+                .Connect<ITargetProvider>(result)
+                .Connect<IActorDataProvider>(result)
+                .Connect<IEventConditionProvider>(result)
+                .Connect<IStateConditionProvider>(result);
 
             item.ConnectTime();
 
+            m_Created.Add(result);
             return result;
         }
         public void Reserve(IStageActor item)
         {
-            Disconnect<IAssetProvider>(item.Owner.Assets)
-                .Disconnect<IActorDataProvider>(item.Owner.Skill)
-                .Disconnect<ITargetProvider>(item.Owner.Skill)
-                .Disconnect<ITargetProvider>(item.Owner.Passive)
-                .Disconnect<IEventConditionProvider>(item.Owner.ConditionResolver)
-                .Disconnect<IStateConditionProvider>(item.Owner.ConditionResolver);
+            if (item is not StageActor actor ||
+                !m_Created.Remove(actor))
+                throw new InvalidOperationException();
+
+            DisconnectActor(actor);
+        }
+
+        private void DisconnectActor(StageActor item)
+        {
+            Disconnect<IAssetProvider>(item)
+                .Disconnect<ITargetProvider>(item)
+                .Disconnect<IActorDataProvider>(item)
+                .Disconnect<IEventConditionProvider>(item)
+                .Disconnect<IStateConditionProvider>(item);
 
             item.Owner.DisconnectTime();
             item.Owner.Skill.Clear();

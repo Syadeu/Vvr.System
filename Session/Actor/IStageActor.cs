@@ -20,13 +20,21 @@
 #endregion
 
 using Vvr.Controller.Actor;
+using Vvr.Controller.Provider;
 using Vvr.Model;
+using Vvr.Provider;
 
 namespace Vvr.Session.Actor
 {
-    public interface IStageActor : IActorData
+    public interface IStageActor :
+        IConnector<IAssetProvider>,
+        IConnector<ITargetProvider>,
+        IConnector<IActorDataProvider>,
+        IConnector<IEventConditionProvider>,
+        IConnector<IStateConditionProvider>
     {
-        IActor Owner           { get; }
-        bool   TagOutRequested { get; set; }
+        IActor     Owner           { get; }
+        IActorData Data            { get; }
+        bool       TagOutRequested { get; set; }
     }
 }

@@ -91,5 +91,13 @@ namespace Vvr.Session
         /// <param name="c">The connector of the provider.</param>
         [PublicAPI]
         IGameSessionBase Disconnect<TProvider>([NotNull] IConnector<TProvider> c) where TProvider : IProvider;
+
+        /// <summary>
+        /// Recursively gets the provider of the specified type.
+        /// </summary>
+        /// <typeparam name="TProvider">The type of the provider to retrieve.</typeparam>
+        /// <returns>The provider of the specified type if it exists, otherwise null.</returns>
+        [PublicAPI]
+        TProvider GetProviderRecursive<TProvider>() where TProvider : class, IProvider;
     }
 }

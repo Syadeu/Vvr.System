@@ -65,7 +65,7 @@ namespace Vvr.Session.World
 
             while (m_TimelineQueueProvider.Count > 0 && m_Timeline.Count < maxTimelineCount)
             {
-                m_Timeline.Add((StageActor)m_TimelineQueueProvider.Dequeue());
+                m_Timeline.Add(m_TimelineQueueProvider.Dequeue());
             }
         }
 
@@ -173,7 +173,7 @@ namespace Vvr.Session.World
 
             // This because field list is ordered list by ActorPositionComparer.
             // If the first element is defensive(2), should direct comparison with given actor
-            if (field[0].Type == ActorSheet.ActorType.Defensive)
+            if (field[0].Data.Type == ActorSheet.ActorType.Defensive)
             {
                 int order = ActorPositionComparer.Static.Compare(runtimeActor, field[0]);
                 // If only actor is Offensive(0)

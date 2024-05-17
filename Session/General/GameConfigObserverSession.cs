@@ -142,7 +142,7 @@ namespace Vvr.Session
 
         private async UniTask ExecuteMethod(IEventTarget o, Model.GameMethod method, IReadOnlyList<string> parameters)
         {
-            var methodProvider = GetProviderRecursive<IGameMethodProvider>();
+            var methodProvider = Parent.GetProviderRecursive<IGameMethodProvider>();
             Assert.IsNotNull(methodProvider, "methodProvider != null");
             await methodProvider.Resolve(method)(o, parameters);
         }

@@ -53,7 +53,7 @@ namespace Vvr.Session
 
             public float timeOffset;
 
-            public float Time => m_Method(actor.Stats);
+            public float Time => m_Method(actor.Data.Stats);
 
             public Entry(CustomMethodDelegate m)
             {

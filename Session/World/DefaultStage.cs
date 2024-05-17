@@ -122,8 +122,8 @@ namespace Vvr.Session.World
                 if (x == null) return 1;
                 if (y == null) return -1;
 
-                short xx = (short)x.Type,
-                    yy   = (short)y.Type;
+                short xx = (short)x.Data.Type,
+                    yy   = (short)y.Data.Type;
 
                 if (xx < yy) return -1;
                 return xx > yy ? 1 : 0;
@@ -170,7 +170,9 @@ namespace Vvr.Session.World
             Parent.Register<ITargetProvider>(this)
                 .Register<IStateConditionProvider>(this)
                 .Register<IEventConditionProvider>(this)
-                .Register<IStageProvider>(this);
+                .Register<IStageProvider>(this)
+                .Register<IGameMethodProvider>(this)
+                ;
 
             // TODO: remove outside view provider
             m_ViewProvider         = Vvr.Provider.Provider.Static.GetLazyAsync<IEventViewProvider>();
@@ -194,7 +196,9 @@ namespace Vvr.Session.World
             Parent.Unregister<ITargetProvider>()
                 .Unregister<IStateConditionProvider>()
                 .Unregister<IEventConditionProvider>()
-                .Unregister<IStageProvider>();
+                .Unregister<IStageProvider>()
+                .Unregister<IGameMethodProvider>()
+                ;
 
             Disconnect<IAssetProvider>(m_StageAssetController);
 
@@ -225,7 +229,7 @@ namespace Vvr.Session.World
                     Assert.IsNotNull(Data.prevPlayers);
                     foreach (var prevActor in Data.prevPlayers)
                     {
-                        IStageActor runtimeActor = m_StageActorProvider.Create(prevActor.Owner, prevActor);
+                        IStageActor runtimeActor = m_StageActorProvider.Create(prevActor.Owner, prevActor.Data);
 
                         if (playerIndex != 0)
                         {
@@ -375,8 +379,8 @@ namespace Vvr.Session.World
             if (!m_InputControlProvider.CanControl(runtimeActor.Owner))
             {
                 "[Stage] AI control".ToLog();
-                int count = runtimeActor.Skills.Count;
-                var skill = runtimeActor.Skills[UnityEngine.Random.Range(0, count)];
+                int count = runtimeActor.Data.Skills.Count;
+                var skill = runtimeActor.Data.Skills[UnityEngine.Random.Range(0, count)];
 
                 await runtimeActor.Owner.Skill.Queue(skill);
             }
