@@ -35,14 +35,11 @@ namespace Vvr.Session.World
     [Preserve]
     public partial class DefaultWorld : RootSession, IWorldSession,
         IConnector<IStateConditionProvider>,
-        IConnector<IGameConfigProvider>,
-        IActorProvider
+        IConnector<IGameConfigProvider>
     {
         public DefaultMap     DefaultMap { get; private set; }
 
         private IStateConditionProvider m_StateProvider;
-
-        private ActorProvider m_ActorProvider;
 
         private readonly Dictionary<Hash, int>            m_ExecutionCount = new();
         private          IEnumerable<GameConfigSheet.Row> m_Configs;
@@ -51,8 +48,6 @@ namespace Vvr.Session.World
 
         protected override async UniTask OnInitialize(IParentSession session, RootData data)
         {
-            m_ActorProvider = new();
-
             TimeController.Register(this);
 
             ConditionTrigger.OnEventExecutedAsync += OnEventExecutedAsync;
@@ -61,15 +56,10 @@ namespace Vvr.Session.World
             await CreateSession<UserSession>(default);
             // TODO: skip map load
             DefaultMap = await CreateSession<DefaultMap>(default);
-
-            // Because following OCP
-            Register<IActorProvider>(this);
         }
         protected override UniTask OnReserve()
         {
             Unregister<IActorProvider>();
-
-            m_ActorProvider.Dispose();
 
             TimeController.Unregister(this);
 
@@ -163,8 +153,6 @@ namespace Vvr.Session.World
             Assert.IsTrue(ReferenceEquals(m_Configs, t[MapType.Global]));
             m_Configs = null;
         }
-
-        IActor IActorProvider.Resolve(IActorData data) => m_ActorProvider.Resolve(data);
     }
     partial class DefaultWorld : ITimeUpdate
     {

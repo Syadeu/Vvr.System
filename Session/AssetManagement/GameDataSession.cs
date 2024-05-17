@@ -27,6 +27,9 @@ using Vvr.Provider;
 
 namespace Vvr.Session
 {
+    /// <summary>
+    /// Represents a session used for managing game data.
+    /// </summary>
     [UsedImplicitly]
     public sealed class GameDataSession : ParentSession<GameDataSession.SessionData>
     {

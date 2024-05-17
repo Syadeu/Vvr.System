@@ -43,12 +43,16 @@ namespace Vvr.Session.World
         }
 
         private IPlayerActorProvider m_PlayerActorProvider;
+        private IStageDataProvider   m_StageProvider;
 
         public override string DisplayName => nameof(DefaultRegion);
 
         protected override async UniTask OnInitialize(IParentSession session, SessionData data)
         {
             await CreateSession<PlayerControlSession>(default);
+
+            var actorProvider = await CreateSession<ActorFactorySession>(default);
+            Register<IActorProvider>(actorProvider);
 
             await base.OnInitialize(session, data);
         }
@@ -93,16 +97,7 @@ namespace Vvr.Session.World
         void IConnector<IPlayerActorProvider>.Connect(IPlayerActorProvider    t) => m_PlayerActorProvider = t;
         void IConnector<IPlayerActorProvider>.Disconnect(IPlayerActorProvider t) => m_PlayerActorProvider = null;
 
-        private IStageDataProvider m_StageProvider;
-
-        void IConnector<IStageDataProvider>.Connect(IStageDataProvider t)
-        {
-            m_StageProvider = t;
-        }
-
-        void IConnector<IStageDataProvider>.Disconnect(IStageDataProvider t)
-        {
-            m_StageProvider = null;
-        }
+        void IConnector<IStageDataProvider>.Connect(IStageDataProvider t) => m_StageProvider = t;
+        void IConnector<IStageDataProvider>.Disconnect(IStageDataProvider t) => m_StageProvider = null;
     }
 }

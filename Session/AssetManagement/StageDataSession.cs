@@ -21,13 +21,16 @@
 
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using JetBrains.Annotations;
 using Vvr.Model;
 using Vvr.Provider;
 
 namespace Vvr.Session
 {
+    /// <summary>
+    /// Represents a session for stage data.
+    /// </summary>
+    /// <seealso cref="Vvr.Provider.IStageDataProvider" />
     [UsedImplicitly]
     [ParentSession(typeof(GameDataSession))]
     public class StageDataSession : ChildSession<StageDataSession.SessionData>,
@@ -45,20 +48,13 @@ namespace Vvr.Session
 
         public override string DisplayName => nameof(StageDataSession);
 
+        public IStageData this[string key] => Data.sheet[key];
+        public IEnumerable<string>     Keys   => Data.sheet.Keys;
+        public IEnumerable<IStageData> Values => Data.sheet;
 
-        public IEnumerator<KeyValuePair<string, IStageData>> GetEnumerator()
-        {
-            foreach (var x in Data.sheet)
-            {
-                yield return new KeyValuePair<string, IStageData>(x.Id, x);
-            }
-        }
+        public int Count => Data.sheet.Count;
 
-        IEnumerator IEnumerable.                                 GetEnumerator() => GetEnumerator();
-
-        public int  Count                   => Data.sheet.Count;
         public bool ContainsKey(string key) => Data.sheet.Contains(key);
-
         public bool TryGetValue(string    key, out IStageData value)
         {
             value = null;
@@ -68,9 +64,13 @@ namespace Vvr.Session
             return true;
         }
 
-        public IStageData this[string key] => Data.sheet[key];
-
-        public IEnumerable<string>     Keys   => Data.sheet.Keys;
-        public IEnumerable<IStageData> Values => Data.sheet;
+        public IEnumerator<KeyValuePair<string, IStageData>> GetEnumerator()
+        {
+            foreach (var x in Data.sheet)
+            {
+                yield return new KeyValuePair<string, IStageData>(x.Id, x);
+            }
+        }
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }
 }

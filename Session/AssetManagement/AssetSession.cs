@@ -51,6 +51,9 @@ namespace Vvr.Session
     {
         public struct SessionData : ISessionData
         {
+            /// <summary>
+            /// The preloadGroups variable is an array of strings that specifies the groups of assets to be preloaded in the AssetSession class.
+            /// </summary>
             public readonly string[] preloadGroups;
 
             public SessionData(params string[] preloadGroups)
@@ -59,6 +62,13 @@ namespace Vvr.Session
             }
         }
 
+        /// <summary>
+        /// Represents an immutable object that wraps a Unity Object.
+        /// </summary>
+        /// <remarks>
+        /// This class provides a wrapper for a Unity object to ensure that it cannot be modified once created. It implements the <see cref="Vvr.Provider.IImmutableObject"/> interface.
+        /// The object can be retrieved using the <see cref="Object"/> property. If an attempt is made to access the object after it has been disposed, an <see cref="ObjectDisposedException"/> will be thrown.
+        /// </remarks>
         private abstract class ImmutableObject : IImmutableObject, IDisposable
         {
             private UnityEngine.Object m_Object;
@@ -85,6 +95,14 @@ namespace Vvr.Session
                 m_Disposed = true;
             }
         }
+
+        /// <summary>
+        /// Represents an immutable object that wraps a Unity Object.
+        /// </summary>
+        /// <remarks>
+        /// This class is used internally within the AssetSession class to wrap loaded Unity Objects and provide immutability guarantees.
+        /// It is an abstract class that cannot be instantiated directly. Instead, concrete subclasses should be used.
+        /// </remarks>
         private sealed class ImmutableObject<T> : ImmutableObject, IImmutableObject<T>
             where T : UnityEngine.Object
         {

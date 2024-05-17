@@ -32,14 +32,14 @@ namespace Vvr.Session
 {
     [UsedImplicitly]
     [ParentSession(typeof(DefaultFloor), true)]
-    public sealed class StageActorCreateSession : ChildSession<StageActorCreateSession.SessionData>,
+    public sealed class StageActorFactorySession : ChildSession<StageActorFactorySession.SessionData>,
         IStageActorProvider
     {
         public struct SessionData : ISessionData
         {
         }
 
-        public override string DisplayName => nameof(StageActorCreateSession);
+        public override string DisplayName => nameof(StageActorFactorySession);
 
         public IStageActor Create(IActor actor, IActorData data)
         {

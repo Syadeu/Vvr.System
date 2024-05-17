@@ -71,7 +71,7 @@ namespace Vvr.Session.World
             // When this session close, child session also closed.
             var timelineSession = await CreateSession<TimelineQueueSession>(default);
             var assetSession    = await CreateSession<AssetSession>(default);
-            var stageActorCreateSession = await CreateSession<StageActorCreateSession>(default);
+            var stageActorCreateSession = await CreateSession<StageActorFactorySession>(default);
 
             // Register providers to inject child sessions.
             Register<ITimelineQueueProvider>(timelineSession)

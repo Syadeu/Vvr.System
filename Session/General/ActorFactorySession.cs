@@ -15,7 +15,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// File created : 2024, 05, 16 11:05
+// File created : 2024, 05, 17 17:05
 
 #endregion
 
@@ -24,15 +24,21 @@ using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 using Vvr.Controller.Actor;
-using Vvr.Controller.Provider;
 using Vvr.Model;
 using Vvr.Provider;
+using Vvr.Session.Provider;
 
-namespace Vvr.Session.Provider
+namespace Vvr.Session
 {
-    [Obsolete("", true)]
-    internal sealed class ActorProvider : IActorProvider, IDisposable
+    public sealed class ActorFactorySession : ChildSession<ActorFactorySession.SessionData>,
+        IActorProvider, IConnector<IEventViewProvider>
     {
+        public struct SessionData : ISessionData
+        {
+        }
+
+        public override string DisplayName => nameof(ActorFactorySession);
+
         struct CachedActor : IComparable<CachedActor>
         {
             public          uint   hash;
@@ -50,25 +56,21 @@ namespace Vvr.Session.Provider
             }
         }
 
-        private AsyncLazy<IActorDataProvider> m_DataProvider;
+        private IEventViewProvider m_ViewProvider;
 
         private readonly List<CachedActor> m_ResolvedActors = new();
 
-        public ActorProvider()
-        {
-            m_DataProvider = Vvr.Provider.Provider.Static.GetLazyAsync<IActorDataProvider>();
-        }
-
-        public void Dispose()
+        protected override UniTask OnReserve()
         {
             for (int i = 0; i < m_ResolvedActors.Count; i++)
             {
                 IActor e = m_ResolvedActors[i].actor;
 
+                m_ViewProvider?.Release(e);
                 e.Release();
             }
 
-            m_DataProvider = null;
+            return base.OnReserve();
         }
 
         public IActor Resolve(IActorData data)
@@ -82,5 +84,8 @@ namespace Vvr.Session.Provider
             m_ResolvedActors.Sort();
             return actor;
         }
+
+        public void Connect(IEventViewProvider t) => m_ViewProvider = t;
+        public void Disconnect(IEventViewProvider t) => m_ViewProvider = null;
     }
 }

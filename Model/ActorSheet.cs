@@ -62,15 +62,17 @@ namespace Vvr.Model
             private PassiveSheet.Row[] m_Passive;
             private SkillSheet.Row[] m_Skills;
 
-            IReadOnlyList<PassiveSheet.Row> IActorData.Passive => m_Passive;
-            IReadOnlyList<SkillSheet.Row> IActorData.  Skills  => m_Skills;
+            IReadOnlyList<PassiveSheet.Row> IActorData.Passive => m_Passive ?? Array.Empty<PassiveSheet.Row>();
+            IReadOnlyList<SkillSheet.Row> IActorData.  Skills  => m_Skills  ?? Array.Empty<SkillSheet.Row>();
 
             public override void PostLoad(SheetConvertingContext context)
             {
                 base.PostLoad(context);
 
-                m_Passive = Passive.Select(x => x.Ref).ToArray();
-                m_Skills  = Skills.Select(x => x.Ref).ToArray();
+                if (Passive != null)
+                    m_Passive = Passive.Select(x => x.Ref).ToArray();
+                if (Skills != null)
+                    m_Skills  = Skills.Select(x => x.Ref).ToArray();
             }
         }
 

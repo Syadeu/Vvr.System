@@ -29,6 +29,12 @@ using Vvr.Provider;
 
 namespace Vvr.Session
 {
+    /// <summary>
+    /// Represents a custom method session.
+    /// </summary>
+    /// <remarks>
+    /// This session provides custom methods for resolving values.
+    /// </remarks>
     [UsedImplicitly]
     [ParentSession(typeof(GameDataSession))]
     public class CustomMethodSession : ChildSession<CustomMethodSession.SessionData>,
