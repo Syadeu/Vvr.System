@@ -39,6 +39,6 @@ namespace Vvr.Session.Provider
         /// </remarks>
         /// <param name="data">The data used to resolve the actor.</param>
         /// <returns>The resolved actor.</returns>
-        IActor Resolve(IActorData data);
+        IReadOnlyActor Resolve(IActorData data);
     }
 }

@@ -19,12 +19,14 @@
 
 #endregion
 
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Cathei.BakingSheet;
 using JetBrains.Annotations;
+using UnityEngine;
 using UnityEngine.Assertions;
 
 namespace Vvr.Model.Stat
@@ -36,7 +38,8 @@ namespace Vvr.Model.Stat
     /// Represents a struct that holds a collection of Actor stat values.
     /// </summary>
     [SheetValueConverter(typeof(UnresolvedStatValuesConverter))]
-    public readonly struct StatValues : IReadOnlyStatValues
+    [Serializable]
+    public struct StatValues : IReadOnlyStatValues
     {
         private static readonly Dictionary<StatType, StatValueGetterDelegate>
             s_CachedGetter = new();
@@ -88,7 +91,8 @@ namespace Vvr.Model.Stat
             return new StatValues(from.Types, from.Values.ToArray());
         }
 
-        private readonly float[] m_Values;
+        [SerializeField] private float[]  m_Values;
+        [SerializeField] private StatType m_Types;
 
         public float this[StatType t]
         {
@@ -99,7 +103,8 @@ namespace Vvr.Model.Stat
         /// <summary>
         /// Bit-masked StatType in this struct
         /// </summary>
-        public StatType     Types  { get; }
+        public StatType Types => m_Types;
+
         /// <summary>
         /// Returns all values
         /// </summary>
@@ -109,7 +114,7 @@ namespace Vvr.Model.Stat
 
         internal StatValues(StatType query, float[] values)
         {
-            Types  = query;
+            m_Types  = query;
             m_Values = values;
         }
 

@@ -124,14 +124,29 @@ namespace Vvr.Session
         {
             Owner = owner;
 
-            ParentSessionAttribute att = GetType().GetCustomAttribute<ParentSessionAttribute>();
+            ParentSessionAttribute att = Type.GetCustomAttribute<ParentSessionAttribute>();
             if (att != null)
             {
+                if (parent == null)
+                    throw new InvalidOperationException(
+                        $"Session({Type.FullName}) is trying to create without any parent " +
+                        $"while its child marked by attribute.");
+
+                Type parentType = parent.GetType();
                 if (att.IncludeInherits)
                 {
-                    Assert.IsTrue(VvrTypeHelper.InheritsFrom(parent.GetType(), att.Type));
+                    if (!VvrTypeHelper.InheritsFrom(parentType, att.Type))
+                        throw new InvalidOperationException(
+                            $"Session({Type.FullName}) trying to create under " +
+                            $"{parentType.FullName} is not inherits from {att.Type.FullName}");
                 }
-                else Assert.AreEqual(att.Type, parent.GetType());
+                else
+                {
+                    if (att.Type != parentType)
+                        throw new InvalidOperationException(
+                            $"Session({Type.FullName}) trying to create under " +
+                            $"{parentType.FullName} but only accepts {att.Type.FullName}");
+                }
             }
 
             if (m_ReserveTokenSource != null)

@@ -42,18 +42,26 @@ using Vvr.Provider;
 
 namespace Vvr.Session.Actor
 {
+    [Serializable]
     internal class Actor : ScriptableObject, IActor, IInitialize<Owner, IActorData>
     {
-        private StatValueStack         m_Stats;
-        private ConditionResolver      m_ConditionResolver;
-        private AbnormalController     m_AbnormalController;
-        private PassiveController      m_PassiveController;
-        private SkillController        m_SkillController;
-        private ItemInventory          m_ItemInventory;
-        private BehaviorTreeController m_BehaviorTreeController;
-        private AssetController        m_AssetController;
+        [SerializeField] private Owner m_Owner;
 
-        public Owner  Owner       { get; private set; }
+        private  StatValueStack         m_Stats;
+        private  ConditionResolver      m_ConditionResolver;
+        private  AbnormalController     m_AbnormalController;
+        private  PassiveController      m_PassiveController;
+        private  SkillController        m_SkillController;
+        private  ItemInventory          m_ItemInventory;
+        private  BehaviorTreeController m_BehaviorTreeController;
+        private  AssetController        m_AssetController;
+
+        public Owner Owner
+        {
+            get => m_Owner;
+            private set => m_Owner = value;
+        }
+
         public string DisplayName => Id;
         public bool   Disposed    { get; private set; }
 
@@ -70,7 +78,7 @@ namespace Vvr.Session.Actor
 
         public IAsset Assets => m_AssetController;
 
-        IActor IActor.CreateInstance()
+        public IActor CreateInstance()
         {
             var d = Instantiate(this);
             d.Instanced = true;

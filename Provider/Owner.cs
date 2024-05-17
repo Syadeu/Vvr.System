@@ -20,16 +20,18 @@
 #endregion
 
 using System;
+using UnityEngine;
 
 namespace Vvr.Provider
 {
+    [Serializable]
     public struct Owner
     {
         public static Owner Issue => new(FNV1a32.Calculate(Guid.NewGuid()));
 
-        private readonly uint m_Id;
+        [SerializeField] private uint m_Id;
 
-        public Owner(uint t)
+        private Owner(uint t)
         {
             m_Id = t;
         }

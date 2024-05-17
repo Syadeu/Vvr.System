@@ -32,22 +32,9 @@ using Vvr.Provider;
 
 namespace Vvr.Controller.Actor
 {
-    public interface IActor : IConditionTarget, IBehaviorTarget
+    public interface IActor : IReadOnlyActor
     {
-        string Id { get; }
-
-        IStatValueStack Stats    { get; }
-        IPassive        Passive  { get; }
-        IAbnormal       Abnormal { get; }
-        ISkill          Skill    { get; }
-
-        IAsset Assets { get; }
-
-        int GetInstanceID();
-
         void Initialize(Owner t, IActorData ta);
-
-        IActor CreateInstance();
 
         /// <summary>
         ///
@@ -59,10 +46,25 @@ namespace Vvr.Controller.Actor
 
         [PublicAPI]
         void ConnectTime();
-
         [PublicAPI]
         void DisconnectTime();
         [PublicAPI]
         void Reset();
+    }
+
+    public interface IReadOnlyActor : IConditionTarget, IBehaviorTarget
+    {
+        string Id { get; }
+
+        IStatValueStack Stats    { get; }
+        IPassive        Passive  { get; }
+        IAbnormal       Abnormal { get; }
+        ISkill          Skill    { get; }
+
+        IAsset Assets { get; }
+
+        IActor CreateInstance();
+
+        int GetInstanceID();
     }
 }

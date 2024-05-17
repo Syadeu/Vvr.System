@@ -22,6 +22,7 @@
 using System;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
+using JetBrains.Annotations;
 using UnityEngine;
 using Vvr.Controller.Actor;
 using Vvr.Model;
@@ -30,6 +31,7 @@ using Vvr.Session.Provider;
 
 namespace Vvr.Session
 {
+    [UsedImplicitly]
     public sealed class ActorFactorySession : ChildSession<ActorFactorySession.SessionData>,
         IActorProvider, IConnector<IEventViewProvider>
     {
@@ -69,11 +71,12 @@ namespace Vvr.Session
                 m_ViewProvider?.Release(e);
                 e.Release();
             }
+            m_ResolvedActors.Clear();
 
             return base.OnReserve();
         }
 
-        public IActor Resolve(IActorData data)
+        public IReadOnlyActor Resolve(IActorData data)
         {
             int i = m_ResolvedActors.BinarySearch(new CachedActor() { hash = FNV1a32.Calculate(data.Id) });
             if (0 <= i) return m_ResolvedActors[i].actor;
