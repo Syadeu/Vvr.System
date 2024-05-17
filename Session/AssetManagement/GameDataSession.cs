@@ -74,9 +74,15 @@ namespace Vvr.Session
                 .Register<IStageDataProvider>(stageDataSession)
                 ;
         }
-
         protected override UniTask OnReserve()
         {
+            Parent
+                .Unregister<IGameConfigProvider>()
+                .Unregister<IActorDataProvider>()
+                .Unregister<ICustomMethodProvider>()
+                .Unregister<IStageDataProvider>()
+                ;
+
             m_SheetContainer.Dispose();
 
             return base.OnReserve();
