@@ -74,5 +74,12 @@ namespace Vvr.Session
                 .Register<IStageDataProvider>(stageDataSession)
                 ;
         }
+
+        protected override UniTask OnReserve()
+        {
+            m_SheetContainer.Dispose();
+
+            return base.OnReserve();
+        }
     }
 }
