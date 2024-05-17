@@ -19,8 +19,6 @@
 
 #endregion
 
-using System;
-using System.Collections.Generic;
 using Cathei.BakingSheet.Unity;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
@@ -58,69 +56,23 @@ namespace Vvr.Session
             ScriptableObjectSheetImporter imp = new(dataContainer.Object);
             await m_SheetContainer.Bake(imp).AsUniTask();
 
+            StatProvider.GetOrCreate(m_SheetContainer.StatTable);
+
             var gameConfigSession = await CreateSession<GameConfigSession>(
                 new GameConfigSession.SessionData(m_SheetContainer.GameConfigTable));
-            Parent.Register<IGameConfigProvider>(gameConfigSession);
-        }
-    }
+            var actorDataSession = await CreateSession<ActorDataSession>(
+                new ActorDataSession.SessionData(m_SheetContainer.Actors));
+            var customMethodSession = await CreateSession<CustomMethodSession>(
+                new CustomMethodSession.SessionData(m_SheetContainer.CustomMethodTable));
+            var stageDataSession = await CreateSession<StageDataSession>(
+                new StageDataSession.SessionData(m_SheetContainer.Stages));
 
-    [UsedImplicitly]
-    [ParentSession(typeof(GameDataSession))]
-    public class GameConfigSession : ChildSession<GameConfigSession.SessionData>,
-        IGameConfigProvider
-    {
-        public struct SessionData : ISessionData
-        {
-            public readonly GameConfigSheet sheet;
-
-            public SessionData(GameConfigSheet s)
-            {
-                sheet = s;
-            }
-        }
-
-        private readonly Dictionary<MapType, LinkedList<GameConfigSheet.Row>> m_Configs = new();
-
-        public override string DisplayName => nameof(GameConfigSession);
-
-        public IEnumerable<GameConfigSheet.Row> this[MapType t]
-        {
-            get
-            {
-                if (!m_Configs.TryGetValue(t, out var list))
-                {
-                    return Array.Empty<GameConfigSheet.Row>();
-                }
-
-                return list;
-            }
-        }
-
-        protected override UniTask OnInitialize(IParentSession session, SessionData data)
-        {
-            foreach (var item in data.sheet)
-            {
-                if (!m_Configs.TryGetValue(item.Lifecycle.Map, out var list))
-                {
-                    list                          = new();
-                    m_Configs[item.Lifecycle.Map] = list;
-                }
-
-                list.AddLast(item);
-            }
-
-            return base.OnInitialize(session, data);
-        }
-
-        protected override UniTask OnReserve()
-        {
-            foreach (var list in m_Configs.Values)
-            {
-                list.Clear();
-            }
-
-            m_Configs.Clear();
-            return base.OnReserve();
+            Parent
+                .Register<IGameConfigProvider>(gameConfigSession)
+                .Register<IActorDataProvider>(actorDataSession)
+                .Register<ICustomMethodProvider>(customMethodSession)
+                .Register<IStageDataProvider>(stageDataSession)
+                ;
         }
     }
 }

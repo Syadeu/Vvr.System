@@ -1,4 +1,5 @@
 #region Copyrights
+
 // Copyright 2024 Syadeu
 // Author : Seung Ha Kim
 //
@@ -14,21 +15,35 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// File created : 2024, 05, 15 13:05
+// File created : 2024, 05, 17 14:05
+
 #endregion
 
 using System;
 using System.Collections.Generic;
+using JetBrains.Annotations;
 using UnityEngine.Assertions;
 using Vvr.Model;
 using Vvr.Model.Stat;
 using Vvr.Provider;
 
-namespace Vvr.Session.Provider
+namespace Vvr.Session
 {
-    [Obsolete("", true)]
-    internal class CustomMethodProvider : ICustomMethodProvider
+    [UsedImplicitly]
+    [ParentSession(typeof(GameDataSession))]
+    public class CustomMethodSession : ChildSession<CustomMethodSession.SessionData>,
+        ICustomMethodProvider
     {
+        public struct SessionData : ISessionData
+        {
+            public readonly CustomMethodSheet sheet;
+
+            public SessionData(CustomMethodSheet s)
+            {
+                sheet = s;
+            }
+        }
+
         abstract class Element
         {
             public readonly string rawValue;
@@ -73,7 +88,7 @@ namespace Vvr.Session.Provider
         class MethodValue : Element
         {
             public readonly MethodImplDelegate method;
-            public readonly short             methodType;
+            public readonly short              methodType;
 
             public MethodValue(string r, Method m) : base(r)
             {
@@ -137,8 +152,6 @@ namespace Vvr.Session.Provider
             }
         }
 
-        private CustomMethodSheet m_Sheet;
-
         private readonly Dictionary<int, MethodBody> m_Methods = new();
 
         public CustomMethodDelegate this[CustomMethodNames method]
@@ -148,7 +161,7 @@ namespace Vvr.Session.Provider
                 int hash = method.GetHashCode();
                 if (!m_Methods.TryGetValue(hash, out var body))
                 {
-                    body            = Create(m_Sheet[method.ToString()]);
+                    body            = Create(Data.sheet[method.ToString()]);
                     m_Methods[hash] = body;
                 }
 
@@ -156,16 +169,13 @@ namespace Vvr.Session.Provider
             }
         }
 
-        public CustomMethodProvider(CustomMethodSheet t)
-        {
-            m_Sheet = t;
-        }
+        public override string DisplayName => nameof(CustomMethodSession);
 
         private MethodBody Create(CustomMethodSheet.Row row)
         {
             Assert.IsNotNull(row);
             Assert.IsNotNull(StatProvider.Static);
-            MethodBody elements  = new();
+            MethodBody elements = new();
 
             Dictionary<string, DynamicReference> refValues = new();
             foreach (var e in row)
@@ -173,7 +183,7 @@ namespace Vvr.Session.Provider
                 refValues[e.Name] = e.Value;
             }
 
-            bool       wasMethod = true;
+            bool wasMethod = true;
             foreach (string entry in row.Calculations)
             {
                 if (wasMethod)
@@ -205,7 +215,7 @@ namespace Vvr.Session.Provider
             int hash = method.GetHashCode();
             if (!m_Methods.TryGetValue(hash, out var body))
             {
-                body              = Create(m_Sheet[method.ToString()]);
+                body            = Create(Data.sheet[method.ToString()]);
                 m_Methods[hash] = body;
             }
 

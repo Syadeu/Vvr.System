@@ -42,7 +42,7 @@ using Vvr.Provider;
 
 namespace Vvr.Session.Actor
 {
-    internal class Actor : ScriptableObject, IActor, IInitialize<Owner, ActorSheet.Row>
+    internal class Actor : ScriptableObject, IActor, IInitialize<Owner, IActorData>
     {
         private StatValueStack         m_Stats;
         private ConditionResolver      m_ConditionResolver;
@@ -54,13 +54,13 @@ namespace Vvr.Session.Actor
         private AssetController        m_AssetController;
 
         public Owner  Owner       { get; private set; }
-        public string DisplayName => DataID;
+        public string DisplayName => Id;
         public bool   Disposed    { get; private set; }
 
         public bool Initialized { get; private set; }
         public bool Instanced   { get; private set; }
 
-        public string                     DataID            { get; private set; }
+        public string                     Id            { get; private set; }
         public IReadOnlyConditionResolver ConditionResolver => m_ConditionResolver;
         public IStatValueStack            Stats             => m_Stats;
 
@@ -85,12 +85,12 @@ namespace Vvr.Session.Actor
             Destroy(this);
         }
 
-        public void Initialize(Owner t, ActorSheet.Row ta)
+        public void Initialize(Owner t, IActorData ta)
         {
             Assert.IsFalse(Initialized);
 
             Owner  = t;
-            DataID = ta.Id;
+            Id = ta.Id;
 
             m_Stats = new StatValueStack(this, ta.Stats);
 

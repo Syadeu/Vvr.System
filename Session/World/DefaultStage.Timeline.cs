@@ -173,7 +173,7 @@ namespace Vvr.Session.World
 
             // This because field list is ordered list by ActorPositionComparer.
             // If the first element is defensive(2), should direct comparison with given actor
-            if (field[0].Data.Type == ActorSheet.ActorType.Defensive)
+            if (field[0].Type == ActorSheet.ActorType.Defensive)
             {
                 int order = ActorPositionComparer.Static.Compare(runtimeActor, field[0]);
                 // If only actor is Offensive(0)

@@ -19,96 +19,14 @@
 
 #endregion
 
-using System.Collections.Generic;
-using Cysharp.Threading.Tasks;
-using Vvr.Controller.Abnormal;
 using Vvr.Controller.Actor;
-using Vvr.Controller.Asset;
-using Vvr.Controller.BehaviorTree;
-using Vvr.Controller.Condition;
-using Vvr.Controller.Passive;
-using Vvr.Controller.Skill;
-using Vvr.Controller.Stat;
 using Vvr.Model;
-using Vvr.Provider;
 
 namespace Vvr.Session.Actor
 {
-    public interface IStageActor : IActor, IActorData
+    public interface IStageActor : IActorData
     {
         IActor Owner           { get; }
         bool   TagOutRequested { get; set; }
-    }
-
-    public struct CachedActor : IActor, IActorData
-    {
-        public IActor       Owner       { get; }
-        string IEventTarget.DisplayName => Owner.DisplayName;
-
-        bool IEventTarget.    Disposed => Owner.Disposed;
-
-        async UniTask IBehaviorTarget.Execute(IReadOnlyList<string> parameters)
-        {
-            await Owner.Execute(parameters);
-        }
-
-        public ActorSheet.Row Data        { get; }
-
-        internal CachedActor(IStageActor d)
-        {
-            Owner = d.Owner;
-            Data  = d.Data;
-        }
-
-        Owner IEventTarget.                         Owner => Owner.Owner;
-
-        IReadOnlyConditionResolver IConditionTarget.ConditionResolver => Owner.ConditionResolver;
-
-        string IActor.                              DataID => Owner.DataID;
-
-        IStatValueStack IActor.                     Stats => Owner.Stats;
-
-        IPassive IActor.                            Passive => Owner.Passive;
-
-        IAbnormal IActor.                           Abnormal => Owner.Abnormal;
-
-        ISkill IActor.                              Skill => Owner.Skill;
-
-        IAsset IActor.                              Assets => Owner.Assets;
-
-        int IActor.GetInstanceID()
-        {
-            return Owner.GetInstanceID();
-        }
-
-        void IActor.Initialize(Owner t, ActorSheet.Row ta)
-        {
-            Owner.Initialize(t, ta);
-        }
-
-        IActor IActor.CreateInstance()
-        {
-            return Owner.CreateInstance();
-        }
-
-        void IActor.Release()
-        {
-            Owner.Release();
-        }
-
-        void IActor.ConnectTime()
-        {
-            Owner.ConnectTime();
-        }
-
-        void IActor.DisconnectTime()
-        {
-            Owner.DisconnectTime();
-        }
-
-        void IActor.Reset()
-        {
-            Owner.Reset();
-        }
     }
 }

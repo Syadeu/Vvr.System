@@ -165,7 +165,7 @@ namespace Vvr.Session.World
             m_Configs = null;
         }
 
-        IActor IActorProvider.Resolve(ActorSheet.Row data) => m_ActorProvider.Resolve(data);
+        IActor IActorProvider.Resolve(IActorData data) => m_ActorProvider.Resolve(data);
     }
     partial class DefaultWorld : ITimeUpdate
     {

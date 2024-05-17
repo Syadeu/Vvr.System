@@ -40,7 +40,7 @@ namespace Vvr.Session.Provider
         /// <param name="data">The data used to configure the stage actor.</param>
         /// <returns>The created stage actor instance.</returns>
         [PublicAPI]
-        IStageActor Create(IActor actor, ActorSheet.Row data);
+        IStageActor Create(IActor actor, IActorData data);
 
         /// <summary>
         /// Reserves a stage actor for reuse by disconnecting and clearing its connections and resetting its state.

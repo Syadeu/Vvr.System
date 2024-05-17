@@ -18,6 +18,7 @@
 #endregion
 
 using System.Collections.Generic;
+using System.Linq;
 using Cathei.BakingSheet;
 using Cathei.BakingSheet.Unity;
 using JetBrains.Annotations;
@@ -28,7 +29,7 @@ namespace Vvr.Model
     [Preserve]
     public sealed class StageSheet : Sheet<StageSheet.Row>
     {
-        public sealed class Row : SheetRow
+        public sealed class Row : SheetRow, IStageData
         {
             [UsedImplicitly] public string Name { get; private set; }
             [UsedImplicitly] public int Population { get; private set; }
@@ -37,6 +38,19 @@ namespace Vvr.Model
             [UsedImplicitly] public List<ActorSheet.Reference> Actors { get; private set; }
 
             [UsedImplicitly] public Dictionary<AssetType, AddressablePath> Assets { get; private set; }
+
+            private IActorData[] m_Actors;
+
+            IStageData IStageData.                                     NextStage => NextStage.Ref;
+            IReadOnlyList<IActorData> IStageData.                      Actors    => m_Actors;
+            IReadOnlyDictionary<AssetType, AddressablePath> IStageData.Assets    => Assets;
+
+            public override void PostLoad(SheetConvertingContext context)
+            {
+                base.PostLoad(context);
+
+                m_Actors = Actors.Select(x => (IActorData)x.Ref).ToArray();
+            }
         }
 
         public StageSheet()

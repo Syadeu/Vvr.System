@@ -21,19 +21,12 @@
 
 using System;
 using Cysharp.Threading.Tasks;
-using UnityEngine.Assertions;
-using Vvr.Controller.Provider;
-using Vvr.Model;
 using Vvr.Provider;
-using Vvr.Session.Provider;
 
 namespace Vvr.Session.World
 {
     public static class GameWorld
     {
-        private static ActorDataProvider    s_ActorDataProvider;
-        private static CustomMethodProvider s_CustomMethodProvider;
-
         public static IWorldSession World { get; private set; }
 
         public static async UniTask<TWorldSession> GetOrCreate<TWorldSession>(Owner owner)
@@ -51,29 +44,7 @@ namespace Vvr.Session.World
 
             World = world;
 
-            if (s_ActorDataProvider != null)
-            {
-                World.Register<IActorDataProvider>(s_ActorDataProvider);
-            }
-
             return world;
-        }
-
-        [Obsolete]
-        public static void RegisterCustomMethodData(CustomMethodSheet sheet)
-        {
-            Assert.IsNull(s_CustomMethodProvider);
-
-            s_CustomMethodProvider = new(sheet);
-            World?.Register<ICustomMethodProvider>(s_CustomMethodProvider);
-        }
-        [Obsolete]
-        public static void RegisterActorData(ActorSheet sheet)
-        {
-            Assert.IsNull(s_ActorDataProvider);
-
-            s_ActorDataProvider = new(sheet);
-            World?.Register<IActorDataProvider>(s_ActorDataProvider);
         }
     }
 }

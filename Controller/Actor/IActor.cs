@@ -34,7 +34,7 @@ namespace Vvr.Controller.Actor
 {
     public interface IActor : IConditionTarget, IBehaviorTarget
     {
-        string DataID { get; }
+        string Id { get; }
 
         IStatValueStack Stats    { get; }
         IPassive        Passive  { get; }
@@ -45,7 +45,7 @@ namespace Vvr.Controller.Actor
 
         int GetInstanceID();
 
-        void Initialize(Owner t, ActorSheet.Row ta);
+        void Initialize(Owner t, IActorData ta);
 
         IActor CreateInstance();
 

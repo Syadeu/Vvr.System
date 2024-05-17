@@ -35,26 +35,18 @@ namespace Vvr.Session
     [UsedImplicitly]
     public class UserSession : ChildSession<UserSession.SessionData>,
         IPlayerActorProvider,
-        IConnector<IActorDataProvider>
+        IConnector<IActorDataProvider>,
+        IConnector<IStageProvider>
     {
         public struct SessionData : ISessionData
         {
         }
 
-        class PlayerActorData : IActorData
-        {
-            public ActorSheet.Row Data { get; }
-
-            public PlayerActorData(ActorSheet.Row d)
-            {
-                Data = d;
-            }
-        }
-
         private IActorDataProvider m_ActorDataProvider;
+        private IStageProvider     m_StageProvider;
 
         // TODO: temp
-        private PlayerActorData[] m_CurrentActors;
+        private IActorData[] m_CurrentActors;
 
         public override string DisplayName => nameof(UserSession);
 
@@ -64,7 +56,6 @@ namespace Vvr.Session
 
             await base.OnInitialize(session, data);
         }
-
         protected override UniTask OnReserve()
         {
             Parent.Unregister<IPlayerActorProvider>();
@@ -72,12 +63,18 @@ namespace Vvr.Session
             return base.OnReserve();
         }
 
+        public IReadOnlyList<IActorData> GetCurrentTeam()
+        {
+            // TODO : Temp code
+            return m_CurrentActors;
+        }
+
         void IConnector<IActorDataProvider>.Connect(IActorDataProvider t)
         {
             m_ActorDataProvider = t;
 
             // TODO: Test code
-            m_CurrentActors = new PlayerActorData[5];
+            m_CurrentActors = new IActorData[5];
             List<ActorSheet.Row> chList = new List<ActorSheet.Row>(
                 m_ActorDataProvider.Where(x => x.Id.StartsWith("CH")));
             int i = 0;
@@ -86,17 +83,13 @@ namespace Vvr.Session
                 chList.Shuffle();
                 for (; i < chList.Count && i < m_CurrentActors.Length; i++)
                 {
-                    m_CurrentActors[i] = new PlayerActorData(chList[i]);
+                    m_CurrentActors[i] = chList[i];
                 }
             }
         }
-
         void IConnector<IActorDataProvider>.Disconnect(IActorDataProvider t) => m_ActorDataProvider = null;
 
-        // TODO : Temp code
-        public IReadOnlyList<IActorData> GetCurrentTeam()
-        {
-            return m_CurrentActors;
-        }
+        void IConnector<IStageProvider>.Connect(IStageProvider    t) => m_StageProvider = t;
+        void IConnector<IStageProvider>.Disconnect(IStageProvider t) => m_StageProvider = null;
     }
 }

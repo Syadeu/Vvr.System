@@ -28,6 +28,7 @@ using UnityEngine;
 using UnityEngine.Assertions;
 using Vvr.Controller.Actor;
 using Vvr.Provider;
+using Vvr.Session.Actor;
 using Vvr.Session.Provider;
 
 namespace Vvr.Session
@@ -47,8 +48,8 @@ namespace Vvr.Session
         {
             private readonly CustomMethodDelegate m_Method;
 
-            public IActor actor;
-            public int    index;
+            public IStageActor actor;
+            public int         index;
 
             public float timeOffset;
 
@@ -81,7 +82,7 @@ namespace Vvr.Session
 
         public int Count => m_Queue.Count;
 
-        public int IndexOf(IActor actor)
+        public int IndexOf(IStageActor actor)
         {
             foreach (var entry in m_Queue)
             {
@@ -92,7 +93,7 @@ namespace Vvr.Session
             return -1;
         }
 
-        public void Enqueue(IActor actor)
+        public void Enqueue(IStageActor actor)
         {
             Assert.IsNotNull(actor);
             if (!m_Actors.Add(actor.GetHashCode()))
@@ -105,7 +106,7 @@ namespace Vvr.Session
             });
         }
 
-        public void InsertAfter(int index, IActor actor)
+        public void InsertAfter(int index, IStageActor actor)
         {
             Assert.IsNotNull(actor);
 
@@ -134,7 +135,7 @@ namespace Vvr.Session
             m_Index++;
         }
 
-        public IActor Dequeue()
+        public IStageActor Dequeue()
         {
             if (m_Queue.Count == 0) throw new InvalidOperationException("queue empty");
 
@@ -146,13 +147,13 @@ namespace Vvr.Session
             return min.actor;
         }
 
-        public bool IsStartFrom(IActor actor)
+        public bool IsStartFrom(IStageActor actor)
         {
             var min = m_Queue.Min;
             return ReferenceEquals(min.actor, actor);
         }
 
-        public void StartFrom(IActor actor)
+        public void StartFrom(IStageActor actor)
         {
             Assert.IsNotNull(actor);
 
@@ -186,7 +187,7 @@ namespace Vvr.Session
             ArrayPool<Entry>.Shared.Return(tempArr, true);
         }
 
-        public void Remove(IActor actor)
+        public void Remove(IStageActor actor)
         {
             if (!m_Actors.Remove(actor.GetHashCode()))
                 return;

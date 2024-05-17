@@ -20,58 +20,38 @@
 #endregion
 
 using System.Collections.Generic;
-using Cysharp.Threading.Tasks;
-using Vvr.Controller.Abnormal;
+using Cathei.BakingSheet;
+using Cathei.BakingSheet.Unity;
 using Vvr.Controller.Actor;
-using Vvr.Controller.Asset;
-using Vvr.Controller.BehaviorTree;
-using Vvr.Controller.Condition;
-using Vvr.Controller.Passive;
-using Vvr.Controller.Skill;
-using Vvr.Controller.Stat;
 using Vvr.Model;
-using Vvr.Provider;
+using Vvr.Model.Stat;
 
 namespace Vvr.Session.Actor
 {
-    internal sealed class StageActor : IStageActor, IActor
+    internal sealed class StageActor : IStageActor
     {
-        public readonly IActor         owner;
-        public readonly ActorSheet.Row data;
+        public readonly IActor     owner;
+        public readonly IActorData data;
 
         public bool TagOutRequested { get; set; }
 
-        public StageActor(IActor o, ActorSheet.Row d)
+        public StageActor(IActor o, IActorData d)
         {
             owner = o;
             data  = d;
         }
 
         IActor IStageActor.        Owner       => owner;
-        ActorSheet.Row IActorData.Data        => data;
+        string IRawData.  Id   => owner.Id;
+        string IActorData.Guid => data.Guid;
 
-        Owner IEventTarget. Owner       => owner.Owner;
-        string IEventTarget.DisplayName => owner.DisplayName;
-        bool IEventTarget.  Disposed    => owner.Disposed;
+        ActorSheet.ActorType IActorData.Type       => data.Type;
+        int IActorData.                 Population => data.Population;
+        IReadOnlyStatValues IActorData. Stats      => data.Stats;
 
-        async UniTask IBehaviorTarget.Execute(IReadOnlyList<string> parameters) => await owner.Execute(parameters);
+        IReadOnlyList<Sheet<string, PassiveSheet.Row>.Reference> IActorData.Passive => ((IActorData)data).Passive;
+        IReadOnlyList<Sheet<string, SkillSheet.Row>.Reference> IActorData.Skills => ((IActorData)data).Skills;
 
-        IReadOnlyConditionResolver IConditionTarget.ConditionResolver => owner.ConditionResolver;
-
-        string IActor.         DataID   => owner.DataID;
-        IStatValueStack IActor.Stats    => owner.Stats;
-        IPassive IActor.       Passive  => owner.Passive;
-        IAbnormal IActor.      Abnormal => owner.Abnormal;
-        ISkill IActor.         Skill    => owner.Skill;
-        IAsset IActor.         Assets   => owner.Assets;
-
-        int IActor.GetInstanceID() => owner.GetInstanceID();
-        void IActor.  Initialize(Owner t, ActorSheet.Row ta) => owner.Initialize(t, ta);
-        IActor IActor.CreateInstance() => owner.CreateInstance();
-
-        void IActor.Release() => owner.Release();
-        void IActor.ConnectTime() => owner.ConnectTime();
-        void IActor.DisconnectTime() => owner.DisconnectTime();
-        void IActor.Reset() => owner.Reset();
+        Dictionary<AssetType, AddressablePath> IActorData.Assets => data.Assets;
     }
 }

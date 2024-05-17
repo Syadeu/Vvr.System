@@ -41,10 +41,10 @@ namespace Vvr.Session
 
         public override string DisplayName => nameof(StageActorCreateSession);
 
-        public IStageActor Create(IActor actor, ActorSheet.Row data)
+        public IStageActor Create(IActor actor, IActorData data)
         {
             StageActor result = new StageActor(actor, data);
-            IActor     item   = result;
+            IActor     item   = result.owner;
             Connect<IAssetProvider>(item.Assets)
                 .Connect<IActorDataProvider>(item.Skill)
                 .Connect<ITargetProvider>(item.Skill)
@@ -58,16 +58,16 @@ namespace Vvr.Session
         }
         public void Reserve(IStageActor item)
         {
-            Disconnect<IAssetProvider>(item.Assets)
-                .Disconnect<IActorDataProvider>(item.Skill)
-                .Disconnect<ITargetProvider>(item.Skill)
-                .Disconnect<ITargetProvider>(item.Passive)
-                .Disconnect<IEventConditionProvider>(item.ConditionResolver)
-                .Disconnect<IStateConditionProvider>(item.ConditionResolver);
+            Disconnect<IAssetProvider>(item.Owner.Assets)
+                .Disconnect<IActorDataProvider>(item.Owner.Skill)
+                .Disconnect<ITargetProvider>(item.Owner.Skill)
+                .Disconnect<ITargetProvider>(item.Owner.Passive)
+                .Disconnect<IEventConditionProvider>(item.Owner.ConditionResolver)
+                .Disconnect<IStateConditionProvider>(item.Owner.ConditionResolver);
 
-            item.DisconnectTime();
-            item.Skill.Clear();
-            item.Abnormal.Clear();
+            item.Owner.DisconnectTime();
+            item.Owner.Skill.Clear();
+            item.Owner.Abnormal.Clear();
         }
     }
 }

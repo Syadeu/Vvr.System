@@ -42,7 +42,7 @@ namespace Vvr.Model
             All = 0b11
         }
 
-        public sealed class Row : SheetRow
+        public sealed class Row : SheetRow, IActorData
         {
             [UsedImplicitly] public string    Guid       { get; private set; }
             [UsedImplicitly] public ActorType Type       { get; private set; }
@@ -56,6 +56,9 @@ namespace Vvr.Model
             [UsedImplicitly] public List<SkillSheet.Reference> Skills  { get; private set; }
 
             [UsedImplicitly] public Dictionary<AssetType, AddressablePath> Assets { get; private set; }
+
+            IReadOnlyList<PassiveSheet.Reference> IActorData.Passive => Passive;
+            IReadOnlyList<SkillSheet.Reference> IActorData.Skills => Skills;
         }
 
         public ActorSheet()

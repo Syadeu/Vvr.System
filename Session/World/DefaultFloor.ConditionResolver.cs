@@ -17,6 +17,7 @@
 // File created : 2024, 05, 13 14:05
 #endregion
 
+using System.Linq;
 using Vvr.Controller.Condition;
 
 namespace Vvr.Session.World
@@ -32,8 +33,8 @@ namespace Vvr.Session.World
             conditionResolver[Model.Condition.OnStageStarted] = x => Started && ConditionTrigger.Any(this, Model.Condition.OnStageStarted, x);
             conditionResolver[Model.Condition.OnStageEnded] = x => Started && ConditionTrigger.Any(this, Model.Condition.OnStageEnded, x);
 
-            conditionResolver[Model.Condition.IsFloorStarted] = x => Started  && Data.stages.First.Value.Id == x;
-            conditionResolver[Model.Condition.IsFloorEnded]   = x => !Started && Data.stages.First.Value.Id == x;
+            conditionResolver[Model.Condition.IsFloorStarted] = x => Started  && Data.stages.First().Id == x;
+            conditionResolver[Model.Condition.IsFloorEnded]   = x => !Started && Data.stages.First().Id == x;
             conditionResolver[Model.Condition.IsStageStarted] = x => Started  && m_CurrentStage != null && m_CurrentStage.Data.stage.Id == x;
             conditionResolver[Model.Condition.IsStageEnded] = x => Started  && m_CurrentStage != null && m_CurrentStage.Data.stage.Id == x;
         }

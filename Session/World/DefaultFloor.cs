@@ -37,10 +37,10 @@ namespace Vvr.Session.World
     {
         public struct SessionData : ISessionData
         {
-            public readonly LinkedList<StageSheet.Row> stages;
-            public readonly CachedActor[]              cachedActors;
+            public readonly IEnumerable<IStageData> stages;
+            public readonly IStageActor[]              cachedActors;
 
-            public SessionData(LinkedList<StageSheet.Row> s, CachedActor[] actors)
+            public SessionData(IEnumerable<IStageData> s, IStageActor[] actors)
             {
                 stages       = s;
                 cachedActors = actors;
@@ -49,9 +49,9 @@ namespace Vvr.Session.World
 
         public struct Result
         {
-            public readonly CachedActor[] alivePlayerActors;
+            public readonly IStageActor[] alivePlayerActors;
 
-            public Result(CachedActor[] x)
+            public Result(IStageActor[] x)
             {
                 alivePlayerActors = x;
             }
@@ -97,23 +97,23 @@ namespace Vvr.Session.World
             Result              floorResult = default;
             DefaultStage.Result stageResult = default;
 
-            LinkedListNode<StageSheet.Row> startStage  = Data.stages.First;
-            List<CachedActor>              prevPlayers = new(Data.cachedActors);
+            // LinkedListNode<StageSheet.Row> startStage  = Data.stages.First;
+            List<IStageActor>              prevPlayers = new(Data.cachedActors);
 
-            string cachedStartStageId = startStage.Value.Id;
+            string cachedStartStageId = Data.stages.First().Id;
             await trigger.Execute(Model.Condition.OnFloorStarted, cachedStartStageId);
 
-            while (startStage != null)
+            foreach (IStageData stage in Data.stages)
             {
                 DefaultStage.SessionData sessionData;
                 if (prevPlayers.Count == 0)
                 {
-                    sessionData = new DefaultStage.SessionData(startStage.Value,
+                    sessionData = new DefaultStage.SessionData(stage,
                         playerData);
                 }
                 else
                 {
-                    sessionData = new DefaultStage.SessionData(startStage.Value,
+                    sessionData = new DefaultStage.SessionData(stage,
                         prevPlayers);
                 }
 
@@ -145,12 +145,10 @@ namespace Vvr.Session.World
 
                 "Stage cleared".ToLog();
                 await UniTask.Yield();
-
-                startStage = startStage.Next;
             }
 
             floorResult = new Result(
-                prevPlayers.Any() ? prevPlayers.ToArray() : Array.Empty<CachedActor>());
+                prevPlayers.Any() ? prevPlayers.ToArray() : Array.Empty<IStageActor>());
 
             m_CurrentStage = null;
             Started        = false;

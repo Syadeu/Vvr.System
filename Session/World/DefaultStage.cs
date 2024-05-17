@@ -48,20 +48,20 @@ namespace Vvr.Session.World
     {
         private class ActorList : List<IStageActor>, IReadOnlyActorList
         {
-            CachedActor IReadOnlyList<CachedActor>.this[int index] => new CachedActor(this[index]);
+            IStageActor IReadOnlyList<IStageActor>.this[int index] => (this[index]);
 
             public ActorList() : base()
             {
                 ObjectObserver<ActorList>.Get(this).EnsureContainer();
             }
 
-            public bool TryGetActor(string instanceId, out CachedActor actor)
+            public bool TryGetActor(string instanceId, out IStageActor actor)
             {
                 for (int i = 0; i < Count; i++)
                 {
                     if (this[i].Owner.GetInstanceID().ToString() == instanceId)
                     {
-                        actor = new CachedActor(this[i]);
+                        actor = (this[i]);
                         return true;
                     }
                 }
@@ -70,41 +70,41 @@ namespace Vvr.Session.World
                 return false;
             }
 
-            public void CopyTo(IStageActor[] array)
+            public new void CopyTo(IStageActor[] array)
             {
                 for (int i = 0; i < Count; i++)
                 {
                     array[i] = this[i];
                 }
             }
-            IEnumerator<CachedActor> IEnumerable<CachedActor>.GetEnumerator()
+            IEnumerator<IStageActor> IEnumerable<IStageActor>.GetEnumerator()
             {
                 for (int i = 0; i < Count; i++)
                 {
-                    yield return new CachedActor(this[i]);
+                    yield return (this[i]);
                 }
             }
         }
         public struct SessionData : ISessionData
         {
-            public readonly StageSheet.Row   stage;
-            public readonly ActorSheet.Row[] actors;
+            public readonly IStageData              stage;
+            public readonly IEnumerable<IActorData> actors;
 
-            public readonly IEnumerable<CachedActor> prevPlayers;
+            public readonly IEnumerable<IStageActor> prevPlayers;
             public readonly IEnumerable<IActorData>  players;
 
-            public SessionData(StageSheet.Row data, IEnumerable<CachedActor> p)
+            public SessionData(IStageData data, IEnumerable<IStageActor> p)
             {
-                stage = data;
-                actors  = data.Actors.Select(x => x.Ref).ToArray();
+                stage  = data;
+                actors = data.Actors;
 
                 prevPlayers = p;
                 players     = null;
             }
-            public SessionData(StageSheet.Row data, IEnumerable<IActorData> p)
+            public SessionData(IStageData data, IEnumerable<IActorData> p)
             {
                 stage  = data;
-                actors   = data.Actors.Select(x => x.Ref).ToArray();
+                actors = data.Actors;
 
                 prevPlayers = null;
                 players     = p;
@@ -122,8 +122,8 @@ namespace Vvr.Session.World
                 if (x == null) return 1;
                 if (y == null) return -1;
 
-                short xx = (short)x.Data.Type,
-                    yy   = (short)y.Data.Type;
+                short xx = (short)x.Type,
+                    yy   = (short)y.Type;
 
                 if (xx < yy) return -1;
                 return xx > yy ? 1 : 0;
@@ -132,10 +132,10 @@ namespace Vvr.Session.World
 
         public struct Result
         {
-            public readonly IEnumerable<CachedActor> playerActors;
-            public readonly IEnumerable<CachedActor> enemyActors;
+            public readonly IEnumerable<IStageActor> playerActors;
+            public readonly IEnumerable<IStageActor> enemyActors;
 
-            public Result(IEnumerable<CachedActor> p, IEnumerable<CachedActor> e)
+            public Result(IEnumerable<IStageActor> p, IEnumerable<IStageActor> e)
             {
                 playerActors = p;
                 enemyActors  = e;
@@ -225,7 +225,7 @@ namespace Vvr.Session.World
                     Assert.IsNotNull(Data.prevPlayers);
                     foreach (var prevActor in Data.prevPlayers)
                     {
-                        IStageActor runtimeActor = m_StageActorProvider.Create(prevActor.Owner, prevActor.Data);
+                        IStageActor runtimeActor = m_StageActorProvider.Create(prevActor.Owner, prevActor);
 
                         if (playerIndex != 0)
                         {
@@ -244,10 +244,10 @@ namespace Vvr.Session.World
                 {
                     foreach (var data in Data.players)
                     {
-                        IActor target = m_ActorProvider.Resolve(data.Data).CreateInstance();
-                        target.Initialize(Owner, data.Data);
+                        IActor target = m_ActorProvider.Resolve(data).CreateInstance();
+                        target.Initialize(Owner, data);
 
-                        IStageActor runtimeActor = m_StageActorProvider.Create(target, data.Data);
+                        IStageActor runtimeActor = m_StageActorProvider.Create(target, data);
 
                         if (playerIndex != 0)
                         {
@@ -263,10 +263,9 @@ namespace Vvr.Session.World
                     }
                 }
             }
-            for (int i = 0; i < Data.actors.Length; i++)
+            foreach (var data in Data.actors)
             {
-                ActorSheet.Row data   = Data.actors[i];
-                IActor         target = m_ActorProvider.Resolve(data).CreateInstance();
+                IActor target = m_ActorProvider.Resolve(data).CreateInstance();
                 target.Initialize(m_EnemyId, data);
 
                 IStageActor runtimeActor = m_StageActorProvider.Create(target, data);
@@ -376,8 +375,8 @@ namespace Vvr.Session.World
             if (!m_InputControlProvider.CanControl(runtimeActor.Owner))
             {
                 "[Stage] AI control".ToLog();
-                int count = runtimeActor.Data.Skills.Count;
-                var skill = runtimeActor.Data.Skills[UnityEngine.Random.Range(0, count)].Ref;
+                int count = runtimeActor.Skills.Count;
+                var skill = runtimeActor.Skills[UnityEngine.Random.Range(0, count)].Ref;
 
                 await runtimeActor.Owner.Skill.Queue(skill);
             }
@@ -444,23 +443,23 @@ namespace Vvr.Session.World
             // ObjectObserver<ActorList>.ChangedEvent(m_Timeline);
         }
 
-        private IEnumerable<CachedActor> GetCurrentPlayerActors()
+        private IEnumerable<IStageActor> GetCurrentPlayerActors()
         {
             for (int i = 0; i < m_PlayerField.Count; i++)
             {
-                yield return new CachedActor(m_PlayerField[i]);
+                yield return (m_PlayerField[i]);
             }
             for (int i = 0; i < m_HandActors.Count; i++)
             {
-                yield return new CachedActor(m_HandActors[i]);
+                yield return (m_HandActors[i]);
             }
         }
 
-        private IEnumerable<CachedActor> GetCurrentEnemyActors()
+        private IEnumerable<IStageActor> GetCurrentEnemyActors()
         {
             for (int i = 0; i < m_EnemyField.Count; i++)
             {
-                yield return new CachedActor(m_EnemyField[i]);
+                yield return (m_EnemyField[i]);
             }
         }
 

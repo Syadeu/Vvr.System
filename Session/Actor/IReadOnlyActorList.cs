@@ -23,8 +23,8 @@ using System.Collections.Generic;
 
 namespace Vvr.Session.Actor
 {
-    public interface IReadOnlyActorList : IReadOnlyList<CachedActor>
+    public interface IReadOnlyActorList : IReadOnlyList<IStageActor>
     {
-        bool TryGetActor(string instanceId, out CachedActor actor);
+        bool TryGetActor(string instanceId, out IStageActor actor);
     }
 }

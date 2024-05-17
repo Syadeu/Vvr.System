@@ -22,6 +22,7 @@
 using JetBrains.Annotations;
 using Vvr.Controller.Actor;
 using Vvr.Provider;
+using Vvr.Session.Actor;
 
 namespace Vvr.Session.Provider
 {
@@ -49,14 +50,14 @@ namespace Vvr.Session.Provider
         /// -1 is returned.
         /// </returns>
         [PublicAPI]
-        int IndexOf(IActor actor);
+        int IndexOf(IStageActor actor);
 
         /// <summary>
         /// Adds the specified actor to the timeline queue.
         /// </summary>
         /// <param name="actor">The actor to add to the timeline queue.</param>
         [PublicAPI]
-        void   Enqueue(IActor  actor);
+        void   Enqueue(IStageActor actor);
 
         /// <summary>
         /// Inserts an actor after the specified index in the timeline queue.
@@ -64,7 +65,7 @@ namespace Vvr.Session.Provider
         /// <param name="index">The index after which to insert the actor.</param>
         /// <param name="actor">The actor to insert.</param>
         [PublicAPI]
-        void   InsertAfter(int index, IActor actor);
+        void   InsertAfter(int index, IStageActor actor);
 
         /// <summary>
         /// Removes and returns the first actor in the timeline queue.
@@ -73,7 +74,7 @@ namespace Vvr.Session.Provider
         /// The first actor in the timeline queue.
         /// </returns>
         [PublicAPI]
-        IActor Dequeue();
+        IStageActor Dequeue();
 
         /// <summary>
         /// Determines whether the given actor is the starting actor in the timeline queue.
@@ -83,21 +84,21 @@ namespace Vvr.Session.Provider
         /// <c>true</c> if the given actor is the starting actor in the timeline queue; otherwise, <c>false</c>.
         /// </returns>
         [PublicAPI]
-        bool   IsStartFrom(IActor actor);
+        bool   IsStartFrom(IStageActor actor);
 
         /// <summary>
         /// Sets the starting point of the timeline queue to the specified actor.
         /// </summary>
         /// <param name="actor">The actor to set as the starting point of the timeline queue.</param>
         [PublicAPI]
-        void   StartFrom(IActor   actor);
+        void   StartFrom(IStageActor actor);
 
         /// <summary>
         /// Removes the specified actor from the timeline queue.
         /// </summary>
         /// <param name="actor">The actor to be removed from the queue.</param>
         [PublicAPI]
-        void   Remove(IActor      actor);
+        void   Remove(IStageActor      actor);
 
         /// <summary>
         /// Clears the timeline queue, removing all actors from it.

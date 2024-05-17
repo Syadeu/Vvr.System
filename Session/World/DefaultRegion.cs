@@ -21,6 +21,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Cysharp.Threading.Tasks;
 using Vvr.Controller.Condition;
 using Vvr.Controller.Provider;
@@ -33,18 +34,12 @@ namespace Vvr.Session.World
 {
     [ParentSession(typeof(DefaultMap))]
     public class DefaultRegion : ParentSession<DefaultRegion.SessionData>,
-        IConnector<IPlayerActorProvider>
+        IConnector<IPlayerActorProvider>,
+        // TODO: Temp
+        IConnector<IStageDataProvider>
     {
         public struct SessionData : ISessionData
         {
-            public readonly StageSheet sheet;
-            public readonly string     startStageId;
-
-            public SessionData(StageSheet t, string ta)
-            {
-                sheet        = t;
-                startStageId = ta;
-            }
         }
 
         private IPlayerActorProvider m_PlayerActorProvider;
@@ -58,16 +53,16 @@ namespace Vvr.Session.World
             await base.OnInitialize(session, data);
         }
 
-        public async UniTask Start(StageSheet sheet)
+        public async UniTask Start()
         {
             using var trigger = ConditionTrigger.Push(this, DisplayName);
             // StageSheet.Row startStage = Data.sheet[Data.startStageId];
-            StageSheet.Row startStage = sheet[0];
+            var startStage = m_StageProvider.First().Value;
 
-            StageSheet.Row             currentStage = startStage;
-            LinkedList<StageSheet.Row> list         = new();
+            var             currentStage = startStage;
+            LinkedList<IStageData> list         = new();
 
-            CachedActor[] aliveActors = Array.Empty<CachedActor>();
+            IStageActor[] aliveActors = Array.Empty<IStageActor>();
             do
             {
                 list.AddLast(currentStage);
@@ -90,12 +85,24 @@ namespace Vvr.Session.World
                     }
                 }
 
-                currentStage = currentStage.NextStage.Ref;
+                currentStage = currentStage.NextStage;
                 await UniTask.Yield();
             } while (currentStage != null);
         }
 
         void IConnector<IPlayerActorProvider>.Connect(IPlayerActorProvider    t) => m_PlayerActorProvider = t;
         void IConnector<IPlayerActorProvider>.Disconnect(IPlayerActorProvider t) => m_PlayerActorProvider = null;
+
+        private IStageDataProvider m_StageProvider;
+
+        void IConnector<IStageDataProvider>.Connect(IStageDataProvider t)
+        {
+            m_StageProvider = t;
+        }
+
+        void IConnector<IStageDataProvider>.Disconnect(IStageDataProvider t)
+        {
+            m_StageProvider = null;
+        }
     }
 }

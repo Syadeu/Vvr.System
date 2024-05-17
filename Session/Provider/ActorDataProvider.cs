@@ -27,6 +27,7 @@ using Vvr.Provider;
 
 namespace Vvr.Session.Provider
 {
+    [Obsolete("", true)]
     internal sealed class ActorDataProvider : IActorDataProvider, IDisposable
     {
         private readonly ActorSheet m_Sheet;
