@@ -105,6 +105,15 @@ namespace Vvr.Session
             {
                 Owner.ConditionResolver.Disconnect(t);
             }
+
+            void IConnector<IEventViewProvider>.Connect(IEventViewProvider t)
+            {
+                Owner.Skill.Connect(t);
+            }
+            void IConnector<IEventViewProvider>.Disconnect(IEventViewProvider t)
+            {
+                Owner.Skill.Disconnect(t);
+            }
         }
 
         private readonly List<StageActor> m_Created = new();
@@ -129,6 +138,7 @@ namespace Vvr.Session
             IActor     item   = result.Owner;
             Connect<IAssetProvider>(result)
                 .Connect<ITargetProvider>(result)
+                .Connect<IEventViewProvider>(result)
                 .Connect<IActorDataProvider>(result)
                 .Connect<IEventConditionProvider>(result)
                 .Connect<IStateConditionProvider>(result);
@@ -151,6 +161,7 @@ namespace Vvr.Session
         {
             Disconnect<IAssetProvider>(item)
                 .Disconnect<ITargetProvider>(item)
+                .Disconnect<IEventViewProvider>(item)
                 .Disconnect<IActorDataProvider>(item)
                 .Disconnect<IEventConditionProvider>(item)
                 .Disconnect<IStateConditionProvider>(item);

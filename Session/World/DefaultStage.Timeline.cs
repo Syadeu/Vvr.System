@@ -80,8 +80,7 @@ namespace Vvr.Session.World
             Assert.IsFalse(field.Contains(actor));
             field.Add(actor, ActorPositionComparer.Static);
 
-            var viewProvider = await m_ViewProvider;
-            var view         = await viewProvider.Resolve(actor.Owner);
+            var view = await m_ViewProvider.CardViewProvider.Resolve(actor.Owner);
 
             bool    isFront = ResolvePosition(field, actor);
             Vector3 pos     = view.localPosition;
@@ -127,8 +126,7 @@ namespace Vvr.Session.World
             await RemoveFromTimeline(actor);
             await RemoveFromQueue(actor);
 
-            var viewProvider = await m_ViewProvider;
-            await viewProvider.Release(actor.Owner);
+            await m_ViewProvider.CardViewProvider.Release(actor.Owner);
             actor.Owner.Release();
 
             UpdateTimeline();

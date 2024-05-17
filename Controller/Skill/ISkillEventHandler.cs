@@ -15,27 +15,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// File created : 2024, 05, 10 20:05
+// File created : 2024, 05, 17 23:05
 
 #endregion
 
-using Vvr.Controller.Actor;
-using Vvr.Controller.Provider;
-using Vvr.Model;
-using Vvr.Provider;
+using Cysharp.Threading.Tasks;
+using UnityEngine;
 
-namespace Vvr.Session.Actor
+namespace Vvr.Controller.Skill
 {
-    public interface IStageActor :
-        IConnector<IAssetProvider>,
-        IConnector<IEventViewProvider>,
-        IConnector<ITargetProvider>,
-        IConnector<IActorDataProvider>,
-        IConnector<IEventConditionProvider>,
-        IConnector<IStateConditionProvider>
+    public interface ISkillEventHandler
     {
-        IActor     Owner           { get; }
-        IActorData Data            { get; }
-        bool       TagOutRequested { get; set; }
+        UniTask OnSkillStart(ISkillEffectEmitter effectEmitter);
+        UniTask OnSkillCasting(ISkillEffectEmitter effectEmitter);
+        UniTask OnSkillEnd(Transform target, ISkillEffectEmitter effectEmitter);
     }
 }

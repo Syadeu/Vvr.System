@@ -24,6 +24,9 @@ using Vvr.Provider;
 
 namespace Vvr.Controller.Asset
 {
+    /// <summary>
+    /// Local asset path container
+    /// </summary>
     public interface IAsset : IConnector<IAssetProvider>
     {
         object this[AssetType t] { get; }

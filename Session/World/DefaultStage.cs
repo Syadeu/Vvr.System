@@ -42,6 +42,7 @@ namespace Vvr.Session.World
     [ParentSession(typeof(DefaultFloor), true), Preserve]
     public partial class DefaultStage : ChildSession<DefaultStage.SessionData>,
         IStageProvider,
+        IConnector<IViewRegistryProvider>,
         IConnector<IActorProvider>,
         IConnector<IStageActorProvider>,
         IConnector<IInputControlProvider>
@@ -142,10 +143,10 @@ namespace Vvr.Session.World
             }
         }
 
-        private IActorProvider                m_ActorProvider;
-        private IStageActorProvider           m_StageActorProvider;
-        private IInputControlProvider         m_InputControlProvider;
-        private AsyncLazy<IEventViewProvider> m_ViewProvider;
+        private IActorProvider        m_ActorProvider;
+        private IStageActorProvider   m_StageActorProvider;
+        private IInputControlProvider m_InputControlProvider;
+        private IViewRegistryProvider m_ViewProvider;
 
         private AssetController m_StageAssetController;
 
@@ -174,8 +175,6 @@ namespace Vvr.Session.World
                 .Register<IGameMethodProvider>(this)
                 ;
 
-            // TODO: remove outside view provider
-            m_ViewProvider         = Vvr.Provider.Provider.Static.GetLazyAsync<IEventViewProvider>();
             m_StageAssetController      = new(data.stage.Assets);
 
             // Connects stage asset to asset provider.
@@ -202,8 +201,7 @@ namespace Vvr.Session.World
 
             Disconnect<IAssetProvider>(m_StageAssetController);
 
-            m_ViewProvider         = null;
-            m_StageAssetController      = null;
+            m_StageAssetController = null;
 
             m_HandActors.Clear();
             m_PlayerField.Clear();
@@ -217,9 +215,6 @@ namespace Vvr.Session.World
         public async UniTask<Result> Start()
         {
             $"Stage start: {Data.stage.Id}".ToLog();
-            var viewProvider = await m_ViewProvider;
-
-            await viewProvider.Resolve(this);
 
             // int time = 0;
             {
@@ -234,7 +229,7 @@ namespace Vvr.Session.World
                         if (playerIndex != 0)
                         {
                             m_HandActors.Add(runtimeActor);
-                            await viewProvider.Resolve(prevActor.Owner);
+                            await m_ViewProvider.CardViewProvider.Resolve(prevActor.Owner);
                         }
                         else
                         {
@@ -256,7 +251,7 @@ namespace Vvr.Session.World
                         if (playerIndex != 0)
                         {
                             m_HandActors.Add(runtimeActor);
-                            await viewProvider.Resolve(target);
+                            await m_ViewProvider.CardViewProvider.Resolve(target);
                         }
                         else
                         {
@@ -490,7 +485,9 @@ namespace Vvr.Session.World
             m_InputControlProvider = null;
         }
 
-        public void Connect(IStageActorProvider    t) => m_StageActorProvider = t;
-        public void Disconnect(IStageActorProvider t) => m_StageActorProvider = null;
+        void IConnector<IStageActorProvider>.  Connect(IStageActorProvider      t) => m_StageActorProvider = t;
+        void IConnector<IStageActorProvider>.  Disconnect(IStageActorProvider   t) => m_StageActorProvider = null;
+        void IConnector<IViewRegistryProvider>.Connect(IViewRegistryProvider    t) => m_ViewProvider = t;
+        void IConnector<IViewRegistryProvider>.Disconnect(IViewRegistryProvider t) => m_ViewProvider = null;
     }
 }

@@ -33,14 +33,19 @@ using Vvr.Session.Provider;
 namespace Vvr.Session.World
 {
     [Preserve]
-    public partial class DefaultWorld : RootSession, IWorldSession
+    public partial class DefaultWorld : RootSession, IWorldSession,
+        IConnector<IViewRegistryProvider>
     {
-        public DefaultMap     DefaultMap { get; private set; }
+        private IViewRegistryProvider m_ViewRegistryProvider;
 
         public override string DisplayName => nameof(DefaultWorld);
 
+        public DefaultMap DefaultMap { get; private set; }
+
         protected override async UniTask OnInitialize(IParentSession session, RootData data)
         {
+            Vvr.Provider.Provider.Static.Connect<IViewRegistryProvider>(this);
+
             await CreateSession<GameDataSession>(default);
             await CreateSession<UserSession>(default);
 
@@ -52,9 +57,21 @@ namespace Vvr.Session.World
         }
         protected override UniTask OnReserve()
         {
+            Vvr.Provider.Provider.Static.Disconnect<IViewRegistryProvider>(this);
+
             Unregister<IActorProvider>();
 
             return base.OnReserve();
         }
+
+        protected override UniTask OnCreateSession(IChildSession session)
+        {
+            session.Register(m_ViewRegistryProvider);
+
+            return base.OnCreateSession(session);
+        }
+
+        void IConnector<IViewRegistryProvider>.Connect(IViewRegistryProvider    t) => m_ViewRegistryProvider = t;
+        void IConnector<IViewRegistryProvider>.Disconnect(IViewRegistryProvider t) => m_ViewRegistryProvider = null;
     }
 }

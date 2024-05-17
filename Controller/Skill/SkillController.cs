@@ -59,6 +59,7 @@ namespace Vvr.Controller.Skill
             public SkillSheet.Position Position => skill.Definition.Position;
         }
 
+        private IEventViewProvider m_ViewProvider;
         private IActorDataProvider m_DataProvider;
         private ITargetProvider    m_TargetProvider;
 
@@ -132,14 +133,21 @@ namespace Vvr.Controller.Skill
 
             $"[Skill:{Owner.DisplayName}:{Owner.GetInstanceID()}] Skill start {value.skill.Id}".ToLog();
 
+
             await trigger.Execute(Model.Condition.OnSkillStart, value.skill.Id);
 
             #region Warmup
 
-            if (value.skill.Presentation.SelfEffect.IsValid())
+            var skillEventHandle = (await m_ViewProvider.Resolve(Owner)).GetComponent<ISkillEventHandler>();
+            if (skillEventHandle != null &&
+                value.skill.Presentation.SelfEffect.IsValid())
             {
-                IEventViewProvider viewProvider = await Vvr.Provider.Provider.Static.GetAsync<IEventViewProvider>();
-                Transform          view         = await viewProvider.Resolve(Owner);
+                SkillEffectEmitter emitter = new SkillEffectEmitter(value.skill.Presentation.SelfEffect);
+                await skillEventHandle.OnSkillStart(emitter);
+            }
+            else if (value.skill.Presentation.SelfEffect.IsValid())
+            {
+                Transform view = await m_ViewProvider.Resolve(Owner);
 
                 var effectPool = GameObjectPool.Get(value.skill.Presentation.SelfEffect);
                 var effect = await effectPool.SpawnEffect(
@@ -192,14 +200,28 @@ namespace Vvr.Controller.Skill
             Assert.IsFalse(target.Disposed);
             Assert.IsTrue(Owner.ConditionResolver[Model.Condition.IsActorTurn](null));
 
-            // Cache effect position
-            // because target can be destroyed during this skill execution (ex. actor is dead)
-            IEventViewProvider viewProvider = await Vvr.Provider.Provider.Static.GetAsync<IEventViewProvider>();
-            Vector3            viewPosition;
+            #region Warmup
+
+            Transform targetView = await m_ViewProvider.Resolve(target);
+            var skillEventHandle = (await m_ViewProvider.Resolve(Owner)).GetComponent<ISkillEventHandler>();
+            if (skillEventHandle != null &&
+                value.skill.Presentation.TargetEffect.IsValid())
             {
-                Transform view = await viewProvider.Resolve(target);
-                viewPosition = view.position;
+                SkillEffectEmitter emitter = new SkillEffectEmitter(value.skill.Presentation.TargetEffect);
+                await skillEventHandle.OnSkillEnd(targetView, emitter);
             }
+            else if (value.skill.Presentation.TargetEffect.IsValid())
+            {
+                var effectPool = GameObjectPool.Get(value.skill.Presentation.TargetEffect);
+                var effect = await effectPool.SpawnEffect(
+                    targetView.position, Quaternion.identity);
+                while (!effect.Reserved)
+                {
+                    await UniTask.Yield();
+                }
+            }
+
+            #endregion
 
             #region Execution body
 
@@ -233,19 +255,6 @@ namespace Vvr.Controller.Skill
             }
 
             #endregion
-
-            if (value.skill.Presentation.TargetEffect.IsValid())
-            {
-                var effectPool = GameObjectPool.Get(value.skill.Presentation.TargetEffect);
-                var effect = await effectPool.SpawnEffect(
-                    viewPosition, Quaternion.identity);
-                while (!effect.Reserved)
-                {
-                    await UniTask.Yield();
-                }
-
-                // "play hit eff".ToLog();
-            }
 
             await trigger.Execute(Model.Condition.OnSkillEnd, value.skill.Id);
 
@@ -357,6 +366,19 @@ namespace Vvr.Controller.Skill
 
             Assert.IsTrue(ReferenceEquals(m_DataProvider, t));
             m_DataProvider = null;
+        }
+
+        void IConnector<IEventViewProvider>.Connect(IEventViewProvider t)
+        {
+            if (Disposed)
+                throw new ObjectDisposedException(nameof(SkillController));
+            m_ViewProvider = t;
+        }
+        void IConnector<IEventViewProvider>.Disconnect(IEventViewProvider t)
+        {
+            if (Disposed)
+                throw new ObjectDisposedException(nameof(SkillController));
+            m_ViewProvider = null;
         }
     }
 }

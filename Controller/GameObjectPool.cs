@@ -19,6 +19,7 @@
 
 #endregion
 
+using System;
 using System.Collections.Generic;
 using Cathei.BakingSheet.Unity;
 using Cysharp.Threading.Tasks;
@@ -32,6 +33,7 @@ namespace Vvr.Controller
     /// <summary>
     /// Represents a pool of GameObject instances that can be spawned and reserved.
     /// </summary>
+    [Obsolete]
     internal sealed class GameObjectPool : MonoBehaviour
     {
         [DisallowMultipleComponent]

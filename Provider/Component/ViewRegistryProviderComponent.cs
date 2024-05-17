@@ -15,27 +15,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// File created : 2024, 05, 10 20:05
+// File created : 2024, 05, 18 00:05
 
 #endregion
 
-using Vvr.Controller.Actor;
-using Vvr.Controller.Provider;
-using Vvr.Model;
-using Vvr.Provider;
+using System;
+using Sirenix.OdinInspector;
+using UnityEngine;
 
-namespace Vvr.Session.Actor
+namespace Vvr.Provider
 {
-    public interface IStageActor :
-        IConnector<IAssetProvider>,
-        IConnector<IEventViewProvider>,
-        IConnector<ITargetProvider>,
-        IConnector<IActorDataProvider>,
-        IConnector<IEventConditionProvider>,
-        IConnector<IStateConditionProvider>
+    public sealed class ViewRegistryProviderComponent : MonoBehaviour, IViewRegistryProvider
     {
-        IActor     Owner           { get; }
-        IActorData Data            { get; }
-        bool       TagOutRequested { get; set; }
+        [SerializeField, Required] private EventViewProviderComponent m_CardViewProvider;
+
+        IEventViewProvider IViewRegistryProvider.CardViewProvider => m_CardViewProvider;
+
+        private void Awake()
+        {
+            Provider.Static.Register<IViewRegistryProvider>(this);
+        }
+        private void OnDestroy()
+        {
+            Provider.Static.Unregister<IViewRegistryProvider>(this);
+        }
     }
 }

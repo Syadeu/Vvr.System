@@ -24,6 +24,10 @@ using UnityEngine;
 
 namespace Vvr.Provider
 {
+    /// <summary>
+    /// View transform provider for all IEventTargets 
+    /// </summary>
+    [LocalProvider]
     public interface IEventViewProvider : IProvider
     {
         bool               Has(IEventTarget     owner);

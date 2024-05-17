@@ -24,6 +24,9 @@ using Vvr.Provider;
 
 namespace Vvr.Controller.Asset
 {
+    /// <summary>
+    /// Local asset path container
+    /// </summary>
     public class AssetController : IAsset
     {
         private readonly IReadOnlyDictionary<AssetType, AddressablePath> m_AssetsPath;

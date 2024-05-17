@@ -322,19 +322,20 @@ namespace Vvr.Session
 
             $"[Session: {Type.FullName}] Connectors {ConnectorTypes.Length}".ToLog();
             m_ConnectedProviders[pType] = provider;
-            for (var i = 0; i < ConnectorTypes.Length; i++)
             {
-                var connectorType = ConnectorTypes[i];
-                // $"[Session:{Type.FullName}] Found {connectorType.FullName}".ToLog();
-                if (connectorType.GetGenericArguments()[0] != pType)
+                foreach (var connectorType in ConnectorTypes)
                 {
-                    // $"{connectorType.GetGenericArguments()[0].AssemblyQualifiedName} != {pType.AssemblyQualifiedName}"
+                    // $"[Session:{Type.FullName}] Found {connectorType.FullName}".ToLog();
+                    if (connectorType.GetGenericArguments()[0] != pType)
+                    {
+                        // $"{connectorType.GetGenericArguments()[0].AssemblyQualifiedName} != {pType.AssemblyQualifiedName}"
                         // .ToLog();
-                    continue;
-                }
+                        continue;
+                    }
 
-                ConnectorReflectionUtils.Connect(connectorType, this, provider);
-                break;
+                    ConnectorReflectionUtils.Connect(connectorType, this, provider);
+                    break;
+                }
             }
 
             ConnectObservers(pType, provider);

@@ -84,7 +84,7 @@ namespace Vvr.Model
             [UsedImplicitly] public AddressablePath TargetEffect { get; private set; }
         }
 
-        public sealed class Row : SheetRow
+        public sealed class Row : SheetRow, ISkillData
         {
             [UsedImplicitly] public Reference   NextLevel  { get; private set; }
 
@@ -99,6 +99,11 @@ namespace Vvr.Model
         {
             Name = "Skills";
         }
+    }
+
+    public interface ISkillData
+    {
+        string Id { get; }
     }
 
     public static class SkillSheetExtensions

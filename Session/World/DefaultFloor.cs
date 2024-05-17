@@ -23,6 +23,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Cysharp.Threading.Tasks;
+using UnityEngine.Assertions;
 using Vvr.Controller.Condition;
 using Vvr.Model;
 using Vvr.Provider;
@@ -33,7 +34,7 @@ namespace Vvr.Session.World
 {
  	[ParentSession(typeof(DefaultRegion), true)]
     public partial class DefaultFloor : ParentSession<DefaultFloor.SessionData>,
-        IConnector<IActorProvider>
+        IConnector<IViewRegistryProvider>
     {
         public struct SessionData : ISessionData
         {
@@ -57,16 +58,13 @@ namespace Vvr.Session.World
             }
         }
 
-        private DefaultStage            m_CurrentStage;
-
-        private AsyncLazy<IEventViewProvider> m_ViewProvider;
+        private DefaultStage          m_CurrentStage;
+        private IViewRegistryProvider m_ViewRegistryProvider;
 
         public override string DisplayName => nameof(DefaultFloor);
 
         protected override async UniTask OnInitialize(IParentSession session, SessionData data)
         {
-            m_ViewProvider = Vvr.Provider.Provider.Static.GetLazyAsync<IEventViewProvider>();
-
             // We dont need to manually close these sessions
             // When this session close, child session also closed.
             var timelineSession = await CreateSession<TimelineQueueSession>(default);
@@ -83,8 +81,6 @@ namespace Vvr.Session.World
 
         protected override UniTask OnReserve()
         {
-            m_ViewProvider = null;
-
             return base.OnReserve();
         }
 
@@ -124,10 +120,9 @@ namespace Vvr.Session.World
                     stageResult = await m_CurrentStage.Start();
                     await trigger.Execute(Model.Condition.OnStageEnded, sessionData.stage.Id);
 
-                    var viewProvider = await m_ViewProvider;
                     foreach (var enemy in stageResult.enemyActors)
                     {
-                        viewProvider.Release(enemy.Owner);
+                        m_ViewRegistryProvider.CardViewProvider.Release(enemy.Owner);
                         enemy.Owner.Release();
                     }
 
@@ -158,11 +153,16 @@ namespace Vvr.Session.World
             return floorResult;
         }
 
-        void IConnector<IActorProvider>.Connect(IActorProvider t)
+        protected override UniTask OnCreateSession(IChildSession session)
         {
+            Assert.IsNotNull(m_ViewRegistryProvider);
+
+            session.Register<IEventViewProvider>(m_ViewRegistryProvider.CardViewProvider);
+
+            return base.OnCreateSession(session);
         }
-        void IConnector<IActorProvider>.Disconnect(IActorProvider t)
-        {
-        }
+
+        public void Connect(IViewRegistryProvider    t) => m_ViewRegistryProvider = t;
+        public void Disconnect(IViewRegistryProvider t) => m_ViewRegistryProvider = null;
     }
 }
