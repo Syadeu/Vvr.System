@@ -19,11 +19,15 @@
 
 #endregion
 
+using System;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
+using UnityEngine;
 using UnityEngine.AddressableAssets;
+using UnityEngine.Assertions;
 using UnityEngine.ResourceManagement.AsyncOperations;
+using UnityEngine.ResourceManagement.ResourceLocations;
 using Vvr.Provider;
 using Vvr.Session.Provider;
 
@@ -45,15 +49,38 @@ namespace Vvr.Session
     {
         public struct SessionData : ISessionData
         {
+            public readonly string[] preloadGroups;
+
+            public SessionData(params string[] preloadGroups)
+            {
+                this.preloadGroups = preloadGroups;
+            }
         }
 
-        private abstract class ImmutableObject : IImmutableObject
+        private abstract class ImmutableObject : IImmutableObject, IDisposable
         {
-            public UnityEngine.Object Object { get; }
+            private UnityEngine.Object m_Object;
+            private bool               m_Disposed;
+
+            public UnityEngine.Object Object
+            {
+                get
+                {
+                    if (m_Disposed)
+                        throw new ObjectDisposedException(nameof(IImmutableObject));
+                    return m_Object;
+                }
+            }
 
             protected ImmutableObject(UnityEngine.Object o)
             {
-                Object = o;
+                m_Object = o;
+            }
+
+            public void Dispose()
+            {
+                m_Object   = null;
+                m_Disposed = true;
             }
         }
         private sealed class ImmutableObject<T> : ImmutableObject, IImmutableObject<T>
@@ -71,8 +98,74 @@ namespace Vvr.Session
         private readonly LinkedList<AsyncOperationHandle>  m_Handles       = new();
         private readonly Dictionary<Hash, ImmutableObject> m_LoadedObjects = new();
 
+        private IList<IResourceLocation> m_PreloadedLocations;
+
+        protected override async UniTask OnInitialize(IParentSession session, SessionData data)
+        {
+            await base.OnInitialize(session, data);
+
+            if (data.preloadGroups?.Length > 0)
+            {
+                await PreloadGroup(data.preloadGroups);
+            }
+        }
+
+        private async UniTask PreloadGroup(params string[] preloadGroups)
+        {
+            Assert.IsTrue(preloadGroups.Length > 0);
+
+            var handle =
+                Addressables.LoadResourceLocationsAsync(preloadGroups);
+            await handle.ToUniTask()
+                    .SuppressCancellationThrow()
+                    .AttachExternalCancellation(ReserveToken)
+                ;
+            m_Handles.AddLast(handle);
+            m_PreloadedLocations = handle.Result;
+
+            UniTask<(bool canceled, UnityEngine.Object obj)>[] loadTasks =
+                new UniTask<(bool, UnityEngine.Object)>[m_PreloadedLocations.Count];
+
+            int i = 0;
+            foreach (IResourceLocation location in m_PreloadedLocations)
+            {
+                var loadhandle = Addressables.LoadAssetAsync<UnityEngine.Object>(location);
+                var loadTask = loadhandle.ToUniTask()
+                    .SuppressCancellationThrow()
+                    .AttachExternalCancellation(ReserveToken);
+                loadTasks[i++] = loadTask;
+
+                m_Handles.AddLast(loadhandle);
+            }
+
+            await UniTask.WhenAll(loadTasks);
+
+            i = 0;
+            foreach (var item in loadTasks)
+            {
+                var result = await item;
+
+                IResourceLocation location = m_PreloadedLocations[i++];
+
+                var r = new ImmutableObject<UnityEngine.Object>(result.obj);
+
+                Hash hash = new Hash(
+                    FNV1a32.Calculate(location.PrimaryKey)
+                    ^ FNV1a32.Calculate(location.ResourceType.AssemblyQualifiedName)
+                    ^ 367
+                );
+                m_LoadedObjects[hash] = r;
+            }
+        }
+
         protected override UniTask OnReserve()
         {
+            m_PreloadedLocations = null;
+
+            foreach (var item in m_LoadedObjects.Values)
+            {
+                item.Dispose();
+            }
             m_LoadedObjects.Clear();
             foreach (var item in m_Handles)
             {
@@ -84,9 +177,22 @@ namespace Vvr.Session
         public async UniTask<IImmutableObject<TObject>> LoadAsync<TObject>(object key)
             where TObject : UnityEngine.Object
         {
-            Hash hash = new Hash(key.ToString());
+            Type type = VvrTypeHelper.TypeOf<TObject>.Type;
+            Hash hash = new Hash(
+                FNV1a32.Calculate(key.ToString())
+                ^ FNV1a32.Calculate(type.AssemblyQualifiedName)
+                ^ 367
+                );
             if (m_LoadedObjects.TryGetValue(hash, out var existingValue))
+            {
+                // Because preloaded assets are UnityEngine.Object type.
+                if (existingValue is not ImmutableObject<TObject>)
+                {
+                    existingValue         = new ImmutableObject<TObject>(existingValue.Object);
+                    m_LoadedObjects[hash] = existingValue;
+                }
                 return (ImmutableObject<TObject>)existingValue;
+            }
 
             AsyncOperationHandle<TObject> handle = Addressables.LoadAssetAsync<TObject>(key);
             m_Handles.AddLast(handle);
