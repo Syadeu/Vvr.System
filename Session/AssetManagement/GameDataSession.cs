@@ -19,18 +19,25 @@
 
 #endregion
 
+using System;
+using System.Collections.Generic;
+using Cathei.BakingSheet.Unity;
 using Cysharp.Threading.Tasks;
+using JetBrains.Annotations;
+using Vvr.Model;
 using Vvr.Provider;
-using Vvr.Session.World;
 
 namespace Vvr.Session
 {
-    public class GameDataSession : ParentSession<GameDataSession.SessionData>
+    [UsedImplicitly]
+    public sealed class GameDataSession : ParentSession<GameDataSession.SessionData>
     {
         public struct SessionData : ISessionData
         {
 
         }
+
+        private GameDataSheets m_SheetContainer;
 
         public override string DisplayName => nameof(GameDataSession);
 
@@ -40,9 +47,80 @@ namespace Vvr.Session
 
             var assetSession = await CreateSession<AssetSession>(
                 new AssetSession.SessionData(
-                    "Game Data Group"
+                    "GameData"
                     ));
             Register<IAssetProvider>(assetSession);
+
+            m_SheetContainer = new GameDataSheets(UnityLogger.Default);
+            var dataContainer
+                = await assetSession.LoadAsync<SheetContainerScriptableObject>("Data/_Container.asset");
+
+            ScriptableObjectSheetImporter imp = new(dataContainer.Object);
+            await m_SheetContainer.Bake(imp).AsUniTask();
+
+            var gameConfigSession = await CreateSession<GameConfigSession>(
+                new GameConfigSession.SessionData(m_SheetContainer.GameConfigTable));
+            Parent.Register<IGameConfigProvider>(gameConfigSession);
+        }
+    }
+
+    [UsedImplicitly]
+    [ParentSession(typeof(GameDataSession))]
+    public class GameConfigSession : ChildSession<GameConfigSession.SessionData>,
+        IGameConfigProvider
+    {
+        public struct SessionData : ISessionData
+        {
+            public readonly GameConfigSheet sheet;
+
+            public SessionData(GameConfigSheet s)
+            {
+                sheet = s;
+            }
+        }
+
+        private readonly Dictionary<MapType, LinkedList<GameConfigSheet.Row>> m_Configs = new();
+
+        public override string DisplayName => nameof(GameConfigSession);
+
+        public IEnumerable<GameConfigSheet.Row> this[MapType t]
+        {
+            get
+            {
+                if (!m_Configs.TryGetValue(t, out var list))
+                {
+                    return Array.Empty<GameConfigSheet.Row>();
+                }
+
+                return list;
+            }
+        }
+
+        protected override UniTask OnInitialize(IParentSession session, SessionData data)
+        {
+            foreach (var item in data.sheet)
+            {
+                if (!m_Configs.TryGetValue(item.Lifecycle.Map, out var list))
+                {
+                    list                          = new();
+                    m_Configs[item.Lifecycle.Map] = list;
+                }
+
+                list.AddLast(item);
+            }
+
+            return base.OnInitialize(session, data);
+        }
+
+        protected override UniTask OnReserve()
+        {
+            foreach (var list in m_Configs.Values)
+            {
+                list.Clear();
+            }
+
+            m_Configs.Clear();
+            return base.OnReserve();
         }
     }
 }

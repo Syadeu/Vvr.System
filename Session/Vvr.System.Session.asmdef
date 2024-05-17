@@ -16,6 +16,8 @@
 
     "BakingSheet",
 
-    "Vvr.UI"
+    "Vvr.UI",
+
+    "BakingSheet.ScriptableObject"
   ]
 }

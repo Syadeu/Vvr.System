@@ -20,7 +20,9 @@
 #endregion
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using Cathei.BakingSheet.Unity;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using UnityEngine;
@@ -115,7 +117,10 @@ namespace Vvr.Session
             Assert.IsTrue(preloadGroups.Length > 0);
 
             var handle =
-                Addressables.LoadResourceLocationsAsync(preloadGroups);
+                Addressables.LoadResourceLocationsAsync(
+                    (IEnumerable)preloadGroups,
+                    Addressables.MergeMode.Union,
+                    typeof(UnityEngine.Object));
             await handle.ToUniTask()
                     .SuppressCancellationThrow()
                     .AttachExternalCancellation(ReserveToken)

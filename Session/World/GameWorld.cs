@@ -31,7 +31,6 @@ namespace Vvr.Session.World
 {
     public static class GameWorld
     {
-        private static GameConfigProvider   s_GameConfigProvider;
         private static ActorDataProvider    s_ActorDataProvider;
         private static CustomMethodProvider s_CustomMethodProvider;
 
@@ -52,10 +51,6 @@ namespace Vvr.Session.World
 
             World = world;
 
-            if (s_GameConfigProvider != null)
-            {
-                World.Register<IGameConfigProvider>(s_GameConfigProvider);
-            }
             if (s_ActorDataProvider != null)
             {
                 World.Register<IActorDataProvider>(s_ActorDataProvider);
@@ -64,27 +59,21 @@ namespace Vvr.Session.World
             return world;
         }
 
+        [Obsolete]
         public static void RegisterCustomMethodData(CustomMethodSheet sheet)
         {
             Assert.IsNull(s_CustomMethodProvider);
 
             s_CustomMethodProvider = new(sheet);
             World?.Register<ICustomMethodProvider>(s_CustomMethodProvider);
-
         }
+        [Obsolete]
         public static void RegisterActorData(ActorSheet sheet)
         {
             Assert.IsNull(s_ActorDataProvider);
 
             s_ActorDataProvider = new(sheet);
             World?.Register<IActorDataProvider>(s_ActorDataProvider);
-        }
-        public static void RegisterConfigs(GameConfigSheet sheet)
-        {
-            Assert.IsNull(s_GameConfigProvider);
-
-            s_GameConfigProvider = Vvr.Provider.GameConfigProvider.Construct(sheet);
-            World?.Register<IGameConfigProvider>(s_GameConfigProvider);
         }
     }
 }
