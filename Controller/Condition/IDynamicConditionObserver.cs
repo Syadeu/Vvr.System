@@ -103,7 +103,9 @@ namespace Vvr.Controller.Condition
             int i = m_Filter.IndexOf(condition);
             Assert.IsFalse(i < 0);
 
-            await m_Delegates[i](m_Parent.Owner, value);
+            if (m_Delegates[i] == null)
+                throw new InvalidOperationException($"{condition} not found with value({value})");
+;            await m_Delegates[i](m_Parent.Owner, value);
         }
 
         public void Dispose()

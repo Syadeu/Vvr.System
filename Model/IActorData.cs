@@ -27,7 +27,6 @@ namespace Vvr.Model
 {
     public interface IActorData : IRawData
     {
-        string               Guid       { get; }
         ActorSheet.ActorType Type       { get; }
         int                  Population { get; }
 

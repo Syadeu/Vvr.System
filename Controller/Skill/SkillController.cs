@@ -239,10 +239,11 @@ namespace Vvr.Controller.Skill
                     await target.Abnormal.Add(e);
                 }
 
-                float   dmg = Owner.Stats[StatType.ATT] * value.skill.Execution.Multiplier;
                 switch (value.skill.Execution.Method)
                 {
                     case SkillSheet.Method.Damage:
+                        float dmg = Owner.Stats[StatType.ATT] * value.skill.Execution.Multiplier;
+
                         target.Stats.Push<DamageProcessor>(
                             value.skill.Execution.TargetStat.Ref.ToStat(), dmg);
                         await targetTrigger.Execute(Model.Condition.OnHit, null);
@@ -250,11 +251,11 @@ namespace Vvr.Controller.Skill
                         break;
                     case SkillSheet.Method.Default:
                     default:
-                        dmg *= value.skill.Execution.Multiplier;
-                        target.Stats.Push(
-                            value.skill.Execution.TargetStat.Ref.ToStat(), dmg);
-
-                        await targetTrigger.Execute(Model.Condition.OnHit, null);
+                        // dmg *= value.skill.Execution.Multiplier;
+                        // target.Stats.Push(
+                        //     value.skill.Execution.TargetStat.Ref.ToStat(), dmg);
+                        //
+                        // await targetTrigger.Execute(Model.Condition.OnHit, null);
                         break;
                 }
             }

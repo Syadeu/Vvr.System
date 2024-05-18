@@ -46,7 +46,6 @@ namespace Vvr.Model
 
         public sealed class Row : SheetRow, IActorData
         {
-            [UsedImplicitly] public string    Guid       { get; private set; }
             [UsedImplicitly] public ActorType Type       { get; private set; }
             [UsedImplicitly] public int       Population { get; private set; }
 

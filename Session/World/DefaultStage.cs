@@ -298,6 +298,17 @@ namespace Vvr.Session.World
                 IStageActor current  = m_Timeline[0];
                 Assert.IsFalse(current.Owner.Disposed);
 
+                bool isPlayerActor = current.Owner.ConditionResolver[Condition.IsPlayerActor](null);
+                if (isPlayerActor)
+                {
+                    foreach (var handActor in m_HandActors)
+                    {
+                        using var trigger = ConditionTrigger.Push(handActor.Owner, ConditionTrigger.Game);
+
+                        await trigger.Execute(Condition.OnActorTurn, null);
+                    }
+                }
+
                 using (var trigger = ConditionTrigger.Push(current.Owner, ConditionTrigger.Game))
                 {
                     await trigger.Execute(Model.Condition.OnActorTurn, null);
@@ -319,6 +330,16 @@ namespace Vvr.Session.World
                         m_HandActors.Add(current);
 
                         current.TagOutRequested = false;
+                    }
+                }
+
+                if (isPlayerActor)
+                {
+                    foreach (var handActor in m_HandActors)
+                    {
+                        using var trigger = ConditionTrigger.Push(handActor.Owner, ConditionTrigger.Game);
+
+                        await trigger.Execute(Condition.OnActorTurnEnd, null);
                     }
                 }
 
