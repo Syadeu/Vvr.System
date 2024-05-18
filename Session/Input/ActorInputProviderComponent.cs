@@ -63,6 +63,8 @@ namespace Vvr.Session.Input
             m_Target   = null;
             m_Data     = null;
             HasControl = false;
+
+            await m_CurrentTask;
         }
 
         public void SetAuto(bool auto)
@@ -71,6 +73,8 @@ namespace Vvr.Session.Input
 
             enabled = !auto;
         }
+
+        private UniTask m_CurrentTask = UniTask.CompletedTask;
 
         public void SetPass()
         {
@@ -84,7 +88,9 @@ namespace Vvr.Session.Input
             if (!HasControl) return;
 
             var skill = m_Data.Skills[index];
-            m_Target.Skill.Queue(skill);
+
+            var task = m_Target.Skill.Queue(skill);
+            m_CurrentTask = UniTask.WhenAll(m_CurrentTask, task);
         }
     }
 }

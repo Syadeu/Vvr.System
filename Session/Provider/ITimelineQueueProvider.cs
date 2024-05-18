@@ -41,6 +41,9 @@ namespace Vvr.Session.Provider
         [PublicAPI]
         int Count { get; }
 
+        [PublicAPI]
+        void SetEnable(IStageActor actor, bool enabled);
+
         /// <summary>
         /// Finds the index of the specified actor in the timeline queue.
         /// </summary>

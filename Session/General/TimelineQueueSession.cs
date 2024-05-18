@@ -52,6 +52,7 @@ namespace Vvr.Session
             public int         index;
 
             public float timeOffset;
+            public bool  disabled;
 
             public float Time => m_Method(actor.Data.Stats);
 
@@ -96,6 +97,8 @@ namespace Vvr.Session
         public void Enqueue(IStageActor actor)
         {
             Assert.IsNotNull(actor);
+            Assert.IsNotNull(actor.Owner);
+
             if (!m_Actors.Add(actor.GetHashCode()))
                 throw new InvalidOperationException("duplicated");
 
@@ -109,6 +112,7 @@ namespace Vvr.Session
         public void InsertAfter(int index, IStageActor actor)
         {
             Assert.IsNotNull(actor);
+            Assert.IsNotNull(actor.Owner);
 
             if (!m_Actors.Add(actor.GetHashCode()))
                 throw new InvalidOperationException("duplicated");
@@ -137,14 +141,32 @@ namespace Vvr.Session
 
         public IStageActor Dequeue()
         {
-            if (m_Queue.Count == 0) throw new InvalidOperationException("queue empty");
+            int count = m_Queue.Count;
+            if (count == 0) throw new InvalidOperationException("queue empty");
 
-            var min = m_Queue.Min;
-            m_Queue.Remove(min);
-            min.timeOffset += min.Time;
-            m_Queue.Add(min);
+            IStageActor result = null;
+            for (int i = 0; i < count; i++)
+            {
+                var min = m_Queue.Min;
+                m_Queue.Remove(min);
+                min.timeOffset += min.Time;
+                m_Queue.Add(min);
 
-            return min.actor;
+                if (min.disabled) continue;
+                result = min.actor;
+                break;
+            }
+
+            if (result == null)
+                throw new InvalidOperationException("Possible all entries disabled.");
+
+            return result;
+        }
+
+        public void SetEnable(IStageActor actor, bool enabled)
+        {
+            var e = m_Queue.First(x => ReferenceEquals(x.actor, actor));
+            e.disabled = !enabled;
         }
 
         public bool IsStartFrom(IStageActor actor)

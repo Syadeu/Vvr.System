@@ -81,6 +81,18 @@ namespace Vvr.Controller.Condition
                     m_Delegates = nArr;
                 }
 
+                if (!m_Filter.IsEmpty && (short)t < (short)m_Filter.First)
+                {
+                    for (int j = 0; j < m_Delegates.Length - 1; j++)
+                    {
+                        m_Delegates[j + 1] = m_Delegates[j];
+                    }
+
+                    m_Delegates[0] = value;
+                    m_Filter       = modifiedQuery;
+                    return;
+                }
+
                 m_Filter = modifiedQuery;
                 int i = m_Filter.IndexOf(t);
 
@@ -104,7 +116,7 @@ namespace Vvr.Controller.Condition
             Assert.IsFalse(i < 0);
 
             if (m_Delegates[i] == null)
-                throw new InvalidOperationException($"{condition} not found with value({value})");
+                throw new InvalidOperationException($"{condition} not found with value({value}), {m_Filter.ToString()}");
 ;            await m_Delegates[i](m_Parent.Owner, value);
         }
 

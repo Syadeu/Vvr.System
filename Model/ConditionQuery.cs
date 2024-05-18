@@ -22,6 +22,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Text;
 using JetBrains.Annotations;
 using Unity.Mathematics;
 
@@ -47,6 +48,7 @@ namespace Vvr.Model
         /// <summary>
         /// Counts all <see cref="Condition"/> in this query
         /// </summary>
+        [PublicAPI]
         public int Count
         {
             get
@@ -71,6 +73,7 @@ namespace Vvr.Model
         /// The index corresponds to the position of the highest bit flag.
         /// If no conditions exist in the query, an InvalidOperationException is thrown.
         /// </remarks>
+        [PublicAPI]
         public int MaxIndex
         {
             get
@@ -94,6 +97,7 @@ namespace Vvr.Model
         /// Take last <see cref="Condition"/> in this query
         /// </summary>
         /// <exception cref="InvalidOperationException"></exception>
+        [PublicAPI]
         public Condition Last
         {
             get
@@ -112,6 +116,27 @@ namespace Vvr.Model
                 throw new InvalidOperationException("No condition in this query");
             }
         }
+
+        [PublicAPI] public Condition First
+        {
+            get
+            {
+                int index = 0;
+                while (index < 64)
+                {
+                    if ((m_Filter & (1L << index)) != 0)
+                    {
+                        return (Condition)(index + m_Offset);
+                    }
+
+                    index++;
+                }
+
+                throw new InvalidOperationException("No condition in this query");
+            }
+        }
+
+        [PublicAPI] public bool IsEmpty => m_Filter == 0 && m_Offset == 0;
 
         /// <summary>
         /// Base constructor.
@@ -209,9 +234,22 @@ namespace Vvr.Model
             }
         }
 
-        IEnumerator IEnumerable.GetEnumerator()
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+        public override string ToString()
         {
-            return GetEnumerator();
+            StringBuilder sb = new();
+            sb.Append("(");
+            int c = 0;
+            foreach (var con in this)
+            {
+                if (c > 0) sb.Append(", ");
+                sb.Append($"{con}");
+                c++;
+            }
+
+            sb.Append(")");
+            return sb.ToString();
         }
 
         public static implicit operator ConditionQuery(Condition c) => new ConditionQuery((short)c, 1);

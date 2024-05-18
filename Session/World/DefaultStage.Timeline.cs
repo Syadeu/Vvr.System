@@ -105,11 +105,6 @@ namespace Vvr.Session.World
             int index = m_TimelineQueueProvider.IndexOf(target);
             m_TimelineQueueProvider.InsertAfter(
                 index, actor);
-
-            using (var trigger = ConditionTrigger.Push(actor.Owner, ConditionTrigger.Game))
-            {
-                await trigger.Execute(Model.Condition.OnTagIn, null);
-            }
         }
 
         /// <summary>

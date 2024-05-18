@@ -184,11 +184,15 @@ namespace Vvr.Session.World
 
             m_EnemyId = Owner.Issue;
 
+            Vvr.Provider.Provider.Static.Register<IStageActorTagInOutProvider>(this);
+
             return base.OnInitialize(session, data);
         }
 
         protected override UniTask OnReserve()
         {
+            Vvr.Provider.Provider.Static.Unregister<IStageActorTagInOutProvider>(this);
+
             // While this session feeds multiple providers to parent session
             // These will not release after this session closed.
             // So we need to manually remove from parent session.
@@ -330,6 +334,13 @@ namespace Vvr.Session.World
                         m_HandActors.Add(current);
 
                         current.TagOutRequested = false;
+                        await RemoveFromQueue(current);
+
+                        await m_ViewProvider.CardViewProvider.Resolve(current.Owner);
+                        foreach (var actor in m_PlayerField)
+                        {
+                            await m_ViewProvider.CardViewProvider.Resolve(actor.Owner);
+                        }
                     }
                 }
 
@@ -352,7 +363,9 @@ namespace Vvr.Session.World
                         ;
                     if (actor.Any())
                     {
-                        await SwapPlayerCard(actor.First());
+                        var idx = m_HandActors.IndexOf(actor.First());
+                        await TagIn(idx);
+
                         "add actor from hand".ToLog();
                         Assert.IsTrue(m_PlayerField.Count > 0);
                         await UniTask.WaitForSeconds(1);
@@ -388,6 +401,8 @@ namespace Vvr.Session.World
         private partial void DequeueTimeline();
         private partial void UpdateTimeline();
 
+        private partial UniTask TagIn(int index);
+
         // TODO: Test auto play method
         private async UniTask ExecuteTurn(IStageActor runtimeActor)
         {
@@ -416,60 +431,6 @@ namespace Vvr.Session.World
             }
 
             m_ResetEvent.TrySetResult();
-        }
-
-        private async UniTask SwapPlayerCard(IStageActor d)
-        {
-            int index = m_HandActors.IndexOf(d);
-            Assert.IsFalse(index < 0, "index < 0");
-            await SwapPlayerCard(index);
-        }
-
-        private async UniTask SwapPlayerCard(int index)
-        {
-            // Assert.IsTrue(m_Timeline.First.Value.actor.ConditionResolver[Model.Condition.IsPlayerActor](null));
-            if (m_PlayerField.Count > 1)
-            {
-                "Cant swap. already in progress".ToLog();
-                return;
-            }
-
-            Assert.IsFalse(index < 0);
-            Assert.IsTrue(index < m_HandActors.Count);
-
-            var temp = m_HandActors[index];
-            m_HandActors.RemoveAt(index);
-
-            if (m_PlayerField.Count > 0)
-            {
-                IStageActor currentFieldRuntimeActor = m_PlayerField[0];
-                currentFieldRuntimeActor.TagOutRequested = true;
-
-                await JoinAfter(currentFieldRuntimeActor, m_PlayerField, temp);
-
-                await RemoveFromQueue(currentFieldRuntimeActor);
-                await RemoveFromTimeline(currentFieldRuntimeActor, 1);
-
-                // using (var trigger = ConditionTrigger.Push(currentFieldRuntimeActor.owner, ConditionTrigger.Game))
-                // {
-                //     await trigger.Execute(Model.Condition.OnTagOut, null);
-                // }
-            }
-            else
-            {
-                await Join(m_PlayerField, temp);
-            }
-
-            using (var trigger = ConditionTrigger.Push(m_HandActors[index].Owner, ConditionTrigger.Game))
-            {
-                await trigger.Execute(Model.Condition.OnTagIn, null);
-            }
-
-            // Swap
-            UpdateTimeline();
-
-            // ObjectObserver<ActorList>.ChangedEvent(m_HandActors);
-            // ObjectObserver<ActorList>.ChangedEvent(m_Timeline);
         }
 
         private IEnumerable<IStageActor> GetCurrentPlayerActors()

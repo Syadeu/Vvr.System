@@ -34,6 +34,7 @@ namespace Vvr.Model.Stat
         DEF = 0b0100,
         ARM = 0b1000,
         HP  = 0b0001_0000,
+        SHD  = 0b0010_0000,
 
         // ReSharper restore InconsistentNaming
     }

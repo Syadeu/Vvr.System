@@ -35,7 +35,6 @@ namespace Vvr.Controller.Actor
     public interface IActor : IReadOnlyActor
     {
         void Initialize(Owner t, IActorData ta);
-
         /// <summary>
         ///
         /// </summary>

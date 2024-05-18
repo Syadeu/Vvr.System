@@ -109,6 +109,17 @@ namespace Vvr.Controller.Stat
                     e.UpdateValues(m_OriginalStats, ref m_ModifiedStats);
                 }
 
+                if ((m_ModifiedStats.Types & StatType.SHD) == StatType.SHD)
+                {
+                    float shd = m_ModifiedStats[StatType.SHD];
+
+                    if (shd < 0)
+                    {
+                        m_ModifiedStats[StatType.HP]  += shd;
+                        m_ModifiedStats[StatType.SHD] =  0;
+                    }
+                }
+
                 m_IsDirty = true;
             }
 
