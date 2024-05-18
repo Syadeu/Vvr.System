@@ -24,10 +24,10 @@ using System.Collections.Generic;
 using System.Linq;
 using Cysharp.Threading.Tasks;
 using Vvr.Controller.Condition;
-using Vvr.Controller.Provider;
 using Vvr.Model;
 using Vvr.Provider;
 using Vvr.Session.Actor;
+using Vvr.Session.Input;
 using Vvr.Session.Provider;
 
 namespace Vvr.Session.World
@@ -35,7 +35,9 @@ namespace Vvr.Session.World
     [ParentSession(typeof(DefaultMap))]
     public class DefaultRegion : ParentSession<DefaultRegion.SessionData>,
         IConnector<IPlayerActorProvider>,
-        // TODO: Temp
+        IConnector<IManualInputProvider>,
+
+    // TODO: Temp
         IConnector<IStageDataProvider>
     {
         public struct SessionData : ISessionData
@@ -45,16 +47,29 @@ namespace Vvr.Session.World
         private IPlayerActorProvider m_PlayerActorProvider;
         private IStageDataProvider   m_StageProvider;
 
+        private bool m_IsManualControl;
+
         public override string DisplayName => nameof(DefaultRegion);
+
+        private UniTask<IChildSession> CurrentControlSession { get; set; }
 
         protected override async UniTask OnInitialize(IParentSession session, SessionData data)
         {
-            await CreateSession<PlayerControlSession>(default);
+            CurrentControlSession = SwitchControl(null);
 
             var actorProvider = await CreateSession<ActorFactorySession>(default);
             Register<IActorProvider>(actorProvider);
 
+            Vvr.Provider.Provider.Static.Connect<IManualInputProvider>(this);
+
             await base.OnInitialize(session, data);
+        }
+
+        protected override UniTask OnReserve()
+        {
+            Vvr.Provider.Provider.Static.Disconnect<IManualInputProvider>(this);
+
+            return base.OnReserve();
         }
 
         public async UniTask Start()
@@ -99,5 +114,31 @@ namespace Vvr.Session.World
 
         void IConnector<IStageDataProvider>.Connect(IStageDataProvider t) => m_StageProvider = t;
         void IConnector<IStageDataProvider>.Disconnect(IStageDataProvider t) => m_StageProvider = null;
+
+        void IConnector<IManualInputProvider>.Connect(IManualInputProvider t)
+        {
+            m_IsManualControl = true;
+            CurrentControlSession = CurrentControlSession.ContinueWith(SwitchControl);
+        }
+
+        void IConnector<IManualInputProvider>.Disconnect(IManualInputProvider t)
+        {
+            m_IsManualControl     = false;
+            CurrentControlSession = CurrentControlSession.ContinueWith(SwitchControl);
+        }
+
+        private async UniTask<IChildSession> SwitchControl(IChildSession existing)
+        {
+            if (ReserveToken.IsCancellationRequested) return null;
+
+            await existing.Reserve();
+
+            if (!m_IsManualControl)
+            {
+                return await CreateSession<AIControlSession>(default);
+            }
+
+            return await CreateSession<PlayerControlSession>(default);
+        }
     }
 }

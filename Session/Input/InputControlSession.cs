@@ -21,7 +21,7 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 using Vvr.Provider;
 
-namespace Vvr.Session
+namespace Vvr.Session.Input
 {
     public abstract class InputControlSession<TSessionData>
         : ChildSession<TSessionData>,

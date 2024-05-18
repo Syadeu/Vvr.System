@@ -75,7 +75,7 @@ namespace Vvr.Session
 
             // TODO: Test code
             m_CurrentActors = new IActorData[5];
-            List<ActorSheet.Row> chList = new List<ActorSheet.Row>(
+            List<IActorData> chList = new List<IActorData>(
                 m_ActorDataProvider.Where(x => x.Id.StartsWith("CH")));
             int i = 0;
             while (i < m_CurrentActors.Length)

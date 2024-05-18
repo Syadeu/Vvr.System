@@ -47,15 +47,15 @@ namespace Vvr.Session
 
         public override string DisplayName => nameof(ActorDataSession);
 
-        public ActorSheet.Row this[int index] => Data.sheet[index];
+        public IActorData this[int index] => Data.sheet[index];
         public int Count => Data.sheet.Count;
 
-        public ActorSheet.Row Resolve(string key)
+        public IActorData Resolve(string key)
         {
             return Data.sheet[key];
         }
 
-        public IEnumerator<ActorSheet.Row> GetEnumerator() => Data.sheet.GetEnumerator();
-        IEnumerator IEnumerable.           GetEnumerator() => ((IEnumerable)Data.sheet).GetEnumerator();
+        public IEnumerator<IActorData> GetEnumerator() => Data.sheet.GetEnumerator();
+        IEnumerator IEnumerable.       GetEnumerator() => ((IEnumerable)Data.sheet).GetEnumerator();
     }
 }

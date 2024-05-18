@@ -320,7 +320,7 @@ namespace Vvr.Session
         {
             EvaluateProviderRegistration(pType, provider);
 
-            $"[Session: {Type.FullName}] Connectors {ConnectorTypes.Length}".ToLog();
+            // $"[Session: {Type.FullName}] Connectors {ConnectorTypes.Length}".ToLog();
             m_ConnectedProviders[pType] = provider;
             {
                 foreach (var connectorType in ConnectorTypes)
@@ -339,7 +339,7 @@ namespace Vvr.Session
             }
 
             ConnectObservers(pType, provider);
-            $"[Session:{Type.FullName}] Connected {pType.FullName}".ToLog();
+            // $"[Session:{Type.FullName}] Connected {pType.FullName}".ToLog();
 
             OnProviderRegistered(pType, provider);
         }

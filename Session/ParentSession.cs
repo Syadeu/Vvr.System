@@ -70,6 +70,7 @@ namespace Vvr.Session
             await OnCreateSession(session);
 
             await session.Initialize(Owner, this, data);
+            $"[Session: {Type.FullName}] created {childType.FullName}".ToLog();
             return session;
         }
         async UniTask IGameSessionCallback.OnSessionClose(IGameSessionBase child)
@@ -82,10 +83,12 @@ namespace Vvr.Session
 
         public async UniTask CloseAllSessions()
         {
-            foreach (var session in m_ChildSessions)
+            for (var i = m_ChildSessions.Count - 1; i >= 0; i--)
             {
+                var session = m_ChildSessions[i];
                 await session.Reserve();
             }
+
             m_ChildSessions.Clear();
         }
         public async UniTask<IChildSession> WaitUntilSessionAvailableAsync(Type sessionType)

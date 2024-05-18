@@ -370,6 +370,15 @@ namespace Vvr.Session.World
         // TODO: Test auto play method
         private async UniTask ExecuteTurn(IStageActor runtimeActor)
         {
+            if (m_InputControlProvider == null)
+            {
+                "[Stage] Waiting input controller".ToLog();
+                while (m_InputControlProvider == null)
+                {
+                    await UniTask.Yield();
+                }
+            }
+
             // AI
             if (!m_InputControlProvider.CanControl(runtimeActor.Owner))
             {

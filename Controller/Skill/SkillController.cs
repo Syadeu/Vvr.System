@@ -95,12 +95,12 @@ namespace Vvr.Controller.Skill
         public async UniTask<int> GetSkillCount()
         {
             var data         = m_DataProvider.Resolve(Owner.Id);
-            return data.Skills.Count(x => x.Ref != null);
+            return data.Skills.Count(x => x != null);
         }
         public async UniTask Queue(int index)
         {
             var data = m_DataProvider.Resolve(Owner.Id);
-            await Queue(data.Skills[index].Ref);
+            await Queue(data.Skills[index]);
         }
 
         public async UniTask Queue(SkillSheet.Row data) => await Queue(data, null);

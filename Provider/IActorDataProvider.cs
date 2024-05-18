@@ -26,8 +26,8 @@ namespace Vvr.Provider
 {
     [LocalProvider]
     public interface IActorDataProvider : IProvider,
-        IReadOnlyList<ActorSheet.Row>
+        IReadOnlyList<IActorData>
     {
-        ActorSheet.Row Resolve(string key);
+        IActorData Resolve(string key);
     }
 }

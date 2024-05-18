@@ -101,8 +101,9 @@ namespace Vvr.Provider
 
             if (s_Observers.TryGetValue(t, out var list))
             {
-                foreach (var item in list)
+                for (var i = 0; i < list.Count; i++)
                 {
+                    var item = list[i];
                     item.connect.Invoke(p);
                 }
             }
@@ -129,8 +130,9 @@ namespace Vvr.Provider
             {
                 if (s_Observers.TryGetValue(t, out var list))
                 {
-                    foreach (var item in list)
+                    for (var i = 0; i < list.Count; i++)
                     {
+                        var item = list[i];
                         item.disconnect.Invoke(p);
                     }
                 }
