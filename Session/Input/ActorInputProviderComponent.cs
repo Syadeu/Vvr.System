@@ -36,6 +36,8 @@ namespace Vvr.Session.Input
         private IActorData m_Data;
         private bool       m_Pass;
 
+        public bool HasControl { get; private set; }
+
         private void OnEnable()
         {
             Vvr.Provider.Provider.Static.Register<IManualInputProvider>(this);
@@ -47,8 +49,9 @@ namespace Vvr.Session.Input
 
         public async UniTask OnControl(IActor target, IActorData data)
         {
-            m_Target = target;
-            m_Data   = data;
+            HasControl = true;
+            m_Target   = target;
+            m_Data     = data;
 
             while (!m_Pass)
             {
@@ -57,17 +60,29 @@ namespace Vvr.Session.Input
 
             m_Pass = false;
 
-            m_Target = null;
-            m_Data   = null;
+            m_Target   = null;
+            m_Data     = null;
+            HasControl = false;
+        }
+
+        public void SetAuto(bool auto)
+        {
+            if (enabled == !auto) return;
+
+            enabled = !auto;
         }
 
         public void SetPass()
         {
+            if (!HasControl) return;
+
             m_Pass = true;
         }
 
         public void ExecuteSkill(int index)
         {
+            if (!HasControl) return;
+
             var skill = m_Data.Skills[index];
             m_Target.Skill.Queue(skill);
         }

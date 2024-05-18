@@ -27,15 +27,9 @@ using Vvr.Provider;
 namespace Vvr.Session.Input
 {
     [UsedImplicitly]
-    public sealed class PlayerControlSession : InputControlSession<PlayerControlSession.SessionData>,
-        IConnector<IActorDataProvider>,
+    public sealed class PlayerControlSession : AIControlSession,
         IConnector<IManualInputProvider>
     {
-        public struct SessionData : ISessionData
-        {
-        }
-
-        private IActorDataProvider   m_ActorDataProvider;
         private IManualInputProvider m_ManualInputProvider;
 
         public override string DisplayName => nameof(PlayerControlSession);
@@ -61,38 +55,33 @@ namespace Vvr.Session.Input
 
         protected override async UniTask OnControl(IEventTarget  target)
         {
-            IActor actor     = (IActor)target;
-            var    actorData = m_ActorDataProvider.Resolve(actor.Id);
-
             // TODO: testing
-            if (Owner == target.Owner)
+            if (Owner != target.Owner)
             {
-                if (m_ManualInputProvider == null)
-                {
-                    "[Input] No manual input provider found".ToLog();
-                    await actor.Skill.Queue(0);
-                }
-                else
-                {
-                    await m_ManualInputProvider.OnControl(actor, actorData);
-                }
+                // AI
+                await base.OnControl(target);
                 return;
             }
 
-            // AI
-            int count = actorData.Skills.Count;
-            var skill = actorData.Skills[UnityEngine.Random.Range(0, count)];
+            if (m_ManualInputProvider == null)
+            {
+                "[Input] No manual input provider found".ToLog();
+                await base.OnControl(target);
+            }
+            else
+            {
+                IActor actor     = (IActor)target;
+                var    actorData = ActorDataProvider.Resolve(actor.Id);
 
-            await actor.Skill.Queue(skill);
+                await m_ManualInputProvider.OnControl(actor, actorData);
+            }
         }
 
-        void IConnector<IActorDataProvider>.  Connect(IActorDataProvider      t) => m_ActorDataProvider = t;
-        void IConnector<IActorDataProvider>.  Disconnect(IActorDataProvider   t) => m_ActorDataProvider = null;
         void IConnector<IManualInputProvider>.Connect(IManualInputProvider    t) => m_ManualInputProvider = t;
         void IConnector<IManualInputProvider>.Disconnect(IManualInputProvider t) => m_ManualInputProvider = null;
     }
     [UsedImplicitly]
-    public sealed class AIControlSession : InputControlSession<AIControlSession.SessionData>,
+    public class AIControlSession : InputControlSession<AIControlSession.SessionData>,
         IConnector<IActorDataProvider>
     {
         public struct SessionData : ISessionData

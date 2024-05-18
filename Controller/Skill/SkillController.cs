@@ -138,12 +138,17 @@ namespace Vvr.Controller.Skill
 
             #region Warmup
 
-            var skillEventHandle = (await m_ViewProvider.Resolve(Owner)).GetComponent<ISkillEventHandler>();
+            var viewTarget       = await m_ViewProvider.Resolve(Owner);
+            var skillEventHandle = viewTarget.GetComponent<ISkillEventHandler>();
             if (skillEventHandle != null &&
                 value.skill.Presentation.SelfEffect.IsValid())
             {
                 SkillEffectEmitter emitter = new SkillEffectEmitter(value.skill.Presentation.SelfEffect);
-                await skillEventHandle.OnSkillStart(emitter);
+                await skillEventHandle
+                    .OnSkillStart(emitter)
+                    .SuppressCancellationThrow()
+                    .AttachExternalCancellation(viewTarget.GetCancellationTokenOnDestroy())
+                    ;
             }
             else if (value.skill.Presentation.SelfEffect.IsValid())
             {

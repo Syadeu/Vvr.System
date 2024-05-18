@@ -47,7 +47,7 @@ namespace Vvr.Session.World
         private IPlayerActorProvider m_PlayerActorProvider;
         private IStageDataProvider   m_StageProvider;
 
-        private bool m_IsManualControl;
+        private bool m_IsAutoControl;
 
         public override string DisplayName => nameof(DefaultRegion);
 
@@ -117,13 +117,13 @@ namespace Vvr.Session.World
 
         void IConnector<IManualInputProvider>.Connect(IManualInputProvider t)
         {
-            m_IsManualControl = true;
+            m_IsAutoControl = false;
             CurrentControlSession = CurrentControlSession.ContinueWith(SwitchControl);
         }
 
         void IConnector<IManualInputProvider>.Disconnect(IManualInputProvider t)
         {
-            m_IsManualControl     = false;
+            m_IsAutoControl     = true;
             CurrentControlSession = CurrentControlSession.ContinueWith(SwitchControl);
         }
 
@@ -131,13 +131,12 @@ namespace Vvr.Session.World
         {
             if (ReserveToken.IsCancellationRequested) return null;
 
-            await existing.Reserve();
+            if (existing is not null) await existing.Reserve();
 
-            if (!m_IsManualControl)
+            if (m_IsAutoControl)
             {
                 return await CreateSession<AIControlSession>(default);
             }
-
             return await CreateSession<PlayerControlSession>(default);
         }
     }
