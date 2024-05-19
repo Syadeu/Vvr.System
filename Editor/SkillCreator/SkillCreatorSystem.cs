@@ -18,18 +18,14 @@
 #endregion
 
 using System.Collections.Generic;
-using System.Linq;
 using Cathei.BakingSheet.Unity;
 using Cysharp.Threading.Tasks;
-using JetBrains.Annotations;
 using UnityEngine;
 using UnityEngine.InputSystem.EnhancedTouch;
 using Vvr.Controller;
 using Vvr.Controller.Condition;
 using Vvr.Model;
 using Vvr.Provider;
-using Vvr.Session;
-using Vvr.Session.Provider;
 using Vvr.Session.World;
 
 namespace Vvr.System.SkillCreator
@@ -68,56 +64,5 @@ namespace Vvr.System.SkillCreator
         {
             TimeController.Next(1).Forget();
         }
-    }
-
-    [UsedImplicitly]
-    internal sealed class SkillTestUserSession : ChildSession<SkillTestUserSession.SessionData>,
-        IUserActorProvider, IUserStageProvider,
-        IConnector<IActorDataProvider>,
-        IConnector<IStageDataProvider>,
-        IConnector<ITestUserDataProvider>
-    {
-        public struct SessionData : ISessionData
-        {
-            public IEnumerable<string> playerActorIds;
-            public IStageData          customStageData;
-        }
-
-        private IActorDataProvider    m_ActorDataProvider;
-        private IStageDataProvider    m_StageDataProvider;
-        private ITestUserDataProvider m_TestUserDataProvider;
-
-        public override string DisplayName => nameof(UserSession);
-
-        public IStageData CurrentStage => m_StageDataProvider.First().Value;
-
-        protected override async UniTask OnInitialize(IParentSession session, SessionData data)
-        {
-            Parent.Register<IUserActorProvider>(this);
-            Parent.Register<IUserStageProvider>(this);
-            Vvr.Provider.Provider.Static.Connect<ITestUserDataProvider>(this);
-            await base.OnInitialize(session, data);
-        }
-        protected override UniTask OnReserve()
-        {
-            Parent.Unregister<IUserActorProvider>();
-            Parent.Unregister<IUserStageProvider>();
-            Vvr.Provider.Provider.Static.Disconnect<ITestUserDataProvider>(this);
-            return base.OnReserve();
-        }
-
-        public IReadOnlyList<IActorData> GetCurrentTeam()
-        {
-            return m_TestUserDataProvider.CurrentTeam.Select(m_ActorDataProvider.Resolve).ToArray();
-        }
-
-        void IConnector<IActorDataProvider>.Connect(IActorDataProvider    t) => m_ActorDataProvider = t;
-        void IConnector<IActorDataProvider>.Disconnect(IActorDataProvider t) => m_ActorDataProvider = null;
-
-        void IConnector<IStageDataProvider>.Connect(IStageDataProvider    t) => m_StageDataProvider = t;
-        void IConnector<IStageDataProvider>.Disconnect(IStageDataProvider t) => m_StageDataProvider = null;
-
-        public  void                  Connect(ITestUserDataProvider    t) => m_TestUserDataProvider = t;
-        public  void                  Disconnect(ITestUserDataProvider t) => m_TestUserDataProvider = null;
     }
 }

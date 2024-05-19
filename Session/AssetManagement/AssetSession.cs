@@ -200,6 +200,8 @@ namespace Vvr.Session
         public async UniTask<IImmutableObject<TObject>> LoadAsync<TObject>(object key)
             where TObject : UnityEngine.Object
         {
+            if (key == null) return null;
+
             Type type = VvrTypeHelper.TypeOf<TObject>.Type;
             Hash hash = new Hash(
                 FNV1a32.Calculate(key.ToString())

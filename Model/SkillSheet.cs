@@ -93,6 +93,8 @@ namespace Vvr.Model
             [UsedImplicitly] public Presentation Presentation { get; private set; }
 
             [UsedImplicitly] public List<AbnormalSheet.Reference> Abnormal { get; private set; }
+
+            float ISkillData.Cooltime => Definition.Cooltime;
         }
 
         public SkillSheet()
@@ -108,7 +110,7 @@ namespace Vvr.Model
 
     public interface ISkillData : ISkillID
     {
-
+        float Cooltime { get; }
     }
 
     public static class SkillSheetExtensions

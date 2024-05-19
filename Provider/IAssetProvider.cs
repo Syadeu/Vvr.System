@@ -41,6 +41,6 @@ namespace Vvr.Provider
         /// <param name="key">The key used to identify the asset.</param>
         /// <returns>A task representing the asynchronous loading of the asset.</returns>
         [PublicAPI]
-        UniTask<IImmutableObject<TObject>> LoadAsync<TObject>(object key) where TObject : UnityEngine.Object;
+        UniTask<IImmutableObject<TObject>> LoadAsync<TObject>([CanBeNull] object key) where TObject : UnityEngine.Object;
     }
 }

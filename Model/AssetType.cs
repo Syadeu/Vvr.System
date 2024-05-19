@@ -24,6 +24,7 @@ namespace Vvr.Model
     public enum AssetType : short
     {
         CardPortrait,
+        Animation,
         BehaviorTree,
 
         BackgroundImage,
@@ -32,6 +33,7 @@ namespace Vvr.Model
     public enum ActorAssetType : short
     {
         CardPortrait = AssetType.CardPortrait,
+        Animation    = AssetType.Animation,
         BehaviorTree = AssetType.BehaviorTree,
     }
 }

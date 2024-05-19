@@ -19,6 +19,7 @@
 
 using System.Collections.Generic;
 using Cathei.BakingSheet.Unity;
+using JetBrains.Annotations;
 using Vvr.Model;
 using Vvr.Provider;
 
@@ -31,7 +32,7 @@ namespace Vvr.Controller.Asset
     {
         private readonly IReadOnlyDictionary<AssetType, AddressablePath> m_AssetsPath;
 
-        public object this[AssetType t] => m_AssetsPath[t].FullPath;
+        public object this[AssetType t] => m_AssetsPath.TryGetValue(t, out var p) ? p.FullPath : null;
 
         public IAssetProvider AssetProvider { get; private set; }
 

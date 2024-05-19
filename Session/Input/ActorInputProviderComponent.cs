@@ -28,7 +28,8 @@ using Vvr.Model;
 
 namespace Vvr.Session.Input
 {
-    public sealed class ActorInputProviderComponent : MonoBehaviour, IManualInputProvider
+    [DisallowMultipleComponent]
+    public class ActorInputProviderComponent : MonoBehaviour, IManualInputProvider
     {
         private readonly LinkedList<UniTask> m_Tasks = new();
 
@@ -38,11 +39,12 @@ namespace Vvr.Session.Input
 
         public bool HasControl { get; private set; }
 
-        private void OnEnable()
+        protected virtual void OnEnable()
         {
             Vvr.Provider.Provider.Static.Register<IManualInputProvider>(this);
         }
-        private void OnDisable()
+
+        protected virtual void OnDisable()
         {
             Vvr.Provider.Provider.Static.Unregister<IManualInputProvider>(this);
         }
@@ -88,9 +90,20 @@ namespace Vvr.Session.Input
             if (!HasControl) return;
 
             var skill = m_Data.Skills[index];
+            OnExecuteSkill(skill);
 
-            var task = m_Target.Skill.Queue(skill);
+            var task = m_Target.Skill.Queue(skill)
+                .ContinueWith(() => OnSkillExecuted(skill));
             m_CurrentTask = UniTask.WhenAll(m_CurrentTask, task);
+        }
+
+        protected virtual void OnExecuteSkill(ISkillData skill)
+        {
+        }
+
+        protected virtual void OnSkillExecuted(ISkillData skill)
+        {
+
         }
     }
 }

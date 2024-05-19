@@ -1,5 +1,6 @@
 {
   "name": "Vvr.System.Provider",
+  "rootNamespace": "Vvr.System.Provider",
   "autoReferenced": true,
   "references": [
     "Vvr",

@@ -19,6 +19,7 @@
 
 #endregion
 
+using JetBrains.Annotations;
 using Vvr.Model;
 using Vvr.Provider;
 
@@ -29,6 +30,7 @@ namespace Vvr.Controller.Asset
     /// </summary>
     public interface IAsset : IConnector<IAssetProvider>
     {
+        [CanBeNull]
         object this[AssetType t] { get; }
         IAssetProvider AssetProvider { get; }
     }
