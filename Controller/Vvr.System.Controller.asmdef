@@ -1,5 +1,6 @@
 {
   "name": "Vvr.System.Controller",
+  "rootNamespace": "Vvr.System.Controller",
   "autoReferenced": true,
   "references": [
     "Vvr",

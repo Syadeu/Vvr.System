@@ -32,19 +32,19 @@ using Vvr.Session.Provider;
 
 namespace Vvr.Session.World
 {
- 	[ParentSession(typeof(DefaultRegion), true)]
+ 	// [ParentSession(typeof(DefaultRegion), true)]
     public partial class DefaultFloor : ParentSession<DefaultFloor.SessionData>,
         IConnector<IViewRegistryProvider>
     {
         public struct SessionData : ISessionData
         {
             public readonly IEnumerable<IStageData> stages;
-            public readonly IStageActor[]              cachedActors;
+            public readonly IStageActor[]              existingActors;
 
-            public SessionData(IEnumerable<IStageData> s, IStageActor[] actors)
+            public SessionData(IEnumerable<IStageData> s, IStageActor[] existingActors)
             {
-                stages       = s;
-                cachedActors = actors;
+                stages              = s;
+                this.existingActors = existingActors;
             }
         }
 
@@ -94,7 +94,7 @@ namespace Vvr.Session.World
             DefaultStage.Result stageResult = default;
 
             // LinkedListNode<StageSheet.Row> startStage  = Data.stages.First;
-            List<IStageActor>              prevPlayers = new(Data.cachedActors);
+            List<IStageActor>              prevPlayers = new(Data.existingActors);
 
             string cachedStartStageId = Data.stages.First().Id;
             await trigger.Execute(Model.Condition.OnFloorStarted, cachedStartStageId);
@@ -114,7 +114,7 @@ namespace Vvr.Session.World
                 }
 
                 m_CurrentStage = await CreateSession<DefaultStage>(sessionData);
-                Parent.Register<IStageProvider>(m_CurrentStage);
+                Parent.Register<IStageInfoProvider>(m_CurrentStage);
                 {
                     await trigger.Execute(Model.Condition.OnStageStarted, sessionData.stage.Id);
                     stageResult = await m_CurrentStage.Start();
@@ -135,7 +135,7 @@ namespace Vvr.Session.World
                     prevPlayers.Clear();
                     prevPlayers.AddRange(stageResult.playerActors);
                 }
-                Parent.Unregister<IStageProvider>();
+                Parent.Unregister<IStageInfoProvider>();
                 await m_CurrentStage.Reserve();
 
                 "Stage cleared".ToLog();

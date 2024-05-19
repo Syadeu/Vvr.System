@@ -44,9 +44,22 @@ namespace Vvr.Controller
             public GameObject     Root     { get; set; }
             public bool           Reserved { get; set; }
 
-            public void Stop()
+            public async UniTask Stop()
             {
-                GetComponent<ParticleSystem>().Stop();
+                var s = GetComponent<ParticleSystem>();
+                s.Stop();
+
+                Timer timer = Timer.Start(false);
+                while (!s.isStopped)
+                {
+                    await UniTask.Yield();
+
+                    if (timer.IsExceeded(10))
+                    {
+                        OnParticleSystemStopped();
+                        return;
+                    }
+                }
             }
 
             private void OnParticleSystemStopped()
@@ -262,6 +275,6 @@ namespace Vvr.Controller
     {
         bool Reserved { get; }
 
-        void Stop();
+        UniTask Stop();
     }
 }

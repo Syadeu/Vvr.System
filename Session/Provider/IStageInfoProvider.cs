@@ -15,12 +15,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// File created : 2024, 05, 17 00:05
+// File created : 2024, 05, 10 20:05
 
 #endregion
 
-using System.Collections.Generic;
-using JetBrains.Annotations;
+using Vvr.Controller.Actor;
 using Vvr.Model;
 using Vvr.Provider;
 using Vvr.Session.Actor;
@@ -28,14 +27,12 @@ using Vvr.Session.Actor;
 namespace Vvr.Session.Provider
 {
     [LocalProvider]
-    public interface IPlayerActorProvider : IProvider
+    public interface IStageInfoProvider : IProvider
     {
-        [PublicAPI]
-        IReadOnlyList<IActorData> GetCurrentTeam();
-    }
-    [LocalProvider]
-    public interface IPlayerStageProvider : IProvider
-    {
-        // stage
+        IReadOnlyActorList Timeline     { get; }
+
+        IReadOnlyActorList HandActors  { get; }
+        IReadOnlyActorList PlayerField { get; }
+        IReadOnlyActorList EnemyField  { get; }
     }
 }

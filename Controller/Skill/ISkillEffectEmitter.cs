@@ -53,7 +53,7 @@ namespace Vvr.Controller.Skill
 
             var effectPool = GameObjectPool.Get(m_Path);
             m_CurrentEffect = await effectPool.SpawnEffect(position, rotation);
-            while (!m_CurrentEffect.Reserved)
+            while (m_CurrentEffect is { Reserved: false })
             {
                 await UniTask.Yield();
             }
@@ -64,7 +64,7 @@ namespace Vvr.Controller.Skill
 
             var effectPool = GameObjectPool.Get(m_Path);
             m_CurrentEffect = await effectPool.SpawnEffect(position);
-            while (!m_CurrentEffect.Reserved)
+            while (m_CurrentEffect is { Reserved: false })
             {
                 await UniTask.Yield();
             }
@@ -72,12 +72,10 @@ namespace Vvr.Controller.Skill
 
         public async UniTask Stop()
         {
-            m_CurrentEffect.Stop();
+            if (m_CurrentEffect == null) return;
 
-            while (!m_CurrentEffect.Reserved)
-            {
-                await UniTask.Yield();
-            }
+            await m_CurrentEffect.Stop();
+            m_CurrentEffect = null;
         }
     }
 
@@ -98,7 +96,7 @@ namespace Vvr.Controller.Skill
 
             var effectPool = GameObjectPool.GetWithRawKey(m_Path);
             m_CurrentEffect = await effectPool.SpawnEffect(position, rotation);
-            while (!m_CurrentEffect.Reserved)
+            while (m_CurrentEffect is { Reserved: false })
             {
                 await UniTask.Yield();
             }
@@ -110,7 +108,7 @@ namespace Vvr.Controller.Skill
 
             var effectPool = GameObjectPool.GetWithRawKey(m_Path);
             m_CurrentEffect = await effectPool.SpawnEffect(position);
-            while (!m_CurrentEffect.Reserved)
+            while (m_CurrentEffect is { Reserved: false })
             {
                 await UniTask.Yield();
             }
@@ -120,12 +118,7 @@ namespace Vvr.Controller.Skill
         {
             if (m_CurrentEffect == null) return;
             
-            m_CurrentEffect.Stop();
-
-            while (!m_CurrentEffect.Reserved)
-            {
-                await UniTask.Yield();
-            }
+            await m_CurrentEffect.Stop();
 
             m_CurrentEffect = null;
         }

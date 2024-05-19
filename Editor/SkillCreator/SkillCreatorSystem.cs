@@ -1,5 +1,4 @@
 #region Copyrights
-
 // Copyright 2024 Syadeu
 // Author : Seung Ha Kim
 //
@@ -15,42 +14,66 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// File created : 2024, 05, 17 00:05
-
+// File created : 2024, 05, 19 17:05
 #endregion
 
 using System.Collections.Generic;
 using System.Linq;
+using Cathei.BakingSheet.Unity;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
-using Vvr.Controller.Actor;
+using UnityEngine;
+using Vvr.Controller.Condition;
 using Vvr.Model;
 using Vvr.Provider;
-using Vvr.Session.Actor;
+using Vvr.Session;
 using Vvr.Session.Provider;
+using Vvr.Session.World;
 
-namespace Vvr.Session
+namespace Vvr.System.SkillCreator
 {
-    // TODO: Temp
+    public sealed class SkillCreatorSystem : MonoBehaviour
+    {
+        class TestStage : IStageData
+        {
+            public string Id   => "TEST";
+            public string Name => "SKILL TEST";
+
+            public IStageData                NextStage    { get; }
+            public bool                      IsFinalStage { get; }
+            public IReadOnlyList<IActorData> Actors       { get; }
+
+            public IReadOnlyDictionary<AssetType, AddressablePath> Assets       { get; }
+        }
+
+        private DefaultWorld m_World;
+
+        private async UniTaskVoid Start()
+        {
+            m_World = await GameWorld.GetOrCreate<DefaultWorld>(Owner.Issue);
+            await m_World.CreateSession<SkillTestUserSession>(default);
+
+            await m_World.DefaultMap.CreateSession<DefaultRegion>(default);
+            "end".ToLog();
+        }
+    }
+
     [UsedImplicitly]
-    public class UserSession : ChildSession<UserSession.SessionData>,
+    internal sealed class SkillTestUserSession : ChildSession<SkillTestUserSession.SessionData>,
         IUserActorProvider, IUserStageProvider,
         IConnector<IActorDataProvider>,
-        IConnector<IStageDataProvider>
-
-#if UNITY_EDITOR
-        , IConnector<ITestUserDataProvider>
-#endif
+        IConnector<IStageDataProvider>,
+        IConnector<ITestUserDataProvider>
     {
         public struct SessionData : ISessionData
         {
+            public IEnumerable<string> playerActorIds;
+            public IStageData          customStageData;
         }
 
-        private IActorDataProvider m_ActorDataProvider;
-        private IStageDataProvider m_StageDataProvider;
-
-        // TODO: temp
-        private IActorData[] m_CurrentActors;
+        private IActorDataProvider    m_ActorDataProvider;
+        private IStageDataProvider    m_StageDataProvider;
+        private ITestUserDataProvider m_TestUserDataProvider;
 
         public override string DisplayName => nameof(UserSession);
 
@@ -60,63 +83,29 @@ namespace Vvr.Session
         {
             Parent.Register<IUserActorProvider>(this);
             Parent.Register<IUserStageProvider>(this);
-
-#if UNITY_EDITOR
             Vvr.Provider.Provider.Static.Connect<ITestUserDataProvider>(this);
-#endif
             await base.OnInitialize(session, data);
         }
         protected override UniTask OnReserve()
         {
             Parent.Unregister<IUserActorProvider>();
             Parent.Unregister<IUserStageProvider>();
-
-#if UNITY_EDITOR
             Vvr.Provider.Provider.Static.Disconnect<ITestUserDataProvider>(this);
-#endif
             return base.OnReserve();
         }
 
         public IReadOnlyList<IActorData> GetCurrentTeam()
         {
-            // TODO : Temp code
-#if UNITY_EDITOR
-            if (m_TestUserDataProvider != null)
-            {
-                return m_TestUserDataProvider.CurrentTeam.Select(m_ActorDataProvider.Resolve).ToArray();
-            }
-#endif
-
-            return m_CurrentActors;
+            return m_TestUserDataProvider.CurrentTeam.Select(m_ActorDataProvider.Resolve).ToArray();
         }
 
-        void IConnector<IActorDataProvider>.Connect(IActorDataProvider t)
-        {
-            m_ActorDataProvider = t;
-
-            // TODO: Test code
-            m_CurrentActors = new IActorData[5];
-            List<IActorData> chList = new List<IActorData>(
-                m_ActorDataProvider.Where(x => x.Id.StartsWith("CH")));
-            int i = 0;
-            while (i < m_CurrentActors.Length)
-            {
-                for (; i < chList.Count && i < m_CurrentActors.Length; i++)
-                {
-                    m_CurrentActors[i] = chList[i];
-                }
-                chList.Shuffle();
-            }
-        }
+        void IConnector<IActorDataProvider>.Connect(IActorDataProvider    t) => m_ActorDataProvider = t;
         void IConnector<IActorDataProvider>.Disconnect(IActorDataProvider t) => m_ActorDataProvider = null;
 
         void IConnector<IStageDataProvider>.Connect(IStageDataProvider    t) => m_StageDataProvider = t;
         void IConnector<IStageDataProvider>.Disconnect(IStageDataProvider t) => m_StageDataProvider = null;
 
-#if UNITY_EDITOR
-        private ITestUserDataProvider m_TestUserDataProvider;
         public  void                  Connect(ITestUserDataProvider    t) => m_TestUserDataProvider = t;
         public  void                  Disconnect(ITestUserDataProvider t) => m_TestUserDataProvider = null;
-#endif
     }
 }

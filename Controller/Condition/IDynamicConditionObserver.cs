@@ -125,7 +125,8 @@ namespace Vvr.Controller.Condition
             if (!m_Parent.Disposed)
                 m_Parent.Unsubscribe(this);
 
-            ArrayPool<ConditionObserverDelegate>.Shared.Return(m_Delegates, true);
+            if (m_Delegates != null)
+                ArrayPool<ConditionObserverDelegate>.Shared.Return(m_Delegates, true);
             m_Parent = null;
         }
     }

@@ -41,7 +41,7 @@ namespace Vvr.Session.World
 {
     [ParentSession(typeof(DefaultFloor), true), Preserve]
     public partial class DefaultStage : ChildSession<DefaultStage.SessionData>,
-        IStageProvider,
+        IStageInfoProvider,
         IConnector<IViewRegistryProvider>,
         IConnector<IActorProvider>,
         IConnector<IStageActorProvider>,
@@ -171,7 +171,7 @@ namespace Vvr.Session.World
             Parent.Register<ITargetProvider>(this)
                 .Register<IStateConditionProvider>(this)
                 .Register<IEventConditionProvider>(this)
-                .Register<IStageProvider>(this)
+                .Register<IStageInfoProvider>(this)
                 .Register<IGameMethodProvider>(this)
                 ;
 
@@ -199,7 +199,7 @@ namespace Vvr.Session.World
             Parent.Unregister<ITargetProvider>()
                 .Unregister<IStateConditionProvider>()
                 .Unregister<IEventConditionProvider>()
-                .Unregister<IStageProvider>()
+                .Unregister<IStageInfoProvider>()
                 .Unregister<IGameMethodProvider>()
                 ;
 
@@ -313,33 +313,40 @@ namespace Vvr.Session.World
                     }
                 }
 
-                using (var trigger = ConditionTrigger.Push(current.Owner, ConditionTrigger.Game))
+                // Because field can be cleared by delayed skills
+                if (m_PlayerField.Count > 0 && m_EnemyField.Count > 0)
                 {
-                    await trigger.Execute(Model.Condition.OnActorTurn, null);
-                    await UniTask.WaitForSeconds(1f);
-                    await TimeController.Next(1);
-
-                    ExecuteTurn(current).Forget();
-
-                    await m_ResetEvent.Task;
-
-                    await trigger.Execute(Model.Condition.OnActorTurnEnd, null);
-
-                    // Tag out check
-                    if (current.TagOutRequested)
+                    using (var trigger = ConditionTrigger.Push(current.Owner, ConditionTrigger.Game))
                     {
-                        Assert.IsTrue(current.Owner.ConditionResolver[Model.Condition.IsPlayerActor](null));
+                        await trigger.Execute(Model.Condition.OnActorTurn, null);
+                        await UniTask.WaitForSeconds(1f);
+                        await TimeController.Next(1);
 
-                        m_PlayerField.Remove(current);
-                        m_HandActors.Add(current);
+                        ExecuteTurn(current)
+                            .SuppressCancellationThrow()
+                            .AttachExternalCancellation(ReserveToken)
+                            .Forget(UnityEngine.Debug.LogError);
 
-                        current.TagOutRequested = false;
-                        await RemoveFromQueue(current);
+                        await m_ResetEvent.Task;
 
-                        await m_ViewProvider.CardViewProvider.Resolve(current.Owner);
-                        foreach (var actor in m_PlayerField)
+                        await trigger.Execute(Model.Condition.OnActorTurnEnd, null);
+
+                        // Tag out check
+                        if (current.TagOutRequested)
                         {
-                            await m_ViewProvider.CardViewProvider.Resolve(actor.Owner);
+                            Assert.IsTrue(current.Owner.ConditionResolver[Model.Condition.IsPlayerActor](null));
+
+                            m_PlayerField.Remove(current);
+                            m_HandActors.Add(current);
+
+                            current.TagOutRequested = false;
+                            await RemoveFromQueue(current);
+
+                            await m_ViewProvider.CardViewProvider.Resolve(current.Owner);
+                            foreach (var actor in m_PlayerField)
+                            {
+                                await m_ViewProvider.CardViewProvider.Resolve(actor.Owner);
+                            }
                         }
                     }
                 }

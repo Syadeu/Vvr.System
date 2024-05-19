@@ -1,5 +1,6 @@
 {
   "name": "Vvr.System.Session",
+  "rootNamespace": "Vvr.System.Session",
   "references": [
     "Vvr",
     "Vvr.System.Model",

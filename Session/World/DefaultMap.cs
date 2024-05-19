@@ -20,6 +20,9 @@
 #endregion
 
 using Cysharp.Threading.Tasks;
+using Vvr.Provider;
+using Vvr.Session.Input;
+using Vvr.Session.Provider;
 
 namespace Vvr.Session.World
 {
@@ -35,12 +38,12 @@ namespace Vvr.Session.World
 
         public override string DisplayName => nameof(DefaultMap);
 
-        public DefaultRegion DefaultRegion { get; private set; }
+        // public DefaultRegion DefaultRegion { get; private set; }
 
         protected override async UniTask OnInitialize(IParentSession session, Data data)
         {
             // TODO: skip region load
-            DefaultRegion = await CreateSession<DefaultRegion>(default);
+            // DefaultRegion = await CreateSession<DefaultRegion>(default);
         }
 
         // public void Connect(IActorProvider t)

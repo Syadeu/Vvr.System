@@ -15,24 +15,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// File created : 2024, 05, 10 20:05
+// File created : 2024, 05, 19 18:05
 
 #endregion
 
-using Vvr.Controller.Actor;
+using JetBrains.Annotations;
 using Vvr.Model;
 using Vvr.Provider;
-using Vvr.Session.Actor;
 
 namespace Vvr.Session.Provider
 {
     [LocalProvider]
-    public interface IStageProvider : IProvider
+    public interface IUserStageProvider : IProvider
     {
-        IReadOnlyActorList Timeline     { get; }
-
-        IReadOnlyActorList HandActors  { get; }
-        IReadOnlyActorList PlayerField { get; }
-        IReadOnlyActorList EnemyField  { get; }
+        [PublicAPI]
+        IStageData CurrentStage { get; }
     }
 }

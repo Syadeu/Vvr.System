@@ -23,6 +23,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Cysharp.Threading.Tasks;
+using JetBrains.Annotations;
 using Vvr.Controller.Condition;
 using Vvr.Model;
 using Vvr.Provider;
@@ -32,9 +33,10 @@ using Vvr.Session.Provider;
 
 namespace Vvr.Session.World
 {
-    [ParentSession(typeof(DefaultMap))]
+    [UsedImplicitly, ParentSession(typeof(DefaultMap))]
     public class DefaultRegion : ParentSession<DefaultRegion.SessionData>,
-        IConnector<IPlayerActorProvider>,
+        IConnector<IUserActorProvider>,
+        IConnector<IUserStageProvider>,
         IConnector<IManualInputProvider>,
 
     // TODO: Temp
@@ -44,8 +46,9 @@ namespace Vvr.Session.World
         {
         }
 
-        private IPlayerActorProvider m_PlayerActorProvider;
-        private IStageDataProvider   m_StageProvider;
+        private IUserActorProvider m_UserActorProvider;
+        private IUserStageProvider m_UserStageProvider;
+        private IStageDataProvider m_StageDataProvider;
 
         private bool m_IsAutoControl;
 
@@ -55,6 +58,8 @@ namespace Vvr.Session.World
 
         protected override async UniTask OnInitialize(IParentSession session, SessionData data)
         {
+            await base.OnInitialize(session, data);
+
             CurrentControlSession = SwitchControl(null);
 
             var actorProvider = await CreateSession<ActorFactorySession>(default);
@@ -62,7 +67,7 @@ namespace Vvr.Session.World
 
             Vvr.Provider.Provider.Static.Connect<IManualInputProvider>(this);
 
-            await base.OnInitialize(session, data);
+            await Start();
         }
 
         protected override UniTask OnReserve()
@@ -72,11 +77,12 @@ namespace Vvr.Session.World
             return base.OnReserve();
         }
 
-        public async UniTask Start()
+        private async UniTask Start()
         {
             using var trigger = ConditionTrigger.Push(this, DisplayName);
             // StageSheet.Row startStage = Data.sheet[Data.startStageId];
-            var startStage = m_StageProvider.First().Value;
+            // var startStage = m_StageDataProvider.First().Value;
+            var startStage = m_UserStageProvider.CurrentStage;
 
             var             currentStage = startStage;
             LinkedList<IStageData> list         = new();
@@ -89,7 +95,7 @@ namespace Vvr.Session.World
                 {
                     var floor = await CreateSession<DefaultFloor>(new DefaultFloor.SessionData(list, aliveActors));
 
-                    DefaultFloor.Result result = await floor.Start(m_PlayerActorProvider.GetCurrentTeam());
+                    DefaultFloor.Result result = await floor.Start(m_UserActorProvider.GetCurrentTeam());
                     aliveActors = result.alivePlayerActors;
 
                     await floor.Reserve();
@@ -109,11 +115,25 @@ namespace Vvr.Session.World
             } while (currentStage != null);
         }
 
-        void IConnector<IPlayerActorProvider>.Connect(IPlayerActorProvider    t) => m_PlayerActorProvider = t;
-        void IConnector<IPlayerActorProvider>.Disconnect(IPlayerActorProvider t) => m_PlayerActorProvider = null;
+        private async UniTask<IChildSession> SwitchControl(IChildSession existing)
+        {
+            if (ReserveToken.IsCancellationRequested) return null;
 
-        void IConnector<IStageDataProvider>.Connect(IStageDataProvider t) => m_StageProvider = t;
-        void IConnector<IStageDataProvider>.Disconnect(IStageDataProvider t) => m_StageProvider = null;
+            if (existing is not null) await existing.Reserve();
+
+            if (m_IsAutoControl)
+            {
+                return await CreateSession<AIControlSession>(default);
+            }
+
+            return await CreateSession<PlayerControlSession>(default);
+        }
+
+        void IConnector<IUserActorProvider>.Connect(IUserActorProvider    t) => m_UserActorProvider = t;
+        void IConnector<IUserActorProvider>.Disconnect(IUserActorProvider t) => m_UserActorProvider = null;
+
+        void IConnector<IStageDataProvider>.Connect(IStageDataProvider t) => m_StageDataProvider = t;
+        void IConnector<IStageDataProvider>.Disconnect(IStageDataProvider t) => m_StageDataProvider = null;
 
         void IConnector<IManualInputProvider>.Connect(IManualInputProvider t)
         {
@@ -127,17 +147,7 @@ namespace Vvr.Session.World
             CurrentControlSession = CurrentControlSession.ContinueWith(SwitchControl);
         }
 
-        private async UniTask<IChildSession> SwitchControl(IChildSession existing)
-        {
-            if (ReserveToken.IsCancellationRequested) return null;
-
-            if (existing is not null) await existing.Reserve();
-
-            if (m_IsAutoControl)
-            {
-                return await CreateSession<AIControlSession>(default);
-            }
-            return await CreateSession<PlayerControlSession>(default);
-        }
+        void IConnector<IUserStageProvider>.Connect(IUserStageProvider    t) => m_UserStageProvider = t;
+        void IConnector<IUserStageProvider>.Disconnect(IUserStageProvider t) => m_UserStageProvider = null;
     }
 }

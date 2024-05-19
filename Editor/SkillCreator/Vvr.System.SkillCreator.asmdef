@@ -1,0 +1,36 @@
+{
+    "name": "Vvr.System.SkillCreator",
+    "rootNamespace": "Vvr.System.SkillCreator",
+    "references": [
+        "Vvr",
+        "Vvr.UI",
+        "Vvr.System.Model",
+        "Vvr.System.Controller",
+        "Vvr.System.Provider",
+        "Vvr.System.Session",
+        "Unity.Mathematics",
+        "Unity.Collections",
+        "Unity.Addressables",
+        "Unity.ResourceManager",
+        "UniTask",
+        "UniTask.Addressables",
+        "BakingSheet",
+        "BakingSheet.ScriptableObject"
+    ],
+    "includePlatforms": [
+        "Editor",
+        "macOSStandalone",
+        "WindowsStandalone32",
+        "WindowsStandalone64"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [
+        "UNITY_EDITOR"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
