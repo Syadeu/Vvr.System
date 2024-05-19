@@ -191,7 +191,7 @@ namespace Vvr.Controller.Skill
             {
                 SkillEffectEmitter emitter = new SkillEffectEmitter(value.skill.Presentation.SelfEffect);
                 await skillEventHandle
-                    .OnSkillStart(emitter)
+                    .OnSkillStart(value.skill, emitter)
                     .SuppressCancellationThrow()
                     .AttachExternalCancellation(viewTarget.GetCancellationTokenOnDestroy())
                     ;
@@ -220,9 +220,9 @@ namespace Vvr.Controller.Skill
 
             if (skillEventHandle != null)
             {
-                // SkillEffectEmitter emitter = new SkillEffectEmitter(value.skill.Presentation.SelfEffect);
+                SkillEffectEmitter emitter = new SkillEffectEmitter(value.skill.Presentation.CastingEffect);
                 await skillEventHandle
-                        .OnSkillCasting(null)
+                        .OnSkillCasting(value.skill, emitter)
                         .SuppressCancellationThrow()
                         .AttachExternalCancellation(viewTarget.GetCancellationTokenOnDestroy())
                     ;
@@ -271,7 +271,7 @@ namespace Vvr.Controller.Skill
             {
                 SkillEffectEmitter emitter = new SkillEffectEmitter(value.skill.Presentation.TargetEffect);
                 await skillEventHandle
-                        .OnSkillEnd(targetView, emitter)
+                        .OnSkillEnd(value.skill, targetView, emitter)
                         .SuppressCancellationThrow()
                         .AttachExternalCancellation(view.GetCancellationTokenOnDestroy())
                     ;
@@ -390,9 +390,9 @@ namespace Vvr.Controller.Skill
                 var       skillEventHandle = viewTarget.GetComponent<ISkillEventHandler>();
                 if (skillEventHandle != null)
                 {
-                    // SkillEffectEmitter emitter = new SkillEffectEmitter(value.skill.Presentation.SelfEffect);
+                    SkillEffectEmitter emitter = new SkillEffectEmitter(e.skill.Presentation.CastingEffect);
                     await skillEventHandle
-                            .OnSkillCasting(null)
+                            .OnSkillCasting(e.skill, emitter)
                             .SuppressCancellationThrow()
                             .AttachExternalCancellation(viewTarget.GetCancellationTokenOnDestroy())
                         ;

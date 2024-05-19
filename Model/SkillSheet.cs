@@ -81,6 +81,7 @@ namespace Vvr.Model
         public struct Presentation
         {
             [UsedImplicitly] public AddressablePath SelfEffect   { get; private set; }
+            [UsedImplicitly] public AddressablePath CastingEffect   { get; private set; }
             [UsedImplicitly] public AddressablePath TargetEffect { get; private set; }
         }
 

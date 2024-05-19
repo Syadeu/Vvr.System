@@ -21,13 +21,14 @@
 
 using Cysharp.Threading.Tasks;
 using UnityEngine;
+using Vvr.Model;
 
 namespace Vvr.Controller.Skill
 {
     public interface ISkillEventHandler
     {
-        UniTask OnSkillStart(ISkillEffectEmitter effectEmitter);
-        UniTask OnSkillCasting(ISkillEffectEmitter effectEmitter);
-        UniTask OnSkillEnd(Transform target, ISkillEffectEmitter effectEmitter);
+        UniTask OnSkillStart(ISkillData   skill,  ISkillEffectEmitter effectEmitter);
+        UniTask OnSkillCasting(ISkillData skill,  ISkillEffectEmitter effectEmitter);
+        UniTask OnSkillEnd(ISkillData skill, Transform      target, ISkillEffectEmitter effectEmitter);
     }
 }
