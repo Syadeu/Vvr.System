@@ -80,14 +80,12 @@ namespace Vvr.Session.World
             Assert.IsFalse(field.Contains(actor));
             field.Add(actor, ActorPositionComparer.Static);
 
-            var view = await m_ViewProvider.CardViewProvider.Resolve(actor.Owner);
-
-            bool    isFront = ResolvePosition(field, actor);
-            Vector3 pos     = view.localPosition;
-            pos.z              = isFront ? 1 : 0;
-            view.localPosition = pos;
-
             m_TimelineQueueProvider.Enqueue(actor);
+
+            foreach (var e in field)
+            {
+                await m_ViewProvider.CardViewProvider.Resolve(e.Owner);
+            }
         }
 
         /// <summary>
@@ -105,6 +103,11 @@ namespace Vvr.Session.World
             int index = m_TimelineQueueProvider.IndexOf(target);
             m_TimelineQueueProvider.InsertAfter(
                 index, actor);
+
+            foreach (var e in field)
+            {
+                await m_ViewProvider.CardViewProvider.Resolve(e.Owner);
+            }
         }
 
         /// <summary>
@@ -161,8 +164,8 @@ namespace Vvr.Session.World
         private bool ResolvePosition(IList<IStageActor> field, IStageActor runtimeActor)
         {
             int count = field.Count;
-            // If no actor in the field, always front
-            if (count == 0) return true;
+            // If no or just one actor in the field, always front
+            if (count <= 1) return true;
 
             // This because field list is ordered list by ActorPositionComparer.
             // If the first element is defensive(2), should direct comparison with given actor

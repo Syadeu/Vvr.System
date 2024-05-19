@@ -41,6 +41,11 @@ namespace Vvr.Session.Provider
         [PublicAPI]
         int Count { get; }
 
+        /// <summary>
+        /// Sets the enabled state of the specified actor in the timeline queue.
+        /// </summary>
+        /// <param name="actor">The actor whose enabled state needs to be set.</param>
+        /// <param name="enabled">Specifies whether the actor should be enabled or disabled.</param>
         [PublicAPI]
         void SetEnable(IStageActor actor, bool enabled);
 

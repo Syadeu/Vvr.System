@@ -101,9 +101,14 @@ namespace Vvr.Model
         }
     }
 
-    public interface ISkillData
+    public interface ISkillID
     {
         string Id { get; }
+    }
+
+    public interface ISkillData : ISkillID
+    {
+
     }
 
     public static class SkillSheetExtensions

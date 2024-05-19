@@ -19,6 +19,7 @@
 
 #endregion
 
+using System;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using Vvr.Controller.Actor;
@@ -34,16 +35,24 @@ namespace Vvr.Controller.Skill
         IConnector<IEventViewProvider>
     {
         [PublicAPI]
-        void         Clear();
-        [PublicAPI]
-        UniTask<int> GetSkillCount();
+        void Clear();
 
         [PublicAPI]
-        UniTask      Queue(int index);
+        float GetSkillCooltime(ISkillID skill);
+        [PublicAPI]
+        int GetSkillCount();
 
         [PublicAPI]
-        UniTask Queue(SkillSheet.Row data);
+        IUniTaskAsyncEnumerable<ISkillData> GetSkills();
+
         [PublicAPI]
-        UniTask Queue(SkillSheet.Row data, IActor specifiedTarget);
+        UniTask Queue(int index);
+        [PublicAPI]
+        UniTask Queue(ISkillID skill);
+
+        // [PublicAPI, Obsolete]
+        // UniTask Queue(SkillSheet.Row data);
+        [PublicAPI, Obsolete]
+        UniTask Queue(ISkillID data, IActor specifiedTarget);
     }
 }

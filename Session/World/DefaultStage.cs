@@ -126,8 +126,8 @@ namespace Vvr.Session.World
                 short xx = (short)x.Data.Type,
                     yy   = (short)y.Data.Type;
 
-                if (xx < yy) return -1;
-                return xx > yy ? 1 : 0;
+                if (xx < yy) return 1;
+                return xx > yy ? -1 : 0;
             }
         }
 

@@ -80,11 +80,11 @@ namespace Vvr.Session
             int i = 0;
             while (i < m_CurrentActors.Length)
             {
-                chList.Shuffle();
                 for (; i < chList.Count && i < m_CurrentActors.Length; i++)
                 {
                     m_CurrentActors[i] = chList[i];
                 }
+                chList.Shuffle();
             }
         }
         void IConnector<IActorDataProvider>.Disconnect(IActorDataProvider t) => m_ActorDataProvider = null;

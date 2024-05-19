@@ -15,6 +15,7 @@
     "BakingSheet",
 
     "UniTask",
-    "UniTask.Addressables"
+    "UniTask.Addressables",
+    "UniTask.Linq"
   ]
 }

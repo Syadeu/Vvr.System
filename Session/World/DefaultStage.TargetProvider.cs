@@ -35,6 +35,11 @@ namespace Vvr.Session.World
 {
     partial class DefaultStage : ITargetProvider
     {
+        private void SetActorPosition(ActorList field, IStageActor actor)
+        {
+
+        }
+
         IEnumerable<IActor> ITargetProvider.FindTargets(
             IActor from, ITargetDefinition target)
         {
@@ -47,7 +52,6 @@ namespace Vvr.Session.World
                 if (target.Target == 0) yield break;
             }
 
-            var rnd = Unity.Mathematics.Random.CreateFromIndex(FNV1a32.Calculate(Guid.NewGuid()));
             if ((target.Target & SkillSheet.Target.Ally) == SkillSheet.Target.Ally)
             {
                 "target is ally".ToLog();
@@ -55,34 +59,28 @@ namespace Vvr.Session.World
                 int     count       = field.Count;
                 var     cachedArray = ArrayPool<IStageActor>.Shared.Rent(count);
                 field.CopyTo(cachedArray);
-                if (target.Position == SkillSheet.Position.Random)
+
+                SkillSheet.Position targetPosition = target.Position;
+                if (targetPosition == SkillSheet.Position.Random)
                 {
+                    var rnd = Unity.Mathematics.Random.CreateFromIndex(FNV1a32.Calculate(Guid.NewGuid()));
                     cachedArray.Shuffle(ref rnd, count);
                 }
 
-                for (int i = 0; i < count; i++)
+                bool targetFound = false;
+                foreach (var actor in GetTargets(cachedArray, count, field, targetPosition))
                 {
-                    var actorData = cachedArray[i];
-                    Assert.IsFalse(actorData.Owner.Disposed);
+                    targetFound = true;
+                    yield return actor.Owner;
+                }
 
-                    bool isFront = ResolvePosition(field, actorData);
-
-                    SkillSheet.Position targetPosition = target.Position;
-                    if (targetPosition != 0)
+                // If there is no matching target, just feed all targets.
+                if (!targetFound && count > 0)
+                {
+                    for (int i = 0; i < count; i++)
                     {
-                        if ((targetPosition & SkillSheet.Position.Forward) == SkillSheet.Position.Forward &&
-                            !isFront)
-                        {
-                            continue;
-                        }
-                        if ((targetPosition & SkillSheet.Position.Backward) == SkillSheet.Position.Backward &&
-                            isFront)
-                        {
-                            continue;
-                        }
+                        yield return cachedArray[i].Owner;
                     }
-
-                    yield return actorData.Owner;
                 }
 
                 ArrayPool<IStageActor>.Shared.Return(cachedArray, true);
@@ -96,14 +94,58 @@ namespace Vvr.Session.World
                 var cachedArray = ArrayPool<IStageActor>.Shared.Rent(count);
                 field.CopyTo(cachedArray);
 
-                for (int i = 0; i < count; i++)
+                SkillSheet.Position targetPosition = target.Position;
+                if (targetPosition == SkillSheet.Position.Random)
                 {
-                    var actorData = cachedArray[i];
-                    Assert.IsFalse(actorData.Owner.Disposed);
-                    yield return actorData.Owner;
+                    var rnd = Unity.Mathematics.Random.CreateFromIndex(FNV1a32.Calculate(Guid.NewGuid()));
+                    cachedArray.Shuffle(ref rnd, count);
+                }
+
+                bool targetFound = false;
+                foreach (var actor in GetTargets(cachedArray, count, field, targetPosition))
+                {
+                    targetFound = true;
+                    yield return actor.Owner;
+                }
+
+                // If there is no matching target, just feed all targets.
+                if (!targetFound && count > 0)
+                {
+                    for (int i = 0; i < count; i++)
+                    {
+                        yield return cachedArray[i].Owner;
+                    }
                 }
 
                 ArrayPool<IStageActor>.Shared.Return(cachedArray, true);
+            }
+        }
+
+        private IEnumerable<IStageActor> GetTargets(
+            IList<IStageActor> list, int count, ActorList field, SkillSheet.Position targetPosition)
+        {
+            for (var i = 0; i < count; i++)
+            {
+                var  actor   = list[i];
+                Assert.IsFalse(actor.Owner.Disposed);
+                bool isFront = ResolvePosition(field, actor);
+
+                if (targetPosition != 0)
+                {
+                    if ((targetPosition & SkillSheet.Position.Forward) == SkillSheet.Position.Forward &&
+                        !isFront)
+                    {
+                        continue;
+                    }
+
+                    if ((targetPosition & SkillSheet.Position.Backward) == SkillSheet.Position.Backward &&
+                        isFront)
+                    {
+                        continue;
+                    }
+                }
+
+                yield return actor;
             }
         }
     }

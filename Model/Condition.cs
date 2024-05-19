@@ -54,11 +54,12 @@ namespace Vvr.Model
         OnAbnormalUpdate,
         // EventCondition
 
-        // StageCondition
+        // StateCondition
         IsPlayerActor,
         IsInHand,
         IsActorTurn,
-        // StageCondition
+        IsFront,
+        // StateCondition
 
         // AbnormalCondition
         HasAbnormal,
@@ -107,7 +108,8 @@ namespace Vvr.Model
 
         IsPlayerActor = Condition.IsPlayerActor,
         IsActorTurn = Condition.IsActorTurn,
-        IsInHand    = Condition.IsInHand
+        IsInHand    = Condition.IsInHand,
+        IsFront = Condition.IsFront
     }
 
     public enum LogicalCondition : short

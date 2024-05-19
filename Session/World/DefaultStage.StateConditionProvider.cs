@@ -40,9 +40,25 @@ namespace Vvr.Session.World
                 case StateCondition.IsInHand:
                     if (target.Owner == m_EnemyId) return false;
 
-                    return m_HandActors.Any<IStageActor>(x => x.Owner == target);
+                    return m_HandActors.Any<IStageActor>(x => ReferenceEquals(x.Owner, target));
                 case StateCondition.IsPlayerActor:
                     return target.Owner != m_EnemyId;
+                case StateCondition.IsFront:
+                    if (m_HandActors.Any(x => ReferenceEquals(x.Owner, target)))
+                    {
+                        return false;
+                    }
+
+                    ActorList field;
+                    if (target.Owner == m_EnemyId)
+                    {
+                        field = m_EnemyField;
+                    }
+                    else field = m_PlayerField;
+
+                    return ResolvePosition(field, field.First(x => ReferenceEquals(x.Owner, target)));
+
+                    break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(condition), condition, null);
             }

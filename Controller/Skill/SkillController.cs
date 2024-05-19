@@ -24,6 +24,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Cathei.BakingSheet;
 using Cysharp.Threading.Tasks;
+using Cysharp.Threading.Tasks.Linq;
 using JetBrains.Annotations;
 using UnityEngine;
 using UnityEngine.Assertions;
@@ -92,19 +93,55 @@ namespace Vvr.Controller.Skill
             m_Values.Clear();
         }
 
-        public async UniTask<int> GetSkillCount()
+        float ISkill.GetSkillCooltime(ISkillID skill)
+        {
+            Hash hash = new Hash(skill.Id);
+            m_SkillCooltimes.TryGetValue(hash, out float v);
+            return v;
+        }
+        int ISkill.GetSkillCount()
         {
             var data         = m_DataProvider.Resolve(Owner.Id);
             return data.Skills.Count(x => x != null);
         }
-        public async UniTask Queue(int index)
+
+        IUniTaskAsyncEnumerable<ISkillData> ISkill.GetSkills()
+        {
+            return UniTaskAsyncEnumerable.Create<ISkillData>(async (wr, token) =>
+            {
+                var data = m_DataProvider.Resolve(Owner.Id);
+
+                foreach (var skill in data.Skills)
+                {
+                    if (skill != null)
+                    {
+                        await wr.YieldAsync(skill);
+                    }
+                }
+            });
+        }
+        async UniTask ISkill.Queue(int index)
         {
             var data = m_DataProvider.Resolve(Owner.Id);
             await Queue(data.Skills[index]);
         }
+        public async UniTask Queue(ISkillID skill)
+        {
+            SkillSheet.Row skillRow;
+            if (skill is SkillSheet.Row row) skillRow = row;
+            else
+            {
+                var skillData = m_DataProvider.Resolve(Owner.Id);
+                skillRow = skillData.Skills.FirstOrDefault(x => x.Id == skill.Id);
+            }
 
-        public async UniTask Queue(SkillSheet.Row data) => await Queue(data, null);
-        public async UniTask Queue(SkillSheet.Row data, IActor specifiedTarget)
+            if (skillRow != null)
+            {
+                await Queue(skillRow, null);
+            }
+        }
+
+        public async UniTask Queue(ISkillID data, IActor specifiedTarget)
         {
             Assert.IsNotNull(data);
             Assert.IsTrue(Owner.ConditionResolver[Model.Condition.IsActorTurn](null));
@@ -113,7 +150,15 @@ namespace Vvr.Controller.Skill
 
             $"[Skill:{Owner.DisplayName}]: SKILL QUEUED {data.Id}, {m_Values.Count}".ToLog();
 
-            var value = new Value(data, specifiedTarget);
+            SkillSheet.Row skillRow;
+            if (data is SkillSheet.Row row) skillRow = row;
+            else
+            {
+                var skillData = m_DataProvider.Resolve(Owner.Id);
+                skillRow = skillData.Skills.FirstOrDefault(x => x.Id == data.Id);
+            }
+
+            var value = new Value(skillRow, specifiedTarget);
 
             using var trigger = ConditionTrigger.Push(Owner, ConditionTrigger.Skill);
             await ExecuteSkill(trigger, value);
@@ -140,8 +185,7 @@ namespace Vvr.Controller.Skill
 
             var viewTarget       = await m_ViewProvider.Resolve(Owner);
             var skillEventHandle = viewTarget.GetComponent<ISkillEventHandler>();
-            if (skillEventHandle != null &&
-                value.skill.Presentation.SelfEffect.IsValid())
+            if (skillEventHandle != null)
             {
                 SkillEffectEmitter emitter = new SkillEffectEmitter(value.skill.Presentation.SelfEffect);
                 await skillEventHandle
@@ -170,6 +214,16 @@ namespace Vvr.Controller.Skill
             {
                 m_Values.Add(value);
                 return;
+            }
+
+            if (skillEventHandle != null)
+            {
+                // SkillEffectEmitter emitter = new SkillEffectEmitter(value.skill.Presentation.SelfEffect);
+                await skillEventHandle
+                        .OnSkillCasting(null)
+                        .SuppressCancellationThrow()
+                        .AttachExternalCancellation(viewTarget.GetCancellationTokenOnDestroy())
+                    ;
             }
 
             await ExecuteSkillBody(trigger, value);
@@ -208,12 +262,17 @@ namespace Vvr.Controller.Skill
             #region Warmup
 
             Transform targetView = await m_ViewProvider.Resolve(target);
-            var skillEventHandle = (await m_ViewProvider.Resolve(Owner)).GetComponent<ISkillEventHandler>();
-            if (skillEventHandle != null &&
-                value.skill.Presentation.TargetEffect.IsValid())
+            Transform view       = await m_ViewProvider.Resolve(Owner);
+
+            var skillEventHandle = view.GetComponent<ISkillEventHandler>();
+            if (skillEventHandle != null)
             {
                 SkillEffectEmitter emitter = new SkillEffectEmitter(value.skill.Presentation.TargetEffect);
-                await skillEventHandle.OnSkillEnd(targetView, emitter);
+                await skillEventHandle
+                        .OnSkillEnd(targetView, emitter)
+                        .SuppressCancellationThrow()
+                        .AttachExternalCancellation(view.GetCancellationTokenOnDestroy())
+                    ;
             }
             else if (value.skill.Presentation.TargetEffect.IsValid())
             {
@@ -239,11 +298,10 @@ namespace Vvr.Controller.Skill
                     await target.Abnormal.Add(e);
                 }
 
+                float dmg = Owner.Stats[StatType.ATT] * value.skill.Execution.Multiplier;
                 switch (value.skill.Execution.Method)
                 {
                     case SkillSheet.Method.Damage:
-                        float dmg = Owner.Stats[StatType.ATT] * value.skill.Execution.Multiplier;
-
                         target.Stats.Push<DamageProcessor>(
                             value.skill.Execution.TargetStat.Ref.ToStat(), dmg);
                         await targetTrigger.Execute(Model.Condition.OnHit, null);
@@ -251,11 +309,10 @@ namespace Vvr.Controller.Skill
                         break;
                     case SkillSheet.Method.Default:
                     default:
-                        // dmg *= value.skill.Execution.Multiplier;
-                        // target.Stats.Push(
-                        //     value.skill.Execution.TargetStat.Ref.ToStat(), dmg);
-                        //
-                        // await targetTrigger.Execute(Model.Condition.OnHit, null);
+                        target.Stats.Push(
+                            value.skill.Execution.TargetStat.Ref.ToStat(), dmg);
+
+                        await targetTrigger.Execute(Model.Condition.OnHit, null);
                         break;
                 }
             }
@@ -326,6 +383,18 @@ namespace Vvr.Controller.Skill
                 Value e = m_Values[i];
 
                 await trigger.Execute(Model.Condition.OnSkillCasting, e.skill.Id);
+
+                Transform viewTarget       = await m_ViewProvider.Resolve(Owner);
+                var       skillEventHandle = viewTarget.GetComponent<ISkillEventHandler>();
+                if (skillEventHandle != null)
+                {
+                    // SkillEffectEmitter emitter = new SkillEffectEmitter(value.skill.Presentation.SelfEffect);
+                    await skillEventHandle
+                            .OnSkillCasting(null)
+                            .SuppressCancellationThrow()
+                            .AttachExternalCancellation(viewTarget.GetCancellationTokenOnDestroy())
+                        ;
+                }
 
                 // If time completed, execute
                 if (e.delayedExecutionTime > 0)
