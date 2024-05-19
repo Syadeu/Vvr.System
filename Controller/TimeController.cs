@@ -31,7 +31,7 @@ namespace Vvr.Controller
     {
         private static readonly List<ITimeUpdate> s_TimeUpdaters = new();
 
-        public static CryptoInt CurrentTime { get; private set; } = 0;
+        public static CryptoFloat CurrentTime { get; private set; } = 0;
         public static bool        IsUpdating  { get; private set; }
 
         public static void Register(ITimeUpdate t)
@@ -51,11 +51,11 @@ namespace Vvr.Controller
                 await UniTask.Yield();
             }
         }
-        public static async UniTask Next(int time)
+        public static async UniTask Next(float time)
         {
             IsUpdating  =  true;
             CurrentTime += time;
-            int currentTime = CurrentTime;
+            float currentTime = CurrentTime;
 
             // This because time updater container can be changed
             // while updating their state.
@@ -93,7 +93,7 @@ namespace Vvr.Controller
 
     public interface ITimeUpdate
     {
-        UniTask OnUpdateTime(int currentTime, int deltaTime);
+        UniTask OnUpdateTime(float currentTime, float deltaTime);
         UniTask OnEndUpdateTime();
     }
 }

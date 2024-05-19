@@ -21,6 +21,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using Cathei.BakingSheet;
 using Cysharp.Threading.Tasks;
@@ -169,15 +170,16 @@ namespace Vvr.Controller.Skill
             Assert.IsTrue(Owner.ConditionResolver[Model.Condition.IsActorTurn](null));
 
             // Check cooltime
-            if (m_SkillCooltimes.ContainsKey(value.hash))
+            if (m_SkillCooltimes.TryGetValue(value.hash, out float cooltime))
             {
-                $"[Skill:{Owner.DisplayName}:{Owner.GetInstanceID()}] Skill({value.skill.Id}) is in cooltime {m_SkillCooltimes[value.hash]}"
+                $"[Skill:{Owner.DisplayName}:{Owner.GetInstanceID()}] Skill({value.skill.Id}) is in cooltime {cooltime}"
                     .ToLog();
+
+                await trigger.Execute(Model.Condition.OnSkillCooltime, $"{cooltime}");
                 return;
             }
 
             $"[Skill:{Owner.DisplayName}:{Owner.GetInstanceID()}] Skill start {value.skill.Id}".ToLog();
-
 
             await trigger.Execute(Model.Condition.OnSkillStart, value.skill.Id);
 
@@ -332,7 +334,7 @@ namespace Vvr.Controller.Skill
             m_SkillCooltimeKeys.Add(value.hash);
         }
 
-        async UniTask ITimeUpdate.OnUpdateTime(int currentTime, int deltaTime)
+        async UniTask ITimeUpdate.OnUpdateTime(float currentTime, float deltaTime)
         {
             for (int i = m_SkillCooltimeKeys.Count - 1; i >= 0; i--)
             {

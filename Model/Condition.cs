@@ -48,6 +48,7 @@ namespace Vvr.Model
         OnSkillStart,
         OnSkillCasting,
         OnSkillEnd,
+        OnSkillCooltime,
 
         OnAbnormalAdded,
         OnAbnormalRemoved,
@@ -203,6 +204,7 @@ namespace Vvr.Model
         OnSkillStart = Condition.OnSkillStart,
         OnSkillCasting = Condition.OnSkillCasting,
         OnSkillEnd   = Condition.OnSkillEnd,
+        OnSkillCooltime = Condition.OnSkillCooltime,
 
         OnAbnormalAdded = Condition.OnAbnormalAdded,
         OnAbnormalRemoved = Condition.OnAbnormalRemoved,

@@ -70,7 +70,7 @@ namespace Vvr.Controller.Abnormal
         async UniTask ITimeUpdate.OnEndUpdateTime()
         {
         }
-        async UniTask ITimeUpdate.OnUpdateTime(int currentTime, int deltaTime)
+        async UniTask ITimeUpdate.OnUpdateTime(float currentTime, float deltaTime)
         {
             using var trigger = ConditionTrigger.Push(Owner, ConditionTrigger.Abnormal);
 

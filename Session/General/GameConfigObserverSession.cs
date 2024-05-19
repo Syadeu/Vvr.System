@@ -147,7 +147,7 @@ namespace Vvr.Session
             await methodProvider.Resolve(method)(o, parameters);
         }
 
-        UniTask ITimeUpdate.OnUpdateTime(int currentTime, int deltaTime)
+        UniTask ITimeUpdate.OnUpdateTime(float currentTime, float deltaTime)
         {
             return UniTask.CompletedTask;
         }

@@ -15,7 +15,9 @@
         "UniTask",
         "UniTask.Addressables",
         "BakingSheet",
-        "BakingSheet.ScriptableObject"
+        "BakingSheet.ScriptableObject",
+
+        "Unity.InputSystem"
     ],
     "includePlatforms": [
         "Editor",

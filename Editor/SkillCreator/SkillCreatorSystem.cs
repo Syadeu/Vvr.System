@@ -23,6 +23,8 @@ using Cathei.BakingSheet.Unity;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using UnityEngine;
+using UnityEngine.InputSystem.EnhancedTouch;
+using Vvr.Controller;
 using Vvr.Controller.Condition;
 using Vvr.Model;
 using Vvr.Provider;
@@ -50,11 +52,21 @@ namespace Vvr.System.SkillCreator
 
         private async UniTaskVoid Start()
         {
+            if (!EnhancedTouchSupport.enabled)
+            {
+                EnhancedTouchSupport.Enable();
+            }
+
             m_World = await GameWorld.GetOrCreate<DefaultWorld>(Owner.Issue);
             await m_World.CreateSession<SkillTestUserSession>(default);
 
-            await m_World.DefaultMap.CreateSession<DefaultRegion>(default);
+            m_World.DefaultMap.CreateSession<DefaultRegion>(default).Forget();
             "end".ToLog();
+        }
+
+        public void TimeUpdate()
+        {
+            TimeController.Next(1).Forget();
         }
     }
 
