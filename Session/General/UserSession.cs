@@ -37,6 +37,10 @@ namespace Vvr.Session
         IPlayerActorProvider,
         IConnector<IActorDataProvider>,
         IConnector<IStageProvider>
+
+#if UNITY_EDITOR
+        , IConnector<ITestUserDataProvider>
+#endif
     {
         public struct SessionData : ISessionData
         {
@@ -54,18 +58,31 @@ namespace Vvr.Session
         {
             Parent.Register<IPlayerActorProvider>(this);
 
+#if UNITY_EDITOR
+            Vvr.Provider.Provider.Static.Connect<ITestUserDataProvider>(this);
+#endif
             await base.OnInitialize(session, data);
         }
         protected override UniTask OnReserve()
         {
             Parent.Unregister<IPlayerActorProvider>();
 
+#if UNITY_EDITOR
+            Vvr.Provider.Provider.Static.Disconnect<ITestUserDataProvider>(this);
+#endif
             return base.OnReserve();
         }
 
         public IReadOnlyList<IActorData> GetCurrentTeam()
         {
             // TODO : Temp code
+#if UNITY_EDITOR
+            if (m_TestUserDataProvider != null)
+            {
+                return m_TestUserDataProvider.CurrentTeam.Select(m_ActorDataProvider.Resolve).ToArray();
+            }
+#endif
+
             return m_CurrentActors;
         }
 
@@ -91,5 +108,11 @@ namespace Vvr.Session
 
         void IConnector<IStageProvider>.Connect(IStageProvider    t) => m_StageProvider = t;
         void IConnector<IStageProvider>.Disconnect(IStageProvider t) => m_StageProvider = null;
+
+#if UNITY_EDITOR
+        private ITestUserDataProvider m_TestUserDataProvider;
+        public  void                  Connect(ITestUserDataProvider    t) => m_TestUserDataProvider = t;
+        public  void                  Disconnect(ITestUserDataProvider t) => m_TestUserDataProvider = null;
+#endif
     }
 }

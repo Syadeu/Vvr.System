@@ -26,6 +26,7 @@ using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
+using UnityEngine.ResourceManagement.ResourceLocations;
 using UnityEngine.ResourceManagement.ResourceProviders;
 
 namespace Vvr.Controller
@@ -42,6 +43,11 @@ namespace Vvr.Controller
             public GameObjectPool Pool     { get; set; }
             public GameObject     Root     { get; set; }
             public bool           Reserved { get; set; }
+
+            public void Stop()
+            {
+                GetComponent<ParticleSystem>().Stop();
+            }
 
             private void OnParticleSystemStopped()
             {
@@ -71,9 +77,40 @@ namespace Vvr.Controller
 
             return pool;
         }
+        public static GameObjectPool GetWithRawKey(object key)
+        {
+            Hash h;
 
-        private Hash            m_Hash;
-        private AddressablePath m_Path;
+            if (key is string strKey) h = new Hash(strKey);
+            else if (key is IResourceLocation loc)
+            {
+                h = new Hash(
+                    FNV1a32.Calculate(loc.PrimaryKey)                         ^
+                    FNV1a32.Calculate(loc.ResourceType.AssemblyQualifiedName) ^
+                    367
+                );
+            }
+            else if (key is AssetReference assetReference)
+            {
+                h = new Hash(assetReference.RuntimeKey.ToString());
+            }
+            else throw new NotImplementedException();
+
+            if (!s_ObjectPools.TryGetValue(h, out var pool))
+            {
+                GameObject obj = new GameObject(((uint)h).ToString());
+                pool             = obj.AddComponent<GameObjectPool>();
+
+                pool.RawInitialize(h, key);
+
+                s_ObjectPools[h] = pool;
+            }
+
+            return pool;
+        }
+
+        private Hash   m_Hash;
+        private object m_Key;
 
         private readonly List<AsyncOperationHandle> m_OperationHandles = new();
         private readonly Stack<GameObject>          m_Pool             = new();
@@ -81,7 +118,13 @@ namespace Vvr.Controller
         private void Initialize(Hash h, AddressablePath path)
         {
             m_Hash = h;
-            m_Path = path;
+            m_Key = path.FullPath;
+        }
+
+        private void RawInitialize(Hash h, object key)
+        {
+            m_Hash = h;
+            m_Key  = key;
         }
 
         private AsyncOperationHandle<GameObject> CreateInstance(
@@ -89,11 +132,20 @@ namespace Vvr.Controller
         {
             AsyncOperationHandle<GameObject> handle =
                 Addressables.InstantiateAsync(
-                    m_Path.FullPath,
+                    m_Key,
                     new InstantiationParameters(
                         position,
                         rotation,
                         parent));
+            m_OperationHandles.Add(handle);
+
+            return handle;
+        }
+        private AsyncOperationHandle<GameObject> CreateInstance(Transform parent = null)
+        {
+            AsyncOperationHandle<GameObject> handle =
+                Addressables.InstantiateAsync(
+                    m_Key, parent);
             m_OperationHandles.Add(handle);
 
             return handle;
@@ -113,6 +165,21 @@ namespace Vvr.Controller
             callback.Root     = obj;
             callback.Pool     = this;
 
+            return callback;
+        }
+        public async UniTask<IEffectObject> SpawnEffect(
+            Vector3 position, Transform parent = null)
+        {
+            var obj            = await Spawn(position, parent);
+            var particleSystem = obj.GetComponentInChildren<ParticleSystem>();
+            var main           = particleSystem.main;
+            main.stopAction = ParticleSystemStopAction.Callback;
+            particleSystem.Play();
+
+            var callback = particleSystem.gameObject.GetOrAddComponent<ParticleCallbackReceiver>();
+            callback.Reserved = false;
+            callback.Root     = obj;
+            callback.Pool     = this;
 
             return callback;
         }
@@ -142,6 +209,33 @@ namespace Vvr.Controller
             obj.SetActive(true);
             return obj;
         }
+        public async UniTask<GameObject> Spawn(
+            Vector3 position, Transform parent = null)
+        {
+            if (parent is null) parent = transform;
+
+            if (m_Pool.TryPop(out var result))
+            {
+                var tr  = result.transform;
+                tr.SetParent(parent, false);
+                tr.position = position;
+
+                result.SetActive(true);
+                return result;
+            }
+
+            var handle = CreateInstance(parent);
+            while (!handle.IsDone)
+            {
+                await UniTask.Yield();
+            }
+
+            var obj = handle.Result;
+            obj.transform.position = position;
+
+            obj.SetActive(true);
+            return obj;
+        }
 
         public void Reserve(GameObject ins)
         {
@@ -167,5 +261,7 @@ namespace Vvr.Controller
     public interface IEffectObject
     {
         bool Reserved { get; }
+
+        void Stop();
     }
 }
