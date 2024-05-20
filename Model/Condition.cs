@@ -94,6 +94,9 @@ namespace Vvr.Model
         IsFloorEnded,
         IsStageStarted,
         IsStageEnded,
+
+        IsFloor,
+        IsStage,
         // Session
 
         // GameConfig

@@ -48,7 +48,7 @@ namespace Vvr.Session.World
                 if (x.IsNullOrEmpty() || !int.TryParse(x, out var st)) return true;
 
                 var stage = Data.stages.First();
-                return stage.Floor == st;
+                return st <= stage.Floor;
             };
             conditionResolver[Model.Condition.IsFloorEnded]   = x =>
             {
@@ -59,7 +59,7 @@ namespace Vvr.Session.World
                 if (x.IsNullOrEmpty() || !int.TryParse(x, out var st)) return true;
 
                 var stage = Data.stages.First();
-                return stage.Floor == st;
+                return st < stage.Floor;
             };
             conditionResolver[Model.Condition.IsStageStarted] = x =>
             {
@@ -80,6 +80,26 @@ namespace Vvr.Session.World
                 if (!TryGetStageElementIndex(x, out int index)) return false;
 
                 return index < m_CurrentStageIndex;
+            };
+
+            conditionResolver[Condition.IsFloor] = x =>
+            {
+                if (!Started || !WasStartedOnce || !Data.stages.Any()) return false;
+
+                if (x.IsNullOrEmpty() || !int.TryParse(x, out var st)) return true;
+
+                var stage = Data.stages.First();
+                return stage.Floor == st;
+            };
+            conditionResolver[Condition.IsStage] = x =>
+            {
+                if (!Started || !WasStartedOnce || !Data.stages.Any()) return false;
+
+                if (x.IsNullOrEmpty()) return true;
+
+                if (!TryGetStageElementIndex(x, out int index)) return false;
+
+                return index == m_CurrentStageIndex;
             };
         }
 
