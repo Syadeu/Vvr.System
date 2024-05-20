@@ -31,16 +31,11 @@ using Vvr.Session.Provider;
 
 namespace Vvr.Session
 {
-    // TODO: Temp
     [UsedImplicitly]
     public class UserSession : ChildSession<UserSession.SessionData>,
         IUserActorProvider, IUserStageProvider,
         IConnector<IActorDataProvider>,
         IConnector<IStageDataProvider>
-
-#if UNITY_EDITOR
-        , IConnector<ITestUserDataProvider>
-#endif
     {
         public struct SessionData : ISessionData
         {
@@ -61,9 +56,6 @@ namespace Vvr.Session
             Parent.Register<IUserActorProvider>(this);
             Parent.Register<IUserStageProvider>(this);
 
-#if UNITY_EDITOR
-            Vvr.Provider.Provider.Static.Connect<ITestUserDataProvider>(this);
-#endif
             await base.OnInitialize(session, data);
         }
         protected override UniTask OnReserve()
@@ -71,22 +63,11 @@ namespace Vvr.Session
             Parent.Unregister<IUserActorProvider>();
             Parent.Unregister<IUserStageProvider>();
 
-#if UNITY_EDITOR
-            Vvr.Provider.Provider.Static.Disconnect<ITestUserDataProvider>(this);
-#endif
             return base.OnReserve();
         }
 
         public IReadOnlyList<IActorData> GetCurrentTeam()
         {
-            // TODO : Temp code
-#if UNITY_EDITOR
-            if (m_TestUserDataProvider != null)
-            {
-                return m_TestUserDataProvider.CurrentTeam.Select(m_ActorDataProvider.Resolve).ToArray();
-            }
-#endif
-
             return m_CurrentActors;
         }
 
@@ -112,11 +93,5 @@ namespace Vvr.Session
 
         void IConnector<IStageDataProvider>.Connect(IStageDataProvider    t) => m_StageDataProvider = t;
         void IConnector<IStageDataProvider>.Disconnect(IStageDataProvider t) => m_StageDataProvider = null;
-
-#if UNITY_EDITOR
-        private ITestUserDataProvider m_TestUserDataProvider;
-        public  void                  Connect(ITestUserDataProvider    t) => m_TestUserDataProvider = t;
-        public  void                  Disconnect(ITestUserDataProvider t) => m_TestUserDataProvider = null;
-#endif
     }
 }

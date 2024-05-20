@@ -29,10 +29,9 @@ using Vvr.Model;
 namespace Vvr.TestClass
 {
     [Serializable]
-    public class TestStageData : IStageData
+    public class TestStageData : TestData, IStageData
     {
-        [SerializeField] private string m_Id;
-        [SerializeField] private string m_Name;
+        [SerializeField] private string m_Name = "TESTSTAGE";
         [SerializeField] private int    m_Region;
         [SerializeField] private int    m_Floor;
 
@@ -45,9 +44,6 @@ namespace Vvr.TestClass
 
         private Dictionary<AssetType, AddressablePath> m_Assets;
 
-        public string Id => m_Id;
-
-        public int    Index  => 0;
         public string Name   => m_Name;
         public int    Region => m_Region;
         public int    Floor  => m_Floor;
@@ -55,35 +51,18 @@ namespace Vvr.TestClass
         public IReadOnlyList<IActorData>                       Actors => m_ResolvedActors;
         public IReadOnlyDictionary<AssetType, AddressablePath> Assets => m_Assets;
 
-        public TestStageData(string id, string name, int region, int floor)
-        {
-            m_Id     = id;
-            m_Name   = name;
-            m_Region = region;
-            m_Floor  = floor;
-        }
-
-        public TestStageData Setup(GameDataSheets data)
+        public override void Build(GameDataSheets data)
         {
             m_Sheets = data;
 
-            if (m_Assets == null)
-            {
-                m_Assets = new();
-                m_Assets[AssetType.BackgroundImage] = new AddressablePath(
-                    $"{m_BackgroundImage.RuntimeKey}[{m_BackgroundImage.SubObjectName}]");
-            }
+            m_Assets                            = new();
+            m_Assets[AssetType.BackgroundImage] = m_BackgroundImage.Resolve();
 
-            if (m_ResolvedActors == null)
+            m_ResolvedActors = new();
+            foreach (var actor in m_Actors)
             {
-                m_ResolvedActors = new();
-                foreach (var actor in m_Actors)
-                {
-                    m_ResolvedActors.Add(data.Actors[actor]);
-                }
+                m_ResolvedActors.Add(data.Actors[actor]);
             }
-
-            return this;
         }
         public TestStageData AddActor(IEnumerable<string> actors)
         {

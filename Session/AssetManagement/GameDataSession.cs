@@ -38,9 +38,10 @@ namespace Vvr.Session
 
         }
 
-        private GameDataSheets m_SheetContainer;
-
         public override string DisplayName => nameof(GameDataSession);
+
+        [PublicAPI]
+        public GameDataSheets SheetContainer { get; private set; }
 
         protected override async UniTask OnInitialize(IParentSession session, SessionData data)
         {
@@ -52,23 +53,23 @@ namespace Vvr.Session
                     ));
             Register<IAssetProvider>(assetSession);
 
-            m_SheetContainer = new GameDataSheets(UnityLogger.Default);
+            SheetContainer = new GameDataSheets(UnityLogger.Default);
             var dataContainer
                 = await assetSession.LoadAsync<SheetContainerScriptableObject>("Data/_Container.asset");
 
             ScriptableObjectSheetImporter imp = new(dataContainer.Object);
-            await m_SheetContainer.Bake(imp).AsUniTask();
+            await SheetContainer.Bake(imp).AsUniTask();
 
-            StatProvider.GetOrCreate(m_SheetContainer.StatTable);
+            StatProvider.GetOrCreate(SheetContainer.StatTable);
 
             var gameConfigSession = await CreateSession<GameConfigSession>(
-                new GameConfigSession.SessionData(m_SheetContainer.GameConfigTable));
+                new GameConfigSession.SessionData(SheetContainer.GameConfigTable));
             var actorDataSession = await CreateSession<ActorDataSession>(
-                new ActorDataSession.SessionData(m_SheetContainer.Actors));
+                new ActorDataSession.SessionData(SheetContainer.Actors));
             var customMethodSession = await CreateSession<CustomMethodSession>(
-                new CustomMethodSession.SessionData(m_SheetContainer.CustomMethodTable));
+                new CustomMethodSession.SessionData(SheetContainer.CustomMethodTable));
             var stageDataSession = await CreateSession<StageDataSession>(
-                new StageDataSession.SessionData(m_SheetContainer.Stages));
+                new StageDataSession.SessionData(SheetContainer.Stages));
 
             Parent
                 .Register<IGameConfigProvider>(gameConfigSession)
@@ -86,7 +87,7 @@ namespace Vvr.Session
                 .Unregister<IStageDataProvider>()
                 ;
 
-            m_SheetContainer.Dispose();
+            SheetContainer.Dispose();
 
             return base.OnReserve();
         }

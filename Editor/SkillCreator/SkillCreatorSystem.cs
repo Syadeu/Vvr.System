@@ -17,35 +17,34 @@
 // File created : 2024, 05, 19 17:05
 #endregion
 
-using System.Collections.Generic;
-using Cathei.BakingSheet.Unity;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
-using UnityEngine.InputSystem.EnhancedTouch;
 using Vvr.Controller;
-using Vvr.Controller.Condition;
-using Vvr.Model;
-using Vvr.Provider;
 using Vvr.Session.World;
+using Vvr.TestClass;
 
 namespace Vvr.System.SkillCreator
 {
-    public sealed class SkillCreatorSystem : MonoBehaviour
+    public sealed class SkillCreatorSystem : TestSystem<DefaultWorld>
     {
-        private DefaultWorld m_World;
+        [SerializeField] private string[]      m_Actors;
+        [SerializeField] private string        m_CurrentStageId;
+        [SerializeField] private TestStageData m_StageData;
 
-        private async UniTaskVoid Start()
+        protected override async UniTask OnStart(DefaultWorld world)
         {
-            if (!EnhancedTouchSupport.enabled)
+            if (m_CurrentStageId.IsNullOrEmpty())
             {
-                EnhancedTouchSupport.Enable();
+                m_StageData.Build(world.DataSession.SheetContainer);
+                await world.CreateSession<FakeUserSession>(
+                    new FakeUserSession.SessionData(m_Actors, m_StageData));
             }
-
-            m_World = await GameWorld.GetOrCreate<DefaultWorld>(Owner.Issue);
-            await m_World.CreateSession<SkillTestUserSession>(default);
-
-            m_World.DefaultMap.CreateSession<DefaultRegion>(default).Forget();
-            "end".ToLog();
+            else
+            {
+                await world.CreateSession<FakeUserSession>(
+                    new FakeUserSession.SessionData(m_Actors, m_CurrentStageId));
+            }
+            world.DefaultMap.CreateSession<DefaultRegion>(default).Forget();
         }
 
         public void TimeUpdate()

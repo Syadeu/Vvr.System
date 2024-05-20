@@ -15,29 +15,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // 
-// File created : 2024, 05, 19 13:05
+// File created : 2024, 05, 21 00:05
 
 #endregion
 
-using System.Collections.Generic;
-using UnityEngine;
+using Cathei.BakingSheet.Unity;
+using UnityEngine.AddressableAssets;
 
-namespace Vvr.Session.Provider
+namespace Vvr.TestClass
 {
-    public class TestUserDataProviderComponent : MonoBehaviour, ITestUserDataProvider
+    public static class TestDataExtensions
     {
-        [SerializeField] private string[] m_Teams;
-
-        public IReadOnlyList<string> CurrentTeam => m_Teams;
-
-        private void Awake()
+        public static AddressablePath Resolve(this AssetReference t)
         {
-            Vvr.Provider.Provider.Static.Register<ITestUserDataProvider>(this);
-        }
-
-        private void OnDestroy()
-        {
-            Vvr.Provider.Provider.Static.Unregister<ITestUserDataProvider>(this);
+            return new AddressablePath(
+                $"{t.RuntimeKey}[{t.SubObjectName}]");
         }
     }
 }

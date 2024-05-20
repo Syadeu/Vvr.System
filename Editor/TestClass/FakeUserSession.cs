@@ -15,10 +15,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// File created : 2024, 05, 19 20:05
+// File created : 2024, 05, 21 00:05
 
 #endregion
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Cysharp.Threading.Tasks;
@@ -28,47 +29,84 @@ using Vvr.Provider;
 using Vvr.Session;
 using Vvr.Session.Provider;
 
-namespace Vvr.System.SkillCreator
+namespace Vvr.TestClass
 {
     [UsedImplicitly]
-    internal sealed class SkillTestUserSession : ChildSession<SkillTestUserSession.SessionData>,
+    public sealed class FakeUserSession : ChildSession<FakeUserSession.SessionData>,
         IUserActorProvider, IUserStageProvider,
         IConnector<IActorDataProvider>,
-        IConnector<IStageDataProvider>,
-        IConnector<ITestUserDataProvider>
+        IConnector<IStageDataProvider>
     {
         public struct SessionData : ISessionData
         {
             public IEnumerable<string> playerActorIds;
-            public IStageData          customStageData;
+            public string              customStageId;
+            public TestStageData          testStageData;
+
+            public SessionData(IEnumerable<string> actors, string stageId)
+            {
+                playerActorIds = actors;
+                customStageId  = stageId;
+                testStageData  = null;
+            }
+            public SessionData(IEnumerable<string> actors, TestStageData stage)
+            {
+                playerActorIds = actors;
+                testStageData  = stage;
+                customStageId  = null;
+            }
         }
 
         private IActorDataProvider    m_ActorDataProvider;
         private IStageDataProvider    m_StageDataProvider;
-        private ITestUserDataProvider m_TestUserDataProvider;
 
         public override string DisplayName => nameof(UserSession);
 
-        public IStageData CurrentStage => m_StageDataProvider.First().Value;
+        public IStageData CurrentStage
+        {
+            get
+            {
+                if (Data.customStageId.IsNullOrEmpty())
+                {
+                    return Data.testStageData;
+                }
+
+                return m_StageDataProvider[Data.customStageId];
+            }
+        }
 
         protected override async UniTask OnInitialize(IParentSession session, SessionData data)
         {
             Parent.Register<IUserActorProvider>(this);
             Parent.Register<IUserStageProvider>(this);
-            Vvr.Provider.Provider.Static.Connect<ITestUserDataProvider>(this);
             await base.OnInitialize(session, data);
         }
         protected override UniTask OnReserve()
         {
             Parent.Unregister<IUserActorProvider>();
             Parent.Unregister<IUserStageProvider>();
-            Vvr.Provider.Provider.Static.Disconnect<ITestUserDataProvider>(this);
             return base.OnReserve();
         }
 
+        private IActorData[] m_Actors;
+
         public IReadOnlyList<IActorData> GetCurrentTeam()
         {
-            return m_TestUserDataProvider.CurrentTeam.Select(m_ActorDataProvider.Resolve).ToArray();
+            if (m_Actors == null)
+            {
+                if (!Data.playerActorIds.Any())
+                {
+                    m_Actors = Array.Empty<IActorData>();
+                }
+                else
+                {
+                    m_Actors = Data.playerActorIds
+                        .Select(m_ActorDataProvider.Resolve)
+                        .ToArray();
+                }
+            }
+
+            return m_Actors;
         }
 
         void IConnector<IActorDataProvider>.Connect(IActorDataProvider    t) => m_ActorDataProvider = t;
@@ -76,8 +114,5 @@ namespace Vvr.System.SkillCreator
 
         void IConnector<IStageDataProvider>.Connect(IStageDataProvider    t) => m_StageDataProvider = t;
         void IConnector<IStageDataProvider>.Disconnect(IStageDataProvider t) => m_StageDataProvider = null;
-
-        public void Connect(ITestUserDataProvider    t) => m_TestUserDataProvider = t;
-        public void Disconnect(ITestUserDataProvider t) => m_TestUserDataProvider = null;
     }
 }

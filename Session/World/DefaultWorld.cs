@@ -40,13 +40,14 @@ namespace Vvr.Session.World
 
         public override string DisplayName => nameof(DefaultWorld);
 
-        public DefaultMap DefaultMap { get; private set; }
+        public DefaultMap      DefaultMap  { get; private set; }
+        public GameDataSession DataSession { get; private set; }
 
         protected override async UniTask OnInitialize(IParentSession session, RootData data)
         {
             Vvr.Provider.Provider.Static.Connect<IViewRegistryProvider>(this);
 
-            await CreateSession<GameDataSession>(default);
+            DataSession = await CreateSession<GameDataSession>(default);
             await CreateSession<GameConfigResolveSession>(
                 new GameConfigResolveSession.SessionData(MapType.Global, true));
 
