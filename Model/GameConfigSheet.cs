@@ -58,15 +58,15 @@ namespace Vvr.Model
         public struct Lifecycle
         {
             [UsedImplicitly] public MapType        Map       { get; private set; }
-            [UsedImplicitly] public StateCondition Condition { get; private set; }
+            [UsedImplicitly] public Condition Condition { get; private set; }
             [UsedImplicitly] public string         Value     { get; private set; }
         }
         public struct Evaluation
         {
-            [UsedImplicitly] public EventCondition Condition   { get; private set; }
-            [UsedImplicitly] public string         Value       { get; private set; }
-            [UsedImplicitly] public float          Probability { get; private set; }
-            [UsedImplicitly] public int            MaxCount    { get; private set; }
+            [UsedImplicitly] public Condition Condition   { get; private set; }
+            [UsedImplicitly] public string    Value       { get; private set; }
+            [UsedImplicitly] public float     Probability { get; private set; }
+            [UsedImplicitly] public int       MaxCount    { get; private set; }
         }
         public struct Execution
         {

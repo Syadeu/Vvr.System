@@ -105,12 +105,9 @@ namespace Vvr.Model
         // GameConfig
     }
 
-    public enum SessionEventCondition : short
-    {
-        OnFloorStarted = Condition.OnFloorStarted,
-        OnFloorEnded   = Condition.OnFloorEnded,
-    }
-
+    /// <summary>
+    /// Only for actor
+    /// </summary>
     public enum StateCondition : short
     {
         Always = 0,
@@ -118,7 +115,7 @@ namespace Vvr.Model
         IsPlayerActor = Condition.IsPlayerActor,
         IsActorTurn = Condition.IsActorTurn,
         IsInHand    = Condition.IsInHand,
-        IsFront = Condition.IsFront
+        IsFront = Condition.IsFront,
     }
 
     public enum LogicalCondition : short
@@ -193,6 +190,9 @@ namespace Vvr.Model
         LEqual = Condition.LEqual
     }
 
+    /// <summary>
+    /// Only for actor
+    /// </summary>
     public enum EventCondition : short
     {
         None = 0,
