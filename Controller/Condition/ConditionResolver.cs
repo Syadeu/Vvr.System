@@ -41,6 +41,15 @@ namespace Vvr.Controller.Condition
         public static readonly ConditionDelegate Always = _ => true;
         public static readonly ConditionDelegate False = _ => false;
 
+        /// <summary>
+        /// Create new condition resolver with parent.
+        /// </summary>
+        /// <remarks>
+        /// If target condition cannot be resolved by itself, resolve with parent's resolver.
+        /// </remarks>
+        /// <param name="o"></param>
+        /// <param name="parent"></param>
+        /// <returns></returns>
         public static ConditionResolver Create(IEventTarget o, IReadOnlyConditionResolver parent)
         {
             return new(o, parent);

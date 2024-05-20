@@ -92,20 +92,22 @@ namespace Vvr.Session
                     // Prevent infinite loop
                     await UniTask.Yield();
 
-                    if (!EvaluateActorConfig(config, target)) continue;
+                    if (!EvaluateConfig(config, target)) continue;
                     if (!EvaluateExecutionCount(config, target, out int executedCount)) continue;
 
                     $"[World] execute config : {target.DisplayName} : {condition}, {value}".ToLog();
 
                     m_ExecutionCount[target.GetHash()] = ++executedCount;
-                    await ExecuteMethod(target, config.Execution.Method, config.Parameters);
+                    await ExecuteMethod(
+                        config,
+                        target, config.Execution.Method, config.Parameters);
                 }
 
                 return;
             }
         }
 
-        private bool EvaluateActorConfig(GameConfigSheet.Row config, IConditionTarget target)
+        private bool EvaluateConfig(GameConfigSheet.Row config, IConditionTarget target)
         {
             Assert.IsNotNull(config);
 
@@ -150,14 +152,22 @@ namespace Vvr.Session
             return config.Evaluation.MaxCount > executedCount;
         }
 
-        private async UniTask ExecuteMethod(IEventTarget o, Model.GameMethod method, IReadOnlyList<string> parameters)
+        private async UniTask ExecuteMethod(
+            GameConfigSheet.Row config,
+            IEventTarget o, Model.GameMethod method, IReadOnlyList<string> parameters)
         {
-            IGameMethodProvider methodProvider = m_GameMethodProvider;
-            if (methodProvider == null)
-                methodProvider = Parent.GetProviderRecursive<IGameMethodProvider>();
+            using var trigger = ConditionTrigger.Push(this, DisplayName);
+            await trigger.Execute(Condition.OnGameConfigStarted, config.Id);
+            if (method != 0)
+            {
+                IGameMethodProvider methodProvider = m_GameMethodProvider;
+                if (methodProvider == null)
+                    methodProvider = Parent.GetProviderRecursive<IGameMethodProvider>();
 
-            Assert.IsNotNull(methodProvider, "methodProvider != null");
-            await methodProvider.Resolve(method)(o, parameters);
+                Assert.IsNotNull(methodProvider, "methodProvider != null");
+                await methodProvider.Resolve(method)(o, parameters);
+            }
+            await trigger.Execute(Condition.OnGameConfigEnded, config.Id);
         }
 
         UniTask ITimeUpdate.OnUpdateTime(float currentTime, float deltaTime)

@@ -95,6 +95,11 @@ namespace Vvr.Model
         IsStageStarted,
         IsStageEnded,
         // Session
+
+        // GameConfig
+        OnGameConfigStarted,
+        OnGameConfigEnded,
+        // GameConfig
     }
 
     public enum SessionEventCondition : short
