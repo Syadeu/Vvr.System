@@ -91,9 +91,11 @@ namespace Vvr.Controller.Condition
                 if (m_Delegates == null ||
                     !m_Filter.Has(t))
                 {
+                    // If there is no parent, this resolver cannot resolve target condition
                     if (m_Parent == null)
                         throw new InvalidOperationException($"[Condition] Condition {t} is not connected.");
 
+                    // Use parent's condition resolver.
                     return m_Parent[t];
                 }
 
@@ -167,6 +169,24 @@ namespace Vvr.Controller.Condition
             : this(owner)
         {
             m_Parent = parent;
+        }
+
+        public bool CanResolve(Model.Condition t)
+        {
+            if (t == 0) return true;
+
+            if (m_Delegates == null ||
+                !m_Filter.Has(t))
+            {
+                // If there is no parent, this resolver cannot resolve target condition
+                if (m_Parent == null)
+                    return false;
+
+                // Use parent's condition resolver.
+                return m_Parent.CanResolve(t);
+            }
+
+            return true;
         }
 
         void IConnector<IEventConditionProvider>.Connect(IEventConditionProvider provider)

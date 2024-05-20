@@ -57,7 +57,7 @@ namespace Vvr.Controller.Condition
 
             public void Dispose()
             {
-                Assert.AreEqual(s_MethodStack.Count - 1, m_Index);
+                Assert.AreEqual(s_MethodStack.Last.Value, m_Method);
 
                 s_MethodStack.RemoveLast();
                 m_Method.action = null;

@@ -32,6 +32,10 @@ namespace Vvr.Session.World
 
         protected override void Register(ConditionResolver conditionResolver)
         {
+            // While floor manages all given stages and itself,
+            // resolve method must only floor and stage.
+            // Other methods should supplied by parent.
+
             conditionResolver[Model.Condition.OnFloorStarted] = x => ConditionTrigger.Any(this, Model.Condition.OnFloorStarted, x);
             conditionResolver[Model.Condition.OnFloorEnded] = x => ConditionTrigger.Any(this, Model.Condition.OnFloorEnded, x);
             conditionResolver[Model.Condition.OnStageStarted] = x => Started && ConditionTrigger.Any(this, Model.Condition.OnStageStarted, x);

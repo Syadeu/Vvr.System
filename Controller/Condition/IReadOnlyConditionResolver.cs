@@ -30,6 +30,8 @@ namespace Vvr.Controller.Condition
 
         ConditionDelegate this[Model.Condition t] { get; }
 
+        bool CanResolve(Model.Condition t);
+
         IReadOnlyConditionResolver Subscribe(IConditionObserver   ob);
         IReadOnlyConditionResolver Unsubscribe(IConditionObserver ob);
     }

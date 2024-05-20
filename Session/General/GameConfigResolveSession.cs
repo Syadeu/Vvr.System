@@ -114,7 +114,8 @@ namespace Vvr.Session
             // Check lifecycle condition
             if (config.Lifecycle.Condition != 0)
             {
-                if (!ConditionResolver[(Condition)config.Lifecycle.Condition](config.Lifecycle.Value))
+                if (!ConditionResolver.CanResolve((Condition)config.Lifecycle.Condition) ||
+                    !ConditionResolver[(Condition)config.Lifecycle.Condition](config.Lifecycle.Value))
                 {
                     return false;
                 }
@@ -122,12 +123,14 @@ namespace Vvr.Session
 
             Assert.IsFalse(target.Disposed);
             Assert.IsNotNull(target.ConditionResolver);
-            if (!target.ConditionResolver[(Model.Condition)config.Evaluation.Condition](config.Evaluation.Value))
+            if (!target.ConditionResolver.CanResolve((Condition)config.Evaluation.Condition) ||
+                !target.ConditionResolver[(Model.Condition)config.Evaluation.Condition](config.Evaluation.Value))
                 return false;
 
             // $"[World] Evaluation completed {condition} == {config.Evaluation.Condition}".ToLog();
 
-            if (!target.ConditionResolver[config.Execution.Condition](config.Execution.Value))
+            if (!target.ConditionResolver.CanResolve(config.Execution.Condition) ||
+                !target.ConditionResolver[config.Execution.Condition](config.Execution.Value))
                 return false;
 
             // $"[World] Execution condition completed {condition} == {config.Execution.Condition}".ToLog();
