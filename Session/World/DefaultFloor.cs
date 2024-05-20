@@ -61,6 +61,12 @@ namespace Vvr.Session.World
         private DefaultStage          m_CurrentStage;
         private IViewRegistryProvider m_ViewRegistryProvider;
 
+        private int m_CurrentStageIndex;
+
+        private GameConfigResolveSession
+            m_FloorConfigResolveSession,
+            m_StageConfigResolveSession;
+
         public override string DisplayName => nameof(DefaultFloor);
 
         protected override async UniTask OnInitialize(IParentSession session, SessionData data)
@@ -71,6 +77,11 @@ namespace Vvr.Session.World
             var assetSession    = await CreateSession<AssetSession>(default);
             var stageActorCreateSession = await CreateSession<StageActorFactorySession>(default);
 
+            m_FloorConfigResolveSession = await CreateSession<GameConfigResolveSession>(
+                new GameConfigResolveSession.SessionData(MapType.Floor, false));
+            m_StageConfigResolveSession = await CreateSession<GameConfigResolveSession>(
+                new GameConfigResolveSession.SessionData(MapType.Stage, false));
+
             // Register providers to inject child sessions.
             Register<ITimelineQueueProvider>(timelineSession)
                 .Register<IAssetProvider>(assetSession)
@@ -79,16 +90,14 @@ namespace Vvr.Session.World
             await base.OnInitialize(session, data);
         }
 
-        protected override UniTask OnReserve()
-        {
-            return base.OnReserve();
-        }
-
         public async UniTask<Result> Start(IEnumerable<IActorData> playerData)
         {
-            using var trigger = ConditionTrigger.Push(this, DisplayName);
+            using var evMethod = ConditionTrigger.Scope(m_FloorConfigResolveSession.Resolve);
+            using var trigger  = ConditionTrigger.Push(this, DisplayName);
 
-            Started = true;
+            Started             = true;
+            WasStartedOnce      = true;
+            m_CurrentStageIndex = 0;
 
             Result              floorResult = default;
             DefaultStage.Result stageResult = default;
@@ -96,8 +105,8 @@ namespace Vvr.Session.World
             // LinkedListNode<StageSheet.Row> startStage  = Data.stages.First;
             List<IStageActor>              prevPlayers = new(Data.existingActors);
 
-            string cachedStartStageId = Data.stages.First().Id;
-            await trigger.Execute(Model.Condition.OnFloorStarted, cachedStartStageId);
+            var cachedStartStage = Data.stages.First();
+            await trigger.Execute(Model.Condition.OnFloorStarted, $"{cachedStartStage.Floor}");
 
             foreach (IStageData stage in Data.stages)
             {
@@ -113,30 +122,36 @@ namespace Vvr.Session.World
                         prevPlayers);
                 }
 
-                m_CurrentStage = await CreateSession<DefaultStage>(sessionData);
-                Parent.Register<IStageInfoProvider>(m_CurrentStage);
+                using (ConditionTrigger.Scope(m_StageConfigResolveSession.Resolve))
                 {
-                    await trigger.Execute(Model.Condition.OnStageStarted, sessionData.stage.Id);
-                    stageResult = await m_CurrentStage.Start();
-                    await trigger.Execute(Model.Condition.OnStageEnded, sessionData.stage.Id);
-
-                    foreach (var enemy in stageResult.enemyActors)
+                    m_CurrentStage = await CreateSession<DefaultStage>(sessionData);
+                    m_StageConfigResolveSession.Register<IGameMethodProvider>(m_CurrentStage);
+                    Parent.Register<IStageInfoProvider>(m_CurrentStage);
                     {
-                        m_ViewRegistryProvider.CardViewProvider.Release(enemy.Owner);
-                        enemy.Owner.Release();
-                    }
+                        await trigger.Execute(Model.Condition.OnStageStarted, sessionData.stage.Id);
+                        stageResult = await m_CurrentStage.Start();
+                        m_CurrentStageIndex++;
+                        await trigger.Execute(Model.Condition.OnStageEnded, sessionData.stage.Id);
 
-                    if (!stageResult.playerActors.Any())
-                    {
-                        "all players dead".ToLog();
-                        break;
-                    }
+                        foreach (var enemy in stageResult.enemyActors)
+                        {
+                            m_ViewRegistryProvider.CardViewProvider.Release(enemy.Owner);
+                            enemy.Owner.Release();
+                        }
 
-                    prevPlayers.Clear();
-                    prevPlayers.AddRange(stageResult.playerActors);
+                        if (!stageResult.playerActors.Any())
+                        {
+                            "all players dead".ToLog();
+                            break;
+                        }
+
+                        prevPlayers.Clear();
+                        prevPlayers.AddRange(stageResult.playerActors);
+                    }
+                    m_StageConfigResolveSession.Unregister<IGameMethodProvider>();
+                    Parent.Unregister<IStageInfoProvider>();
+                    await m_CurrentStage.Reserve();
                 }
-                Parent.Unregister<IStageInfoProvider>();
-                await m_CurrentStage.Reserve();
 
                 "Stage cleared".ToLog();
                 await UniTask.Yield();
@@ -148,7 +163,7 @@ namespace Vvr.Session.World
             m_CurrentStage = null;
             Started        = false;
 
-            await trigger.Execute(Model.Condition.OnFloorEnded, cachedStartStageId);
+            await trigger.Execute(Model.Condition.OnFloorEnded, $"{cachedStartStage.Floor}");
 
             return floorResult;
         }

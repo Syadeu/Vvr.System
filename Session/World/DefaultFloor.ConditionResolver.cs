@@ -17,14 +17,18 @@
 // File created : 2024, 05, 13 14:05
 #endregion
 
+using System;
+using System.Buffers;
 using System.Linq;
 using Vvr.Controller.Condition;
+using Vvr.Model;
 
 namespace Vvr.Session.World
 {
     partial class DefaultFloor
     {
-        private bool Started { get; set; }
+        private bool WasStartedOnce { get; set; }
+        private bool Started        { get; set; }
 
         protected override void Register(ConditionResolver conditionResolver)
         {
@@ -33,19 +37,59 @@ namespace Vvr.Session.World
             conditionResolver[Model.Condition.OnStageStarted] = x => Started && ConditionTrigger.Any(this, Model.Condition.OnStageStarted, x);
             conditionResolver[Model.Condition.OnStageEnded] = x => Started && ConditionTrigger.Any(this, Model.Condition.OnStageEnded, x);
 
-            conditionResolver[Model.Condition.IsFloorStarted] = x => Started  && Data.stages.First().Id == x;
-            conditionResolver[Model.Condition.IsFloorEnded]   = x => !Started && Data.stages.First().Id == x;
-            conditionResolver[Model.Condition.IsStageStarted] = x => Started  && m_CurrentStage != null && m_CurrentStage.Data.stage.Id == x;
-            conditionResolver[Model.Condition.IsStageEnded] = x => Started  && m_CurrentStage != null && m_CurrentStage.Data.stage.Id == x;
+            conditionResolver[Model.Condition.IsFloorStarted] = x =>
+            {
+                if (!Started || !Data.stages.Any()) return false;
+
+                if (x.IsNullOrEmpty() || !int.TryParse(x, out var st)) return true;
+
+                var stage = Data.stages.First();
+                return stage.Floor == st;
+            };
+            conditionResolver[Model.Condition.IsFloorEnded]   = x =>
+            {
+                if (!Data.stages.Any()) return true;
+
+                if (!Started && !WasStartedOnce) return false;
+
+                if (x.IsNullOrEmpty() || !int.TryParse(x, out var st)) return true;
+
+                var stage = Data.stages.First();
+                return stage.Floor == st;
+            };
+            conditionResolver[Model.Condition.IsStageStarted] = x =>
+            {
+                if (!Started || !WasStartedOnce || !Data.stages.Any()) return false;
+
+                if (x.IsNullOrEmpty()) return true;
+
+                if (!TryGetStageElementIndex(x, out int index)) return false;
+
+                return index <= m_CurrentStageIndex;
+            };
+            conditionResolver[Model.Condition.IsStageEnded] = x =>
+            {
+                if (!Started || !WasStartedOnce || !Data.stages.Any()) return false;
+
+                if (x.IsNullOrEmpty()) return true;
+
+                if (!TryGetStageElementIndex(x, out int index)) return false;
+
+                return index < m_CurrentStageIndex;
+            };
         }
 
-        // ConditionQuery IConditionObserver.Filter { get; } =
-        //     Condition.OnFloorStarted | (ConditionQuery)Condition.OnFloorEnded |
-        //     (ConditionQuery)Condition.OnStageStarted | (ConditionQuery)Condition.OnStageEnded;
-        //
-        // private partial async UniTask OnEventExecuted(IEventTarget target, Condition condition, string value)
-        // {
-        //
-        // }
+        private bool TryGetStageElementIndex(string id, out int i)
+        {
+            i = 0;
+            foreach (var stage in Data.stages)
+            {
+                if (stage.Id == id) return true;
+                i++;
+            }
+
+            i = -1;
+            return false;
+        }
     }
 }

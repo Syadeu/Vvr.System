@@ -22,6 +22,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using JetBrains.Annotations;
+using UnityEngine.Assertions;
 using Vvr.Model;
 using Vvr.Provider;
 
@@ -62,6 +63,14 @@ namespace Vvr.Session
 
             value = v;
             return true;
+        }
+
+        public IStageData ElementAt(int index)
+        {
+            Assert.IsFalse(index < 0);
+            if (Data.sheet.Count <= index) return null;
+
+            return Data.sheet[index];
         }
 
         public IEnumerator<KeyValuePair<string, IStageData>> GetEnumerator()

@@ -30,19 +30,32 @@ namespace Vvr.Model
     [Preserve]
     public sealed class StageSheet : Sheet<StageSheet.Row>
     {
+        [UsedImplicitly]
+        public struct Definition
+        {
+            [UsedImplicitly] public int Region { get; private set; }
+            [UsedImplicitly] public int Floor { get; private set; }
+        }
+
         public sealed class Row : SheetRow, IStageData
         {
             [UsedImplicitly] public string Name { get; private set; }
             [UsedImplicitly] public int Population { get; private set; }
-            [UsedImplicitly] public StageSheet.Reference NextStage { get; private set; }
-            [UsedImplicitly] public bool IsFinalStage { get; private set; }
-            [UsedImplicitly] public List<ActorSheet.Reference> Actors { get; private set; }
+
+            [UsedImplicitly] public Definition                 Definition   { get; private set; }
+
+            // [UsedImplicitly] public StageSheet.Reference       NextStage    { get; private set; }
+            // [UsedImplicitly] public bool                       IsFinalStage { get; private set; }
+            [UsedImplicitly] public List<ActorSheet.Reference> Actors       { get; private set; }
 
             [UsedImplicitly] public Dictionary<AssetType, AddressablePath> Assets { get; private set; }
 
             private IActorData[] m_Actors;
 
-            IStageData IStageData.                                     NextStage => NextStage.Ref;
+            int IStageData.Region => Definition.Region;
+            int IStageData.Floor => Definition.Floor;
+
+            // IStageData IStageData.                                     NextStage => NextStage.Ref;
             IReadOnlyList<IActorData> IStageData.                      Actors    => m_Actors;
             IReadOnlyDictionary<AssetType, AddressablePath> IStageData.Assets    => Assets;
 

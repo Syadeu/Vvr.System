@@ -244,6 +244,10 @@ namespace Vvr.Controller
             }
 
             var obj = handle.Result;
+            if (obj is null)
+            {
+                return null;
+            }
             obj.transform.position = position;
 
             obj.SetActive(true);

@@ -47,6 +47,8 @@ namespace Vvr.Session.World
             Vvr.Provider.Provider.Static.Connect<IViewRegistryProvider>(this);
 
             await CreateSession<GameDataSession>(default);
+            await CreateSession<GameConfigResolveSession>(
+                new GameConfigResolveSession.SessionData(MapType.Global, true));
 
             // TODO: skip map load
             DefaultMap = await CreateSession<DefaultMap>(default);

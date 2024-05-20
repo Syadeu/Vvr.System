@@ -125,11 +125,4 @@ namespace Vvr.Model
             }
         }
     }
-
-    public enum MapType : short
-    {
-        Global = 0,
-
-        Normal,
-    }
 }

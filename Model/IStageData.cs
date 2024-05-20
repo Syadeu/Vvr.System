@@ -26,9 +26,13 @@ namespace Vvr.Model
 {
     public interface IStageData : IRawData
     {
-        string                                          Name         { get; }
-        IStageData                                      NextStage    { get; }
-        bool                                            IsFinalStage { get; }
+        string                Name       { get; }
+
+        int Region { get; }
+        int Floor  { get; }
+
+        // IStageData                                      NextStage    { get; }
+        // bool                                            IsFinalStage { get; }
         IReadOnlyList<IActorData>                       Actors       { get; }
         IReadOnlyDictionary<AssetType, AddressablePath> Assets       { get; }
     }

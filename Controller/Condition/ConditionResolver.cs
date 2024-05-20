@@ -82,7 +82,10 @@ namespace Vvr.Controller.Condition
                 if (m_Delegates == null ||
                     !m_Filter.Has(t))
                 {
-                    throw new InvalidOperationException($"[Condition] Condition {t} is not connected.");
+                    if (m_Parent == null)
+                        throw new InvalidOperationException($"[Condition] Condition {t} is not connected.");
+
+                    return m_Parent[t];
                 }
 
                 int i = m_Filter.IndexOf(t);

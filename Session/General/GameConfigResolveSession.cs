@@ -32,32 +32,38 @@ using Vvr.Provider;
 namespace Vvr.Session
 {
     [UsedImplicitly]
-    public sealed class GameConfigObserverSession : ChildSession<GameConfigObserverSession.SessionData>,
-        ITimeUpdate,
-        IConnector<IGameConfigProvider>
+    public sealed class GameConfigResolveSession : ChildSession<GameConfigResolveSession.SessionData>,
+        IGameConfigResolveProvider, ITimeUpdate,
+        IConnector<IGameConfigProvider>,
+        IConnector<IGameMethodProvider>
     {
         public struct SessionData : ISessionData
         {
             public readonly MapType configType;
+            public readonly bool    autoResolve;
 
-            public SessionData(MapType t)
+            public SessionData(MapType t, bool auto)
             {
-                configType = t;
+                configType  = t;
+                autoResolve = auto;
             }
         }
 
-        private IGameConfigProvider              m_GameConfigProvider;
+        private IGameConfigProvider m_GameConfigProvider;
+        private IGameMethodProvider m_GameMethodProvider;
+
         private IEnumerable<GameConfigSheet.Row> m_Configs;
 
         private readonly Dictionary<Hash, int> m_ExecutionCount = new();
 
-        public override string DisplayName => nameof(GameConfigObserverSession);
+        public override string DisplayName => nameof(GameConfigResolveSession);
 
         protected override UniTask OnInitialize(IParentSession session, SessionData data)
         {
             m_Configs = m_GameConfigProvider[data.configType];
 
-            ConditionTrigger.OnEventExecutedAsync += OnEventExecutedAsync;
+            if (data.autoResolve)
+                ConditionTrigger.OnEventExecutedAsync += Resolve;
 
             TimeController.Register(this);
 
@@ -66,43 +72,47 @@ namespace Vvr.Session
 
         protected override UniTask OnReserve()
         {
-            ConditionTrigger.OnEventExecutedAsync -= OnEventExecutedAsync;
+            if (Data.autoResolve)
+                ConditionTrigger.OnEventExecutedAsync -= Resolve;
 
             TimeController.Unregister(this);
 
             return base.OnReserve();
         }
 
-        private async UniTask OnEventExecutedAsync(IEventTarget e, Condition condition, string value)
+        public async UniTask Resolve(IEventTarget e, Condition condition, string value)
         {
             Assert.IsFalse(e.Disposed);
 
             // TODO: temp
-            if (e is not IActor target) return;
-
-            foreach (var config in m_Configs)
+            if (e is IConditionTarget target)
             {
-                // Prevent infinite loop
-                await UniTask.Yield();
+                foreach (var config in m_Configs)
+                {
+                    // Prevent infinite loop
+                    await UniTask.Yield();
 
-                if (!EvaluateActorConfig(config, target)) continue;
-                if (!EvaluateExecutionCount(config, target, out int executedCount)) continue;
+                    if (!EvaluateActorConfig(config, target)) continue;
+                    if (!EvaluateExecutionCount(config, target, out int executedCount)) continue;
 
-                $"[World] execute config : {target.DisplayName} : {condition}, {value}".ToLog();
+                    $"[World] execute config : {target.DisplayName} : {condition}, {value}".ToLog();
 
-                m_ExecutionCount[target.GetHash()] = ++executedCount;
-                await ExecuteMethod(target, config.Execution.Method, config.Parameters);
+                    m_ExecutionCount[target.GetHash()] = ++executedCount;
+                    await ExecuteMethod(target, config.Execution.Method, config.Parameters);
+                }
+
+                return;
             }
         }
 
-        private bool EvaluateActorConfig(GameConfigSheet.Row config, IActor target)
+        private bool EvaluateActorConfig(GameConfigSheet.Row config, IConditionTarget target)
         {
             Assert.IsNotNull(config);
 
             // Check lifecycle condition
             if (config.Lifecycle.Condition != 0)
             {
-                if (!target.ConditionResolver[(Condition)config.Lifecycle.Condition](config.Lifecycle.Value))
+                if (!ConditionResolver[(Condition)config.Lifecycle.Condition](config.Lifecycle.Value))
                 {
                     return false;
                 }
@@ -129,7 +139,7 @@ namespace Vvr.Session
             return true;
         }
 
-        private bool EvaluateExecutionCount(GameConfigSheet.Row config, IActor target, out int executedCount)
+        private bool EvaluateExecutionCount(GameConfigSheet.Row config, IEventTarget target, out int executedCount)
         {
             Hash hash = target.GetHash();
             m_ExecutionCount.TryGetValue(hash, out executedCount);
@@ -142,7 +152,10 @@ namespace Vvr.Session
 
         private async UniTask ExecuteMethod(IEventTarget o, Model.GameMethod method, IReadOnlyList<string> parameters)
         {
-            var methodProvider = Parent.GetProviderRecursive<IGameMethodProvider>();
+            IGameMethodProvider methodProvider = m_GameMethodProvider;
+            if (methodProvider == null)
+                methodProvider = Parent.GetProviderRecursive<IGameMethodProvider>();
+
             Assert.IsNotNull(methodProvider, "methodProvider != null");
             await methodProvider.Resolve(method)(o, parameters);
         }
@@ -157,7 +170,16 @@ namespace Vvr.Session
             return UniTask.CompletedTask;
         }
 
-        void IConnector<IGameConfigProvider>.    Connect(IGameConfigProvider        t) => m_GameConfigProvider = t;
-        void IConnector<IGameConfigProvider>.    Disconnect(IGameConfigProvider     t) => m_GameConfigProvider = null;
+        void IConnector<IGameConfigProvider>.Connect(IGameConfigProvider    t) => m_GameConfigProvider = t;
+        void IConnector<IGameConfigProvider>.Disconnect(IGameConfigProvider t) => m_GameConfigProvider = null;
+        void IConnector<IGameMethodProvider>.Connect(IGameMethodProvider    t) => m_GameMethodProvider = t;
+        void IConnector<IGameMethodProvider>.Disconnect(IGameMethodProvider t) => m_GameMethodProvider = null;
+    }
+
+    [LocalProvider]
+    public interface IGameConfigResolveProvider : IProvider
+    {
+        [PublicAPI]
+        UniTask Resolve(IEventTarget e, Condition condition, string value);
     }
 }

@@ -31,6 +31,8 @@ using Vvr.Provider;
 
 namespace Vvr.Controller.Condition
 {
+    public delegate UniTask EventExecutedDelegate(IEventTarget e, Model.Condition condition, string value);
+
     /// <summary>
     /// Condition trigger for broadcasting all event targets.
     /// </summary>
@@ -42,12 +44,53 @@ namespace Vvr.Controller.Condition
             Abnormal = nameof(Abnormal)
             ;
 
-        private static readonly List<ConditionTrigger> s_Stack = new();
+        public struct EventScope : IDisposable
+        {
+            private readonly int         m_Index;
+            private readonly EventMethod m_Method;
+
+            internal EventScope(int index, EventMethod m)
+            {
+                m_Index  = index;
+                m_Method = m;
+            }
+
+            public void Dispose()
+            {
+                Assert.AreEqual(s_MethodStack.Count - 1, m_Index);
+
+                s_MethodStack.RemoveLast();
+                m_Method.action = null;
+                ObjectPool<EventMethod>.Shared.Reserve(m_Method);
+            }
+        }
+
+        [UsedImplicitly]
+        internal sealed class EventMethod
+        {
+            public EventExecutedDelegate action;
+        }
+
+        private static readonly List<ConditionTrigger> s_Stack       = new();
+        private static readonly LinkedList<EventMethod>     s_MethodStack = new();
 
         /// <summary>
         /// Event that executes any condition has triggered by any event target
         /// </summary>
-        public static event Func<IEventTarget, Model.Condition, string, UniTask> OnEventExecutedAsync;
+        public static event EventExecutedDelegate OnEventExecutedAsync;
+
+        public static EventScope Scope([NotNull] EventExecutedDelegate e)
+        {
+            if (e == null)
+                throw new InvalidOperationException("cannot be null");
+
+            var pooled = ObjectPool<EventMethod>.Shared.Get();
+            pooled.action = e;
+            s_MethodStack.AddLast(pooled);
+
+            EventScope s = new EventScope(s_MethodStack.Count, pooled);
+            return s;
+        }
 
         /// <summary>
         /// Push new condition trigger stack for event target
@@ -211,6 +254,15 @@ namespace Vvr.Controller.Condition
             m_Events.AddLast(new Event(condition, value));
 
             await ConditionResolver.Execute(m_Target, condition, value);
+
+            if (s_MethodStack.Count > 0)
+            {
+                LinkedListNode<EventMethod> current = s_MethodStack.Last;
+                do
+                {
+                    await current.Value.action.Invoke(m_Target, condition, value);
+                } while ((current = current.Previous) != null);
+            }
 
             if (OnEventExecutedAsync != null)
                 await OnEventExecutedAsync.Invoke(m_Target, condition, value);

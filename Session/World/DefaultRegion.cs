@@ -91,7 +91,11 @@ namespace Vvr.Session.World
             do
             {
                 list.AddLast(currentStage);
-                if (currentStage.IsFinalStage)
+
+                var nextStage = m_StageDataProvider.ElementAt(currentStage.Index + 1);
+                if (nextStage == null ||
+                    nextStage.Region != startStage.Region ||
+                    nextStage.Floor != currentStage.Floor)
                 {
                     var floor = await CreateSession<DefaultFloor>(new DefaultFloor.SessionData(list, aliveActors));
 
@@ -110,7 +114,7 @@ namespace Vvr.Session.World
                     }
                 }
 
-                currentStage = currentStage.NextStage;
+                currentStage = nextStage;
                 await UniTask.Yield();
             } while (currentStage != null);
         }

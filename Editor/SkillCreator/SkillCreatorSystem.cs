@@ -32,18 +32,6 @@ namespace Vvr.System.SkillCreator
 {
     public sealed class SkillCreatorSystem : MonoBehaviour
     {
-        class TestStage : IStageData
-        {
-            public string Id   => "TEST";
-            public string Name => "SKILL TEST";
-
-            public IStageData                NextStage    { get; }
-            public bool                      IsFinalStage { get; }
-            public IReadOnlyList<IActorData> Actors       { get; }
-
-            public IReadOnlyDictionary<AssetType, AddressablePath> Assets       { get; }
-        }
-
         private DefaultWorld m_World;
 
         private async UniTaskVoid Start()
