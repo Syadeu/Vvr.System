@@ -342,6 +342,8 @@ namespace Vvr.Session.World
                             current.TagOutRequested = false;
                             await RemoveFromQueue(current);
 
+                            await trigger.Execute(Condition.OnTagOut, current.Owner.Id);
+
                             await m_ViewProvider.CardViewProvider.Resolve(current.Owner);
                             foreach (var actor in m_PlayerField)
                             {

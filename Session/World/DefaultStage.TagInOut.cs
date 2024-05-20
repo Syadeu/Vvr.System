@@ -80,7 +80,7 @@ namespace Vvr.Session.World
             await m_ViewProvider.CardViewProvider.Resolve(temp.Owner);
             using (var trigger = ConditionTrigger.Push(temp.Owner, ConditionTrigger.Game))
             {
-                await trigger.Execute(Model.Condition.OnTagIn, null);
+                await trigger.Execute(Model.Condition.OnTagIn, temp.Owner.Id);
             }
 
             // Swap
