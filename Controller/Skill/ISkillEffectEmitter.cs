@@ -49,7 +49,7 @@ namespace Vvr.Controller.Skill
 
         public async UniTask Execute(Vector3 position, Quaternion rotation)
         {
-            if (m_Path.FullPath.IsNullOrEmpty()) return;
+            if (m_Path == null || m_Path.FullPath.IsNullOrEmpty()) return;
 
             var effectPool = GameObjectPool.Get(m_Path);
             m_CurrentEffect = await effectPool.SpawnEffect(position, rotation);
@@ -60,7 +60,7 @@ namespace Vvr.Controller.Skill
         }
         public async UniTask Execute(Vector3 position)
         {
-            if (m_Path.FullPath.IsNullOrEmpty()) return;
+            if (m_Path == null || m_Path.FullPath.IsNullOrEmpty()) return;
 
             var effectPool = GameObjectPool.Get(m_Path);
             m_CurrentEffect = await effectPool.SpawnEffect(position);
