@@ -19,11 +19,10 @@
 
 #endregion
 
-using System;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
-namespace Vvr.Provider
+namespace Vvr.Provider.Component
 {
     public sealed class ViewRegistryProviderComponent : MonoBehaviour, IViewRegistryProvider
     {

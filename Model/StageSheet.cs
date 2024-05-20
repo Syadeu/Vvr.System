@@ -17,6 +17,7 @@
 // File created : 2024, 05, 02 09:05
 #endregion
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Cathei.BakingSheet;
@@ -49,7 +50,11 @@ namespace Vvr.Model
             {
                 base.PostLoad(context);
 
-                m_Actors = Actors.Select(x => (IActorData)x.Ref).ToArray();
+                m_Actors =
+                    Actors != null && Actors.Count > 0 ?
+                    Actors.Select(x => (IActorData)x.Ref).ToArray()
+                        :
+                    Array.Empty<IActorData>();
             }
         }
 

@@ -26,7 +26,7 @@ using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
 
-namespace Vvr.Provider
+namespace Vvr.Provider.Component
 {
     public abstract class EventViewProviderComponent : MonoBehaviour, IEventViewProvider
     {

@@ -20,8 +20,9 @@
 using Newtonsoft.Json;
 using NUnit.Framework;
 using UnityEngine;
+using Vvr.Model.Stat;
 
-namespace Vvr.Model.Stat.Tests
+namespace Vvr.Stat.Tests.Stat.Tests
 {
     public class StatValueTests
     {

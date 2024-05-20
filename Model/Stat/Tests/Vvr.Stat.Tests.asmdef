@@ -1,14 +1,13 @@
 {
-    "name": "Vvr.System.Model.Tests",
-    "rootNamespace": "",
+    "name": "Vvr.Stat.Tests",
+    "rootNamespace": "Vvr.Stat.Tests",
     "references": [
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",
+        "GUID:3957eefabf624d2485d569ea058bfc85",
         "Vvr",
-        "Unity.Collections",
         "Unity.Mathematics",
-        "Vvr.System.Model",
-        "Vvr.System.Controller"
+        "Unity.Collections"
     ],
     "includePlatforms": [
         "Editor"

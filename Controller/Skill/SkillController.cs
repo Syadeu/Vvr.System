@@ -194,6 +194,7 @@ namespace Vvr.Controller.Skill
                     .OnSkillStart(value.skill, emitter)
                     .SuppressCancellationThrow()
                     .AttachExternalCancellation(viewTarget.GetCancellationTokenOnDestroy())
+                    .TimeoutWithoutException(TimeSpan.FromSeconds(5))
                     ;
             }
             else if (value.skill.Presentation.SelfEffect.IsValid())
@@ -225,6 +226,7 @@ namespace Vvr.Controller.Skill
                         .OnSkillCasting(value.skill, emitter)
                         .SuppressCancellationThrow()
                         .AttachExternalCancellation(viewTarget.GetCancellationTokenOnDestroy())
+                        .TimeoutWithoutException(TimeSpan.FromSeconds(5))
                     ;
             }
 
@@ -274,6 +276,7 @@ namespace Vvr.Controller.Skill
                         .OnSkillEnd(value.skill, targetView, emitter)
                         .SuppressCancellationThrow()
                         .AttachExternalCancellation(view.GetCancellationTokenOnDestroy())
+                        .TimeoutWithoutException(TimeSpan.FromSeconds(5))
                     ;
             }
             else if (value.skill.Presentation.TargetEffect.IsValid())
@@ -395,6 +398,7 @@ namespace Vvr.Controller.Skill
                             .OnSkillCasting(e.skill, emitter)
                             .SuppressCancellationThrow()
                             .AttachExternalCancellation(viewTarget.GetCancellationTokenOnDestroy())
+                            .TimeoutWithoutException(TimeSpan.FromSeconds(5))
                         ;
                 }
 

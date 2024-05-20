@@ -1,10 +1,10 @@
 {
-  "name": "Vvr.System.Provider",
-  "rootNamespace": "Vvr.System.Provider",
+  "name": "Vvr.Provider",
+  "rootNamespace": "Vvr.Provider",
   "autoReferenced": true,
   "references": [
     "Vvr",
-    "Vvr.System.Model",
+    "GUID:3957eefabf624d2485d569ea058bfc85",
 
     "Unity.Collections",
     "Unity.Mathematics",

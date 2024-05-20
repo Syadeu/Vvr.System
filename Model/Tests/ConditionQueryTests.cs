@@ -20,7 +20,7 @@
 using System;
 using NUnit.Framework;
 
-namespace Vvr.Model.Tests
+namespace Vvr.Model.Tests.Tests
 {
     public class ConditionQueryTests
     {

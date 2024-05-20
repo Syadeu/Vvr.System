@@ -1,12 +1,13 @@
 {
-  "name": "Vvr.System.Controller",
-  "rootNamespace": "Vvr.System.Controller",
+  "name": "Vvr.Controller",
+  "rootNamespace": "Vvr.Controller",
   "autoReferenced": true,
   "references": [
     "Vvr",
     "Vvr.UI",
-    "Vvr.System.Model",
-    "Vvr.System.Provider",
+
+    "GUID:3957eefabf624d2485d569ea058bfc85",
+    "GUID:0bebf4b98a2c47cd93c8f4c2f5f17d2a",
 
     "Unity.Collections",
     "Unity.Mathematics",

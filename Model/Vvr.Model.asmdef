@@ -1,6 +1,6 @@
 {
-  "name": "Vvr.System.Model",
-  "rootNamespace": "Vvr.System.Model",
+  "name": "Vvr.Model",
+  "rootNamespace": "Vvr.Model",
   "autoReferenced": true,
   "references": [
     "BakingSheet",

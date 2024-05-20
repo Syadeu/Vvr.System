@@ -201,7 +201,7 @@ namespace Vvr.Controller.Condition
         /// </remarks>
         /// <param name="condition">The condition to execute</param>
         /// <param name="value">The value to use in the execution</param>
-        public async UniTask Execute(Model.Condition condition, string value)
+        public async UniTask Execute(Vvr.Model.Condition condition, string value)
         {
             Assert.IsFalse(m_Target.Disposed);
 
