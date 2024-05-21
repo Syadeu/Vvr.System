@@ -22,6 +22,7 @@
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
+using UnityEngine;
 using UnityEngine.Assertions;
 using Vvr.Controller;
 using Vvr.Controller.Actor;
@@ -97,7 +98,11 @@ namespace Vvr.Session
 
                     $"[World] execute config : {target.DisplayName} : {condition}, {value}".ToLog();
 
+                    // These method must be executed before config method execute.
+                    // Config methods also can trigger another config method recursively.
                     m_ExecutionCount[target.GetHash()] = ++executedCount;
+                    IncrementLimitCounter(config);
+
                     await ExecuteMethod(
                         config,
                         target, config.Execution.Method, config.Parameters);
@@ -112,6 +117,8 @@ namespace Vvr.Session
             using var timer = DebugTimer.Start();
 
             Assert.IsNotNull(config);
+
+            if (!EvaluateLimitedCount(config)) return false;
 
             // Check lifecycle condition
             if (config.Lifecycle.Condition != 0)
@@ -159,6 +166,8 @@ namespace Vvr.Session
             return config.Evaluation.MaxCount > executedCount;
         }
 
+        private readonly Dictionary<uint, int> m_LimitCounter = new();
+
         private async UniTask ExecuteMethod(
             GameConfigSheet.Row config,
             IEventTarget o, Model.GameMethod method, IReadOnlyList<string> parameters)
@@ -175,6 +184,45 @@ namespace Vvr.Session
                 await methodProvider.Resolve(method)(o, parameters);
             }
             await trigger.Execute(Condition.OnGameConfigEnded, config.Id);
+        }
+
+        const string ConfigKeyFormat = nameof(GameConfigResolveSession) + "_{0}";
+        // TODO: temp codes should move to remote data
+        private bool EvaluateLimitedCount(GameConfigSheet.Row config)
+        {
+            if (config.Definition.LimitCount < 0) return true;
+
+            uint key = FNV1a32.Calculate(string.Format(ConfigKeyFormat, config.Id));
+
+            int counter;
+            if (config.Definition.CacheLimit)
+            {
+                counter = PlayerPrefs.GetInt(key.ToString(), 0);
+            }
+            else
+            {
+                counter = m_LimitCounter.GetValueOrDefault(key, 0);
+            }
+
+            return counter < config.Definition.LimitCount;
+        }
+
+        private void IncrementLimitCounter(GameConfigSheet.Row config)
+        {
+            if (config.Definition.LimitCount < 0) return;
+
+            uint key = FNV1a32.Calculate(string.Format(ConfigKeyFormat, config.Id));
+
+            if (config.Definition.CacheLimit)
+            {
+                int counter = PlayerPrefs.GetInt(key.ToString(), 0);
+                PlayerPrefs.SetInt(key.ToString(), ++counter);
+            }
+            else
+            {
+                int counter = m_LimitCounter.GetValueOrDefault(key, 0);
+                m_LimitCounter[key] = ++counter;
+            }
         }
 
         UniTask ITimeUpdate.OnUpdateTime(float currentTime, float deltaTime)

@@ -40,7 +40,7 @@ namespace Vvr.Model
         public string Id => name;
         public int Index => m_Index;
 
-        public IReadOnlyList<IDialogueSpeaker> Speakers => m_Speakers;
+        public IReadOnlyList<IDialogueSpeakerData> Speakers => m_Speakers;
         public IReadOnlyDictionary<AssetType, AssetReference> Assets => m_Assets;
 
         public void Build(ActorSheet sheet)
@@ -55,7 +55,7 @@ namespace Vvr.Model
     }
 
     [Serializable]
-    public class DialogueSpeaker : IDialogueSpeaker
+    public class DialogueSpeaker : IDialogueSpeakerData
     {
         [SerializeField] private string m_Actor;
         [SerializeField] private string m_Message;

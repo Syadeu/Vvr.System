@@ -66,6 +66,8 @@ namespace Vvr.Session.Dialogue
             for (int i = 0; i < data.dialogue.Speakers.Count; i++)
             {
                 var speaker  = data.dialogue.Speakers[i];
+                if (speaker.Actor == null) continue;
+
                 var portrait
                     = m_AssetProvider.LoadAsync<Sprite>(speaker.Actor.Assets[AssetType.DialoguePortrait].FullPath);
 
@@ -81,9 +83,12 @@ namespace Vvr.Session.Dialogue
                 var speaker     = data.dialogue.Speakers[i];
                 var portraitImg = await preloadedPortraits[i];
 
+                $"[Dialogue] Speak {i}".ToLog();
                 await m_DialogueViewProvider.SpeakAsync(
-                    portraitImg.Object,
+                    portraitImg?.Object,
                     speaker);
+
+                await UniTask.WaitForSeconds(speaker.Time);
             }
 
             await m_DialogueViewProvider.CloseAsync(data.dialogue.Id);

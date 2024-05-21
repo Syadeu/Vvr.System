@@ -80,14 +80,14 @@ namespace Vvr.Session.Input
 
         public void SetPass()
         {
-            if (!HasControl) return;
+            if (!HasControl || m_Data == null) return;
 
             m_Pass = true;
         }
 
         public void ExecuteSkill(int index)
         {
-            if (!HasControl) return;
+            if (!HasControl || m_Data == null) return;
 
             var skill = m_Data.Skills[index];
             OnExecuteSkill(skill);

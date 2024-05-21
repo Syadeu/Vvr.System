@@ -87,12 +87,15 @@ namespace Vvr.Session
 
         private async UniTask GameMethod_Destroy(IEventTarget e, IReadOnlyList<string> parameters)
         {
+            Assert.IsFalse(e.Disposed);
+
             if (e is IActor x)
             {
                 await DestroyActor(x);
+                return;
             }
 
-            throw new NotImplementedException();
+            throw new NotImplementedException($"{e.GetType().FullName}({e.DisplayName}) has no destroy method");
         }
 
         private async UniTask DestroyActor(IActor x)

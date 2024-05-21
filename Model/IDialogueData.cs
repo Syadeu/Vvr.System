@@ -27,21 +27,24 @@ namespace Vvr.Model
 {
     public interface IDialogueData : IRawData
     {
-        IReadOnlyList<IDialogueSpeaker> Speakers { get; }
+        IReadOnlyList<IDialogueSpeakerData> Speakers { get; }
 
         IReadOnlyDictionary<AssetType, AssetReference> Assets { get; }
 
         void Build(ActorSheet sheet);
     }
 
-    public interface IDialogueSpeaker
+    public interface IDialogueSpeakerData : IDialogueSpeaker
     {
-        IActorData Actor   { get; }
-        string     Message { get; }
         /// <summary>
         /// View transform should reference only.
         /// Actual awaiting logics will execute from Controller
         /// </summary>
-        float      Time    { get; }
+        float Time { get; }
+    }
+    public interface IDialogueSpeaker
+    {
+        IActorData Actor   { get; }
+        string     Message { get; }
     }
 }

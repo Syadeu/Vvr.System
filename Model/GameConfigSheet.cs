@@ -52,8 +52,10 @@ namespace Vvr.Model
 
         public struct Definition
         {
-            [UsedImplicitly] public Target   Target   { get; private set; }
-            [UsedImplicitly] public Position Position { get; private set; }
+            [UsedImplicitly] public Target   Target     { get; private set; }
+            [UsedImplicitly] public Position Position   { get; private set; }
+            [UsedImplicitly] public bool     CacheLimit { get; private set; }
+            [UsedImplicitly] public int      LimitCount { get; private set; }
         }
         public struct Lifecycle
         {
