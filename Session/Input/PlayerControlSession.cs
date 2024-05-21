@@ -80,36 +80,4 @@ namespace Vvr.Session.Input
         void IConnector<IManualInputProvider>.Connect(IManualInputProvider    t) => m_ManualInputProvider = t;
         void IConnector<IManualInputProvider>.Disconnect(IManualInputProvider t) => m_ManualInputProvider = null;
     }
-    [UsedImplicitly]
-    public class AIControlSession : InputControlSession<AIControlSession.SessionData>,
-        IConnector<IActorDataProvider>
-    {
-        public struct SessionData : ISessionData
-        {
-        }
-
-        protected IActorDataProvider   ActorDataProvider { get; private set; }
-
-        public override string DisplayName => nameof(AIControlSession);
-
-        public override bool CanControl(IEventTarget target)
-        {
-            return target is IActor;
-        }
-
-        protected override async UniTask OnControl(IEventTarget  target)
-        {
-            IActor actor     = (IActor)target;
-            var    actorData = ActorDataProvider.Resolve(actor.Id);
-
-            // AI
-            int count = actorData.Skills.Count;
-            var skill = actorData.Skills[UnityEngine.Random.Range(0, count)];
-
-            await actor.Skill.Queue(skill);
-        }
-
-        void IConnector<IActorDataProvider>.  Connect(IActorDataProvider      t) => ActorDataProvider = t;
-        void IConnector<IActorDataProvider>.  Disconnect(IActorDataProvider   t) => ActorDataProvider = null;
-    }
 }

@@ -15,33 +15,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// File created : 2024, 05, 21 00:05
+// File created : 2024, 05, 21 10:05
 
 #endregion
 
-using System;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 using Vvr.Model;
 
-namespace Vvr.TestClass
+namespace Vvr.Provider.Component
 {
-    [Serializable]
-    public class TestDialogueSpeaker : IDialogueSpeaker
+    public abstract class DialogueViewProviderComponent : MonoBehaviour, IDialogueViewProvider
     {
-        [SerializeField] private string m_Actor;
-        [SerializeField] private string m_Message;
-        [SerializeField] private float  m_Time;
-
-        private IActorData actor;
-
-        public IActorData Actor => actor;
-
-        public string Message => m_Message;
-        public float  Time    => m_Time;
-
-        public void Build(ActorSheet sheet)
-        {
-            actor = sheet[m_Actor];
-        }
+        public abstract UniTask OpenAsync(string  dialogueId,    Sprite           backgroundImage);
+        public abstract UniTask SpeakAsync(Sprite portraitImage, IDialogueSpeaker speaker);
+        public abstract UniTask CloseAsync(string dialogueId);
     }
 }

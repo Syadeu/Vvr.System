@@ -75,6 +75,8 @@ namespace Vvr.Session
         /// <param name="value">The value to connect to.</param>
         public static void Connect(Type connectorType, object connector, object value)
         {
+            using var timer = DebugTimer.Start();
+
             var methodInfo = connectorType.GetMethod(
                 nameof(IConnector<ConnectorImpl>.Connect),
                 BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
@@ -95,6 +97,8 @@ namespace Vvr.Session
         /// <param name="value"></param>
         public static void Disconnect(Type connectorType, object connector, object value)
         {
+            using var timer = DebugTimer.Start();
+
             var methodInfo = connectorType.GetMethod(
                 nameof(IConnector<ConnectorImpl>.Disconnect),
                 BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);

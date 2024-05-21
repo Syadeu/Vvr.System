@@ -21,6 +21,7 @@
 
 using System.Collections.Generic;
 using Cathei.BakingSheet.Unity;
+using UnityEngine.AddressableAssets;
 
 namespace Vvr.Model
 {
@@ -28,7 +29,9 @@ namespace Vvr.Model
     {
         IReadOnlyList<IDialogueSpeaker> Speakers { get; }
 
-        IReadOnlyDictionary<AssetType, AddressablePath> Assets { get; }
+        IReadOnlyDictionary<AssetType, AssetReference> Assets { get; }
+
+        void Build(ActorSheet sheet);
     }
 
     public interface IDialogueSpeaker

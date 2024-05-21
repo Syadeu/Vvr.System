@@ -22,6 +22,7 @@ using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using UnityEngine;
+using UnityEngine.Assertions;
 using Vvr.Controller.Asset;
 using Vvr.Model;
 using Vvr.Provider;
@@ -30,30 +31,35 @@ namespace Vvr.Session.Dialogue
 {
     [UsedImplicitly]
     public class DialogueSession : ParentSession<DialogueSession.SessionData>,
+        IConnector<IAssetProvider>,
         IConnector<IDialogueViewProvider>,
         IConnector<IActorDataProvider>
     {
         public struct SessionData : ISessionData
         {
             public IDialogueData dialogue;
+
+            public SessionData(IDialogueData d)
+            {
+                dialogue = d;
+            }
         }
 
         public override string DisplayName => nameof(DialogueSession);
 
+        private IAssetProvider        m_AssetProvider;
         private IDialogueViewProvider m_DialogueViewProvider;
         private IActorDataProvider    m_ActorDataProvider;
-
-        private AssetController m_AssetController;
 
         protected override async UniTask OnInitialize(IParentSession session, SessionData data)
         {
             await base.OnInitialize(session, data);
 
-            // Because most likely dialogue uses their own resources
-            var assetSession = await CreateSession<AssetSession>(default);
-            Register<IAssetProvider>(assetSession);
+            Assert.IsNotNull(m_AssetProvider);
+            Assert.IsNotNull(m_ActorDataProvider);
+            Assert.IsNotNull(m_ActorDataProvider.DataSheet);
 
-            m_AssetController = new(data.dialogue.Assets);
+            data.dialogue.Build(m_ActorDataProvider.DataSheet);
 
             UniTask<IImmutableObject<Sprite>>[] preloadedPortraits
                 = new UniTask<IImmutableObject<Sprite>>[data.dialogue.Speakers.Count];
@@ -61,13 +67,14 @@ namespace Vvr.Session.Dialogue
             {
                 var speaker  = data.dialogue.Speakers[i];
                 var portrait
-                    = assetSession.LoadAsync<Sprite>(speaker.Actor.Assets[AssetType.CardPortrait]);
+                    = m_AssetProvider.LoadAsync<Sprite>(speaker.Actor.Assets[AssetType.DialoguePortrait].FullPath);
 
                 preloadedPortraits[i] = portrait;
             }
 
-            IImmutableObject<Sprite> backgroundImg = await assetSession.LoadAsync<Sprite>(m_AssetController[AssetType.BackgroundImage]);
-            await m_DialogueViewProvider.OpenAsync(backgroundImg.Object);
+            IImmutableObject<Sprite> backgroundImg = await m_AssetProvider.LoadAsync<Sprite>(
+                data.dialogue.Assets[AssetType.BackgroundImage]);
+            await m_DialogueViewProvider.OpenAsync(data.dialogue.Id, backgroundImg?.Object);
 
             for (var i = 0; i < data.dialogue.Speakers.Count; i++)
             {
@@ -79,7 +86,7 @@ namespace Vvr.Session.Dialogue
                     speaker);
             }
 
-            await m_DialogueViewProvider.CloseAsync();
+            await m_DialogueViewProvider.CloseAsync(data.dialogue.Id);
         }
 
         protected override async UniTask OnReserve()
@@ -91,17 +98,11 @@ namespace Vvr.Session.Dialogue
             await base.OnReserve();
         }
 
+        void IConnector<IAssetProvider>.       Connect(IAssetProvider           t) => m_AssetProvider = t;
+        void IConnector<IAssetProvider>.       Disconnect(IAssetProvider        t) => m_AssetProvider = null;
         void IConnector<IDialogueViewProvider>.Connect(IDialogueViewProvider    t) => m_DialogueViewProvider = t;
         void IConnector<IDialogueViewProvider>.Disconnect(IDialogueViewProvider t) => m_DialogueViewProvider = null;
         void IConnector<IActorDataProvider>.   Connect(IActorDataProvider       t) => m_ActorDataProvider = t;
         void IConnector<IActorDataProvider>.   Disconnect(IActorDataProvider    t) => m_ActorDataProvider = null;
-    }
-
-    public interface IDialogueViewProvider : IProvider
-    {
-        UniTask OpenAsync(Sprite backgroundImage);
-
-        UniTask SpeakAsync(Sprite portraitImage, IDialogueSpeaker speaker);
-        UniTask CloseAsync();
     }
 }

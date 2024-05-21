@@ -85,6 +85,8 @@ namespace Vvr.Session
 
         public int IndexOf(IStageActor actor)
         {
+            using var timer = DebugTimer.Start();
+
             foreach (var entry in m_Queue)
             {
                 if (ReferenceEquals(entry.actor, actor))
@@ -96,6 +98,8 @@ namespace Vvr.Session
 
         public void Enqueue(IStageActor actor)
         {
+            using var timer = DebugTimer.Start();
+
             Assert.IsNotNull(actor);
             Assert.IsNotNull(actor.Owner);
 
@@ -111,6 +115,8 @@ namespace Vvr.Session
 
         public void InsertAfter(int index, IStageActor actor)
         {
+            using var timer = DebugTimer.Start();
+
             Assert.IsNotNull(actor);
             Assert.IsNotNull(actor.Owner);
 
@@ -141,6 +147,8 @@ namespace Vvr.Session
 
         public IStageActor Dequeue()
         {
+            using var timer = DebugTimer.Start();
+
             int count = m_Queue.Count;
             if (count == 0) throw new InvalidOperationException("queue empty");
 
@@ -165,18 +173,24 @@ namespace Vvr.Session
 
         public void SetEnable(IStageActor actor, bool enabled)
         {
+            using var timer = DebugTimer.Start();
+
             var e = m_Queue.First(x => ReferenceEquals(x.actor, actor));
             e.disabled = !enabled;
         }
 
         public bool IsStartFrom(IStageActor actor)
         {
+            using var timer = DebugTimer.Start();
+
             var min = m_Queue.Min;
             return ReferenceEquals(min.actor, actor);
         }
 
         public void StartFrom(IStageActor actor)
         {
+            using var timer = DebugTimer.Start();
+
             Assert.IsNotNull(actor);
 
             if (IsStartFrom(actor)) return;
@@ -211,6 +225,8 @@ namespace Vvr.Session
 
         public void Remove(IStageActor actor)
         {
+            using var timer = DebugTimer.Start();
+
             if (!m_Actors.Remove(actor.GetHashCode()))
                 return;
 

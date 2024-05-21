@@ -28,6 +28,8 @@ namespace Vvr.Provider
     public interface IActorDataProvider : IProvider,
         IReadOnlyList<IActorData>
     {
+        public ActorSheet DataSheet { get; }
+
         IActorData Resolve(string key);
     }
 }

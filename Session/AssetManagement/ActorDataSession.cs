@@ -50,6 +50,8 @@ namespace Vvr.Session
         public IActorData this[int index] => Data.sheet[index];
         public int Count => Data.sheet.Count;
 
+        public ActorSheet DataSheet => Data.sheet;
+
         public IActorData Resolve(string key)
         {
             return Data.sheet[key];

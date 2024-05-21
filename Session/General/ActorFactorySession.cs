@@ -78,6 +78,8 @@ namespace Vvr.Session
 
         public IReadOnlyActor Resolve(IActorData data)
         {
+            using var timer = DebugTimer.Start();
+
             int i = m_ResolvedActors.BinarySearch(new CachedActor() { hash = FNV1a32.Calculate(data.Id) });
             if (0 <= i) return m_ResolvedActors[i].actor;
 

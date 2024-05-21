@@ -27,15 +27,17 @@ using UnityEngine.Assertions;
 using Vvr.Controller.Actor;
 using Vvr.Controller.BehaviorTree;
 using Vvr.Controller.Condition;
+using Vvr.Model;
 using Vvr.Model.Stat;
 using Vvr.Provider;
 using Vvr.Session.Actor;
+using Vvr.Session.Dialogue;
 using Vvr.Session.Provider;
 
 namespace Vvr.Session
 {
     [UsedImplicitly]
-    public class GameMethodResolveSession : ChildSession<GameMethodResolveSession.SessionData>,
+    public class GameMethodResolveSession : ParentSession<GameMethodResolveSession.SessionData>,
         IGameMethodProvider
     {
         public struct SessionData : ISessionData
@@ -47,6 +49,8 @@ namespace Vvr.Session
 
         GameMethodImplDelegate IGameMethodProvider.Resolve(Model.GameMethod method)
         {
+            using var timer = DebugTimer.Start();
+
             if (method == Model.GameMethod.Destroy)
             {
                 return GameMethod_Destroy;
@@ -57,7 +61,28 @@ namespace Vvr.Session
                 return GameMethod_ExecuteBehaviorTree;
             }
 
+            if (method == GameMethod.ExecuteDialogue)
+            {
+                return GameMethod_ExecuteDialogue;
+            }
+
             throw new NotImplementedException();
+        }
+
+        private async UniTask GameMethod_ExecuteDialogue(IEventTarget e, IReadOnlyList<string> parameters)
+        {
+            var assetSession = await CreateSession<AssetSession>(default);
+            Register<IAssetProvider>(assetSession);
+
+            var data = await assetSession.LoadAsync<DialogueData>(parameters[0]);
+            var dialogue = await CreateSession<DialogueSession>(
+                new DialogueSession.SessionData(data.Object)
+                );
+
+            await dialogue.Reserve();
+
+            Unregister<IAssetProvider>();
+            await assetSession.Reserve();
         }
 
         private async UniTask GameMethod_Destroy(IEventTarget e, IReadOnlyList<string> parameters)

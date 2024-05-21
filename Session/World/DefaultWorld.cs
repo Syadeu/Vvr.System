@@ -73,7 +73,19 @@ namespace Vvr.Session.World
             return base.OnCreateSession(session);
         }
 
-        void IConnector<IViewRegistryProvider>.Connect(IViewRegistryProvider    t) => m_ViewRegistryProvider = t;
-        void IConnector<IViewRegistryProvider>.Disconnect(IViewRegistryProvider t) => m_ViewRegistryProvider = null;
+        void IConnector<IViewRegistryProvider>.Connect(IViewRegistryProvider    t)
+        {
+            m_ViewRegistryProvider = t;
+
+            Register<IEventViewProvider>(t.CardViewProvider)
+                .Register<IDialogueViewProvider>(t.DialogueViewProvider);
+        }
+
+        void IConnector<IViewRegistryProvider>.Disconnect(IViewRegistryProvider t)
+        {
+            Unregister<IEventViewProvider>()
+                .Unregister<IDialogueViewProvider>();
+            m_ViewRegistryProvider = null;
+        }
     }
 }

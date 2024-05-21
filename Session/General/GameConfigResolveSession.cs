@@ -109,6 +109,8 @@ namespace Vvr.Session
 
         private bool EvaluateConfig(GameConfigSheet.Row config, IConditionTarget target)
         {
+            using var timer = DebugTimer.Start();
+
             Assert.IsNotNull(config);
 
             // Check lifecycle condition
@@ -146,6 +148,8 @@ namespace Vvr.Session
 
         private bool EvaluateExecutionCount(GameConfigSheet.Row config, IEventTarget target, out int executedCount)
         {
+            using var timer = DebugTimer.Start();
+
             Hash hash = target.GetHash();
             m_ExecutionCount.TryGetValue(hash, out executedCount);
 

@@ -120,20 +120,24 @@ namespace Vvr.Session
 
         public override string DisplayName => nameof(StageActorFactorySession);
 
-        protected override UniTask OnReserve()
+        protected override async UniTask OnReserve()
         {
+            await base.OnReserve();
+
+            using var timer = DebugTimer.Start();
+
             for (int i = m_Created.Count - 1; i >= 0; i--)
             {
                 var e = m_Created[i];
                 DisconnectActor(e);
             }
             m_Created.Clear();
-
-            return base.OnReserve();
         }
 
         public IStageActor Create(IActor actor, IActorData data)
         {
+            using var timer = DebugTimer.Start();
+
             StageActor result = new StageActor(actor, data);
             IActor     item   = result.Owner;
             Connect<IAssetProvider>(result)
@@ -150,6 +154,8 @@ namespace Vvr.Session
         }
         public void Reserve(IStageActor item)
         {
+            using var timer = DebugTimer.Start();
+
             if (item is not StageActor actor ||
                 !m_Created.Remove(actor))
                 throw new InvalidOperationException();
@@ -159,6 +165,8 @@ namespace Vvr.Session
 
         private void DisconnectActor(StageActor item)
         {
+            using var timer = DebugTimer.Start();
+
             Disconnect<IAssetProvider>(item)
                 .Disconnect<ITargetProvider>(item)
                 .Disconnect<IEventViewProvider>(item)

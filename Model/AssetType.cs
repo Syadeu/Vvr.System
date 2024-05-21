@@ -24,6 +24,7 @@ namespace Vvr.Model
     public enum AssetType : short
     {
         CardPortrait,
+        DialoguePortrait,
         Animation,
         BehaviorTree,
 

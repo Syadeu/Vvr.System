@@ -35,13 +35,13 @@ namespace Vvr.Model
         [SerializeField] private DialogueSpeaker[]    m_Speakers;
         [SerializeField] private AssetReferenceSprite m_BackgroundImage;
 
-        private Dictionary<AssetType, AddressablePath> m_Assets   = new();
+        private Dictionary<AssetType, AssetReference> m_Assets   = new();
 
         public string Id => name;
         public int Index => m_Index;
 
         public IReadOnlyList<IDialogueSpeaker> Speakers => m_Speakers;
-        public IReadOnlyDictionary<AssetType, AddressablePath> Assets => m_Assets;
+        public IReadOnlyDictionary<AssetType, AssetReference> Assets => m_Assets;
 
         public void Build(ActorSheet sheet)
         {
@@ -50,8 +50,7 @@ namespace Vvr.Model
                 speaker.Build(sheet);
             }
 
-            m_Assets[AssetType.BackgroundImage]
-                = new AddressablePath($"{m_BackgroundImage.RuntimeKey}[{m_BackgroundImage.SubObjectName}]");
+            m_Assets[AssetType.BackgroundImage] = m_BackgroundImage;
         }
     }
 

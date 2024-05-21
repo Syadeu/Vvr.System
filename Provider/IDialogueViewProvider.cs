@@ -15,15 +15,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// File created : 2024, 05, 17 23:05
+// File created : 2024, 05, 21 10:05
 
 #endregion
 
+using Cysharp.Threading.Tasks;
+using UnityEngine;
+using Vvr.Model;
+
 namespace Vvr.Provider
 {
-    public interface IViewRegistryProvider : IProvider
+    public interface IDialogueViewProvider : IProvider
     {
-        IEventViewProvider    CardViewProvider     { get; }
-        IDialogueViewProvider DialogueViewProvider { get; }
+        UniTask OpenAsync(string dialogueId, Sprite backgroundImage);
+
+        UniTask SpeakAsync(Sprite portraitImage, IDialogueSpeaker speaker);
+        UniTask CloseAsync(string dialogueId);
     }
 }
