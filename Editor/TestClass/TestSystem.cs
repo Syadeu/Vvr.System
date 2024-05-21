@@ -20,6 +20,7 @@
 #endregion
 
 using Cysharp.Threading.Tasks;
+using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.InputSystem.EnhancedTouch;
 using Vvr.Provider;
@@ -31,13 +32,16 @@ namespace Vvr.TestClass
     public abstract class TestSystem<TWorld> : MonoBehaviour
         where TWorld : class, IWorldSession, IParentSession
     {
+        [SerializeField] private bool m_AutoDownload;
+
         private TWorld m_World;
 
         public TWorld World => m_World;
 
         private async UniTaskVoid Start()
         {
-            await TestUtils.DownloadSheet();
+            if (m_AutoDownload)
+                await TestUtils.DownloadSheet();
 
             if (!EnhancedTouchSupport.enabled)
             {
@@ -50,5 +54,11 @@ namespace Vvr.TestClass
         }
 
         protected abstract UniTask OnStart(TWorld world);
+
+        [Button]
+        private async void Download()
+        {
+            await TestUtils.DownloadSheet();
+        }
     }
 }
