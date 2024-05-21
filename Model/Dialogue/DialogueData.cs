@@ -68,15 +68,18 @@ namespace Vvr.Model
     [Serializable]
     public class DialogueSpeaker : IDialogueSpeakerData, IDisposable
     {
+        [HorizontalGroup("Info"), LabelWidth(50)]
         [SerializeField] private string m_Actor;
-        [SerializeField] private int    m_Id;
+        [HorizontalGroup("Info"), LabelWidth(20)]
+        [SerializeField, HideLabel] private int    m_Id;
 
-        [Space]
-        [SerializeField] private string               m_Message;
-        [SerializeField] private float                m_Time;
-
-        [Space] [SerializeField]
+        [Space] [BoxGroup("Definition")] [SerializeField]
+        private float m_Time;
+        [BoxGroup("Definition")]
+        [SerializeField]
         private DialogueSpeakerOptions m_Options = DialogueSpeakerOptions.Left | DialogueSpeakerOptions.In;
+
+        [Space] [SerializeField, TextArea] private string m_Message;
 
         [Space]
         [SerializeField] private DialogueSpeakerPortrait m_PortraitReference;
