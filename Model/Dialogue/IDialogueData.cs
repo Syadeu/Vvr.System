@@ -19,6 +19,7 @@
 
 #endregion
 
+using System;
 using System.Collections.Generic;
 using Cathei.BakingSheet.Unity;
 using Cysharp.Threading.Tasks;
@@ -49,10 +50,26 @@ namespace Vvr.Model
     }
     public interface IDialogueSpeaker
     {
+        int        Id      { get; }
         IActorData Actor   { get; }
         string     Message { get; }
+
+        DialogueSpeakerOptions Options { get; }
+
+        Vector3 PositionOffset { get; }
+        Vector3 Rotation { get; }
+        Vector3 Scale { get; }
     }
 
+    [Flags]
+    public enum DialogueSpeakerOptions
+    {
+        Left  = 0b0001,
+        Right = 0b0010,
+
+        In  = 0b0100,
+        Out = 0b1000
+    }
 
     public interface IDialogueAttribute
     {

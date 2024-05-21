@@ -22,20 +22,22 @@
 using System;
 using System.Collections.Generic;
 using Cathei.BakingSheet.Unity;
+using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
+using Vvr.Model.Dialogue;
 
 namespace Vvr.Model
 {
     [CreateAssetMenu(menuName = "Vvr/Create DialogueData", fileName = "DialogueData", order = 0)]
-    public class DialogueData : ScriptableObject, IDialogueData
+    public class DialogueData : ScriptableObject, IDialogueData, IDisposable
     {
         [SerializeField] private int    m_Index;
 
         [SerializeField] private DialogueSpeaker[]    m_Speakers;
         [SerializeField] private AssetReferenceSprite m_BackgroundImage;
 
-        private Dictionary<AssetType, AssetReference> m_Assets   = new();
+        private readonly Dictionary<AssetType, AssetReference> m_Assets = new();
 
         public string Id => name;
         public int Index => m_Index;
@@ -52,30 +54,70 @@ namespace Vvr.Model
 
             m_Assets[AssetType.BackgroundImage] = m_BackgroundImage;
         }
+
+        public void Dispose()
+        {
+            foreach (var speaker in m_Speakers)
+            {
+                speaker.Dispose();
+            }
+            m_Assets.Clear();
+        }
     }
 
     [Serializable]
-    public class DialogueSpeaker : IDialogueSpeakerData
+    public class DialogueSpeaker : IDialogueSpeakerData, IDisposable
     {
-        [SerializeField] private string               m_Actor;
-        [SerializeField] private AssetReferenceSprite m_OverridePortrait;
+        [SerializeField] private string m_Actor;
+        [SerializeField] private int    m_Id;
+
+        [Space]
         [SerializeField] private string               m_Message;
         [SerializeField] private float                m_Time;
 
+        [Space] [SerializeField]
+        private DialogueSpeakerOptions m_Options = DialogueSpeakerOptions.Left | DialogueSpeakerOptions.In;
+
+        [Space]
+        [SerializeField] private DialogueSpeakerPortrait m_PortraitReference;
+        [ShowIf("@" + nameof(m_PortraitReference) + " == null")]
+        [SerializeField] private AssetReferenceSprite    m_OverridePortrait;
+        [ShowIf("@" + nameof(m_PortraitReference) + " == null")]
+        [SerializeField] private Vector3                 m_PositionOffset;
+        [ShowIf("@" + nameof(m_PortraitReference) + " == null")]
+        [SerializeField] private Vector3                 m_Rotation;
+        [ShowIf("@" + nameof(m_PortraitReference) + " == null")]
+        [SerializeField] private Vector3                 m_Scale = Vector3.one;
+
+        private IActorData m_ResolvedActor;
+
+        public int        Id    => m_Id;
+        public IActorData Actor => m_ResolvedActor;
+
+        public string                 Message          => m_Message;
+        public float                  Time             => m_Time;
+
+        public DialogueSpeakerOptions Options          => m_Options;
+
+        public AssetReferenceSprite OverridePortrait =>
+            m_PortraitReference == null ? m_OverridePortrait : m_PortraitReference.Portrait;
+        public Vector3 PositionOffset =>
+            m_PortraitReference == null ? m_PositionOffset : m_PortraitReference.PositionOffset;
+        public Vector3 Rotation => m_PortraitReference == null ? m_Rotation : m_PortraitReference.Rotation;
+        public Vector3 Scale => m_PortraitReference == null ? m_Scale : m_PortraitReference.Scale;
 
 
-        private IActorData actor;
-
-        public IActorData Actor => actor;
-
-        public string               Message          => m_Message;
-        public float                Time             => m_Time;
-        public AssetReferenceSprite OverridePortrait => m_OverridePortrait;
-        public IDialogueAttribute   Attribute        { get; } = null;
+        public IDialogueAttribute     Attribute        { get; } = null;
 
         public void Build(ActorSheet sheet)
         {
-            actor = sheet[m_Actor];
+            if (!m_Actor.IsNullOrEmpty())
+                m_ResolvedActor = sheet[m_Actor];
+        }
+
+        public void Dispose()
+        {
+            m_ResolvedActor = null;
         }
     }
 }

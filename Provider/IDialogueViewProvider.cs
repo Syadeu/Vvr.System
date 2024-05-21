@@ -20,6 +20,7 @@
 #endregion
 
 using Cysharp.Threading.Tasks;
+using JetBrains.Annotations;
 using UnityEngine;
 using Vvr.Model;
 
@@ -29,7 +30,7 @@ namespace Vvr.Provider
     {
         UniTask OpenAsync(string dialogueId, Sprite backgroundImage);
 
-        UniTask SpeakAsync(Sprite portraitImage, IDialogueSpeaker speaker);
+        UniTask SpeakAsync([CanBeNull] Sprite portraitImage, IDialogueSpeaker speaker);
         UniTask CloseAsync(string dialogueId);
     }
 }
