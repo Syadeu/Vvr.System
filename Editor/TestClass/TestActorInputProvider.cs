@@ -15,27 +15,35 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// File created : 2024, 05, 10 20:05
+// File created : 2024, 05, 19 20:05
 
 #endregion
 
 using Cysharp.Threading.Tasks;
-using Vvr.Controller.Actor;
+using UnityEngine;
+using Vvr.Controller;
 using Vvr.Model;
-using Vvr.Provider;
-using Vvr.Session.Actor;
+using Vvr.Session.Input;
 
-namespace Vvr.Session.Provider
+namespace Vvr.TestClass
 {
-    [LocalProvider]
-    public interface IStageInfoProvider : IProvider
+    class TestActorInputProvider : ActorInputProviderComponent
     {
-        IReadOnlyActorList Timeline     { get; }
+        [SerializeField] private bool m_SkipSkillCooltime;
 
-        IReadOnlyActorList HandActors  { get; }
-        IReadOnlyActorList PlayerField { get; }
-        IReadOnlyActorList EnemyField  { get; }
+        protected override void OnSkillExecuted(ISkillData skill)
+        {
+            if (m_SkipSkillCooltime)
+                SkipTime(skill.Cooltime).Forget();
 
-        UniTask Delete(IActor actor);
+            base.OnSkillExecuted(skill);
+        }
+
+        private async UniTaskVoid SkipTime(float time)
+        {
+            await UniTask.WaitForSeconds(0.1f);
+
+            await TimeController.Next(time);
+        }
     }
 }

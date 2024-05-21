@@ -48,6 +48,9 @@ namespace Vvr.Session.World
             Vvr.Provider.Provider.Static.Connect<IViewRegistryProvider>(this);
 
             DataSession = await CreateSession<GameDataSession>(default);
+            var gameMethodResolver = await CreateSession<GameMethodResolveSession>(default);
+            Register<IGameMethodProvider>(gameMethodResolver);
+
             await CreateSession<GameConfigResolveSession>(
                 new GameConfigResolveSession.SessionData(MapType.Global, true));
 

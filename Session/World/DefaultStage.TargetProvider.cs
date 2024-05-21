@@ -22,24 +22,17 @@
 using System;
 using System.Buffers;
 using System.Collections.Generic;
-using Cysharp.Threading.Tasks;
 using UnityEngine.Assertions;
 using Vvr.Controller.Actor;
 using Vvr.Controller.Provider;
 using Vvr.Controller.Skill;
 using Vvr.Model;
 using Vvr.Session.Actor;
-using Vvr.Session.Provider;
 
 namespace Vvr.Session.World
 {
     partial class DefaultStage : ITargetProvider
     {
-        private void SetActorPosition(ActorList field, IStageActor actor)
-        {
-
-        }
-
         IEnumerable<IActor> ITargetProvider.FindTargets(
             IActor from, ITargetDefinition target)
         {

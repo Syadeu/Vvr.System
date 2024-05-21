@@ -33,56 +33,59 @@ using Vvr.Session.Actor;
 
 namespace Vvr.Session.World
 {
-    partial class DefaultStage : IGameMethodProvider
+    partial class DefaultStage
     {
-        GameMethodImplDelegate IGameMethodProvider.Resolve(Model.GameMethod method)
-        {
-            if (method == Model.GameMethod.Destroy)
-            {
-                return GameMethod_Destroy;
-            }
+        // [Obsolete("Use " + nameof(GameMethodResolveSession), true)]
+        // GameMethodImplDelegate IGameMethodProvider.Resolve(Model.GameMethod method)
+        // {
+        //     if (method == Model.GameMethod.Destroy)
+        //     {
+        //         return GameMethod_Destroy;
+        //     }
+        //
+        //     if (method == Model.GameMethod.ExecuteBehaviorTree)
+        //     {
+        //         return GameMethod_ExecuteBehaviorTree;
+        //     }
+        //
+        //     throw new NotImplementedException();
+        // }
 
-            if (method == Model.GameMethod.ExecuteBehaviorTree)
-            {
-                return GameMethod_ExecuteBehaviorTree;
-            }
-
-            throw new NotImplementedException();
-        }
-
-        private async UniTask GameMethod_Destroy(IEventTarget e, IReadOnlyList<string> parameters)
-        {
-            if (e is not IActor x)
-                throw new InvalidOperationException("target is not actor");
-
-            using (var trigger = ConditionTrigger.Push(x, nameof(Model.GameMethod)))
-            {
-                await trigger.Execute(Model.Condition.OnBattleEnd, null);
-                await trigger.Execute(Model.Condition.OnActorDead, null);
-            }
-
-            var field = x.ConditionResolver[Model.Condition.IsPlayerActor](null) ? m_PlayerField : m_EnemyField;
-            int index = field.FindIndex(e => e.Owner == x);
-            if (index < 0)
-            {
-                $"{index} not found in field {x.ConditionResolver[Model.Condition.IsPlayerActor](null)}".ToLogError();
-                return;
-            }
-
-            IStageActor actor = field[index];
-            m_StageActorProvider.Reserve(actor);
-
-            $"Actor {actor.Owner.DisplayName} is dead {actor.Owner.Stats[StatType.HP]}".ToLog();
-
-            Assert.IsFalse(Disposed);
-            await Delete(field, actor);
-        }
-
-        async UniTask GameMethod_ExecuteBehaviorTree(IEventTarget e, IReadOnlyList<string> parameters)
-        {
-            if (e is not IBehaviorTarget b) throw new InvalidOperationException();
-
-            await b.Execute(parameters);
-        }
+        // [Obsolete("Use " + nameof(GameMethodResolveSession), true)]
+        // private async UniTask GameMethod_Destroy(IEventTarget e, IReadOnlyList<string> parameters)
+        // {
+        //     if (e is not IActor x)
+        //         throw new InvalidOperationException("target is not actor");
+        //
+        //     using (var trigger = ConditionTrigger.Push(x, nameof(Model.GameMethod)))
+        //     {
+        //         await trigger.Execute(Model.Condition.OnBattleEnd, null);
+        //         await trigger.Execute(Model.Condition.OnActorDead, null);
+        //     }
+        //
+        //     var field = x.ConditionResolver[Model.Condition.IsPlayerActor](null) ? m_PlayerField : m_EnemyField;
+        //     int index = field.FindIndex(e => e.Owner == x);
+        //     if (index < 0)
+        //     {
+        //         $"{index} not found in field {x.ConditionResolver[Model.Condition.IsPlayerActor](null)}".ToLogError();
+        //         return;
+        //     }
+        //
+        //     IStageActor actor = field[index];
+        //     m_StageActorProvider.Reserve(actor);
+        //
+        //     $"Actor {actor.Owner.DisplayName} is dead {actor.Owner.Stats[StatType.HP]}".ToLog();
+        //
+        //     Assert.IsFalse(Disposed);
+        //     await Delete(field, actor);
+        // }
+        //
+        // [Obsolete("Use " + nameof(GameMethodResolveSession), true)]
+        // async UniTask GameMethod_ExecuteBehaviorTree(IEventTarget e, IReadOnlyList<string> parameters)
+        // {
+        //     if (e is not IBehaviorTarget b) throw new InvalidOperationException();
+        //
+        //     await b.Execute(parameters);
+        // }
     }
 }

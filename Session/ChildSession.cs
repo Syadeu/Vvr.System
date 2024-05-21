@@ -433,7 +433,7 @@ namespace Vvr.Session
         {
             if (m_ConnectedProviders.TryGetValue(providerType, out var existing) &&
                 !ReferenceEquals(existing, provider))
-                throw new InvalidOperationException("Already registered.");
+                throw new InvalidOperationException($"Already registered {providerType.FullName}.");
         }
 
         /// <summary>

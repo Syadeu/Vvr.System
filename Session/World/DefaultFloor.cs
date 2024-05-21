@@ -82,6 +82,9 @@ namespace Vvr.Session.World
             m_StageConfigResolveSession = await CreateSession<GameConfigResolveSession>(
                 new GameConfigResolveSession.SessionData(MapType.Stage, false));
 
+            Connect<IGameMethodProvider>(m_FloorConfigResolveSession);
+            Connect<IGameMethodProvider>(m_StageConfigResolveSession);
+
             // Register providers to inject child sessions.
             Register<ITimelineQueueProvider>(timelineSession)
                 .Register<IAssetProvider>(assetSession)
@@ -125,7 +128,6 @@ namespace Vvr.Session.World
                 using (ConditionTrigger.Scope(m_StageConfigResolveSession.Resolve))
                 {
                     m_CurrentStage = await CreateSession<DefaultStage>(sessionData);
-                    m_StageConfigResolveSession.Register<IGameMethodProvider>(m_CurrentStage);
                     Parent.Register<IStageInfoProvider>(m_CurrentStage);
                     {
                         await trigger.Execute(Model.Condition.OnStageStarted, sessionData.stage.Id);
@@ -148,7 +150,6 @@ namespace Vvr.Session.World
                         prevPlayers.Clear();
                         prevPlayers.AddRange(stageResult.playerActors);
                     }
-                    m_StageConfigResolveSession.Unregister<IGameMethodProvider>();
                     Parent.Unregister<IStageInfoProvider>();
                     await m_CurrentStage.Reserve();
                 }

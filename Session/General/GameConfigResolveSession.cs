@@ -164,8 +164,8 @@ namespace Vvr.Session
             if (method != 0)
             {
                 IGameMethodProvider methodProvider = m_GameMethodProvider;
-                if (methodProvider == null)
-                    methodProvider = Parent.GetProviderRecursive<IGameMethodProvider>();
+                // if (methodProvider == null)
+                //     methodProvider = Parent.GetProviderRecursive<IGameMethodProvider>();
 
                 Assert.IsNotNull(methodProvider, "methodProvider != null");
                 await methodProvider.Resolve(method)(o, parameters);
@@ -187,12 +187,5 @@ namespace Vvr.Session
         void IConnector<IGameConfigProvider>.Disconnect(IGameConfigProvider t) => m_GameConfigProvider = null;
         void IConnector<IGameMethodProvider>.Connect(IGameMethodProvider    t) => m_GameMethodProvider = t;
         void IConnector<IGameMethodProvider>.Disconnect(IGameMethodProvider t) => m_GameMethodProvider = null;
-    }
-
-    [LocalProvider]
-    public interface IGameConfigResolveProvider : IProvider
-    {
-        [PublicAPI]
-        UniTask Resolve(IEventTarget e, Condition condition, string value);
     }
 }

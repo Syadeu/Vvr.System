@@ -124,6 +124,7 @@ namespace Vvr.Session.World
             await RemoveFromTimeline(actor);
             await RemoveFromQueue(actor);
 
+            m_StageActorProvider.Reserve(actor);
             await m_ViewProvider.CardViewProvider.Release(actor.Owner);
             actor.Owner.Release();
 

@@ -71,6 +71,20 @@ namespace Vvr.Session.World
                 return false;
             }
 
+            public bool TryGetActor(IActor actor, out IStageActor result)
+            {
+                for (int i = 0; i < Count; i++)
+                {
+                    result = this[i];
+                    if (!ReferenceEquals(result.Owner, actor)) continue;
+
+                    return true;
+                }
+
+                result = null;
+                return false;
+            }
+
             public new void CopyTo(IStageActor[] array)
             {
                 for (int i = 0; i < Count; i++)
@@ -172,7 +186,7 @@ namespace Vvr.Session.World
                 .Register<IStateConditionProvider>(this)
                 .Register<IEventConditionProvider>(this)
                 .Register<IStageInfoProvider>(this)
-                .Register<IGameMethodProvider>(this)
+                // .Register<IGameMethodProvider>(this)
                 ;
 
             m_StageAssetController      = new(data.stage.Assets);
@@ -200,7 +214,7 @@ namespace Vvr.Session.World
                 .Unregister<IStateConditionProvider>()
                 .Unregister<IEventConditionProvider>()
                 .Unregister<IStageInfoProvider>()
-                .Unregister<IGameMethodProvider>()
+                // .Unregister<IGameMethodProvider>()
                 ;
 
             Disconnect<IAssetProvider>(m_StageAssetController);
@@ -399,6 +413,20 @@ namespace Vvr.Session.World
             m_TimelineQueueProvider.Clear();
             "Stage end".ToLog();
             return new Result(GetCurrentPlayerActors(), GetCurrentEnemyActors());
+        }
+
+        async UniTask IStageInfoProvider.Delete(IActor actor)
+        {
+            IStageActor sta;
+            if (actor.ConditionResolver[Condition.IsPlayerActor](null))
+            {
+                if (m_HandActors.TryGetActor(actor, out sta))
+                    await Delete(m_HandActors, sta);
+                else if (m_PlayerField.TryGetActor(actor, out sta))
+                    await Delete(m_PlayerField, sta);
+            }
+            else if (m_EnemyField.TryGetActor(actor, out sta))
+                await Delete(m_EnemyField, sta);
         }
 
         private partial UniTask Join(ActorList                 field,  IStageActor actor);
