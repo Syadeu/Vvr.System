@@ -32,6 +32,7 @@ using UnityEngine.Assertions;
 using Vvr.Controller.Actor;
 using Vvr.Controller.Condition;
 using Vvr.Controller.Provider;
+using Vvr.Controller.Stat;
 using Vvr.Model;
 using Vvr.Model.Stat;
 using Vvr.Provider;
