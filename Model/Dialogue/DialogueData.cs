@@ -57,16 +57,21 @@ namespace Vvr.Model
     [Serializable]
     public class DialogueSpeaker : IDialogueSpeakerData
     {
-        [SerializeField] private string m_Actor;
-        [SerializeField] private string m_Message;
-        [SerializeField] private float  m_Time;
+        [SerializeField] private string               m_Actor;
+        [SerializeField] private AssetReferenceSprite m_OverridePortrait;
+        [SerializeField] private string               m_Message;
+        [SerializeField] private float                m_Time;
+
+
 
         private IActorData actor;
 
         public IActorData Actor => actor;
 
-        public string Message => m_Message;
-        public float  Time    => m_Time;
+        public string               Message          => m_Message;
+        public float                Time             => m_Time;
+        public AssetReferenceSprite OverridePortrait => m_OverridePortrait;
+        public IDialogueAttribute   Attribute        { get; } = null;
 
         public void Build(ActorSheet sheet)
         {

@@ -21,6 +21,8 @@
 
 using System.Collections.Generic;
 using Cathei.BakingSheet.Unity;
+using Cysharp.Threading.Tasks;
+using UnityEngine;
 using UnityEngine.AddressableAssets;
 
 namespace Vvr.Model
@@ -41,10 +43,19 @@ namespace Vvr.Model
         /// Actual awaiting logics will execute from Controller
         /// </summary>
         float Time { get; }
+
+        AssetReferenceSprite OverridePortrait { get; }
+        IDialogueAttribute   Attribute        { get; }
     }
     public interface IDialogueSpeaker
     {
         IActorData Actor   { get; }
         string     Message { get; }
+    }
+
+
+    public interface IDialogueAttribute
+    {
+        UniTask Execute(RectTransform transform);
     }
 }

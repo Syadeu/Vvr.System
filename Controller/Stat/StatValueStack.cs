@@ -69,14 +69,15 @@ namespace Vvr.Controller.Stat
             m_Owner         =  owner;
             m_OriginalStats =  originalStats;
             m_ModifiedStats |= m_OriginalStats.Types;
-            m_PushStats     =  StatValues.Copy(m_OriginalStats);
-            m_ResultStats   =  StatValues.Copy(m_OriginalStats);
+            m_PushStats     |= m_OriginalStats.Types;
+            m_ResultStats   |= m_OriginalStats.Types;
 
             ObjectObserver<StatValueStack>.Get(this).EnsureContainer();
         }
 
         public void Push(StatType t, float v)
         {
+            using var debugTimer = DebugTimer.Start();
             m_PushStats    |= t;
             m_PushStats[t] += v;
             m_IsDirty      =  true;
@@ -87,10 +88,12 @@ namespace Vvr.Controller.Stat
         }
         public void Push<TProcessor>(StatType t, float v) where TProcessor : struct, IStatValueProcessor
         {
+            using var debugTimer = DebugTimer.Start();
             m_PushStats |= t;
 
             TProcessor processor = Activator.CreateInstance<TProcessor>();
             float processedV = processor.Process(m_PushStats, v);
+
             m_PushStats[t] += processedV;
             m_IsDirty = true;
 
@@ -101,39 +104,69 @@ namespace Vvr.Controller.Stat
 
         public void Update()
         {
-            if (m_Modifiers.Any(x => x.IsDirty))
+            using var debugTimer = DebugTimer.Start();
+
+            if (!m_Modifiers.Any(x => x.IsDirty) && !m_IsDirty) return;
+
+            m_ModifiedStats |= m_OriginalStats.Types;
+            m_ModifiedStats.Clear();
+            m_ModifiedStats += m_OriginalStats;
+
+            float prevHp = m_ModifiedStats[StatType.HP];
+            float currentHp;
+            foreach (var e in m_Modifiers.OrderBy(StatModifierComparer.Selector, StatModifierComparer.Static))
             {
-                m_ModifiedStats |= m_OriginalStats.Types;
-                foreach (var e in m_Modifiers.OrderBy(StatModifierComparer.Selector, StatModifierComparer.Static))
-                {
-                    e.UpdateValues(m_OriginalStats, ref m_ModifiedStats);
-                }
+                e.UpdateValues(m_OriginalStats, ref m_ModifiedStats);
 
-                if ((m_ModifiedStats.Types & StatType.SHD) == StatType.SHD)
+                currentHp = m_ModifiedStats[StatType.HP];
+                if (currentHp < prevHp && (m_ModifiedStats.Types & StatType.SHD) == StatType.SHD)
                 {
-                    float shd = m_ModifiedStats[StatType.SHD];
-
-                    if (shd < 0)
+                    float shield = m_ModifiedStats[StatType.SHD];
+                    float sub    = prevHp - currentHp;
+                    if (sub > shield)
                     {
-                        m_ModifiedStats[StatType.HP]  += shd;
+                        currentHp                     -= sub - shield;
+                        m_ModifiedStats[StatType.HP]  =  currentHp;
                         m_ModifiedStats[StatType.SHD] =  0;
+                    }
+                    else
+                    {
+                        m_ModifiedStats[StatType.SHD] = shield - sub;
                     }
                 }
 
-                m_IsDirty = true;
+                prevHp = currentHp;
             }
 
-            if (m_IsDirty)
-            {
-                m_ResultStats |= m_ModifiedStats.Types | m_PushStats.Types;
-                m_ResultStats.Clear();
+            m_ResultStats |= m_ModifiedStats.Types | m_PushStats.Types;
+            m_ResultStats.Clear();
 
-                m_ResultStats += m_ModifiedStats;
-                m_ResultStats += m_PushStats;
+            m_ResultStats += m_ModifiedStats;
+
+            prevHp        =  m_ResultStats[StatType.HP];
+            m_ResultStats += m_PushStats;
+
+            currentHp = m_ResultStats[StatType.HP];
+            if (currentHp < prevHp && (m_ResultStats.Types & StatType.SHD) == StatType.SHD)
+            {
+                float shield = m_ResultStats[StatType.SHD];
+                float sub    = prevHp - currentHp;
+                if (sub > shield)
+                {
+                    currentHp                   -= sub - shield;
+                    m_ResultStats[StatType.HP]  =  currentHp;
+                    m_ResultStats[StatType.SHD] =  0;
+                }
+                else
+                {
+                    m_ResultStats[StatType.HP]  = prevHp;
+                    m_ResultStats[StatType.SHD] = shield - sub;
+                }
             }
 
             m_IsDirty = false;
         }
+
         public float GetValue(StatType t)
         {
             Update();
