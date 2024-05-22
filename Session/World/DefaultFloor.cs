@@ -23,7 +23,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Cysharp.Threading.Tasks;
+using UnityEngine;
 using UnityEngine.Assertions;
+using Vvr.Controller.Actor;
 using Vvr.Controller.Condition;
 using Vvr.Model;
 using Vvr.Provider;
@@ -61,6 +63,8 @@ namespace Vvr.Session.World
         private DefaultStage          m_CurrentStage;
         private IViewRegistryProvider m_ViewRegistryProvider;
 
+        private AssetSession m_AssetSession;
+
         private int m_CurrentStageIndex;
 
         private GameConfigResolveSession
@@ -74,7 +78,7 @@ namespace Vvr.Session.World
             // We dont need to manually close these sessions
             // When this session close, child session also closed.
             var timelineSession = await CreateSession<TimelineQueueSession>(default);
-            var assetSession    = await CreateSession<AssetSession>(default);
+            m_AssetSession = await CreateSession<AssetSession>(default);
             var stageActorCreateSession = await CreateSession<StageActorFactorySession>(default);
 
             m_FloorConfigResolveSession = await CreateSession<GameConfigResolveSession>(
@@ -82,15 +86,32 @@ namespace Vvr.Session.World
             m_StageConfigResolveSession = await CreateSession<GameConfigResolveSession>(
                 new GameConfigResolveSession.SessionData(MapType.Stage, false));
 
-            Connect<IGameMethodProvider>(m_FloorConfigResolveSession);
-            Connect<IGameMethodProvider>(m_StageConfigResolveSession);
+            Connect<IGameMethodProvider>(m_FloorConfigResolveSession)
+                .Connect<IGameMethodProvider>(m_StageConfigResolveSession);
 
             // Register providers to inject child sessions.
             Register<ITimelineQueueProvider>(timelineSession)
-                .Register<IAssetProvider>(assetSession)
+                .Register<IAssetProvider>(m_AssetSession)
                 .Register<IStageActorProvider>(stageActorCreateSession);
 
             await base.OnInitialize(session, data);
+        }
+
+        protected override async UniTask OnReserve()
+        {
+            Disconnect<IGameMethodProvider>(m_FloorConfigResolveSession)
+                .Disconnect<IGameMethodProvider>(m_StageConfigResolveSession);
+
+            Unregister<ITimelineQueueProvider>()
+                .Unregister<IAssetProvider>()
+                .Unregister<IStageActorProvider>()
+                ;
+
+            m_AssetSession              = null;
+            m_FloorConfigResolveSession = null;
+            m_StageConfigResolveSession = null;
+
+            await base.OnReserve();
         }
 
         public async UniTask<Result> Start(IEnumerable<IActorData> playerData)
@@ -131,6 +152,7 @@ namespace Vvr.Session.World
                         prevPlayers);
                 }
 
+                using (ConditionTrigger.Scope(OnConditionTriggered))
                 using (ConditionTrigger.Scope(m_StageConfigResolveSession.Resolve))
                 {
                     m_CurrentStage = await CreateSession<DefaultStage>(sessionData);
@@ -177,7 +199,6 @@ namespace Vvr.Session.World
 
             return floorResult;
         }
-
         protected override UniTask OnCreateSession(IChildSession session)
         {
             Assert.IsNotNull(m_ViewRegistryProvider);
@@ -185,6 +206,23 @@ namespace Vvr.Session.World
             session.Register<IEventViewProvider>(m_ViewRegistryProvider.CardViewProvider);
 
             return base.OnCreateSession(session);
+        }
+
+        private async UniTask OnConditionTriggered(IEventTarget e, Condition condition, string value)
+        {
+            // TODO : test code for testing corner intersection view
+            if (condition == Condition.OnSkillStart &&
+                e.Owner != Owner)
+            {
+                IActor actor = (IActor)e;
+
+                var portraitImg = await m_AssetSession.LoadAsync<Sprite>(actor.Assets[AssetType.DialoguePortrait]);
+                await m_ViewRegistryProvider.StageViewProvider.OpenCornerIntersectionViewAsync(
+                    portraitImg.Object, "5252 그렇게 허약해보여서는 이 몸의 공격을 제대로 받아낼 수 있겠어?"
+                );
+                await UniTask.WaitForSeconds(2);
+                await m_ViewRegistryProvider.StageViewProvider.CloseCornerIntersectionViewAsync();
+            }
         }
 
         public void Connect(IViewRegistryProvider    t) => m_ViewRegistryProvider = t;

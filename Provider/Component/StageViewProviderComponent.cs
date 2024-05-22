@@ -29,5 +29,7 @@ namespace Vvr.Provider.Component
     {
         public abstract UniTask OpenEntryViewAsync(string title, string subtitle);
         public abstract UniTask CloseEntryViewAsync();
+        public abstract UniTask OpenCornerIntersectionViewAsync(Sprite portrait, string text);
+        public abstract UniTask CloseCornerIntersectionViewAsync();
     }
 }

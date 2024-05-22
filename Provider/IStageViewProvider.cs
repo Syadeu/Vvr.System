@@ -20,6 +20,7 @@
 #endregion
 
 using Cysharp.Threading.Tasks;
+using UnityEngine;
 
 namespace Vvr.Provider
 {
@@ -28,5 +29,8 @@ namespace Vvr.Provider
     {
         UniTask OpenEntryViewAsync(string title, string subtitle);
         UniTask CloseEntryViewAsync();
+
+        UniTask OpenCornerIntersectionViewAsync(Sprite portrait, string text);
+        UniTask CloseCornerIntersectionViewAsync();
     }
 }
