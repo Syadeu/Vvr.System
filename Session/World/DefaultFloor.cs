@@ -182,7 +182,7 @@ namespace Vvr.Session.World
                 "Stage cleared".ToLog();
                 await UniTask.Yield();
 
-                if (!stageResult.playerActors.Any())
+                if (!prevPlayers.Any())
                 {
                     "all players dead".ToLog();
                     break;

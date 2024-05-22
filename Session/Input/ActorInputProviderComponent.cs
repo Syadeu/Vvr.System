@@ -37,6 +37,8 @@ namespace Vvr.Session.Input
         private IActorData m_Data;
         private bool       m_Pass;
 
+        private bool m_IsSkillExecuting;
+
         public bool HasControl { get; private set; }
 
         protected virtual void OnEnable()
@@ -66,7 +68,10 @@ namespace Vvr.Session.Input
             m_Data     = null;
             HasControl = false;
 
-            await m_CurrentTask;
+            while (m_IsSkillExecuting)
+            {
+                await UniTask.Yield();
+            }
         }
 
         public void SetAuto(bool auto)
@@ -76,25 +81,40 @@ namespace Vvr.Session.Input
             enabled = !auto;
         }
 
-        private UniTask m_CurrentTask = UniTask.CompletedTask;
-
         public void SetPass()
         {
             if (!HasControl || m_Data == null) return;
 
             m_Pass = true;
+
+            HasControl = false;
+            m_Data     = null;
         }
 
         public void ExecuteSkill(int index)
         {
             if (!HasControl || m_Data == null) return;
 
+            if (m_IsSkillExecuting)
+            {
+                "Already executing".ToLog();
+                return;
+            }
+
+            m_IsSkillExecuting = true;
+
             var skill = m_Data.Skills[index];
             OnExecuteSkill(skill);
 
-            var task = m_Target.Skill.Queue(skill)
-                .ContinueWith(() => OnSkillExecuted(skill));
-            m_CurrentTask = UniTask.WhenAll(m_CurrentTask, task);
+            ExecuteSkill(skill).Forget();
+        }
+
+        private async UniTask ExecuteSkill(ISkillData skill)
+        {
+            await m_Target.Skill.Queue(skill);
+            OnSkillExecuted(skill);
+
+            m_IsSkillExecuting = false;
         }
 
         protected virtual void OnExecuteSkill(ISkillData skill)
