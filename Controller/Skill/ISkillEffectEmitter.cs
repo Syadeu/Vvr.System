@@ -36,23 +36,32 @@ namespace Vvr.Controller.Skill
     }
 
     [Obsolete("Because using outside of Session design")]
-    internal sealed class SkillEffectEmitter : ISkillEffectEmitter
+    internal sealed class SkillEffectEmitter : ISkillEffectEmitter, IDisposable
     {
         private readonly AddressablePath m_Path;
 
+        private Action        m_OnExecute;
         private IEffectObject m_CurrentEffect;
 
-        public SkillEffectEmitter(AddressablePath path)
+        private bool m_Disposed;
+
+        public SkillEffectEmitter(AddressablePath path, Action onExecute)
         {
-            m_Path = path;
+            m_Path      = path;
+            m_OnExecute = onExecute;
         }
 
         public async UniTask Execute(Vector3 position, Quaternion rotation)
         {
+            if (m_Disposed)
+                throw new ObjectDisposedException(nameof(ISkillEffectEmitter));
+
             if (m_Path == null || m_Path.FullPath.IsNullOrEmpty()) return;
 
             var effectPool = GameObjectPool.Get(m_Path);
             m_CurrentEffect = await effectPool.SpawnEffect(position, rotation);
+            m_OnExecute?.Invoke();
+
             while (m_CurrentEffect is { Reserved: false })
             {
                 await UniTask.Yield();
@@ -60,10 +69,15 @@ namespace Vvr.Controller.Skill
         }
         public async UniTask Execute(Vector3 position)
         {
+            if (m_Disposed)
+                throw new ObjectDisposedException(nameof(ISkillEffectEmitter));
+
             if (m_Path == null || m_Path.FullPath.IsNullOrEmpty()) return;
 
             var effectPool = GameObjectPool.Get(m_Path);
             m_CurrentEffect = await effectPool.SpawnEffect(position);
+            m_OnExecute?.Invoke();
+
             while (m_CurrentEffect is { Reserved: false })
             {
                 await UniTask.Yield();
@@ -72,10 +86,21 @@ namespace Vvr.Controller.Skill
 
         public async UniTask Stop()
         {
+            if (m_Disposed)
+                throw new ObjectDisposedException(nameof(ISkillEffectEmitter));
+
             if (m_CurrentEffect == null) return;
 
             await m_CurrentEffect.Stop();
             m_CurrentEffect = null;
+        }
+
+        public void Dispose()
+        {
+            m_OnExecute     = null;
+            m_CurrentEffect = null;
+
+            m_Disposed = true;
         }
     }
 

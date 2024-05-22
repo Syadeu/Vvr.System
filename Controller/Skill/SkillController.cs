@@ -190,7 +190,7 @@ namespace Vvr.Controller.Skill
             var skillEventHandle = viewTarget.GetComponent<ISkillEventHandler>();
             if (skillEventHandle != null)
             {
-                SkillEffectEmitter emitter = new SkillEffectEmitter(value.skill.Presentation.SelfEffect);
+                SkillEffectEmitter emitter = new SkillEffectEmitter(value.skill.Presentation.SelfEffect, null);
                 await skillEventHandle
                     .OnSkillStart(value.skill, emitter)
                     .SuppressCancellationThrow()
@@ -222,7 +222,7 @@ namespace Vvr.Controller.Skill
 
             if (skillEventHandle != null)
             {
-                SkillEffectEmitter emitter = new SkillEffectEmitter(value.skill.Presentation.CastingEffect);
+                SkillEffectEmitter emitter = new SkillEffectEmitter(value.skill.Presentation.CastingEffect, null);
                 await skillEventHandle
                         .OnSkillCasting(value.skill, emitter)
                         .SuppressCancellationThrow()
@@ -292,13 +292,26 @@ namespace Vvr.Controller.Skill
             var skillEventHandle = view.GetComponent<ISkillEventHandler>();
             if (skillEventHandle != null)
             {
-                SkillEffectEmitter emitter = new SkillEffectEmitter(value.skill.Presentation.TargetEffect);
+                SkillEffectEmitter emitter;
+
+                // If method is damage, should shake camera
+                if (value.skill.Execution.Method == SkillSheet.Method.Damage)
+                {
+                    ICameraProvider camPrv = await Vvr.Provider.Provider.Static.GetAsync<ICameraProvider>();
+                    emitter = new SkillEffectEmitter(
+                        value.skill.Presentation.TargetEffect,
+                        () => camPrv.Shake().Forget());
+                }
+                else emitter = new SkillEffectEmitter(value.skill.Presentation.TargetEffect, null);
+
                 await skillEventHandle
                         .OnSkillEnd(value.skill, targetView, emitter)
                         .SuppressCancellationThrow()
                         .AttachExternalCancellation(view.GetCancellationTokenOnDestroy())
                         .TimeoutWithoutException(TimeSpan.FromSeconds(5))
                     ;
+
+                emitter.Dispose();
             }
             else if (value.skill.Presentation.TargetEffect.IsValid())
             {
@@ -414,7 +427,7 @@ namespace Vvr.Controller.Skill
                 var       skillEventHandle = viewTarget.GetComponent<ISkillEventHandler>();
                 if (skillEventHandle != null)
                 {
-                    SkillEffectEmitter emitter = new SkillEffectEmitter(e.skill.Presentation.CastingEffect);
+                    SkillEffectEmitter emitter = new SkillEffectEmitter(e.skill.Presentation.CastingEffect, null);
                     await skillEventHandle
                             .OnSkillCasting(e.skill, emitter)
                             .SuppressCancellationThrow()
