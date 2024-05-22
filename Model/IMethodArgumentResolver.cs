@@ -15,33 +15,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // 
-// File created : 2024, 05, 15 13:05
+// File created : 2024, 05, 23 01:05
 
 #endregion
 
-using System.Collections.Generic;
-using Cathei.BakingSheet;
 using JetBrains.Annotations;
-using UnityEngine.Scripting;
 
 namespace Vvr.Model
 {
-    [Preserve]
-    public sealed class CustomMethodSheet : Sheet<CustomMethodSheet.Row>
+    [PublicAPI]
+    public interface IMethodArgumentResolver
     {
-        public class Row : SheetRowArray<Variable>
-        {
-            [UsedImplicitly] public List<string> Calculations { get; private set; }
-        }
-        public class Variable : SheetRowElem
-        {
-            [UsedImplicitly] public string Name  { get; private set; }
-            [UsedImplicitly] public string Value { get; private set; }
-        }
-
-        public CustomMethodSheet()
-        {
-            Name = nameof(GameDataSheets.CustomMethodTable);
-        }
+        [PublicAPI]
+        float Resolve(string arg);
     }
 }

@@ -27,6 +27,7 @@ using JetBrains.Annotations;
 using UnityEngine;
 using UnityEngine.Assertions;
 using Vvr.Controller.Actor;
+using Vvr.Model;
 using Vvr.Provider;
 using Vvr.Session.Actor;
 using Vvr.Session.Provider;
@@ -44,7 +45,7 @@ namespace Vvr.Session
 
         public override string DisplayName => nameof(TimelineQueueSession);
 
-        private class Entry : IComparable<Entry>
+        private class Entry : IComparable<Entry>, IMethodArgumentResolver
         {
             private readonly CustomMethodDelegate m_Method;
 
@@ -54,7 +55,7 @@ namespace Vvr.Session
             public float timeOffset;
             public bool  disabled;
 
-            public float Time => m_Method(actor.Data.Stats);
+            public float Time => m_Method(this);
 
             public Entry(CustomMethodDelegate m)
             {
@@ -72,6 +73,16 @@ namespace Vvr.Session
 
                 if (xx < yy) return -1;
                 return 1;
+            }
+
+            float IMethodArgumentResolver.Resolve(string arg)
+            {
+                if (StatProvider.Static.TryGetType(arg, out var s))
+                {
+                    return actor.Owner.Stats[s];
+                }
+
+                throw new NotImplementedException();
             }
         }
 

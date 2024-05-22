@@ -20,18 +20,16 @@
 #endregion
 
 using JetBrains.Annotations;
+using Vvr.Model;
 using Vvr.Model.Stat;
 
 namespace Vvr.Provider
 {
-    public delegate float CustomMethodDelegate(IReadOnlyStatValues stats);
+    public delegate float CustomMethodDelegate(IMethodArgumentResolver argumentResolver);
 
     [LocalProvider]
     public interface ICustomMethodProvider : IProvider
     {
         CustomMethodDelegate this[CustomMethodNames method] { get; }
-
-        [PublicAPI]
-        float Resolve(IReadOnlyStatValues stats, CustomMethodNames method);
     }
 }
