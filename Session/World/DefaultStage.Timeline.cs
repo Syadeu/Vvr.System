@@ -20,6 +20,7 @@
 #endregion
 
 using System.Collections.Generic;
+using System.Linq;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using UnityEngine;
@@ -32,10 +33,14 @@ using Vvr.Session.Provider;
 
 namespace Vvr.Session.World
 {
-    partial class DefaultStage : IConnector<ITimelineQueueProvider>
+    partial class DefaultStage :
+        IConnector<ITimelineQueueProvider>,
+        IConnector<IEventTimelineNodeProvider>
     {
         private readonly ActorList         m_Timeline      = new();
-        private          ITimelineQueueProvider m_TimelineQueueProvider;
+
+        private ITimelineQueueProvider     m_TimelineQueueProvider;
+        private IEventTimelineNodeProvider m_TimelineNodeProvider;
 
         /// <summary>
         /// Dequeues the first actor from the timeline and updates it.
@@ -52,7 +57,7 @@ namespace Vvr.Session.World
         /// </summary>
         private partial void UpdateTimeline()
         {
-            const int maxTimelineCount = 5;
+            const int maxTimelineCount = 15;
 
             if (m_Timeline.Count > 0 && !m_TimelineQueueProvider.IsStartFrom(m_Timeline[0]))
             {
@@ -67,6 +72,30 @@ namespace Vvr.Session.World
             {
                 m_Timeline.Add(m_TimelineQueueProvider.Dequeue());
             }
+        }
+
+        private partial async UniTask UpdateTimelineNodeView()
+        {
+            UniTask tasks = UniTask.CompletedTask;
+            foreach (var stageActor in m_PlayerField.Concat(m_EnemyField))
+            {
+                int index = m_Timeline.FindIndex(x => ReferenceEquals(x.Owner, stageActor.Owner));
+                tasks = UniTask.WhenAll(tasks,
+                    m_TimelineNodeProvider.Resolve(stageActor.Owner, index));
+            }
+
+            await tasks;
+        }
+        private partial async UniTask CloseTimelineNodeView()
+        {
+            UniTask tasks = UniTask.CompletedTask;
+            foreach (var stageActor in m_PlayerField.Concat(m_EnemyField))
+            {
+                tasks = UniTask.WhenAll(tasks,
+                    m_TimelineNodeProvider.Release(stageActor.Owner));
+            }
+
+            await tasks;
         }
 
         /// <summary>
@@ -125,6 +154,7 @@ namespace Vvr.Session.World
             await RemoveFromQueue(actor);
 
             m_StageActorProvider.Reserve(actor);
+            await m_TimelineNodeProvider.Release(actor.Owner);
             await m_ViewProvider.CardViewProvider.Release(actor.Owner);
             actor.Owner.Release();
 
@@ -219,5 +249,7 @@ namespace Vvr.Session.World
             Assert.IsTrue(ReferenceEquals(m_TimelineQueueProvider, t));
             m_TimelineQueueProvider = null;
         }
+        void IConnector<IEventTimelineNodeProvider>.Connect(IEventTimelineNodeProvider    t) => m_TimelineNodeProvider = t;
+        void IConnector<IEventTimelineNodeProvider>.Disconnect(IEventTimelineNodeProvider t) => m_TimelineNodeProvider = null;
     }
 }

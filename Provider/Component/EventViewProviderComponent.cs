@@ -34,7 +34,7 @@ namespace Vvr.Provider.Component
 
         bool IEventViewProvider.Has(IEventTarget owner) => m_Handles.ContainsKey(owner);
 
-        async UniTask<Transform> IEventViewProvider.Resolve(IEventTarget owner)
+        public async UniTask<Transform> Resolve(IEventTarget owner)
         {
             if (owner.Disposed)
                 throw new ObjectDisposedException(owner.DisplayName);
@@ -60,7 +60,7 @@ namespace Vvr.Provider.Component
             return result;
         }
 
-        async UniTask IEventViewProvider.Release(IEventTarget owner)
+        public async UniTask Release(IEventTarget owner)
         {
             if (owner.Disposed)
                 throw new ObjectDisposedException(owner.DisplayName);

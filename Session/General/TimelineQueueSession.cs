@@ -123,14 +123,17 @@ namespace Vvr.Session
             if (!m_Actors.Add(actor.GetHashCode()))
                 throw new InvalidOperationException("duplicated");
 
-            int count   = m_Queue.Count;
-            var tempArr = ArrayPool<Entry>.Shared.Rent(count);
+            float targetTimeOffset = 0;
+            int   count            = m_Queue.Count;
+            var   tempArr          = ArrayPool<Entry>.Shared.Rent(count);
             m_Queue.CopyTo(tempArr, 0);
             m_Queue.Clear();
             for (int i = 0; i < count; i++)
             {
                 var entry = tempArr[i];
                 if (entry.index > index) entry.index++;
+
+                if (entry.index == index) targetTimeOffset = entry.timeOffset;
 
                 m_Queue.Add(entry);
             }
@@ -141,6 +144,7 @@ namespace Vvr.Session
             {
                 actor = actor,
                 index = index + 1,
+                timeOffset = targetTimeOffset
             });
             m_Index++;
         }

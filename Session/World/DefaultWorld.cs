@@ -77,14 +77,20 @@ namespace Vvr.Session.World
         {
             m_ViewRegistryProvider = t;
 
+            // ReSharper disable RedundantTypeArgumentsOfMethod
+
             Register<IEventViewProvider>(t.CardViewProvider)
-                .Register<IDialogueViewProvider>(t.DialogueViewProvider);
+                .Register<IDialogueViewProvider>(t.DialogueViewProvider)
+                .Register<IEventTimelineNodeProvider>(t.TimelineNodeViewProvider);
+
+            // ReSharper restore RedundantTypeArgumentsOfMethod
         }
 
         void IConnector<IViewRegistryProvider>.Disconnect(IViewRegistryProvider t)
         {
             Unregister<IEventViewProvider>()
-                .Unregister<IDialogueViewProvider>();
+                .Unregister<IDialogueViewProvider>()
+                .Unregister<IEventTimelineNodeProvider>();
             m_ViewRegistryProvider = null;
         }
     }

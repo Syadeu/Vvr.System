@@ -15,17 +15,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// File created : 2024, 05, 17 23:05
+// File created : 2024, 05, 22 10:05
 
 #endregion
 
+using Cysharp.Threading.Tasks;
+using UnityEngine;
+
 namespace Vvr.Provider
 {
-    public interface IViewRegistryProvider : IProvider
+    [LocalProvider]
+    public interface IEventTimelineNodeProvider : IProvider
     {
-        IEventViewProvider    CardViewProvider     { get; }
-        IDialogueViewProvider DialogueViewProvider { get; }
-
-        IEventTimelineNodeProvider TimelineNodeViewProvider { get; }
+        UniTask<Transform> Resolve(IEventTarget actor, int order);
+        UniTask            Release(IEventTarget actor);
     }
 }

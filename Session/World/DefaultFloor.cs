@@ -128,7 +128,7 @@ namespace Vvr.Session.World
                 using (ConditionTrigger.Scope(m_StageConfigResolveSession.Resolve))
                 {
                     m_CurrentStage = await CreateSession<DefaultStage>(sessionData);
-                    Parent.Register<IStageInfoProvider>(m_CurrentStage);
+                    // Parent.Register<IStageInfoProvider>(m_CurrentStage);
                     {
                         await trigger.Execute(Model.Condition.OnStageStarted, sessionData.stage.Id);
                         stageResult = await m_CurrentStage.Start();
@@ -141,21 +141,24 @@ namespace Vvr.Session.World
                             enemy.Owner.Release();
                         }
 
-                        if (!stageResult.playerActors.Any())
+                        // if (stageResult.playerActors.Any())
                         {
-                            "all players dead".ToLog();
-                            break;
+                            prevPlayers.Clear();
+                            prevPlayers.AddRange(stageResult.playerActors);
                         }
-
-                        prevPlayers.Clear();
-                        prevPlayers.AddRange(stageResult.playerActors);
                     }
-                    Parent.Unregister<IStageInfoProvider>();
+                    // Parent.Unregister<IStageInfoProvider>();
                     await m_CurrentStage.Reserve();
                 }
 
                 "Stage cleared".ToLog();
                 await UniTask.Yield();
+
+                if (!stageResult.playerActors.Any())
+                {
+                    "all players dead".ToLog();
+                    break;
+                }
             }
 
             floorResult = new Result(

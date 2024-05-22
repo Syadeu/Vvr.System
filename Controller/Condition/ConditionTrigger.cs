@@ -253,8 +253,6 @@ namespace Vvr.Controller.Condition
             m_Conditions.value |= condition;
             m_Events.AddLast(new Event(condition, value));
 
-            await ConditionResolver.Execute(m_Target, condition, value);
-
             if (s_MethodStack.Count > 0)
             {
                 LinkedListNode<EventMethod> current = s_MethodStack.Last;
@@ -263,6 +261,8 @@ namespace Vvr.Controller.Condition
                     await current.Value.action.Invoke(m_Target, condition, value);
                 } while ((current = current.Previous) != null);
             }
+
+            await ConditionResolver.Execute(m_Target, condition, value);
 
             if (OnEventExecutedAsync != null)
                 await OnEventExecutedAsync.Invoke(m_Target, condition, value);

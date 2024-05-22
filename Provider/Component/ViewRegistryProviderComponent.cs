@@ -26,11 +26,13 @@ namespace Vvr.Provider.Component
 {
     public sealed class ViewRegistryProviderComponent : MonoBehaviour, IViewRegistryProvider
     {
-        [SerializeField, Required] private EventViewProviderComponent    m_CardViewProvider;
-        [SerializeField, Required] private DialogueViewProviderComponent m_DialogueViewProvider;
+        [SerializeField, Required] private EventViewProviderComponent        m_CardViewProvider;
+        [SerializeField, Required] private DialogueViewProviderComponent     m_DialogueViewProvider;
+        [SerializeField, Required] private TimelineNodeViewProviderComponent m_TimelineNodeViewProvider;
 
-        IEventViewProvider IViewRegistryProvider.   CardViewProvider     => m_CardViewProvider;
-        IDialogueViewProvider IViewRegistryProvider.DialogueViewProvider => m_DialogueViewProvider;
+        IEventViewProvider IViewRegistryProvider.        CardViewProvider         => m_CardViewProvider;
+        IDialogueViewProvider IViewRegistryProvider.     DialogueViewProvider     => m_DialogueViewProvider;
+        IEventTimelineNodeProvider IViewRegistryProvider.TimelineNodeViewProvider => m_TimelineNodeViewProvider;
 
         private void Awake()
         {

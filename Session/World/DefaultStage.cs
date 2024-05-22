@@ -186,7 +186,6 @@ namespace Vvr.Session.World
                 .Register<IStateConditionProvider>(this)
                 .Register<IEventConditionProvider>(this)
                 .Register<IStageInfoProvider>(this)
-                // .Register<IGameMethodProvider>(this)
                 ;
 
             m_StageAssetController      = new(data.stage.Assets);
@@ -214,7 +213,6 @@ namespace Vvr.Session.World
                 .Unregister<IStateConditionProvider>()
                 .Unregister<IEventConditionProvider>()
                 .Unregister<IStageInfoProvider>()
-                // .Unregister<IGameMethodProvider>()
                 ;
 
             Disconnect<IAssetProvider>(m_StageAssetController);
@@ -311,6 +309,7 @@ namespace Vvr.Session.World
             while (m_Timeline.Count > 0 && m_PlayerField.Count > 0 && m_EnemyField.Count > 0)
             {
                 $"Timeline count {m_Timeline.Count}".ToLog();
+                await UpdateTimelineNodeView();
 
                 m_ResetEvent = new();
                 IStageActor current  = m_Timeline[0];
@@ -435,14 +434,18 @@ namespace Vvr.Session.World
         private partial UniTask RemoveFromQueue(IStageActor    actor);
         private partial UniTask RemoveFromTimeline(IStageActor actor, int preserveCount = 0);
 
-        private partial void DequeueTimeline();
-        private partial void UpdateTimeline();
+        private partial void    DequeueTimeline();
+        private partial void    UpdateTimeline();
+        private partial UniTask UpdateTimelineNodeView();
+        private partial UniTask CloseTimelineNodeView();
 
         private partial UniTask TagIn(int index);
 
         // TODO: Test auto play method
         private async UniTask ExecuteTurn(IStageActor runtimeActor)
         {
+            using var triggerEvent = ConditionTrigger.Scope(OnActorAction);
+
             if (m_InputControlProvider == null)
             {
                 "[Stage] Waiting input controller".ToLog();
@@ -468,6 +471,21 @@ namespace Vvr.Session.World
             }
 
             m_ResetEvent.TrySetResult();
+        }
+
+        private async UniTask OnActorAction(IEventTarget e, Model.Condition condition, string value)
+        {
+            if (e is not IActor) return;
+
+            await CloseTimelineNodeView();
+
+            await UniTask.WaitForSeconds(0.1f);
+
+            if (condition == Condition.OnTagIn ||
+                condition == Condition.OnTagOut)
+            {
+                await UpdateTimelineNodeView();
+            }
         }
 
         private IEnumerable<IStageActor> GetCurrentPlayerActors()
