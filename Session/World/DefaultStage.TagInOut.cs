@@ -77,18 +77,13 @@ namespace Vvr.Session.World
                 await Join(m_PlayerField, temp);
             }
 
+            UpdateTimeline();
+
             await m_ViewProvider.CardViewProvider.Resolve(temp.Owner);
             using (var trigger = ConditionTrigger.Push(temp.Owner, ConditionTrigger.Game))
             {
                 await trigger.Execute(Model.Condition.OnTagIn, temp.Owner.Id);
             }
-
-            // Swap
-            UpdateTimeline();
-
-            // ObjectObserver<ActorList>.ChangedEvent(m_HandActors);
-            // ObjectObserver<ActorList>.ChangedEvent(m_Timeline);
         }
-
     }
 }

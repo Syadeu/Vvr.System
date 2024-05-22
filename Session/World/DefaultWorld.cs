@@ -81,7 +81,9 @@ namespace Vvr.Session.World
 
             Register<IEventViewProvider>(t.CardViewProvider)
                 .Register<IDialogueViewProvider>(t.DialogueViewProvider)
-                .Register<IEventTimelineNodeProvider>(t.TimelineNodeViewProvider);
+                .Register<IEventTimelineNodeProvider>(t.TimelineNodeViewProvider)
+                .Register<IStageViewProvider>(t.StageViewProvider)
+                ;
 
             // ReSharper restore RedundantTypeArgumentsOfMethod
         }
@@ -90,7 +92,9 @@ namespace Vvr.Session.World
         {
             Unregister<IEventViewProvider>()
                 .Unregister<IDialogueViewProvider>()
-                .Unregister<IEventTimelineNodeProvider>();
+                .Unregister<IEventTimelineNodeProvider>()
+                .Unregister<IStageViewProvider>()
+                ;
             m_ViewRegistryProvider = null;
         }
     }

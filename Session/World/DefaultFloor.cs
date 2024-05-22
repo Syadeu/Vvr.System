@@ -111,6 +111,12 @@ namespace Vvr.Session.World
             var cachedStartStage = Data.stages.First();
             await trigger.Execute(Model.Condition.OnFloorStarted, $"{cachedStartStage.Floor}");
 
+            // TODO: test
+            await m_ViewRegistryProvider.StageViewProvider.OpenEntryViewAsync(
+                "테스트 필드", $"제 {cachedStartStage.Floor} 층");
+            await UniTask.WaitForSeconds(2);
+            await m_ViewRegistryProvider.StageViewProvider.CloseEntryViewAsync();
+
             foreach (IStageData stage in Data.stages)
             {
                 DefaultStage.SessionData sessionData;

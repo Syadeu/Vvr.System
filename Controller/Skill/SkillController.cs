@@ -239,9 +239,14 @@ namespace Vvr.Controller.Skill
             Assert.IsFalse(Owner.Disposed);
             Assert.IsTrue(Owner.ConditionResolver[Model.Condition.IsActorTurn](null));
 
+            bool executed = false;
             if (value.overrideTarget != null)
             {
-                await ExecuteSkillTarget(trigger, value, value.overrideTarget);
+                if (!value.overrideTarget.Disposed)
+                {
+                    executed = true;
+                    await ExecuteSkillTarget(trigger, value, value.overrideTarget);
+                }
             }
             else
             {
@@ -252,7 +257,22 @@ namespace Vvr.Controller.Skill
                     if (value.skill.Definition.TargetCount <= count++) break;
 
                     await ExecuteSkillTarget(trigger, value, target);
+                    executed = true;
                 }
+            }
+
+            // Target not found
+            if (!executed)
+            {
+                Transform view = await m_ViewProvider.Resolve(Owner);
+
+                await view
+                        .GetComponent<ISkillEventHandler>()
+                        .OnSkillCanceled(value.skill)
+                        .SuppressCancellationThrow()
+                        .AttachExternalCancellation(view.GetCancellationTokenOnDestroy())
+                        .TimeoutWithoutException(TimeSpan.FromSeconds(5))
+                    ;
             }
 
             RegisterCooltime(value);

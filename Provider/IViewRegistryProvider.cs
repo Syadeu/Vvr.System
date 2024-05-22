@@ -27,5 +27,7 @@ namespace Vvr.Provider
         IDialogueViewProvider DialogueViewProvider { get; }
 
         IEventTimelineNodeProvider TimelineNodeViewProvider { get; }
+
+        IStageViewProvider StageViewProvider { get; }
     }
 }

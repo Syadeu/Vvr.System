@@ -490,22 +490,24 @@ namespace Vvr.Session.World
 
         private IEnumerable<IStageActor> GetCurrentPlayerActors()
         {
-            for (int i = 0; i < m_PlayerField.Count; i++)
-            {
-                yield return (m_PlayerField[i]);
-            }
-            for (int i = 0; i < m_HandActors.Count; i++)
-            {
-                yield return (m_HandActors[i]);
-            }
+            return m_PlayerField.Concat(m_HandActors);
+            // for (int i = 0; i < m_PlayerField.Count; i++)
+            // {
+            //     yield return (m_PlayerField[i]);
+            // }
+            // for (int i = 0; i < m_HandActors.Count; i++)
+            // {
+            //     yield return (m_HandActors[i]);
+            // }
         }
 
         private IEnumerable<IStageActor> GetCurrentEnemyActors()
         {
-            for (int i = 0; i < m_EnemyField.Count; i++)
-            {
-                yield return (m_EnemyField[i]);
-            }
+            return m_EnemyField;
+            // for (int i = 0; i < m_EnemyField.Count; i++)
+            // {
+            //     yield return (m_EnemyField[i]);
+            // }
         }
 
         void IConnector<IActorProvider>.Connect(IActorProvider t)

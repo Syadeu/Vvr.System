@@ -29,10 +29,12 @@ namespace Vvr.Provider.Component
         [SerializeField, Required] private EventViewProviderComponent        m_CardViewProvider;
         [SerializeField, Required] private DialogueViewProviderComponent     m_DialogueViewProvider;
         [SerializeField, Required] private TimelineNodeViewProviderComponent m_TimelineNodeViewProvider;
+        [SerializeField, Required] private StageViewProviderComponent        m_StageViewProvider;
 
         IEventViewProvider IViewRegistryProvider.        CardViewProvider         => m_CardViewProvider;
         IDialogueViewProvider IViewRegistryProvider.     DialogueViewProvider     => m_DialogueViewProvider;
         IEventTimelineNodeProvider IViewRegistryProvider.TimelineNodeViewProvider => m_TimelineNodeViewProvider;
+        IStageViewProvider IViewRegistryProvider.        StageViewProvider        => m_StageViewProvider;
 
         private void Awake()
         {

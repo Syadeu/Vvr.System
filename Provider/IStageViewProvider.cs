@@ -15,21 +15,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// File created : 2024, 05, 17 23:05
+// File created : 2024, 05, 22 12:05
 
 #endregion
 
 using Cysharp.Threading.Tasks;
-using UnityEngine;
-using Vvr.Model;
 
-namespace Vvr.Controller.Skill
+namespace Vvr.Provider
 {
-    public interface ISkillEventHandler
+    [LocalProvider]
+    public interface IStageViewProvider : IProvider
     {
-        UniTask OnSkillStart(ISkillData   skill,  ISkillEffectEmitter effectEmitter);
-        UniTask OnSkillCasting(ISkillData skill,  ISkillEffectEmitter effectEmitter);
-        UniTask OnSkillEnd(ISkillData skill, Transform      target, ISkillEffectEmitter effectEmitter);
-        UniTask OnSkillCanceled(ISkillData skill);
+        UniTask OpenEntryViewAsync(string title, string subtitle);
+        UniTask CloseEntryViewAsync();
     }
 }
