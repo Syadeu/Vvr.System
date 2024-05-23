@@ -21,7 +21,6 @@ using System;
 using System.Collections.Generic;
 using Vvr.Controller.Stat;
 using Vvr.Model;
-using Vvr.Model.Wallet;
 
 namespace Vvr.Controller.Research
 {

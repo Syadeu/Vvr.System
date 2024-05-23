@@ -104,7 +104,10 @@ namespace Vvr.Model
                 {
                     if (refValues.TryGetValue(entry, out var refVal))
                     {
-                        m_Elements.Add(new UnresolvedReferenceValue(entry, refVal));
+                        if (!float.TryParse(refVal, out float v))
+                            m_Elements.Add(new UnresolvedReferenceValue(entry, refVal));
+                        else
+                            m_Elements.Add(new RawValue(entry, v));
                     }
                     else
                         m_Elements.Add(new RawValue(entry, float.Parse(entry)));
