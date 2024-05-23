@@ -2,19 +2,19 @@
 
 // Copyright 2024 Syadeu
 // Author : Seung Ha Kim
-// 
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// 
+//
 //     http://www.apache.org/licenses/LICENSE-2.0
-// 
+//
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-// 
+//
 // File created : 2024, 05, 23 11:05
 
 #endregion
@@ -30,9 +30,9 @@ using Vvr.Provider;
 
 namespace Vvr.Controller.Research
 {
-    public sealed class ResearchNodeGroup
+    public sealed class ResearchNodeGroup : IResearchNodeGroup
     {
-        private sealed class ResearchNode : IResearchNode, IMethodArgumentResolver
+        private sealed class ResearchNode : IResearchNode, IMethodArgumentResolver, IDisposable
         {
             private readonly ResearchSheet.Row m_Data;
 
@@ -47,9 +47,12 @@ namespace Vvr.Controller.Research
             private readonly StatValueGetterDelegate m_StatGetter;
             private readonly StatValueSetterDelegate m_StatSetter;
 
+            private bool m_Disposed;
+
             public string        Id     => m_Data.Id;
             public IResearchNode Parent { get; private set; }
 
+            public IReadOnlyList<ResearchNode> Children => m_Children;
             IReadOnlyList<IResearchNode> IResearchNode.Children => m_Children;
 
             public int Level    { get; private set; }
@@ -59,6 +62,9 @@ namespace Vvr.Controller.Research
             {
                 get
                 {
+                    if (m_Disposed)
+                        throw new ObjectDisposedException(nameof(IResearchNode));
+
                     if (Level < MaxLevel)
                     {
                         float v = m_CalculateResearchTime(this);
@@ -71,6 +77,9 @@ namespace Vvr.Controller.Research
             {
                 get
                 {
+                    if (m_Disposed)
+                        throw new ObjectDisposedException(nameof(IResearchNode));
+
                     if (Level < MaxLevel)
                     {
                         return m_CalculateConsumableCount(this);
@@ -98,6 +107,11 @@ namespace Vvr.Controller.Research
 
             public void Build(IReadOnlyDictionary<string, ResearchNode> map)
             {
+                if (m_Data.Connection is not { Count: > 0 })
+                {
+                    m_Children = Array.Empty<ResearchNode>();
+                    return;
+                }
                 m_Children = new ResearchNode[m_Data.Connection.Count];
                 int i = 0;
                 foreach (var childData in m_Data.Connection.Select(x => x.Ref).OrderBy(x => x.Definition.Order))
@@ -111,6 +125,9 @@ namespace Vvr.Controller.Research
             private IReadOnlyStatValues m_CachedStatValues;
             void IStatModifier.UpdateValues(in IReadOnlyStatValues originalStats, ref StatValues stats)
             {
+                if (m_Disposed)
+                    throw new ObjectDisposedException(nameof(IResearchNode));
+
                 m_CachedStatValues = stats;
                 float v = m_CalculateStatModifier(this);
                 m_CachedStatValues = null;
@@ -122,6 +139,9 @@ namespace Vvr.Controller.Research
 
             float IMethodArgumentResolver.Resolve(string arg)
             {
+                if (m_Disposed)
+                    throw new ObjectDisposedException(nameof(IResearchNode));
+
                 if (CustomMethodArgumentNames.TARGET == arg)
                 {
                     Assert.IsNotNull(m_CachedStatValues);
@@ -132,21 +152,29 @@ namespace Vvr.Controller.Research
 
                 throw new ArgumentException($"{arg} is not valid argument", nameof(arg));
             }
+
+            public void Dispose()
+            {
+                Array.Clear(m_Children, 0, m_Children.Length);
+                m_Children = null;
+
+                m_Disposed = true;
+            }
         }
 
-        public static ResearchNodeGroup Build(IEnumerable<ResearchSheet.Row> nodes)
+        public static IResearchNodeGroup Build(IEnumerable<ResearchSheet.Row> nodes)
         {
             Dictionary<string, ResearchNode> map = nodes.ToDictionary(
                 x => x.Id, x => new ResearchNode(x));
 
-            var result = new IResearchNode[map.Count];
+            var result = new ResearchNode[map.Count];
             foreach (var node in map.Values)
             {
                 node.Build(map);
             }
 
-            IResearchNode        root  = map.Values.First(x => x.Parent == null);
-            Queue<IResearchNode> queue = new();
+            ResearchNode        root  = map.Values.First(x => x.Parent == null);
+            Queue<ResearchNode> queue = new();
             queue.Enqueue(root);
 
             int i = 0;
@@ -161,18 +189,45 @@ namespace Vvr.Controller.Research
                 }
             }
 
-            return new(result);
+            return new ResearchNodeGroup(result);
         }
 
-        private readonly IResearchNode[] m_Nodes;
+        private readonly ResearchNode[] m_Nodes;
 
-        private ResearchNodeGroup(IResearchNode[] nodes)
+        public IResearchNode Root
+        {
+            get
+            {
+                if (Disposed)
+                    throw new ObjectDisposedException(nameof(IResearchNode));
+
+                return m_Nodes[0];
+            }
+        }
+
+        public IResearchNode this[int i]
+        {
+            get
+            {
+                if (Disposed)
+                    throw new ObjectDisposedException(nameof(IResearchNode));
+
+                return m_Nodes[i];
+            }
+        }
+
+        public bool Disposed { get; private set; }
+
+        private ResearchNodeGroup(ResearchNode[] nodes)
         {
             m_Nodes = nodes;
         }
 
         public void Connect(IStatValueStack stat)
         {
+            if (Disposed)
+                throw new ObjectDisposedException(nameof(IResearchNode));
+
             using var debugTimer = DebugTimer.Start();
 
             foreach (var node in m_Nodes)
@@ -183,12 +238,27 @@ namespace Vvr.Controller.Research
 
         public void Disconnect(IStatValueStack stat)
         {
+            if (Disposed)
+                throw new ObjectDisposedException(nameof(IResearchNode));
+
             using var debugTimer = DebugTimer.Start();
-            
+
             foreach (var node in m_Nodes)
             {
                 stat.RemoveModifier(node);
             }
+        }
+
+        public void Dispose()
+        {
+            foreach (var item in m_Nodes)
+            {
+                item.Dispose();
+            }
+
+            Array.Clear(m_Nodes, 0, m_Nodes.Length);
+
+            Disposed = true;
         }
     }
 }

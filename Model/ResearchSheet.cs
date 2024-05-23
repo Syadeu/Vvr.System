@@ -21,6 +21,7 @@
 
 using System.Collections.Generic;
 using Cathei.BakingSheet;
+using Cathei.BakingSheet.Unity;
 using JetBrains.Annotations;
 using UnityEngine.Scripting;
 
@@ -48,6 +49,8 @@ namespace Vvr.Model
             [UsedImplicitly] public Definition      Definition { get; private set; }
             [UsedImplicitly] public Methods         Methods    { get; private set; }
             [UsedImplicitly] public List<Reference> Connection { get; private set; }
+
+            [UsedImplicitly] public Dictionary<AssetType, AddressablePath> Assets     { get; private set; }
         }
 
         public ResearchSheet()

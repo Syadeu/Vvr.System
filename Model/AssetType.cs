@@ -29,6 +29,8 @@ namespace Vvr.Model
         BehaviorTree,
 
         BackgroundImage,
+
+        Icon,
     }
 
     public enum ActorAssetType : short

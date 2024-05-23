@@ -15,19 +15,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// File created : 2024, 05, 22 11:05
+// File created : 2024, 05, 23 20:05
 
 #endregion
 
-using System;
-using Cysharp.Threading.Tasks;
-using UnityEngine;
+using Vvr.Controller.Research;
+using Vvr.Provider;
 
-namespace Vvr.Provider.Component
+namespace Vvr.Session.Provider
 {
-    public abstract class TimelineNodeViewProviderComponent : MonoBehaviour, IEventTimelineNodeViewProvider
+    [LocalProvider]
+    public interface IResearchDataProvider : IProvider
     {
-        public abstract UniTask<Transform> Resolve(IEventTarget actor, int order);
-        public abstract UniTask            Release(IEventTarget actor);
+        IResearchNodeGroup this[int i] { get; }
     }
 }

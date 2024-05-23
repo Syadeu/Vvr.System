@@ -24,6 +24,7 @@ using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using Vvr.Model;
 using Vvr.Provider;
+using Vvr.Session.Provider;
 
 namespace Vvr.Session
 {
@@ -70,12 +71,15 @@ namespace Vvr.Session
                 new CustomMethodSession.SessionData(SheetContainer.CustomMethodTable));
             var stageDataSession = await CreateSession<StageDataSession>(
                 new StageDataSession.SessionData(SheetContainer.Stages));
+            var researchDataSession = await CreateSession<ResearchDataSession>(
+                new ResearchDataSession.SessionData(SheetContainer.ResearchTable));
 
             Parent
                 .Register<IGameConfigProvider>(gameConfigSession)
                 .Register<IActorDataProvider>(actorDataSession)
                 .Register<ICustomMethodProvider>(customMethodSession)
                 .Register<IStageDataProvider>(stageDataSession)
+                .Register<IResearchDataProvider>(researchDataSession)
                 ;
         }
         protected override UniTask OnReserve()
@@ -85,6 +89,7 @@ namespace Vvr.Session
                 .Unregister<IActorDataProvider>()
                 .Unregister<ICustomMethodProvider>()
                 .Unregister<IStageDataProvider>()
+                .Unregister<IResearchDataProvider>()
                 ;
 
             SheetContainer.Dispose();

@@ -57,8 +57,10 @@ namespace Vvr.Session
 
             public float Time => m_Method(this);
 
-            public Entry(CustomMethodDelegate m)
+            public Entry([NotNull] CustomMethodDelegate m)
             {
+                Assert.IsNotNull(m, "timeline method is null");
+
                 m_Method = m;
             }
 

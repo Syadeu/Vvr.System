@@ -19,6 +19,8 @@
 
 #endregion
 
+using Vvr.Provider.ContentView;
+
 namespace Vvr.Provider
 {
     public interface IViewRegistryProvider : IProvider
@@ -26,8 +28,13 @@ namespace Vvr.Provider
         IEventViewProvider    CardViewProvider     { get; }
         IDialogueViewProvider DialogueViewProvider { get; }
 
-        IEventTimelineNodeProvider TimelineNodeViewProvider { get; }
+        IEventTimelineNodeViewProvider TimelineNodeViewViewProvider { get; }
 
-        IStageViewProvider StageViewProvider { get; }
+        IStageViewProvider    StageViewProvider    { get; }
+    }
+
+    public interface IContentViewRegistryProvider : IProvider
+    {
+        IResearchViewProvider ResearchViewProvider { get; }
     }
 }

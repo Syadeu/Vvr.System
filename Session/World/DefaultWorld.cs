@@ -29,6 +29,7 @@ using Vvr.Controller.Condition;
 using Vvr.Model;
 using Vvr.Provider;
 using Vvr.Session.Provider;
+using Vvr.Session.View;
 
 namespace Vvr.Session.World
 {
@@ -53,6 +54,8 @@ namespace Vvr.Session.World
 
             await CreateSession<GameConfigResolveSession>(
                 new GameConfigResolveSession.SessionData(MapType.Global, true));
+
+            await CreateSession<ViewSession>(default);
 
             // TODO: skip map load
             DefaultMap = await CreateSession<DefaultMap>(default);
@@ -81,7 +84,7 @@ namespace Vvr.Session.World
 
             Register<IEventViewProvider>(t.CardViewProvider)
                 .Register<IDialogueViewProvider>(t.DialogueViewProvider)
-                .Register<IEventTimelineNodeProvider>(t.TimelineNodeViewProvider)
+                .Register<IEventTimelineNodeViewProvider>(t.TimelineNodeViewViewProvider)
                 .Register<IStageViewProvider>(t.StageViewProvider)
                 ;
 
@@ -92,7 +95,7 @@ namespace Vvr.Session.World
         {
             Unregister<IEventViewProvider>()
                 .Unregister<IDialogueViewProvider>()
-                .Unregister<IEventTimelineNodeProvider>()
+                .Unregister<IEventTimelineNodeViewProvider>()
                 .Unregister<IStageViewProvider>()
                 ;
             m_ViewRegistryProvider = null;

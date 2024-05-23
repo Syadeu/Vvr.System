@@ -35,12 +35,12 @@ namespace Vvr.Session.World
 {
     partial class DefaultStage :
         IConnector<ITimelineQueueProvider>,
-        IConnector<IEventTimelineNodeProvider>
+        IConnector<IEventTimelineNodeViewProvider>
     {
         private readonly ActorList         m_Timeline      = new();
 
         private ITimelineQueueProvider     m_TimelineQueueProvider;
-        private IEventTimelineNodeProvider m_TimelineNodeProvider;
+        private IEventTimelineNodeViewProvider m_TimelineNodeViewProvider;
 
         /// <summary>
         /// Dequeues the first actor from the timeline and updates it.
@@ -81,7 +81,7 @@ namespace Vvr.Session.World
             {
                 int index = m_Timeline.FindIndex(x => ReferenceEquals(x.Owner, stageActor.Owner));
                 tasks = UniTask.WhenAll(tasks,
-                    m_TimelineNodeProvider.Resolve(stageActor.Owner, index));
+                    m_TimelineNodeViewProvider.Resolve(stageActor.Owner, index));
             }
 
             await tasks;
@@ -92,7 +92,7 @@ namespace Vvr.Session.World
             foreach (var stageActor in m_PlayerField.Concat(m_EnemyField))
             {
                 tasks = UniTask.WhenAll(tasks,
-                    m_TimelineNodeProvider.Release(stageActor.Owner));
+                    m_TimelineNodeViewProvider.Release(stageActor.Owner));
             }
 
             await tasks;
@@ -154,7 +154,7 @@ namespace Vvr.Session.World
             await RemoveFromQueue(actor);
 
             m_StageActorProvider.Reserve(actor);
-            await m_TimelineNodeProvider.Release(actor.Owner);
+            await m_TimelineNodeViewProvider.Release(actor.Owner);
             await m_ViewProvider.CardViewProvider.Release(actor.Owner);
             actor.Owner.Release();
 
@@ -249,7 +249,7 @@ namespace Vvr.Session.World
             Assert.IsTrue(ReferenceEquals(m_TimelineQueueProvider, t));
             m_TimelineQueueProvider = null;
         }
-        void IConnector<IEventTimelineNodeProvider>.Connect(IEventTimelineNodeProvider    t) => m_TimelineNodeProvider = t;
-        void IConnector<IEventTimelineNodeProvider>.Disconnect(IEventTimelineNodeProvider t) => m_TimelineNodeProvider = null;
+        void IConnector<IEventTimelineNodeViewProvider>.Connect(IEventTimelineNodeViewProvider    t) => m_TimelineNodeViewProvider = t;
+        void IConnector<IEventTimelineNodeViewProvider>.Disconnect(IEventTimelineNodeViewProvider t) => m_TimelineNodeViewProvider = null;
     }
 }

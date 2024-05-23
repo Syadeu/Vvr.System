@@ -15,19 +15,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// File created : 2024, 05, 22 11:05
+// File created : 2024, 05, 23 22:05
 
 #endregion
 
 using System;
 using Cysharp.Threading.Tasks;
-using UnityEngine;
 
-namespace Vvr.Provider.Component
+namespace Vvr.Provider.ContentView
 {
-    public abstract class TimelineNodeViewProviderComponent : MonoBehaviour, IEventTimelineNodeViewProvider
+    public delegate UniTask ContentViewEventDelegate<in TEvent>(TEvent e) where TEvent : struct, IConvertible;
+
+    public interface IContentViewEventHandler<TEvent> : IContentViewEventHandler
+        where TEvent : struct, IConvertible
     {
-        public abstract UniTask<Transform> Resolve(IEventTarget actor, int order);
-        public abstract UniTask            Release(IEventTarget actor);
+        IContentViewEventHandler<TEvent> Register(TEvent   e, ContentViewEventDelegate<TEvent> x);
+        IContentViewEventHandler<TEvent> Unregister(TEvent e, ContentViewEventDelegate<TEvent> x);
+
+        UniTask Execute(TEvent e);
+    }
+
+    [LocalProvider]
+    public interface IContentViewEventHandler : IProvider, IDisposable
+    {
     }
 }
