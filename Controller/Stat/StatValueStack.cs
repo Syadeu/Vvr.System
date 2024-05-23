@@ -173,15 +173,20 @@ namespace Vvr.Controller.Stat
             return m_ResultStats[t];
         }
 
-        public StatValueStack AddModifier(IStatModifier modifier)
+        public IStatValueStack AddModifier(IStatModifier modifier)
         {
+            using var debugTimer = DebugTimer.Start();
+
             Assert.IsFalse(m_Modifiers.Contains(modifier));
             m_Modifiers.Add(modifier);
             return this;
         }
-        public void RemoveModifier(IStatModifier modifier)
+        public IStatValueStack RemoveModifier(IStatModifier modifier)
         {
+            using var debugTimer = DebugTimer.Start();
+
             m_Modifiers.Remove(modifier);
+            return this;
         }
 
         public void Dispose()

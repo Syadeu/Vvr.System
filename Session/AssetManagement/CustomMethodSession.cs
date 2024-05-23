@@ -50,20 +50,12 @@ namespace Vvr.Session
             }
         }
 
-        private readonly Dictionary<int, UnresolvedCustomMethod> m_Methods = new();
 
         public CustomMethodDelegate this[CustomMethodNames method]
         {
             get
             {
-                int hash = method.GetHashCode();
-                if (!m_Methods.TryGetValue(hash, out var body))
-                {
-                    body            = new(Data.sheet[method.ToString()]);
-                    m_Methods[hash] = body;
-                }
-
-                return body.Execute;
+                return CustomMethod.Static[Data.sheet[method.ToString()]];
             }
         }
 

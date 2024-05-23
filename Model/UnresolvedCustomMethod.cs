@@ -2,19 +2,19 @@
 
 // Copyright 2024 Syadeu
 // Author : Seung Ha Kim
-// 
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// 
+//
 //     http://www.apache.org/licenses/LICENSE-2.0
-// 
+//
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-// 
+//
 // File created : 2024, 05, 23 01:05
 
 #endregion
@@ -25,7 +25,7 @@ using UnityEngine.Assertions;
 
 namespace Vvr.Model
 {
-    public sealed class UnresolvedCustomMethod
+    public sealed class UnresolvedCustomMethod : IUnresolvedCustomMethod
     {
         abstract class Element
         {
@@ -42,7 +42,7 @@ namespace Vvr.Model
             {
 
             }
-            public abstract float Resolve(IMethodArgumentResolver stats);
+            public abstract float Resolve(IMethodArgumentResolver resolver);
         }
 
         class RawValue : Variable
@@ -54,7 +54,7 @@ namespace Vvr.Model
                 value = v;
             }
 
-            public override float Resolve(IMethodArgumentResolver stats) => value;
+            public override float Resolve(IMethodArgumentResolver resolver) => value;
         }
         class UnresolvedReferenceValue : Variable
         {
@@ -65,7 +65,7 @@ namespace Vvr.Model
                 m_Reference = re;
             }
 
-            public override float Resolve(IMethodArgumentResolver stats) => stats.Resolve(m_Reference);
+            public override float Resolve(IMethodArgumentResolver resolver) => resolver.Resolve(m_Reference);
         }
 
         class MethodValue : Element
@@ -85,7 +85,7 @@ namespace Vvr.Model
             }
         }
 
-        private readonly List<Element> m_Elements = new();
+        private readonly List<Element>           m_Elements = new();
 
         public UnresolvedCustomMethod(CustomMethodSheet.Row row)
         {
@@ -119,13 +119,13 @@ namespace Vvr.Model
             }
         }
 
-        public float Execute(IMethodArgumentResolver stats)
+        public float Execute(IMethodArgumentResolver resolver)
         {
             using DebugTimer t = DebugTimer.Start();
 
             if (m_Elements.Count < 2 && m_Elements[0] is Variable firstVar)
             {
-                return firstVar.Resolve(stats);
+                return firstVar.Resolve(resolver);
             }
 
             Stack<float>       resolvedValues = new();
@@ -136,7 +136,7 @@ namespace Vvr.Model
                 switch (element)
                 {
                     case Variable v:
-                        resolvedValues.Push(v.Resolve(stats));
+                        resolvedValues.Push(v.Resolve(resolver));
                         break;
                     case MethodValue m:
                         while (methods.TryPeek(out var e) &&
@@ -166,5 +166,10 @@ namespace Vvr.Model
 
             return resolvedValues.Pop();
         }
+    }
+
+    public interface IUnresolvedCustomMethod
+    {
+        float Execute(IMethodArgumentResolver resolver);
     }
 }

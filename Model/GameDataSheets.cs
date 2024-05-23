@@ -35,6 +35,7 @@ namespace Vvr.Model
         [UsedImplicitly] public CustomMethodSheet CustomMethodTable { get; private set; }
         [UsedImplicitly] public WalletSheet       WalletTable       { get; private set; }
         [UsedImplicitly] public StatSheet         StatTable         { get; private set; }
+        [UsedImplicitly] public ResearchSheet     ResearchTable     { get; private set; }
 
         [UsedImplicitly] public ActorSheet Actors { get; private set; }
         [UsedImplicitly] public StageSheet Stages { get; private set; }

@@ -1,5 +1,4 @@
 #region Copyrights
-
 // Copyright 2024 Syadeu
 // Author : Seung Ha Kim
 //
@@ -15,24 +14,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// File created : 2024, 05, 08 01:05
-
+// File created : 2024, 05, 23 01:05
 #endregion
 
-using Vvr.Model.Stat;
+using System;
+using System.Collections.Generic;
+using Vvr.Controller.Stat;
+using Vvr.Model;
+using Vvr.Model.Wallet;
 
-namespace Vvr.Controller.Stat
+namespace Vvr.Controller.Research
 {
-    public interface IStatValueStack : IReadOnlyStatValues
+    public interface IResearchNode : IRawDataId, IStatModifier
     {
-        IReadOnlyStatValues OriginalStats { get; }
+        IResearchNode                Parent   { get; }
+        IReadOnlyList<IResearchNode> Children { get; }
 
-        void  Push(StatType             t, float v);
-        void  Push<TProcessor>(StatType t, float v) where TProcessor : struct, IStatValueProcessor;
+        int           Level    { get; }
+        int           MaxLevel { get; }
 
-        IStatValueStack AddModifier(IStatModifier    modifier);
-        IStatValueStack RemoveModifier(IStatModifier modifier);
-
-        void Update();
+        TimeSpan NextLevelResearchTime { get; }
+        float    NextLevelRequired     { get; }
     }
 }

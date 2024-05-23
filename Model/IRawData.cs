@@ -21,9 +21,8 @@
 
 namespace Vvr.Model
 {
-    public interface IRawData
+    public interface IRawData : IRawDataId
     {
-        string Id    { get; }
         int    Index { get; }
     }
 }
