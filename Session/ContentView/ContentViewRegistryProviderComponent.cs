@@ -21,9 +21,9 @@
 
 using Sirenix.OdinInspector;
 using UnityEngine;
-using Vvr.Provider.Component;
+using Vvr.Session.ContentView.Research;
 
-namespace Vvr.Provider.ContentView
+namespace Vvr.Session.ContentView
 {
     public sealed class ContentViewRegistryProviderComponent : MonoBehaviour, IContentViewRegistryProvider
     {
@@ -33,12 +33,12 @@ namespace Vvr.Provider.ContentView
 
         private void Awake()
         {
-            Provider.Static.Register<IContentViewRegistryProvider>(this);
+            Vvr.Provider.Provider.Static.Register<IContentViewRegistryProvider>(this);
         }
 
         private void OnDestroy()
         {
-            Provider.Static.Unregister<IContentViewRegistryProvider>(this);
+            Vvr.Provider.Provider.Static.Unregister<IContentViewRegistryProvider>(this);
         }
     }
 }

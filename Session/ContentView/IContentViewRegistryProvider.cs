@@ -15,21 +15,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// File created : 2024, 05, 23 21:05
+// File created : 2024, 05, 24 00:05
 
 #endregion
 
-using System;
-using Cysharp.Threading.Tasks;
+using Vvr.Provider;
+using Vvr.Session.ContentView.Research;
 
-namespace Vvr.Provider.ContentView
+namespace Vvr.Session.ContentView
 {
-    public interface IContentViewProvider<TEvent> : IProvider
-        where TEvent : struct, IConvertible
+    public interface IContentViewRegistryProvider : IProvider
     {
-        UniTask Initialize(IContentViewEventHandler<TEvent> eventHandler);
-
-        UniTask OnSessionOpened();
-        UniTask OnSessionClose();
+        IResearchViewProvider ResearchViewProvider { get; }
     }
 }

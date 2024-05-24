@@ -202,6 +202,11 @@ namespace Vvr.Session
         {
             if (key == null) return null;
 
+            if (key is AddressablePath addressablePath)
+            {
+                key = addressablePath.FullPath;
+            }
+
             Type type = VvrTypeHelper.TypeOf<TObject>.Type;
             Hash hash = new Hash(
                 FNV1a32.Calculate(key.ToString())

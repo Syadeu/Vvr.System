@@ -15,28 +15,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// File created : 2024, 05, 23 22:05
+// File created : 2024, 05, 23 21:05
 
 #endregion
 
 using System;
 using Cysharp.Threading.Tasks;
+using Vvr.Provider;
 
-namespace Vvr.Provider.ContentView
+namespace Vvr.Session.ContentView
 {
-    public delegate UniTask ContentViewEventDelegate<in TEvent>(TEvent e) where TEvent : struct, IConvertible;
-
-    public interface IContentViewEventHandler<TEvent> : IContentViewEventHandler
+    public interface IContentViewProvider<TEvent> : IProvider
         where TEvent : struct, IConvertible
     {
-        IContentViewEventHandler<TEvent> Register(TEvent   e, ContentViewEventDelegate<TEvent> x);
-        IContentViewEventHandler<TEvent> Unregister(TEvent e, ContentViewEventDelegate<TEvent> x);
-
-        UniTask Execute(TEvent e);
-    }
-
-    [LocalProvider]
-    public interface IContentViewEventHandler : IProvider, IDisposable
-    {
+        UniTask Initialize(IContentViewEventHandler<TEvent> eventHandler);
     }
 }

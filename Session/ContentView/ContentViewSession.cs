@@ -24,11 +24,11 @@ using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using Vvr.Provider;
-using Vvr.Provider.ContentView;
+using Vvr.Session.ContentView.Research;
 
-namespace Vvr.Session.View
+namespace Vvr.Session.ContentView
 {
-    public sealed class ViewSession : ParentSession<ViewSession.SessionData>,
+    public sealed class ContentViewSession : ParentSession<ContentViewSession.SessionData>,
         IConnector<IContentViewRegistryProvider>
     {
         public struct SessionData : ISessionData
@@ -95,7 +95,7 @@ namespace Vvr.Session.View
         private IContentViewEventHandler
             m_ResearchViewEventHandler;
 
-        public override string DisplayName => nameof(ViewSession);
+        public override string DisplayName => nameof(ContentViewSession);
 
         protected override async UniTask OnInitialize(IParentSession session, SessionData data)
         {
@@ -136,17 +136,17 @@ namespace Vvr.Session.View
             evHandler.Register(ResearchViewEvent.Open, async ev =>
             {
                 m_ResearchViewSession = await CreateSession<ResearchViewSession>(default);
-                await t.OnSessionOpened();
             });
             evHandler.Register(ResearchViewEvent.Close, async ev =>
             {
-                await t.OnSessionClose();
                 await m_ResearchViewSession.Reserve();
                 m_ResearchViewSession = null;
             });
             m_ResearchViewEventHandler = evHandler;
 
             t.Initialize(evHandler);
+
+            base.Register<IResearchViewProvider>(t);
         }
         void Unregister(IResearchViewProvider t)
         {
@@ -155,6 +155,8 @@ namespace Vvr.Session.View
 
             m_ResearchViewEventHandler.Dispose();
             m_ResearchViewEventHandler = null;
+
+            base.Unregister<IResearchViewProvider>();
         }
     }
 }

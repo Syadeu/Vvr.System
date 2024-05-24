@@ -15,21 +15,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// File created : 2024, 05, 23 19:05
+// File created : 2024, 05, 23 22:05
 
 #endregion
 
+using System;
 using Cysharp.Threading.Tasks;
-using UnityEngine;
-using Vvr.Provider.ContentView;
+using Vvr.Provider;
 
-namespace Vvr.Provider.Component
+namespace Vvr.Session.ContentView
 {
-    [DisallowMultipleComponent]
-    public abstract class ResearchViewProviderComponent : MonoBehaviour, IResearchViewProvider
+    public delegate UniTask ContentViewEventDelegate<in TEvent>(TEvent e) where TEvent : struct, IConvertible;
+
+    public interface IContentViewEventHandler<TEvent> : IContentViewEventHandler
+        where TEvent : struct, IConvertible
     {
-        public abstract UniTask Initialize(IContentViewEventHandler<ResearchViewEvent> eventHandler);
-        public abstract UniTask OnSessionOpened();
-        public abstract UniTask OnSessionClose();
+        IContentViewEventHandler<TEvent> Register(TEvent   e, ContentViewEventDelegate<TEvent> x);
+        IContentViewEventHandler<TEvent> Unregister(TEvent e, ContentViewEventDelegate<TEvent> x);
+
+        UniTask Execute(TEvent e);
+    }
+
+    [LocalProvider]
+    public interface IContentViewEventHandler : IProvider, IDisposable
+    {
     }
 }

@@ -22,7 +22,6 @@
 using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.Serialization;
-using Vvr.Provider.ContentView;
 
 namespace Vvr.Provider.Component
 {

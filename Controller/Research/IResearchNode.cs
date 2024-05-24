@@ -19,8 +19,11 @@
 
 using System;
 using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
+using UnityEngine;
 using Vvr.Controller.Stat;
 using Vvr.Model;
+using Vvr.Provider;
 
 namespace Vvr.Controller.Research
 {
@@ -34,5 +37,7 @@ namespace Vvr.Controller.Research
 
         TimeSpan NextLevelResearchTime { get; }
         float    NextLevelRequired     { get; }
+
+        AsyncLazy<IImmutableObject<Sprite>> Icon { get; }
     }
 }

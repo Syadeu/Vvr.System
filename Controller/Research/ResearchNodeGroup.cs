@@ -20,8 +20,12 @@
 #endregion
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Cathei.BakingSheet.Unity;
+using Cysharp.Threading.Tasks;
+using UnityEngine;
 using UnityEngine.Assertions;
 using Vvr.Controller.Stat;
 using Vvr.Model;
@@ -89,6 +93,8 @@ namespace Vvr.Controller.Research
                 }
             }
 
+            public AsyncLazy<IImmutableObject<Sprite>> Icon { get; private set; }
+
             bool IStatModifier.IsDirty => m_IsDirty;
             int IStatModifier. Order   => StatModifierOrder.Item - 1;
 
@@ -120,6 +126,13 @@ namespace Vvr.Controller.Research
                     child.Parent    = this;
                     m_Children[i++] = child;
                 }
+            }
+
+            public void SetupAssetProvider(IAssetProvider assetProvider)
+            {
+                Icon = UniTask.Lazy(
+                    () => assetProvider.LoadAsync<Sprite>(m_Data.Assets[AssetType.Icon])
+                );
             }
 
             private IReadOnlyStatValues m_CachedStatValues;
@@ -157,6 +170,7 @@ namespace Vvr.Controller.Research
             {
                 Array.Clear(m_Children, 0, m_Children.Length);
                 m_Children = null;
+                Icon       = null;
 
                 m_Disposed = true;
             }
@@ -223,6 +237,16 @@ namespace Vvr.Controller.Research
             m_Nodes = nodes;
         }
 
+        public IResearchNodeGroup Connect(IAssetProvider assetProvider)
+        {
+            foreach (var node in m_Nodes)
+            {
+                node.SetupAssetProvider(assetProvider);
+            }
+
+            return this;
+        }
+
         public void Connect(IStatValueStack stat)
         {
             if (Disposed)
@@ -259,6 +283,16 @@ namespace Vvr.Controller.Research
             Array.Clear(m_Nodes, 0, m_Nodes.Length);
 
             Disposed = true;
+        }
+
+        public IEnumerator<IResearchNode> GetEnumerator()
+        {
+            return m_Nodes.OfType<IResearchNode>().GetEnumerator();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
         }
     }
 }

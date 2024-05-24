@@ -19,13 +19,14 @@
 
 #endregion
 
+using System.Collections.Generic;
 using Vvr.Controller.Research;
 using Vvr.Provider;
 
 namespace Vvr.Session.Provider
 {
     [LocalProvider]
-    public interface IResearchDataProvider : IProvider
+    public interface IResearchDataProvider : IProvider, IEnumerable<IResearchNodeGroup>
     {
         IResearchNodeGroup this[int i] { get; }
     }

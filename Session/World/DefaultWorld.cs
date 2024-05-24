@@ -28,8 +28,8 @@ using Vvr.Controller.Actor;
 using Vvr.Controller.Condition;
 using Vvr.Model;
 using Vvr.Provider;
+using Vvr.Session.ContentView;
 using Vvr.Session.Provider;
-using Vvr.Session.View;
 
 namespace Vvr.Session.World
 {
@@ -55,7 +55,7 @@ namespace Vvr.Session.World
             await CreateSession<GameConfigResolveSession>(
                 new GameConfigResolveSession.SessionData(MapType.Global, true));
 
-            await CreateSession<ViewSession>(default);
+            await CreateSession<ContentViewSession>(default);
 
             // TODO: skip map load
             DefaultMap = await CreateSession<DefaultMap>(default);

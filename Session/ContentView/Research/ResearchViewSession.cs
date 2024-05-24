@@ -17,14 +17,11 @@
 // File created : 2024, 05, 23 19:05
 #endregion
 
-using System.Linq;
 using Cysharp.Threading.Tasks;
-using Vvr.Controller.Research;
 using Vvr.Provider;
-using Vvr.Provider.ContentView;
 using Vvr.Session.Provider;
 
-namespace Vvr.Session.View
+namespace Vvr.Session.ContentView.Research
 {
     public sealed class ResearchViewSession : ParentSession<ResearchViewSession.SessionData>,
         IConnector<IResearchDataProvider>,
@@ -47,6 +44,12 @@ namespace Vvr.Session.View
             await base.OnInitialize(session, data);
 
             m_AssetSession = await CreateSession<AssetSession>(default);
+            foreach (var nodeGroup in m_ResearchDataProvider)
+            {
+                nodeGroup.Connect(m_AssetSession);
+            }
+
+            await m_ResearchViewProvider.Setup(m_ResearchDataProvider[0]);
         }
 
         protected override async UniTask OnReserve()

@@ -19,6 +19,7 @@
 
 #endregion
 
+using System.Collections;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
@@ -79,6 +80,19 @@ namespace Vvr.Session
             m_NodeGroups.Clear();
 
             await base.OnReserve();
+        }
+
+        public IEnumerator<IResearchNodeGroup> GetEnumerator()
+        {
+            foreach (var nodeGroup in m_NodeGroups.Values)
+            {
+                yield return nodeGroup;
+            }
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
         }
     }
 }
