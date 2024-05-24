@@ -100,10 +100,16 @@ namespace Vvr.Session.View
         protected override async UniTask OnInitialize(IParentSession session, SessionData data)
         {
             await base.OnInitialize(session, data);
+
+            Vvr.Provider.Provider.Static.Connect<IContentViewRegistryProvider>(this);
         }
         protected override async UniTask OnReserve()
         {
-            m_ResearchViewEventHandler.Dispose();
+            Vvr.Provider.Provider.Static.Disconnect<IContentViewRegistryProvider>(this);
+
+            m_ResearchViewEventHandler?.Dispose();
+
+            m_ResearchViewEventHandler = null;
 
             await base.OnReserve();
         }
