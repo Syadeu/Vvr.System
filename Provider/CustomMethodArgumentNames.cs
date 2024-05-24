@@ -27,9 +27,10 @@ namespace Vvr.Provider
     {
         // ReSharper disable InconsistentNaming
         // ReSharper disable IdentifierTypo
-        public static CustomMethodArgumentNames TARGET => new(nameof(TARGET));
-        public static CustomMethodArgumentNames LVL    => new(nameof(LVL));
-        public static CustomMethodArgumentNames MAXLVL => new(nameof(MAXLVL));
+        public static CustomMethodArgumentNames TARGET  => new(nameof(TARGET));
+        public static CustomMethodArgumentNames LVL     => new(nameof(LVL));
+        public static CustomMethodArgumentNames MAXLVL  => new(nameof(MAXLVL));
+        public static CustomMethodArgumentNames NEXTLVL => new(nameof(NEXTLVL));
         // ReSharper restore IdentifierTypo
         // ReSharper restore InconsistentNaming
 

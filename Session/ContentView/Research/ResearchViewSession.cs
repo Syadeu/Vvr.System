@@ -19,6 +19,7 @@
 
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
+using Vvr.Controller.Research;
 using Vvr.Provider;
 using Vvr.Session.Provider;
 
@@ -57,10 +58,11 @@ namespace Vvr.Session.ContentView.Research
         {
             int index = (int)ctx;
 
-            Data.eventHandler.Execute(ResearchViewEvent.SelectGroup, m_ResearchDataProvider[index])
-                .SuppressCancellationThrow()
-                .AttachExternalCancellation(ReserveToken)
-                .Forget();
+            IResearchNodeGroup group = m_ResearchDataProvider[index];
+            await Data.eventHandler.Execute(ResearchViewEvent.SelectGroup, group);
+
+            // TODO: select last upgraded node
+            await Data.eventHandler.Execute(ResearchViewEvent.Select, group.Root);
         }
 
         protected override async UniTask OnReserve()

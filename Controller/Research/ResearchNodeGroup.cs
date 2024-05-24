@@ -161,8 +161,9 @@ namespace Vvr.Controller.Research
                     Assert.IsNotNull(m_CachedStatValues);
                     return m_StatGetter(m_CachedStatValues);
                 }
-                if (CustomMethodArgumentNames.LVL    == arg) return Level;
-                if (CustomMethodArgumentNames.MAXLVL == arg) return MaxLevel;
+                if (CustomMethodArgumentNames.LVL     == arg) return Level;
+                if (CustomMethodArgumentNames.NEXTLVL == arg) return Mathf.Clamp(Level + 1, 0, MaxLevel);
+                if (CustomMethodArgumentNames.MAXLVL  == arg) return MaxLevel;
 
                 throw new ArgumentException($"{arg} is not valid argument", nameof(arg));
             }
