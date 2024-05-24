@@ -19,8 +19,6 @@
 
 #endregion
 
-using Cysharp.Threading.Tasks;
-using Vvr.Controller.Research;
 using Vvr.Provider;
 
 namespace Vvr.Session.ContentView.Research
@@ -28,12 +26,16 @@ namespace Vvr.Session.ContentView.Research
     [LocalProvider]
     public interface IResearchViewProvider : IContentViewProvider<ResearchViewEvent>
     {
-        UniTask Setup(IResearchNodeGroup group);
     }
 
     public enum ResearchViewEvent : short
     {
         Open,
-        Close
+        Close,
+
+        SelectGroupWithIndex,
+        SelectGroup,
+        Select,
+        Upgrade
     }
 }

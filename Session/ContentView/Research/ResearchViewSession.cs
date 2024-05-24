@@ -18,18 +18,20 @@
 #endregion
 
 using Cysharp.Threading.Tasks;
+using JetBrains.Annotations;
 using Vvr.Provider;
 using Vvr.Session.Provider;
 
 namespace Vvr.Session.ContentView.Research
 {
+    [UsedImplicitly]
     public sealed class ResearchViewSession : ParentSession<ResearchViewSession.SessionData>,
         IConnector<IResearchDataProvider>,
         IConnector<IResearchViewProvider>
     {
         public struct SessionData : ISessionData
         {
-
+            public IContentViewEventHandler<ResearchViewEvent> eventHandler;
         }
 
         public override string DisplayName => nameof(ResearchViewSession);
@@ -49,11 +51,22 @@ namespace Vvr.Session.ContentView.Research
                 nodeGroup.Connect(m_AssetSession);
             }
 
-            await m_ResearchViewProvider.Setup(m_ResearchDataProvider[0]);
+            Data.eventHandler.Register(ResearchViewEvent.SelectGroupWithIndex, OnSelectGroupWithIndex);
+        }
+        private async UniTask OnSelectGroupWithIndex(ResearchViewEvent e, object ctx)
+        {
+            int index = (int)ctx;
+
+            Data.eventHandler.Execute(ResearchViewEvent.SelectGroup, m_ResearchDataProvider[index])
+                .SuppressCancellationThrow()
+                .AttachExternalCancellation(ReserveToken)
+                .Forget();
         }
 
         protected override async UniTask OnReserve()
         {
+            Data.eventHandler.Unregister(ResearchViewEvent.SelectGroupWithIndex, OnSelectGroupWithIndex);
+
             m_AssetSession = null;
 
             await base.OnReserve();

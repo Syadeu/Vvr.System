@@ -29,6 +29,8 @@ namespace Vvr.Controller.Research
 {
     public interface IResearchNode : IRawDataId, IStatModifier
     {
+        int Index { get; }
+
         IResearchNode                Parent   { get; }
         IReadOnlyList<IResearchNode> Children { get; }
 

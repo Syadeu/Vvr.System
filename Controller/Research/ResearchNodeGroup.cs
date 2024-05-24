@@ -54,6 +54,7 @@ namespace Vvr.Controller.Research
             private bool m_Disposed;
 
             public string        Id     => m_Data.Id;
+            public int           Index  { get; set; }
             public IResearchNode Parent { get; private set; }
 
             public IReadOnlyList<ResearchNode> Children => m_Children;
@@ -195,6 +196,7 @@ namespace Vvr.Controller.Research
             while (queue.Count > 0)
             {
                 var c = queue.Dequeue();
+                c.Index     = i;
                 result[i++] = c;
 
                 foreach (var t in c.Children)

@@ -25,7 +25,7 @@ using Vvr.Provider;
 
 namespace Vvr.Session.ContentView
 {
-    public delegate UniTask ContentViewEventDelegate<in TEvent>(TEvent e) where TEvent : struct, IConvertible;
+    public delegate UniTask ContentViewEventDelegate<in TEvent>(TEvent e, object ctx) where TEvent : struct, IConvertible;
 
     public interface IContentViewEventHandler<TEvent> : IContentViewEventHandler
         where TEvent : struct, IConvertible
@@ -34,6 +34,7 @@ namespace Vvr.Session.ContentView
         IContentViewEventHandler<TEvent> Unregister(TEvent e, ContentViewEventDelegate<TEvent> x);
 
         UniTask Execute(TEvent e);
+        UniTask Execute(TEvent e, object ctx);
     }
 
     [LocalProvider]

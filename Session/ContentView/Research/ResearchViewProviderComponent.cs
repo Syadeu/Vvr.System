@@ -29,6 +29,5 @@ namespace Vvr.Session.ContentView.Research
     public abstract class ResearchViewProviderComponent : MonoBehaviour, IResearchViewProvider
     {
         public abstract UniTask Initialize(IContentViewEventHandler<ResearchViewEvent> eventHandler);
-        public abstract UniTask Setup(IResearchNodeGroup group);
     }
 }

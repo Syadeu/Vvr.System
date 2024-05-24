@@ -68,7 +68,21 @@ namespace Vvr.Session.ContentView
                 if (!m_Actions.TryGetValue(e, out var list)) return;
 
                 await UniTask
-                        .WhenAll(list.Select(x => x(e)))
+                        .WhenAll(list.Select(x => x(e, null)))
+                        .AttachExternalCancellation(m_CancellationTokenSource.Token)
+                        .SuppressCancellationThrow()
+                    ;
+            }
+            public async UniTask Execute(TEvent e, object ctx)
+            {
+                if (!m_Actions.TryGetValue(e, out var list)) return;
+
+                // foreach (var item in list)
+                // {
+                //     await item(e, ctx);
+                // }
+                await UniTask
+                        .WhenAll(list.Select(x => x(e, ctx)))
                         .AttachExternalCancellation(m_CancellationTokenSource.Token)
                         .SuppressCancellationThrow()
                     ;
@@ -92,7 +106,7 @@ namespace Vvr.Session.ContentView
         private IChildSession
             m_ResearchViewSession;
 
-        private IContentViewEventHandler
+        private IContentViewEventHandler<ResearchViewEvent>
             m_ResearchViewEventHandler;
 
         public override string DisplayName => nameof(ContentViewSession);
@@ -133,16 +147,21 @@ namespace Vvr.Session.ContentView
                 throw new InvalidOperationException();
 
             var evHandler = new ContentViewEventHandler<ResearchViewEvent>();
-            evHandler.Register(ResearchViewEvent.Open, async ev =>
+            m_ResearchViewEventHandler = evHandler;
+
+            evHandler.Register(ResearchViewEvent.Open, async (ev, ctx) =>
             {
-                m_ResearchViewSession = await CreateSession<ResearchViewSession>(default);
+                m_ResearchViewSession = await CreateSession<ResearchViewSession>(
+                    new ResearchViewSession.SessionData()
+                    {
+                        eventHandler = m_ResearchViewEventHandler
+                    });
             });
-            evHandler.Register(ResearchViewEvent.Close, async ev =>
+            evHandler.Register(ResearchViewEvent.Close, async (ev, ctx) =>
             {
                 await m_ResearchViewSession.Reserve();
                 m_ResearchViewSession = null;
             });
-            m_ResearchViewEventHandler = evHandler;
 
             t.Initialize(evHandler);
 
