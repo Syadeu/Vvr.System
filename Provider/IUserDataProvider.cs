@@ -1,4 +1,5 @@
 #region Copyrights
+
 // Copyright 2024 Syadeu
 // Author : Seung Ha Kim
 //
@@ -14,32 +15,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// File created : 2024, 05, 23 01:05
+// File created : 2024, 05, 24 22:05
+
 #endregion
 
-using System;
-using System.Collections.Generic;
-using Cysharp.Threading.Tasks;
-using UnityEngine;
-using Vvr.Controller.Stat;
+using JetBrains.Annotations;
 using Vvr.Model;
-using Vvr.Provider;
 
-namespace Vvr.Controller.Research
+namespace Vvr.Provider
 {
-    public interface IResearchNode : IRawDataId, IStatModifier
+    /// <summary>
+    /// For saving permanent data
+    /// </summary>
+    [LocalProvider, PublicAPI]
+    public interface IUserDataProvider : IProvider
     {
-        int Index { get; }
+        int GetInt(UserDataKey key, int defaultValue = 0);
+        float GetFloat(UserDataKey key, float defaultValue = 0);
+        string GetString(UserDataKey key, string defaultValue = null);
 
-        IResearchNode                Parent   { get; }
-        IReadOnlyList<IResearchNode> Children { get; }
-
-        int Level    { get; set; }
-        int MaxLevel { get; }
-
-        TimeSpan NextLevelResearchTime { get; }
-        float    NextLevelRequired     { get; }
-
-        AsyncLazy<IImmutableObject<Sprite>> Icon { get; }
+        void SetInt(UserDataKey key, int value);
+        void SetFloat(UserDataKey key, float value);
+        void SetString(UserDataKey key, string value);
     }
 }

@@ -1,4 +1,5 @@
 #region Copyrights
+
 // Copyright 2024 Syadeu
 // Author : Seung Ha Kim
 //
@@ -14,32 +15,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// File created : 2024, 05, 23 01:05
+// File created : 2024, 05, 24 22:05
+
 #endregion
 
-using System;
-using System.Collections.Generic;
-using Cysharp.Threading.Tasks;
-using UnityEngine;
-using Vvr.Controller.Stat;
+using JetBrains.Annotations;
 using Vvr.Model;
-using Vvr.Provider;
 
-namespace Vvr.Controller.Research
+namespace Vvr.Provider
 {
-    public interface IResearchNode : IRawDataId, IStatModifier
+    [PublicAPI]
+    public struct UserDataKeyCollection
     {
-        int Index { get; }
+        private static string KeyFormatter(string x, string y)
+        {
+            const string format = "{0}_{1}";
+            return string.Format(format, x, y);
+        }
 
-        IResearchNode                Parent   { get; }
-        IReadOnlyList<IResearchNode> Children { get; }
+        public static UserDataKey ResearchNodeLevel(string id)
+        {
+            const string group = "Research_Level";
 
-        int Level    { get; set; }
-        int MaxLevel { get; }
-
-        TimeSpan NextLevelResearchTime { get; }
-        float    NextLevelRequired     { get; }
-
-        AsyncLazy<IImmutableObject<Sprite>> Icon { get; }
+            return KeyFormatter(group, id);
+        }
     }
 }

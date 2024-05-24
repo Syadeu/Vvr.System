@@ -60,7 +60,7 @@ namespace Vvr.Controller.Research
             public IReadOnlyList<ResearchNode> Children => m_Children;
             IReadOnlyList<IResearchNode> IResearchNode.Children => m_Children;
 
-            public int Level    { get; private set; }
+            public int Level    { get; set; }
             public int MaxLevel => m_Data.Definition.MaxLevel;
 
             public TimeSpan NextLevelResearchTime

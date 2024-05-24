@@ -33,7 +33,8 @@ namespace Vvr.Session
     [UsedImplicitly]
     [ParentSession(typeof(GameDataSession))]
     public sealed class ResearchDataSession : ChildSession<ResearchDataSession.SessionData>,
-        IResearchDataProvider
+        IResearchDataProvider,
+        IConnector<IUserDataProvider>
     {
         public struct SessionData : ISessionData
         {
@@ -93,6 +94,22 @@ namespace Vvr.Session
         IEnumerator IEnumerable.GetEnumerator()
         {
             return GetEnumerator();
+        }
+
+        void IConnector<IUserDataProvider>.Connect(IUserDataProvider t)
+        {
+            // Because data session always initialized before user session.
+            // So we can safely initialize all nodes
+            foreach (var nodeGroup in m_NodeGroups.Values)
+            {
+                foreach (var node in nodeGroup)
+                {
+                    node.Level = t.GetInt(UserDataKeyCollection.ResearchNodeLevel(node.Id));
+                }
+            }
+        }
+        void IConnector<IUserDataProvider>.Disconnect(IUserDataProvider t)
+        {
         }
     }
 }

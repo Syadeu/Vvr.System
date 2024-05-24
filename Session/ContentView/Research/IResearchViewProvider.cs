@@ -33,6 +33,8 @@ namespace Vvr.Session.ContentView.Research
         Open,
         Close,
 
+        Update,
+
         SelectGroupWithIndex,
         SelectGroup,
         Select,

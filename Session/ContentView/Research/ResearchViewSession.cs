@@ -17,6 +17,7 @@
 // File created : 2024, 05, 23 19:05
 #endregion
 
+using System;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using Vvr.Controller.Research;
@@ -27,6 +28,7 @@ namespace Vvr.Session.ContentView.Research
 {
     [UsedImplicitly]
     public sealed class ResearchViewSession : ParentSession<ResearchViewSession.SessionData>,
+        IConnector<IUserDataProvider>,
         IConnector<IResearchDataProvider>,
         IConnector<IResearchViewProvider>
     {
@@ -39,6 +41,7 @@ namespace Vvr.Session.ContentView.Research
 
         private AssetSession m_AssetSession;
 
+        private IUserDataProvider     m_UserDataProvider;
         private IResearchDataProvider m_ResearchDataProvider;
         private IResearchViewProvider m_ResearchViewProvider;
 
@@ -52,8 +55,34 @@ namespace Vvr.Session.ContentView.Research
                 nodeGroup.Connect(m_AssetSession);
             }
 
-            Data.eventHandler.Register(ResearchViewEvent.SelectGroupWithIndex, OnSelectGroupWithIndex);
+            data.eventHandler.Register(ResearchViewEvent.SelectGroupWithIndex, OnSelectGroupWithIndex);
+            data.eventHandler.Register(ResearchViewEvent.Upgrade, OnUpgrade);
         }
+
+        private async UniTask OnUpgrade(ResearchViewEvent e, object ctx)
+        {
+            IResearchNode node = (IResearchNode)ctx;
+
+            if (node.MaxLevel <= node.Level)
+            {
+                "already max level".ToLogError();
+                return;
+            }
+
+            int lvl = m_UserDataProvider.GetInt(UserDataKeyCollection.ResearchNodeLevel(node.Id));
+            if (lvl != node.Level)
+                throw new InvalidOperationException("lvl has been modified");
+
+            $"Upgrade node {node.Id}".ToLog();
+
+            lvl += 1;
+            m_UserDataProvider.SetInt(UserDataKeyCollection.ResearchNodeLevel(node.Id), lvl);
+            node.Level = lvl;
+
+            Data.eventHandler.Execute(ResearchViewEvent.Update, node)
+                .Forget();
+        }
+
         private async UniTask OnSelectGroupWithIndex(ResearchViewEvent e, object ctx)
         {
             int index = (int)ctx;
@@ -79,5 +108,7 @@ namespace Vvr.Session.ContentView.Research
 
         void IConnector<IResearchViewProvider>.Connect(IResearchViewProvider    t) => m_ResearchViewProvider = t;
         void IConnector<IResearchViewProvider>.Disconnect(IResearchViewProvider t) => m_ResearchViewProvider = null;
+        void IConnector<IUserDataProvider>.    Connect(IUserDataProvider        t) => m_UserDataProvider = t;
+        void IConnector<IUserDataProvider>.    Disconnect(IUserDataProvider     t) => m_UserDataProvider = null;
     }
 }

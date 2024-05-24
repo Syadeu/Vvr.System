@@ -32,7 +32,7 @@ using Vvr.Session.Provider;
 namespace Vvr.Session
 {
     [UsedImplicitly]
-    public class UserSession : ChildSession<UserSession.SessionData>,
+    public class UserSession : ParentSession<UserSession.SessionData>,
         IUserActorProvider, IUserStageProvider,
         IConnector<IActorDataProvider>,
         IConnector<IStageDataProvider>
@@ -53,6 +53,7 @@ namespace Vvr.Session
 
         protected override async UniTask OnInitialize(IParentSession session, SessionData data)
         {
+            Parent.Register<IUserDataProvider>(await CreateSession<UserDataSession>(default));
             Parent.Register<IUserActorProvider>(this);
             Parent.Register<IUserStageProvider>(this);
 
@@ -60,6 +61,7 @@ namespace Vvr.Session
         }
         protected override UniTask OnReserve()
         {
+            Parent.Unregister<IUserDataProvider>();
             Parent.Unregister<IUserActorProvider>();
             Parent.Unregister<IUserStageProvider>();
 
@@ -93,5 +95,60 @@ namespace Vvr.Session
 
         void IConnector<IStageDataProvider>.Connect(IStageDataProvider    t) => m_StageDataProvider = t;
         void IConnector<IStageDataProvider>.Disconnect(IStageDataProvider t) => m_StageDataProvider = null;
+
+
+    }
+
+    [UsedImplicitly]
+    public sealed class UserDataSession : ChildSession<UserDataSession.SessionData>,
+        IUserDataProvider
+    {
+        public struct SessionData : ISessionData
+        {
+        }
+
+        // TODO: temp
+        private readonly Dictionary<string, object> m_DataStore = new();
+
+        public override string DisplayName => nameof(UserDataSession);
+
+        public int GetInt(UserDataKey key, int defaultValue = 0)
+        {
+            if (!m_DataStore.TryGetValue(key.ToString(), out var v))
+                return defaultValue;
+
+            return (int)v;
+        }
+
+        public float GetFloat(UserDataKey key, float defaultValue = 0)
+        {
+            if (!m_DataStore.TryGetValue(key.ToString(), out var v))
+                return defaultValue;
+
+            return (float)v;
+        }
+
+        public string GetString(UserDataKey key, string defaultValue = null)
+        {
+            if (!m_DataStore.TryGetValue(key.ToString(), out var v))
+                return defaultValue;
+
+            return (string)v;
+        }
+
+        public void SetInt(UserDataKey key, int value)
+        {
+            m_DataStore[key.ToString()] = value;
+        }
+
+        public void SetFloat(UserDataKey key, float value)
+        {
+            m_DataStore[key.ToString()] = value;
+        }
+
+        public void SetString(UserDataKey key, string value)
+        {
+            m_DataStore[key.ToString()] = value;
+        }
     }
 }

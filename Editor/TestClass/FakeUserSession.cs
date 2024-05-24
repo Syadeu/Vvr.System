@@ -32,7 +32,7 @@ using Vvr.Session.Provider;
 namespace Vvr.TestClass
 {
     [UsedImplicitly]
-    public sealed class FakeUserSession : ChildSession<FakeUserSession.SessionData>,
+    public sealed class FakeUserSession : ParentSession<FakeUserSession.SessionData>,
         IUserActorProvider, IUserStageProvider,
         IConnector<IActorDataProvider>,
         IConnector<IStageDataProvider>
@@ -77,12 +77,14 @@ namespace Vvr.TestClass
 
         protected override async UniTask OnInitialize(IParentSession session, SessionData data)
         {
+            Parent.Register<IUserDataProvider>(await CreateSession<UserDataSession>(default));
             Parent.Register<IUserActorProvider>(this);
             Parent.Register<IUserStageProvider>(this);
             await base.OnInitialize(session, data);
         }
         protected override UniTask OnReserve()
         {
+            Parent.Unregister<IUserDataProvider>();
             Parent.Unregister<IUserActorProvider>();
             Parent.Unregister<IUserStageProvider>();
             return base.OnReserve();
