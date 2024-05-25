@@ -106,24 +106,23 @@ namespace Vvr.Session.ContentView
         private IChildSession
             m_ResearchViewSession;
 
-        private IContentViewEventHandler<ResearchViewEvent>
-            m_ResearchViewEventHandler;
-
         public override string DisplayName => nameof(ContentViewSession);
 
         protected override async UniTask OnInitialize(IParentSession session, SessionData data)
         {
             await base.OnInitialize(session, data);
 
+            m_ResearchViewSession = await CreateSession<ResearchViewSession>(
+                new ResearchViewSession.SessionData()
+                {
+                    eventHandler = new ContentViewEventHandler<ResearchViewEvent>()
+                });
+
             Vvr.Provider.Provider.Static.Connect<IContentViewRegistryProvider>(this);
         }
         protected override async UniTask OnReserve()
         {
             Vvr.Provider.Provider.Static.Disconnect<IContentViewRegistryProvider>(this);
-
-            m_ResearchViewEventHandler?.Dispose();
-
-            m_ResearchViewEventHandler = null;
 
             await base.OnReserve();
         }
@@ -132,50 +131,13 @@ namespace Vvr.Session.ContentView
         {
             m_ContentViewRegistryProvider = t;
 
-            Register(t.ResearchViewProvider);
+            Register<IResearchViewProvider>(t.ResearchViewProvider);
         }
         public void Disconnect(IContentViewRegistryProvider t)
         {
-            Unregister(t.ResearchViewProvider);
+            Unregister<IResearchViewProvider>();
 
             m_ContentViewRegistryProvider = null;
-        }
-
-        void Register(IResearchViewProvider t)
-        {
-            if (m_ResearchViewEventHandler != null)
-                throw new InvalidOperationException();
-
-            var evHandler = new ContentViewEventHandler<ResearchViewEvent>();
-            m_ResearchViewEventHandler = evHandler;
-
-            evHandler.Register(ResearchViewEvent.Open, async (ev, ctx) =>
-            {
-                m_ResearchViewSession = await CreateSession<ResearchViewSession>(
-                    new ResearchViewSession.SessionData()
-                    {
-                        eventHandler = m_ResearchViewEventHandler
-                    });
-            });
-            evHandler.Register(ResearchViewEvent.Close, async (ev, ctx) =>
-            {
-                await m_ResearchViewSession.Reserve();
-                m_ResearchViewSession = null;
-            });
-
-            t.Initialize(evHandler);
-
-            base.Register<IResearchViewProvider>(t);
-        }
-        void Unregister(IResearchViewProvider t)
-        {
-            if (m_ResearchViewEventHandler == null)
-                throw new InvalidOperationException();
-
-            m_ResearchViewEventHandler.Dispose();
-            m_ResearchViewEventHandler = null;
-
-            base.Unregister<IResearchViewProvider>();
         }
     }
 }

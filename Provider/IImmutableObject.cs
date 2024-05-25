@@ -47,4 +47,13 @@ namespace Vvr.Provider
         [PublicAPI]
         new TObject Object { get; }
     }
+
+    public static class ImmutableObjectExtensions
+    {
+        public static TObject CreateInstance<TObject>(this IImmutableObject<TObject> t)
+            where TObject : UnityEngine.Object
+        {
+            return UnityEngine.Object.Instantiate(t.Object);
+        }
+    }
 }

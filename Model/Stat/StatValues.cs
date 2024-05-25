@@ -166,7 +166,7 @@ namespace Vvr.Model.Stat
         public void SetValue(StatType t, float v)
         {
             int index = IndexOf(t);
-            Assert.IsFalse(index < 0);
+            Assert.IsFalse(index < 0, $"{t} not found");
 
             Values[index] = v;
         }

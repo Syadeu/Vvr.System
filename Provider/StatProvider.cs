@@ -22,6 +22,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using Sirenix.Utilities.Editor;
 using Vvr.Model;
 using Vvr.Model.Stat;
 
@@ -71,7 +72,10 @@ namespace Vvr.Provider
             IReadOnlyStatValues centerStats,
             IReadOnlyStatValues stats, OperatorCondition condition, string value)
         {
-            const string ValueDelimiter = "|";
+            const char ValueDelimiter = '|';
+            const char PercentChar = '%';
+
+            using var debugTimer = DebugTimer.Start();
 
             int i = value.IndexOf(ValueDelimiter, StringComparison.Ordinal);
             if (i < 0)
@@ -80,20 +84,26 @@ namespace Vvr.Provider
                 return false;
             }
 
-            string statTypeString = value.Substring(0, i);
-            string indexString    = value.Substring(i + ValueDelimiter.Length);
+            ReadOnlySpan<char> span = value.AsSpan();
 
-            if (!m_Map.TryGetValue(statTypeString, out StatType statType))
+            var statTypeString = span[..i];
+            var indexString    = span[(i + 1)..];
+
+            if (!m_Map.TryGetValue(statTypeString.ToString(), out StatType statType))
             {
-                $"[Condition] Invalid stat type: {statTypeString}".ToLogError();
+                $"[Condition] Invalid stat type: {statTypeString.ToString()}".ToLogError();
                 return false;
             }
 
             bool result;
-            var  percentMatch = Regex.Match(indexString, @"([0-9]+)%$");
-            if (percentMatch.Success)
+            // var  percentMatch = Regex.Match(indexString, @"([0-9]+)%$");
+            // if (percentMatch.Success)
+            if (indexString[^1] == PercentChar)
             {
-                float v = float.Parse(percentMatch.Groups[1].Value);
+                // float v = float.Parse(percentMatch.Groups[1].Value);
+                float v = float.Parse(
+                    indexString[..^1].ToString()
+                    );
 
                 float percent = stats[statType] / centerStats[statType] * 100;
                 switch (condition)
@@ -114,7 +124,7 @@ namespace Vvr.Provider
             {
                 if (!float.TryParse(indexString, out float v))
                 {
-                    $"[Condition] Invalid index: {indexString}".ToLogError();
+                    $"[Condition] Invalid index: {indexString.ToString()}".ToLogError();
                     return false;
                 }
 
@@ -133,7 +143,7 @@ namespace Vvr.Provider
                 }
             }
 
-            $"[Condition:Stats] Resolved {VvrTypeHelper.Enum<OperatorCondition>.ToString(condition)}: {result}".ToLog();
+            // $"[Condition:Stats] Resolved {VvrTypeHelper.Enum<OperatorCondition>.ToString(condition)}: {result}".ToLog();
             return result;
         }
     }

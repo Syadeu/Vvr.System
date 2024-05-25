@@ -36,7 +36,8 @@ namespace Vvr.Session
     [UsedImplicitly]
     [ParentSession(typeof(DefaultFloor), true)]
     public sealed class StageActorFactorySession : ChildSession<StageActorFactorySession.SessionData>,
-        IStageActorProvider
+        IStageActorProvider,
+        IConnector<IResearchDataProvider>
     {
         public struct SessionData : ISessionData
         {
@@ -118,6 +119,8 @@ namespace Vvr.Session
 
         private readonly List<StageActor> m_Created = new();
 
+        private IResearchDataProvider m_ResearchDataProvider;
+
         public override string DisplayName => nameof(StageActorFactorySession);
 
         protected override async UniTask OnReserve()
@@ -149,6 +152,18 @@ namespace Vvr.Session
 
             item.ConnectTime();
 
+            // Only if player actor
+            if (actor.Owner == Owner)
+            {
+                foreach (var nodeGroup in m_ResearchDataProvider)
+                {
+                    foreach (var node in nodeGroup)
+                    {
+                        item.Stats.AddModifier(node);
+                    }
+                }
+            }
+
             m_Created.Add(result);
             return result;
         }
@@ -167,6 +182,18 @@ namespace Vvr.Session
         {
             using var timer = DebugTimer.Start();
 
+            // Only if player actor
+            if (item.Owner.Owner == Owner)
+            {
+                foreach (var nodeGroup in m_ResearchDataProvider)
+                {
+                    foreach (var node in nodeGroup)
+                    {
+                        item.Owner.Stats.RemoveModifier(node);
+                    }
+                }
+            }
+
             Disconnect<IAssetProvider>(item)
                 .Disconnect<ITargetProvider>(item)
                 .Disconnect<IEventViewProvider>(item)
@@ -178,5 +205,8 @@ namespace Vvr.Session
             item.Owner.Skill.Clear();
             item.Owner.Abnormal.Clear();
         }
+
+        void IConnector<IResearchDataProvider>.Connect(IResearchDataProvider    t) => m_ResearchDataProvider = t;
+        void IConnector<IResearchDataProvider>.Disconnect(IResearchDataProvider t) => m_ResearchDataProvider = null;
     }
 }

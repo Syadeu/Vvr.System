@@ -57,6 +57,7 @@ namespace Vvr.Session
             if (session is IChildSessionConnector sessionConnector)
             {
                 $"[Session: {Type.FullName}] Chain connector to {childType.FullName}".ToLog();
+                using var debugTimer = DebugTimer.Start();
                 foreach (var item in ConnectedProviders)
                 {
                     var pType = item.Key;
@@ -77,8 +78,12 @@ namespace Vvr.Session
         {
             IChildSession session = (IChildSession)child;
 
+            Type childType = session.Type;
+
             await OnSessionClose(session);
             m_ChildSessions.Remove(session);
+
+            $"[Session: {Type.FullName}] closed {childType.FullName}".ToLog();
         }
 
         public async UniTask CloseAllSessions()

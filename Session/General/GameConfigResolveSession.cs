@@ -114,6 +114,10 @@ namespace Vvr.Session
 
         private bool EvaluateConfig(GameConfigSheet.Row config, IConditionTarget target)
         {
+            const string resolveLifecycle  = "Resolve Lifecycle";
+            const string resolveEvaluation = "Resolve Evaluation";
+            const string resolveExecution  = "Resolve Execution";
+
             using var timer = DebugTimer.Start();
 
             Assert.IsNotNull(config);
@@ -123,24 +127,34 @@ namespace Vvr.Session
             // Check lifecycle condition
             if (config.Lifecycle.Condition != 0)
             {
-                if (!ConditionResolver.CanResolve((Condition)config.Lifecycle.Condition) ||
-                    !ConditionResolver[(Condition)config.Lifecycle.Condition](config.Lifecycle.Value))
+                using (DebugTimer.StartWithCustomName(resolveLifecycle))
                 {
-                    return false;
+                    if (!ConditionResolver.CanResolve((Condition)config.Lifecycle.Condition) ||
+                     !ConditionResolver[(Condition)config.Lifecycle.Condition](config.Lifecycle.Value))
+                    {
+                        return false;
+                    }
                 }
             }
 
             Assert.IsFalse(target.Disposed);
             Assert.IsNotNull(target.ConditionResolver);
-            if (!target.ConditionResolver.CanResolve((Condition)config.Evaluation.Condition) ||
-                !target.ConditionResolver[(Model.Condition)config.Evaluation.Condition](config.Evaluation.Value))
-                return false;
+
+            using (DebugTimer.StartWithCustomName(resolveEvaluation))
+            {
+                if (!target.ConditionResolver.CanResolve((Condition)config.Evaluation.Condition) ||
+                    !target.ConditionResolver[(Model.Condition)config.Evaluation.Condition](config.Evaluation.Value))
+                    return false;
+            }
 
             // $"[World] Evaluation completed {condition} == {config.Evaluation.Condition}".ToLog();
 
-            if (!target.ConditionResolver.CanResolve(config.Execution.Condition) ||
-                !target.ConditionResolver[config.Execution.Condition](config.Execution.Value))
-                return false;
+            using (DebugTimer.StartWithCustomName(resolveExecution))
+            {
+                if (!target.ConditionResolver.CanResolve(config.Execution.Condition) ||
+                    !target.ConditionResolver[config.Execution.Condition](config.Execution.Value))
+                    return false;
+            }
 
             // $"[World] Execution condition completed {condition} == {config.Execution.Condition}".ToLog();
 
@@ -190,6 +204,7 @@ namespace Vvr.Session
         // TODO: temp codes should move to remote data
         private bool EvaluateLimitedCount(GameConfigSheet.Row config)
         {
+            using var debugTimer = DebugTimer.Start();
             if (config.Definition.LimitCount < 0) return true;
 
             uint key = FNV1a32.Calculate(string.Format(ConfigKeyFormat, config.Id));

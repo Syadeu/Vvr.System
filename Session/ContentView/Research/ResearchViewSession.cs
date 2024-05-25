@@ -45,18 +45,62 @@ namespace Vvr.Session.ContentView.Research
         private IResearchDataProvider m_ResearchDataProvider;
         private IResearchViewProvider m_ResearchViewProvider;
 
+        private bool m_Opened = false;
+
         protected override async UniTask OnInitialize(IParentSession session, SessionData data)
         {
             await base.OnInitialize(session, data);
 
+            data.eventHandler.Register(ResearchViewEvent.Open, OnOpen);
+            data.eventHandler.Register(ResearchViewEvent.Close, OnClose);
+            data.eventHandler.Register(ResearchViewEvent.SelectGroupWithIndex, OnSelectGroupWithIndex);
+            data.eventHandler.Register(ResearchViewEvent.Upgrade, OnUpgrade);
+        }
+
+        private async UniTask OnOpen(ResearchViewEvent e, object ctx)
+        {
+            if (m_Opened)
+            {
+                // Is in opening sequence or already opened
+                return;
+            }
+
+            m_Opened = true;
+
             m_AssetSession = await CreateSession<AssetSession>(default);
             foreach (var nodeGroup in m_ResearchDataProvider)
             {
-                nodeGroup.Connect(m_AssetSession);
+                nodeGroup.RegisterAssetProvider(m_AssetSession);
             }
 
-            data.eventHandler.Register(ResearchViewEvent.SelectGroupWithIndex, OnSelectGroupWithIndex);
-            data.eventHandler.Register(ResearchViewEvent.Upgrade, OnUpgrade);
+            await m_ResearchViewProvider.Open(m_AssetSession);
+        }
+        private async UniTask OnClose(ResearchViewEvent e, object ctx)
+        {
+            if (!m_Opened)
+                return;
+
+            await m_ResearchViewProvider.Close();
+
+            foreach (var nodeGroup in m_ResearchDataProvider)
+            {
+                nodeGroup.UnregisterAssetProvider();
+            }
+            await m_AssetSession.Reserve();
+
+            m_AssetSession = null;
+            m_Opened       = false;
+        }
+
+        protected override async UniTask OnReserve()
+        {
+            Data.eventHandler.Dispose();
+
+            Data.eventHandler.Unregister(ResearchViewEvent.SelectGroupWithIndex, OnSelectGroupWithIndex);
+
+            m_AssetSession             = null;
+
+            await base.OnReserve();
         }
 
         private async UniTask OnUpgrade(ResearchViewEvent e, object ctx)
@@ -77,7 +121,7 @@ namespace Vvr.Session.ContentView.Research
 
             lvl += 1;
             m_UserDataProvider.SetInt(UserDataKeyCollection.ResearchNodeLevel(node.Id), lvl);
-            node.Level = lvl;
+            node.SetLevel(lvl);
 
             Data.eventHandler.Execute(ResearchViewEvent.Update, node)
                 .Forget();
@@ -94,19 +138,16 @@ namespace Vvr.Session.ContentView.Research
             await Data.eventHandler.Execute(ResearchViewEvent.Select, group.Root);
         }
 
-        protected override async UniTask OnReserve()
-        {
-            Data.eventHandler.Unregister(ResearchViewEvent.SelectGroupWithIndex, OnSelectGroupWithIndex);
-
-            m_AssetSession = null;
-
-            await base.OnReserve();
-        }
-
         void IConnector<IResearchDataProvider>.Connect(IResearchDataProvider    t) => m_ResearchDataProvider = t;
         void IConnector<IResearchDataProvider>.Disconnect(IResearchDataProvider t) => m_ResearchDataProvider = null;
 
-        void IConnector<IResearchViewProvider>.Connect(IResearchViewProvider    t) => m_ResearchViewProvider = t;
+        void IConnector<IResearchViewProvider>.Connect(IResearchViewProvider    t)
+        {
+            m_ResearchViewProvider = t;
+
+            m_ResearchViewProvider.Initialize(Data.eventHandler);
+        }
+
         void IConnector<IResearchViewProvider>.Disconnect(IResearchViewProvider t) => m_ResearchViewProvider = null;
         void IConnector<IUserDataProvider>.    Connect(IUserDataProvider        t) => m_UserDataProvider = t;
         void IConnector<IUserDataProvider>.    Disconnect(IUserDataProvider     t) => m_UserDataProvider = null;

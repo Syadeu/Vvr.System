@@ -132,6 +132,8 @@ namespace Vvr.Controller.Condition
         /// <returns>True if the trigger is found, otherwise false</returns>
         public static bool Last(IEventTarget target, Model.Condition condition, string value)
         {
+            using var debugTimer = DebugTimer.Start();
+
             var d = s_Stack
                 .Where(x => x.m_Target == target)
                 .LastOrDefault();
@@ -143,34 +145,60 @@ namespace Vvr.Controller.Condition
 
         public static bool Any(IEventTarget target, Model.Condition condition)
         {
-            return s_Stack
-                .Where(x => x.m_Target == target)
-                .SelectMany(x => x.m_Events)
-                .Any(x => x.condition == condition);
+            return Any(target, condition, null);
         }
 
         public static bool Any(IEventTarget target, Model.Condition condition, string value)
         {
-            Event e = new Event(condition, value);
+            using var debugTimer = DebugTimer.Start();
+
             // if value is null, should check only condition
             if (value.IsNullOrEmpty())
             {
-                return s_Stack
-                    .Where(x => x.m_Target == target)
-                    .SelectMany(x => x.m_Events)
-                    .Any(x => x.condition == condition);
+                for (var i = 0; i < s_Stack.Count; i++)
+                {
+                    var conditionTrigger = s_Stack[i];
+                    if (conditionTrigger.m_Target != target) continue;
+
+                    var events = s_Stack[i].m_Events;
+                    for (var node = events.First; node != null; node = node.Next)
+                    {
+                        if (node.Value.condition == condition)
+                        {
+                            return true;
+                        }
+                    }
+                }
             }
-            return s_Stack
-                .Where(x => x.m_Target == target)
-                .Any(x => x.m_Events.Contains(e));
+            else
+            {
+                Event e = new Event(condition, value);
+                for (var i = 0; i < s_Stack.Count; i++)
+                {
+                    if (s_Stack[i].m_Target != target) continue;
+
+                    var events = s_Stack[i].m_Events;
+                    for (var node = events.First; node != null; node = node.Next)
+                    {
+                        if (node.Value.Equals(e))
+                        {
+                            return true;
+                        }
+                    }
+                }
+            }
+
+            return false;
         }
-        public static bool Any(IEventTarget target, Model.Condition condition, Predicate<string> predicate)
-        {
-            return s_Stack
-                .Where(x => x.m_Target == target)
-                .SelectMany(x => x.m_Events)
-                .Any(x => x.condition == condition && predicate(x.value));
-        }
+        // public static bool Any(IEventTarget target, Model.Condition condition, Predicate<string> predicate)
+        // {
+        //     using var debugTimer = DebugTimer.Start();
+        //
+        //     return s_Stack
+        //         .Where(x => x.m_Target == target)
+        //         .SelectMany(x => x.m_Events)
+        //         .Any(x => x.condition == condition && predicate(x.value));
+        // }
 
         // TODO: make gc allocation free
         [UsedImplicitly]

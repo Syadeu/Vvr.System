@@ -29,5 +29,8 @@ namespace Vvr.Session.ContentView
         where TEvent : struct, IConvertible
     {
         UniTask Initialize(IContentViewEventHandler<TEvent> eventHandler);
+
+        UniTask Open(IAssetProvider assetProvider);
+        UniTask Close();
     }
 }

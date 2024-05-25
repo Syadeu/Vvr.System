@@ -33,7 +33,9 @@ namespace Vvr.Controller.Research
 
         bool Disposed { get; }
 
-        IResearchNodeGroup Connect(IAssetProvider     assetProvider);
+        IResearchNodeGroup RegisterAssetProvider(IAssetProvider     assetProvider);
+        IResearchNodeGroup UnregisterAssetProvider();
+
         void               Connect(IStatValueStack    stat);
         void               Disconnect(IStatValueStack stat);
     }

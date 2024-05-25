@@ -34,12 +34,14 @@ namespace Vvr.Controller.Research
         IResearchNode                Parent   { get; }
         IReadOnlyList<IResearchNode> Children { get; }
 
-        int Level    { get; set; }
+        int Level    { get; }
         int MaxLevel { get; }
 
         TimeSpan NextLevelResearchTime { get; }
         float    NextLevelRequired     { get; }
 
         AsyncLazy<IImmutableObject<Sprite>> Icon { get; }
+
+        void SetLevel(int level);
     }
 }

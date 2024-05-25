@@ -48,6 +48,7 @@ namespace Vvr.Controller.Research
                 m_CalculateConsumableCount,
                 m_CalculateStatModifier;
 
+            private readonly StatType                m_TargetStatType;
             private readonly StatValueGetterDelegate m_StatGetter;
             private readonly StatValueSetterDelegate m_StatSetter;
 
@@ -60,7 +61,7 @@ namespace Vvr.Controller.Research
             public IReadOnlyList<ResearchNode> Children => m_Children;
             IReadOnlyList<IResearchNode> IResearchNode.Children => m_Children;
 
-            public int Level    { get; set; }
+            public int Level    { get; private set; }
             public int MaxLevel => m_Data.Definition.MaxLevel;
 
             public TimeSpan NextLevelResearchTime
@@ -95,6 +96,11 @@ namespace Vvr.Controller.Research
             }
 
             public AsyncLazy<IImmutableObject<Sprite>> Icon { get; private set; }
+            public void SetLevel(int level)
+            {
+                Level     = level;
+                m_IsDirty = true;
+            }
 
             bool IStatModifier.IsDirty => m_IsDirty;
             int IStatModifier. Order   => StatModifierOrder.Item - 1;
@@ -103,9 +109,9 @@ namespace Vvr.Controller.Research
             {
                 m_Data = data;
 
-                var statType = StatProvider.Static[data.Definition.TargetStat.Id];
-                m_StatGetter = StatValues.GetGetMethod(statType);
-                m_StatSetter = StatValues.GetSetMethod(statType);
+                m_TargetStatType = StatProvider.Static[data.Definition.TargetStat.Id];
+                m_StatGetter     = StatValues.GetGetMethod(m_TargetStatType);
+                m_StatSetter     = StatValues.GetSetMethod(m_TargetStatType);
 
                 m_CalculateResearchTime    = CustomMethod.Static[data.Methods.ResearchTime.Ref];
                 m_CalculateConsumableCount = CustomMethod.Static[data.Methods.Consumable.Ref];
@@ -128,12 +134,16 @@ namespace Vvr.Controller.Research
                     m_Children[i++] = child;
                 }
             }
-
-            public void SetupAssetProvider(IAssetProvider assetProvider)
+            public void RegisterAssetProvider(IAssetProvider assetProvider)
             {
                 Icon = UniTask.Lazy(
                     () => assetProvider.LoadAsync<Sprite>(m_Data.Assets[AssetType.Icon])
                 );
+            }
+
+            public void UnregisterAssetProvider()
+            {
+                Icon = null;
             }
 
             private IReadOnlyStatValues m_CachedStatValues;
@@ -142,7 +152,8 @@ namespace Vvr.Controller.Research
                 if (m_Disposed)
                     throw new ObjectDisposedException(nameof(IResearchNode));
 
-                m_CachedStatValues = stats;
+                stats              |= m_TargetStatType;
+                m_CachedStatValues =  stats;
                 float v = m_CalculateStatModifier(this);
                 m_CachedStatValues = null;
 
@@ -240,11 +251,20 @@ namespace Vvr.Controller.Research
             m_Nodes = nodes;
         }
 
-        public IResearchNodeGroup Connect(IAssetProvider assetProvider)
+        public IResearchNodeGroup RegisterAssetProvider(IAssetProvider assetProvider)
         {
             foreach (var node in m_Nodes)
             {
-                node.SetupAssetProvider(assetProvider);
+                node.RegisterAssetProvider(assetProvider);
+            }
+
+            return this;
+        }
+        public IResearchNodeGroup UnregisterAssetProvider()
+        {
+            foreach (var node in m_Nodes)
+            {
+                node.UnregisterAssetProvider();
             }
 
             return this;
