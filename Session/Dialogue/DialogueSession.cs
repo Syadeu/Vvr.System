@@ -59,45 +59,55 @@ namespace Vvr.Session.Dialogue
             Assert.IsNotNull(m_ActorDataProvider);
             Assert.IsNotNull(m_ActorDataProvider.DataSheet);
 
-            data.dialogue.Build(m_ActorDataProvider.DataSheet);
+            UniTask lastCloseTask = UniTask.CompletedTask;
 
-            UniTask<IImmutableObject<Sprite>>[] preloadedPortraits
-                = new UniTask<IImmutableObject<Sprite>>[data.dialogue.Speakers.Count];
-            for (int i = 0; i < data.dialogue.Speakers.Count; i++)
+            IDialogueData currentDialogue = data.dialogue;
+            while (currentDialogue != null)
             {
-                var speaker  = data.dialogue.Speakers[i];
-                if (speaker.Actor == null) continue;
+                currentDialogue.Build(m_ActorDataProvider.DataSheet);
 
-                UniTask<IImmutableObject<Sprite>> portrait;
-                if (speaker.OverridePortrait.RuntimeKeyIsValid())
+                IImmutableObject<Sprite> backgroundImg = await m_AssetProvider.LoadAsync<Sprite>(
+                    currentDialogue.Assets[AssetType.BackgroundImage]);
+
+                UniTask<IImmutableObject<Sprite>>[] preloadedPortraits
+                    = new UniTask<IImmutableObject<Sprite>>[currentDialogue.Speakers.Count];
+                for (int i = 0; i < currentDialogue.Speakers.Count; i++)
                 {
-                    portrait = m_AssetProvider.LoadAsync<Sprite>(speaker.OverridePortrait);
+                    var speaker = currentDialogue.Speakers[i];
+                    if (speaker.Actor == null) continue;
+
+                    UniTask<IImmutableObject<Sprite>> portrait;
+                    if (speaker.OverridePortrait.RuntimeKeyIsValid())
+                    {
+                        portrait = m_AssetProvider.LoadAsync<Sprite>(speaker.OverridePortrait);
+                    }
+                    else
+                        portrait = m_AssetProvider.LoadAsync<Sprite>(speaker.Actor.Assets[AssetType.DialoguePortrait]
+                            .FullPath);
+
+                    preloadedPortraits[i] = portrait;
                 }
-                else
-                    portrait = m_AssetProvider.LoadAsync<Sprite>(speaker.Actor.Assets[AssetType.DialoguePortrait]
-                        .FullPath);
 
-                preloadedPortraits[i] = portrait;
+                await m_DialogueViewProvider.OpenAsync(currentDialogue.Id, backgroundImg?.Object);
+                for (var i = 0; i < currentDialogue.Speakers.Count; i++)
+                {
+                    var speaker     = currentDialogue.Speakers[i];
+                    var portraitImg = await preloadedPortraits[i];
+
+                    $"[Dialogue] Speak {i}".ToLog();
+                    await m_DialogueViewProvider.SpeakAsync(
+                        currentDialogue.Id,
+                        portraitImg?.Object,
+                        speaker);
+
+                    await UniTask.WaitForSeconds(speaker.Time);
+                }
+
+                lastCloseTask   = m_DialogueViewProvider.CloseAsync(currentDialogue.Id);
+                currentDialogue = currentDialogue.NextDialogue;
             }
 
-            IImmutableObject<Sprite> backgroundImg = await m_AssetProvider.LoadAsync<Sprite>(
-                data.dialogue.Assets[AssetType.BackgroundImage]);
-            await m_DialogueViewProvider.OpenAsync(data.dialogue.Id, backgroundImg?.Object);
-
-            for (var i = 0; i < data.dialogue.Speakers.Count; i++)
-            {
-                var speaker     = data.dialogue.Speakers[i];
-                var portraitImg = await preloadedPortraits[i];
-
-                $"[Dialogue] Speak {i}".ToLog();
-                await m_DialogueViewProvider.SpeakAsync(
-                    portraitImg?.Object,
-                    speaker);
-
-                await UniTask.WaitForSeconds(speaker.Time);
-            }
-
-            await m_DialogueViewProvider.CloseAsync(data.dialogue.Id);
+            await lastCloseTask;
         }
 
         protected override async UniTask OnReserve()

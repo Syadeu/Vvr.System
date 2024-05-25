@@ -33,9 +33,15 @@ namespace Vvr.Model
     public class DialogueData : ScriptableObject, IDialogueData, IDisposable
     {
         [SerializeField] private int    m_Index;
-
-        [SerializeField] private DialogueSpeaker[]    m_Speakers;
         [SerializeField] private AssetReferenceSprite m_BackgroundImage;
+
+        [ListDrawerSettings(AddCopiesLastElement = true,
+            ListElementLabelName = "@m_Actor + \": \" + m_Message",
+            ShowIndexLabels = true)]
+        [SerializeField] private DialogueSpeaker[]    m_Speakers;
+
+        [Space] [SerializeField]
+        private DialogueData m_NextDialogue;
 
         private readonly Dictionary<AssetType, AssetReference> m_Assets = new();
 
@@ -44,6 +50,8 @@ namespace Vvr.Model
 
         public IReadOnlyList<IDialogueSpeakerData> Speakers => m_Speakers;
         public IReadOnlyDictionary<AssetType, AssetReference> Assets => m_Assets;
+
+        public IDialogueData NextDialogue => m_NextDialogue;
 
         public void Build(ActorSheet sheet)
         {

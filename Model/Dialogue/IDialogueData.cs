@@ -34,6 +34,8 @@ namespace Vvr.Model
 
         IReadOnlyDictionary<AssetType, AssetReference> Assets { get; }
 
+        IDialogueData NextDialogue { get; }
+
         void Build(ActorSheet sheet);
     }
 

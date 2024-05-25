@@ -30,7 +30,7 @@ namespace Vvr.Provider
     {
         UniTask OpenAsync(string dialogueId, Sprite backgroundImage);
 
-        UniTask SpeakAsync([CanBeNull] Sprite portraitImage, IDialogueSpeaker speaker);
+        UniTask SpeakAsync(string dialogueId, [CanBeNull] Sprite portraitImage, IDialogueSpeaker speaker);
         UniTask CloseAsync(string dialogueId);
     }
 }

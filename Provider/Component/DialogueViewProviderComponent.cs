@@ -27,8 +27,8 @@ namespace Vvr.Provider.Component
 {
     public abstract class DialogueViewProviderComponent : MonoBehaviour, IDialogueViewProvider
     {
-        public abstract UniTask OpenAsync(string  dialogueId,    Sprite           backgroundImage);
-        public abstract UniTask SpeakAsync(Sprite portraitImage, IDialogueSpeaker speaker);
+        public abstract UniTask OpenAsync(string  dialogueId, Sprite backgroundImage);
+        public abstract UniTask SpeakAsync(string dialogueId, Sprite portraitImage, IDialogueSpeaker speaker);
         public abstract UniTask CloseAsync(string dialogueId);
     }
 }
