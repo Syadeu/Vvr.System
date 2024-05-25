@@ -21,6 +21,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Text.RegularExpressions;
 using Sirenix.Utilities.Editor;
 using Vvr.Model;
@@ -101,9 +102,10 @@ namespace Vvr.Provider
             if (indexString[^1] == PercentChar)
             {
                 // float v = float.Parse(percentMatch.Groups[1].Value);
-                float v = float.Parse(
-                    indexString[..^1].ToString()
-                    );
+                // float v = float.Parse(
+                //     indexString[..^1].ToString()
+                //     );
+                float v = FastFloat.Parse(indexString[..^1]);
 
                 float percent = stats[statType] / centerStats[statType] * 100;
                 switch (condition)
@@ -122,11 +124,12 @@ namespace Vvr.Provider
             }
             else
             {
-                if (!float.TryParse(indexString, out float v))
-                {
-                    $"[Condition] Invalid index: {indexString.ToString()}".ToLogError();
-                    return false;
-                }
+                float v = FastFloat.Parse(indexString);
+                // if (!float.TryParse(indexString, out float v))
+                // {
+                //     $"[Condition] Invalid index: {indexString.ToString()}".ToLogError();
+                //     return false;
+                // }
 
                 switch (condition)
                 {
