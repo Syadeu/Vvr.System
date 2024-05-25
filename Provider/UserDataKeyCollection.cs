@@ -19,36 +19,51 @@
 
 #endregion
 
+using System.Text;
+using System.Threading;
 using JetBrains.Annotations;
 using Vvr.Model;
 
 namespace Vvr.Provider
 {
     [PublicAPI]
-    public struct UserDataKeyCollection
+    public ref struct UserDataKeyCollection
     {
+        private static readonly ThreadLocal<StringBuilder> s_StringBuilder
+            = new(() => new StringBuilder(256));
+
         private static string KeyFormatter(string x, string y)
         {
-            const string format = "{0}_{1}";
-            return string.Format(format, x, y);
+            const char delimiter = '_';
+
+            StringBuilder sb = s_StringBuilder.Value;
+            sb.Clear();
+            sb.Append(x);
+            sb.Append(delimiter);
+            sb.Append(y);
+            return sb.ToString();
         }
 
-        public static UserDataKey GameConfigExecutedCount(string id)
+        public ref struct GameConfig
         {
-            const string group = "GameConfig";
-            const string key   = "ExecutedCount";
+            public static UserDataKey ExecutedCount(string id)
+            {
+                const string key = "ExecutedCount";
 
-            string obj = KeyFormatter(group, id);
-            return KeyFormatter(obj, key);
+                string obj = KeyFormatter(nameof(GameConfig), id);
+                return KeyFormatter(obj, key);
+            }
         }
 
-        public static UserDataKey ResearchNodeLevel(string id)
+        public ref struct Research
         {
-            const string group = "Research";
-            const string key   = "Level";
+            public static UserDataKey NodeLevel(string id)
+            {
+                const string key   = "Level";
 
-            string obj = KeyFormatter(group, id);
-            return KeyFormatter(obj, key);
+                string obj = KeyFormatter(nameof(Research), id);
+                return KeyFormatter(obj, key);
+            }
         }
     }
 }

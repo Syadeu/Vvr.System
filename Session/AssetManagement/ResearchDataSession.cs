@@ -104,7 +104,7 @@ namespace Vvr.Session
             {
                 foreach (var node in nodeGroup)
                 {
-                    node.SetLevel(t.GetInt(UserDataKeyCollection.ResearchNodeLevel(node.Id)));
+                    node.SetLevel(t.GetInt(UserDataKeyCollection.Research.NodeLevel(node.Id)));
                 }
             }
         }

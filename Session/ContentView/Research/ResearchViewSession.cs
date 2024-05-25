@@ -113,14 +113,14 @@ namespace Vvr.Session.ContentView.Research
                 return;
             }
 
-            int lvl = m_UserDataProvider.GetInt(UserDataKeyCollection.ResearchNodeLevel(node.Id));
+            int lvl = m_UserDataProvider.GetInt(UserDataKeyCollection.Research.NodeLevel(node.Id));
             if (lvl != node.Level)
                 throw new InvalidOperationException("lvl has been modified");
 
             $"Upgrade node {node.Id}".ToLog();
 
             lvl += 1;
-            m_UserDataProvider.SetInt(UserDataKeyCollection.ResearchNodeLevel(node.Id), lvl);
+            m_UserDataProvider.SetInt(UserDataKeyCollection.Research.NodeLevel(node.Id), lvl);
             node.SetLevel(lvl);
 
             Data.eventHandler.Execute(ResearchViewEvent.Update, node)
