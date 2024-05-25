@@ -22,21 +22,23 @@
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
-using UnityEngine;
 using UnityEngine.Assertions;
 using Vvr.Controller;
-using Vvr.Controller.Actor;
 using Vvr.Controller.Condition;
 using Vvr.Model;
 using Vvr.Provider;
 
 namespace Vvr.Session
 {
+    /// <summary>
+    /// Represents a session for resolving game configuration.
+    /// </summary>
     [UsedImplicitly]
     public sealed class GameConfigResolveSession : ChildSession<GameConfigResolveSession.SessionData>,
         IGameConfigResolveProvider, ITimeUpdate,
         IConnector<IGameConfigProvider>,
-        IConnector<IGameMethodProvider>
+        IConnector<IGameMethodProvider>,
+        IConnector<IUserDataProvider>
     {
         public struct SessionData : ISessionData
         {
@@ -52,10 +54,12 @@ namespace Vvr.Session
 
         private IGameConfigProvider m_GameConfigProvider;
         private IGameMethodProvider m_GameMethodProvider;
+        private IUserDataProvider   m_UserDataProvider;
 
         private IEnumerable<GameConfigSheet.Row> m_Configs;
 
         private readonly Dictionary<Hash, int> m_ExecutionCount = new();
+        private readonly Dictionary<string, int> m_LimitCounter   = new();
 
         public override string DisplayName => nameof(GameConfigResolveSession);
 
@@ -70,7 +74,6 @@ namespace Vvr.Session
 
             return base.OnInitialize(session, data);
         }
-
         protected override UniTask OnReserve()
         {
             if (Data.autoResolve)
@@ -112,6 +115,12 @@ namespace Vvr.Session
             }
         }
 
+        /// <summary>
+        /// Evaluates a game configuration.
+        /// </summary>
+        /// <param name="config">The game configuration to evaluate.</param>
+        /// <param name="target">The target to evaluate the configuration against.</param>
+        /// <returns>True if the configuration should be executed, false otherwise.</returns>
         private bool EvaluateConfig(GameConfigSheet.Row config, IConditionTarget target)
         {
             const string resolveLifecycle  = "Resolve Lifecycle";
@@ -167,6 +176,13 @@ namespace Vvr.Session
             return true;
         }
 
+        /// <summary>
+        /// Evaluates the execution count for a game configuration and target.
+        /// </summary>
+        /// <param name="config">The game configuration to evaluate.</param>
+        /// <param name="target">The target to evaluate the configuration against.</param>
+        /// <param name="executedCount">The number of times the target has been executed.</param>
+        /// <returns>True if the configuration should be executed, false otherwise.</returns>
         private bool EvaluateExecutionCount(GameConfigSheet.Row config, IEventTarget target, out int executedCount)
         {
             using var timer = DebugTimer.Start();
@@ -180,8 +196,14 @@ namespace Vvr.Session
             return config.Evaluation.MaxCount > executedCount;
         }
 
-        private readonly Dictionary<uint, int> m_LimitCounter = new();
-
+        /// <summary>
+        /// Executes a game configuration method.
+        /// </summary>
+        /// <param name="config">The game configuration to execute.</param>
+        /// <param name="o">The event target to execute the method on.</param>
+        /// <param name="method">The method to execute.</param>
+        /// <param name="parameters">The parameters to pass to the method.</param>
+        /// <returns>A task representing the asynchronous execution of the method.</returns>
         private async UniTask ExecuteMethod(
             GameConfigSheet.Row config,
             IEventTarget o, Model.GameMethod method, IReadOnlyList<string> parameters)
@@ -200,43 +222,48 @@ namespace Vvr.Session
             await trigger.Execute(Condition.OnGameConfigEnded, config.Id);
         }
 
-        const string ConfigKeyFormat = nameof(GameConfigResolveSession) + "_{0}";
-        // TODO: temp codes should move to remote data
+        /// <summary>
+        /// Evaluates whether the given game configuration should be executed, based on the limited count defined in the configuration.
+        /// </summary>
+        /// <param name="config">The game configuration to evaluate.</param>
+        /// <returns>True if the configuration should be executed, false otherwise.</returns>
         private bool EvaluateLimitedCount(GameConfigSheet.Row config)
         {
             using var debugTimer = DebugTimer.Start();
             if (config.Definition.LimitCount < 0) return true;
 
-            uint key = FNV1a32.Calculate(string.Format(ConfigKeyFormat, config.Id));
-
             int counter;
             if (config.Definition.CacheLimit)
             {
-                counter = PlayerPrefs.GetInt(key.ToString(), 0);
+                var key = UserDataKeyCollection.GameConfigExecutedCount(config.Id);
+                counter   = m_UserDataProvider.GetInt(key);
             }
             else
             {
-                counter = m_LimitCounter.GetValueOrDefault(key, 0);
+                counter = m_LimitCounter.GetValueOrDefault(config.Id, 0);
             }
 
             return counter < config.Definition.LimitCount;
         }
 
+        /// <summary>
+        /// Increments the limit counter for a game configuration.
+        /// </summary>
+        /// <param name="config">The game configuration for which to increment the limit counter.</param>
         private void IncrementLimitCounter(GameConfigSheet.Row config)
         {
             if (config.Definition.LimitCount < 0) return;
 
-            uint key = FNV1a32.Calculate(string.Format(ConfigKeyFormat, config.Id));
-
             if (config.Definition.CacheLimit)
             {
-                int counter = PlayerPrefs.GetInt(key.ToString(), 0);
-                PlayerPrefs.SetInt(key.ToString(), ++counter);
+                var key     = UserDataKeyCollection.GameConfigExecutedCount(config.Id);
+                int counter = m_UserDataProvider.GetInt(key);
+                m_UserDataProvider.SetInt(key, ++counter);
             }
             else
             {
-                int counter = m_LimitCounter.GetValueOrDefault(key, 0);
-                m_LimitCounter[key] = ++counter;
+                int  counter = m_LimitCounter.GetValueOrDefault(config.Id, 0);
+                m_LimitCounter[config.Id] = ++counter;
             }
         }
 
@@ -254,5 +281,8 @@ namespace Vvr.Session
         void IConnector<IGameConfigProvider>.Disconnect(IGameConfigProvider t) => m_GameConfigProvider = null;
         void IConnector<IGameMethodProvider>.Connect(IGameMethodProvider    t) => m_GameMethodProvider = t;
         void IConnector<IGameMethodProvider>.Disconnect(IGameMethodProvider t) => m_GameMethodProvider = null;
+
+        void IConnector<IUserDataProvider>.Connect(IUserDataProvider    t) => m_UserDataProvider = t;
+        void IConnector<IUserDataProvider>.Disconnect(IUserDataProvider t) => m_UserDataProvider = null;
     }
 }

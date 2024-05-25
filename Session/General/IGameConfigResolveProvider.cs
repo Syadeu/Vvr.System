@@ -26,9 +26,19 @@ using Vvr.Provider;
 
 namespace Vvr.Session
 {
+    /// <summary>
+    /// Interface for resolving game configuration.
+    /// </summary>
     [LocalProvider]
     public interface IGameConfigResolveProvider : IProvider
     {
+        /// <summary>
+        /// Resolves game configuration based on the provided event target, condition, and value.
+        /// </summary>
+        /// <param name="e">The event target.</param>
+        /// <param name="condition">The condition to resolve.</param>
+        /// <param name="value">The value used in the resolution.</param>
+        /// <returns>A UniTask representing the async operation.</returns>
         [PublicAPI]
         UniTask Resolve(IEventTarget e, Condition condition, string value);
     }

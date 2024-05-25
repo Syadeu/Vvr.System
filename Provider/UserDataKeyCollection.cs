@@ -33,11 +33,22 @@ namespace Vvr.Provider
             return string.Format(format, x, y);
         }
 
+        public static UserDataKey GameConfigExecutedCount(string id)
+        {
+            const string group = "GameConfig";
+            const string key   = "ExecutedCount";
+
+            string obj = KeyFormatter(group, id);
+            return KeyFormatter(obj, key);
+        }
+
         public static UserDataKey ResearchNodeLevel(string id)
         {
-            const string group = "Research_Level";
+            const string group = "Research";
+            const string key   = "Level";
 
-            return KeyFormatter(group, id);
+            string obj = KeyFormatter(group, id);
+            return KeyFormatter(obj, key);
         }
     }
 }
