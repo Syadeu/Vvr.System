@@ -19,15 +19,25 @@
 
 #endregion
 
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
+using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 
 namespace Vvr.Model.Dialogue
 {
     [CreateAssetMenu(menuName = "Vvr/Create DialogueSpeakerPortrait", fileName = "DialogueSpeakerPortrait", order = 0)]
+    [HideMonoScript]
     public class DialogueSpeakerPortrait : ScriptableObject
     {
         [SerializeField] private AssetReferenceSprite m_Portrait;
+
+#if UNITY_EDITOR
+        [ShowInInspector, PreviewField(200), HideLabel]
+        private Sprite Preview => (Sprite)Portrait.editorAsset;
+#endif
 
         [Space]
         [SerializeField] private Vector3 m_PositionOffset;
