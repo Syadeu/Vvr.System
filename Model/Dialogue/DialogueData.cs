@@ -102,10 +102,10 @@ namespace Vvr.Model
 
         public DialogueSpeakerOptions Options          => m_Options;
 
-        public AssetReferenceSprite OverridePortrait => m_PortraitReference.Portrait;
+        public AssetReferenceSprite OverridePortrait => m_PortraitReference ==null ? null : m_PortraitReference.Portrait;
         public Vector3              PositionOffset   => m_PortraitReference.PositionOffset;
-        public Vector3 Rotation => m_PortraitReference.Rotation;
-        public Vector3 Scale => m_PortraitReference.Scale;
+        public Vector3              Rotation         => m_PortraitReference.Rotation;
+        public Vector3              Scale            => m_PortraitReference.Scale;
 
 
         public IDialogueAttribute     Attribute        { get; } = null;

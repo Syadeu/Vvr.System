@@ -101,7 +101,8 @@ namespace Vvr.Session.ContentView.Dialogue
                     if (speaker.Actor == null) continue;
 
                     UniTask<IImmutableObject<Sprite>> portrait = default;
-                    if (speaker.OverridePortrait.RuntimeKeyIsValid())
+                    if (speaker.OverridePortrait != null &&
+                        speaker.OverridePortrait.RuntimeKeyIsValid())
                     {
                         portrait = m_AssetProvider.LoadAsync<Sprite>(speaker.OverridePortrait);
                     }
