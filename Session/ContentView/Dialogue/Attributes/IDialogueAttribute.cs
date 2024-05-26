@@ -19,10 +19,7 @@
 
 #endregion
 
-using System;
 using Cysharp.Threading.Tasks;
-using Sirenix.OdinInspector;
-using UnityEngine;
 using Vvr.Provider;
 
 namespace Vvr.Session.ContentView.Dialogue.Attributes
@@ -30,71 +27,5 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
     public interface IDialogueAttribute
     {
         UniTask ExecuteAsync(IDialogueData dialogue, IAssetProvider assetProvider, IDialogueViewProvider viewProvider);
-    }
-
-    [Serializable]
-    sealed class RawDialogueAttribute : ISerializationCallbackReceiver
-    {
-        [OnValueChanged(nameof(Resolve))]
-        [ValueDropdown(
-            nameof(GetTypeNameList), IsUniqueList = true, OnlyChangeValueOnConfirm = true)]
-        [SerializeField] private string m_TypeName;
-
-        [HideInInspector] [SerializeField] private string m_Json;
-
-        private IDialogueAttribute m_Attribute;
-
-        [FoldoutGroup("@"+nameof(DisplayName), GroupID = "Attribute")]
-        [ShowInInspector, InlineProperty, HideLabel]
-        [HideReferenceObjectPicker]
-        public IDialogueAttribute Value
-        {
-            get
-            {
-                if (m_Attribute == null) Resolve();
-
-                return m_Attribute;
-            }
-            private set => m_Attribute = value;
-        }
-#if UNITY_EDITOR
-        private ValueDropdownList<string> GetTypeNameList() => DialogueAttributeHelper.GetDropdownList();
-#endif
-
-        private string DisplayName => m_Attribute == null ? "Attribute" : m_Attribute.ToString();
-
-        void ISerializationCallbackReceiver.OnBeforeSerialize()
-        {
-            if (Value == null)
-            {
-                // m_Type = 0;
-                // m_Json = null;
-                return;
-            }
-
-            m_TypeName = Value.GetType().AssemblyQualifiedName;
-
-            m_Json = JsonUtility.ToJson(Value);
-        }
-
-        void ISerializationCallbackReceiver.OnAfterDeserialize()
-        {
-        }
-
-        private void Resolve()
-        {
-            if (m_TypeName.IsNullOrEmpty())
-            {
-                m_Attribute = null;
-                return;
-            }
-
-            Type type = Type.GetType(m_TypeName, true);
-
-            m_Attribute =
-                m_Json.IsNullOrEmpty()
-                    ? Activator.CreateInstance(type) as IDialogueAttribute
-                    : JsonUtility.FromJson(m_Json, type) as IDialogueAttribute;
-        }
     }
 }
