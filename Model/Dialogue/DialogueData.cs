@@ -112,10 +112,23 @@ namespace Vvr.Model
 
         public AssetReferenceSprite OverridePortrait =>
             m_PortraitReference == null ? m_OverridePortrait : m_PortraitReference.Portrait;
-        public Vector3 PositionOffset =>
-            m_PortraitReference == null ? m_PositionOffset : m_PortraitReference.PositionOffset;
-        public Vector3 Rotation => m_PortraitReference == null ? m_Rotation : m_PortraitReference.Rotation;
-        public Vector3 Scale => m_PortraitReference == null ? m_Scale : m_PortraitReference.Scale;
+        public Vector3 PositionOffset
+        {
+            get => m_PortraitReference == null ? m_PositionOffset : m_PortraitReference.PositionOffset;
+            set => m_PositionOffset = value;
+        }
+
+        public Vector3 Rotation
+        {
+            get => m_PortraitReference == null ? m_Rotation : m_PortraitReference.Rotation;
+            set => m_Rotation = value;
+        }
+
+        public Vector3 Scale
+        {
+            get => m_PortraitReference == null ? m_Scale : m_PortraitReference.Scale;
+            set => m_Scale = value;
+        }
 
 
         public IDialogueAttribute     Attribute        { get; } = null;

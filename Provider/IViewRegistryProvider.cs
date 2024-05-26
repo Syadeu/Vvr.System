@@ -24,7 +24,6 @@ namespace Vvr.Provider
     public interface IViewRegistryProvider : IProvider
     {
         IEventViewProvider    CardViewProvider     { get; }
-        IDialogueViewProvider DialogueViewProvider { get; }
 
         IEventTimelineNodeViewProvider TimelineNodeViewViewProvider { get; }
 

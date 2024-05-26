@@ -83,7 +83,6 @@ namespace Vvr.Session.World
             // ReSharper disable RedundantTypeArgumentsOfMethod
 
             Register<IEventViewProvider>(t.CardViewProvider)
-                .Register<IDialogueViewProvider>(t.DialogueViewProvider)
                 .Register<IEventTimelineNodeViewProvider>(t.TimelineNodeViewViewProvider)
                 .Register<IStageViewProvider>(t.StageViewProvider)
                 ;
@@ -94,7 +93,6 @@ namespace Vvr.Session.World
         void IConnector<IViewRegistryProvider>.Disconnect(IViewRegistryProvider t)
         {
             Unregister<IEventViewProvider>()
-                .Unregister<IDialogueViewProvider>()
                 .Unregister<IEventTimelineNodeViewProvider>()
                 .Unregister<IStageViewProvider>()
                 ;

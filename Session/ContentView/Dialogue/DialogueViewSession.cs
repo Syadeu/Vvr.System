@@ -1,4 +1,5 @@
 #region Copyrights
+
 // Copyright 2024 Syadeu
 // Author : Seung Ha Kim
 //
@@ -14,60 +15,83 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// File created : 2024, 05, 20 23:05
+// File created : 2024, 05, 26 10:05
+
 #endregion
 
-using System.Buffers;
-using System.Collections.Generic;
+using System;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using UnityEngine;
-using UnityEngine.Assertions;
-using Vvr.Controller.Asset;
 using Vvr.Model;
 using Vvr.Provider;
 
-namespace Vvr.Session.Dialogue
+namespace Vvr.Session.ContentView.Dialogue
 {
     [UsedImplicitly]
-    public class DialogueSession : ParentSession<DialogueSession.SessionData>,
-        IConnector<IAssetProvider>,
+    public sealed class DialogueViewSession : ParentSession<DialogueViewSession.SessionData>,
+        IDialoguePlayProvider,
         IConnector<IDialogueViewProvider>,
         IConnector<IActorDataProvider>
     {
         public struct SessionData : ISessionData
         {
-            public IDialogueData dialogue;
-
-            public SessionData(IDialogueData d)
-            {
-                dialogue = d;
-            }
+            public IContentViewEventHandler<DialogueViewEvent> eventHandler;
         }
-
-        public override string DisplayName => nameof(DialogueSession);
 
         private IAssetProvider        m_AssetProvider;
         private IDialogueViewProvider m_DialogueViewProvider;
         private IActorDataProvider    m_ActorDataProvider;
 
+        public override string DisplayName => nameof(DialogueViewSession);
+
         protected override async UniTask OnInitialize(IParentSession session, SessionData data)
         {
             await base.OnInitialize(session, data);
 
-            Assert.IsNotNull(m_AssetProvider);
-            Assert.IsNotNull(m_ActorDataProvider);
-            Assert.IsNotNull(m_ActorDataProvider.DataSheet);
+            m_AssetProvider = await CreateSession<AssetSession>(default);
 
+            data.eventHandler.Register(DialogueViewEvent.Open, OnOpen);
+        }
+
+        private async UniTask OnOpen(DialogueViewEvent e, object ctx)
+        {
+            if (ctx is IDialogueData d)
+            {
+                Play(d).Forget();
+                return;
+            }
+
+            if (ctx is string str)
+            {
+                if (str.EndsWith(".asset"))
+                {
+                    Play(str).Forget();
+                }
+            }
+
+            throw new NotImplementedException();
+        }
+
+        public async UniTask Play(string dialogueAssetPath)
+        {
+            if (!dialogueAssetPath.EndsWith(".asset"))
+                throw new InvalidOperationException($"{dialogueAssetPath}");
+
+            var asset = await m_AssetProvider.LoadAsync<DialogueData>(dialogueAssetPath);
+            await Play(asset.Object);
+        }
+        public async UniTask Play(IDialogueData dialogue)
+        {
             UniTask lastCloseTask = UniTask.CompletedTask;
 
-            IDialogueData currentDialogue = data.dialogue;
+            IDialogueData currentDialogue = dialogue;
             while (currentDialogue != null)
             {
                 currentDialogue.Build(m_ActorDataProvider.DataSheet);
 
-                IImmutableObject<Sprite> backgroundImg = await m_AssetProvider.LoadAsync<Sprite>(
-                    currentDialogue.Assets[AssetType.BackgroundImage]);
+                // IImmutableObject<Sprite> backgroundImg = await m_AssetProvider.LoadAsync<Sprite>(
+                //     currentDialogue.Assets[AssetType.BackgroundImage]);
 
                 UniTask<IImmutableObject<Sprite>>[] preloadedPortraits
                     = new UniTask<IImmutableObject<Sprite>>[currentDialogue.Speakers.Count];
@@ -88,7 +112,8 @@ namespace Vvr.Session.Dialogue
                     preloadedPortraits[i] = portrait;
                 }
 
-                await m_DialogueViewProvider.OpenAsync(currentDialogue.Id, backgroundImg?.Object);
+                // await m_DialogueViewProvider.OpenAsync(currentDialogue.Id, backgroundImg?.Object);
+                await m_DialogueViewProvider.Open(m_AssetProvider, currentDialogue);
                 for (var i = 0; i < currentDialogue.Speakers.Count; i++)
                 {
                     var speaker     = currentDialogue.Speakers[i];
@@ -103,25 +128,21 @@ namespace Vvr.Session.Dialogue
                     await UniTask.WaitForSeconds(speaker.Time);
                 }
 
-                lastCloseTask   = m_DialogueViewProvider.CloseAsync(currentDialogue.Id);
+                lastCloseTask = m_DialogueViewProvider.Close(currentDialogue);
+                // lastCloseTask   = m_DialogueViewProvider.CloseAsync(currentDialogue.Id);
                 currentDialogue = currentDialogue.NextDialogue;
             }
 
             await lastCloseTask;
         }
 
-        protected override async UniTask OnReserve()
+        void IConnector<IDialogueViewProvider>.Connect(IDialogueViewProvider    t)
         {
-            // We don't need to manually release registered providers
-            // only for following code of conduct which is Dispose pattern
-            Unregister<IAssetProvider>();
+            m_DialogueViewProvider = t;
 
-            await base.OnReserve();
+            m_DialogueViewProvider.Initialize(Data.eventHandler);
         }
 
-        void IConnector<IAssetProvider>.       Connect(IAssetProvider           t) => m_AssetProvider = t;
-        void IConnector<IAssetProvider>.       Disconnect(IAssetProvider        t) => m_AssetProvider = null;
-        void IConnector<IDialogueViewProvider>.Connect(IDialogueViewProvider    t) => m_DialogueViewProvider = t;
         void IConnector<IDialogueViewProvider>.Disconnect(IDialogueViewProvider t) => m_DialogueViewProvider = null;
         void IConnector<IActorDataProvider>.   Connect(IActorDataProvider       t) => m_ActorDataProvider = t;
         void IConnector<IActorDataProvider>.   Disconnect(IActorDataProvider    t) => m_ActorDataProvider = null;

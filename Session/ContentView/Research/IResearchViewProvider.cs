@@ -40,4 +40,6 @@ namespace Vvr.Session.ContentView.Research
         Select,
         Upgrade
     }
+
+
 }

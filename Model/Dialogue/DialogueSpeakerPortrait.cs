@@ -25,7 +25,7 @@ using UnityEngine.AddressableAssets;
 namespace Vvr.Model.Dialogue
 {
     [CreateAssetMenu(menuName = "Vvr/Create DialogueSpeakerPortrait", fileName = "DialogueSpeakerPortrait", order = 0)]
-    internal class DialogueSpeakerPortrait : ScriptableObject
+    public class DialogueSpeakerPortrait : ScriptableObject
     {
         [SerializeField] private AssetReferenceSprite m_Portrait;
 
@@ -34,9 +34,23 @@ namespace Vvr.Model.Dialogue
         [SerializeField] private Vector3 m_Rotation;
         [SerializeField] private Vector3 m_Scale = Vector3.one;
 
-        public Vector3 PositionOffset => m_PositionOffset;
-        public Vector3 Rotation       => m_Rotation;
-        public Vector3 Scale          => m_Scale;
+        public Vector3 PositionOffset
+        {
+            get => m_PositionOffset;
+            set => m_PositionOffset = value;
+        }
+
+        public Vector3 Rotation
+        {
+            get => m_Rotation;
+            set => m_Rotation = value;
+        }
+
+        public Vector3 Scale
+        {
+            get => m_Scale;
+            set => m_Scale = value;
+        }
 
         public AssetReferenceSprite Portrait => m_Portrait;
     }

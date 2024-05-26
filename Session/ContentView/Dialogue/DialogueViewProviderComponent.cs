@@ -15,20 +15,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// File created : 2024, 05, 24 00:05
+// File created : 2024, 05, 26 10:05
 
 #endregion
 
+using Cysharp.Threading.Tasks;
+using UnityEngine;
+using Vvr.Model;
 using Vvr.Provider;
-using Vvr.Session.ContentView.Dialogue;
-using Vvr.Session.ContentView.Research;
 
-namespace Vvr.Session.ContentView
+namespace Vvr.Session.ContentView.Dialogue
 {
-    public interface IContentViewRegistryProvider : IProvider
+    public abstract class DialogueViewProviderComponent : MonoBehaviour, IDialogueViewProvider
     {
-        IDialogueViewProvider DialogueViewProvider { get; }
+        public abstract UniTask SpeakAsync(string dialogueId, Sprite portraitImage, IDialogueSpeaker speaker);
 
-        IResearchViewProvider ResearchViewProvider { get; }
+        public abstract UniTask Initialize(IContentViewEventHandler<DialogueViewEvent> eventHandler);
+
+        public abstract UniTask Open(IAssetProvider assetProvider, object ctx);
+        public abstract UniTask Close(object ctx);
     }
 }

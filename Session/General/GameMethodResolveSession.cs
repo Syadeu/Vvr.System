@@ -31,14 +31,15 @@ using Vvr.Model;
 using Vvr.Model.Stat;
 using Vvr.Provider;
 using Vvr.Session.Actor;
-using Vvr.Session.Dialogue;
+using Vvr.Session.ContentView.Dialogue;
 using Vvr.Session.Provider;
 
 namespace Vvr.Session
 {
     [UsedImplicitly]
     public class GameMethodResolveSession : ParentSession<GameMethodResolveSession.SessionData>,
-        IGameMethodProvider
+        IGameMethodProvider,
+        IConnector<IDialoguePlayProvider>
     {
         public struct SessionData : ISessionData
         {
@@ -71,18 +72,20 @@ namespace Vvr.Session
 
         private async UniTask GameMethod_ExecuteDialogue(IEventTarget e, IReadOnlyList<string> parameters)
         {
-            var assetSession = await CreateSession<AssetSession>(default);
-            Register<IAssetProvider>(assetSession);
+            await m_DialoguePlayProvider.Play(parameters[0]);
 
-            var data = await assetSession.LoadAsync<DialogueData>(parameters[0]);
-            var dialogue = await CreateSession<DialogueSession>(
-                new DialogueSession.SessionData(data.Object)
-                );
-
-            await dialogue.Reserve();
-
-            Unregister<IAssetProvider>();
-            await assetSession.Reserve();
+            // var assetSession = await CreateSession<AssetSession>(default);
+            // Register<IAssetProvider>(assetSession);
+            //
+            // var data = await assetSession.LoadAsync<DialogueData>(parameters[0]);
+            // var dialogue = await CreateSession<DialogueSession>(
+            //     new DialogueSession.SessionData(data.Object)
+            //     );
+            //
+            // await dialogue.Reserve();
+            //
+            // Unregister<IAssetProvider>();
+            // await assetSession.Reserve();
         }
 
         private async UniTask GameMethod_Destroy(IEventTarget e, IReadOnlyList<string> parameters)
@@ -118,5 +121,10 @@ namespace Vvr.Session
 
             await b.Execute(parameters);
         }
+
+        private IDialoguePlayProvider m_DialoguePlayProvider;
+
+        void IConnector<IDialoguePlayProvider>.Connect(IDialoguePlayProvider    t) => m_DialoguePlayProvider = t;
+        void IConnector<IDialoguePlayProvider>.Disconnect(IDialoguePlayProvider t) => m_DialoguePlayProvider = null;
     }
 }

@@ -73,14 +73,14 @@ namespace Vvr.Session.ContentView.Research
                 nodeGroup.RegisterAssetProvider(m_AssetSession);
             }
 
-            await m_ResearchViewProvider.Open(m_AssetSession);
+            await m_ResearchViewProvider.Open(m_AssetSession, ctx);
         }
         private async UniTask OnClose(ResearchViewEvent e, object ctx)
         {
             if (!m_Opened)
                 return;
 
-            await m_ResearchViewProvider.Close();
+            await m_ResearchViewProvider.Close(ctx);
 
             foreach (var nodeGroup in m_ResearchDataProvider)
             {

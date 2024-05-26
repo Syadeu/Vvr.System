@@ -23,11 +23,14 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using JetBrains.Annotations;
 using Vvr.Provider;
+using Vvr.Session.ContentView.Dialogue;
 using Vvr.Session.ContentView.Research;
 
 namespace Vvr.Session.ContentView
 {
+    [UsedImplicitly]
     public sealed class ContentViewSession : ParentSession<ContentViewSession.SessionData>,
         IConnector<IContentViewRegistryProvider>
     {
@@ -104,7 +107,8 @@ namespace Vvr.Session.ContentView
         private IContentViewRegistryProvider m_ContentViewRegistryProvider;
 
         private IChildSession
-            m_ResearchViewSession;
+            m_ResearchViewSession,
+            m_DialogueViewSession;
 
         public override string DisplayName => nameof(ContentViewSession);
 
@@ -117,11 +121,20 @@ namespace Vvr.Session.ContentView
                 {
                     eventHandler = new ContentViewEventHandler<ResearchViewEvent>()
                 });
+            m_DialogueViewSession = await CreateSession<DialogueViewSession>(
+                new DialogueViewSession.SessionData()
+                {
+                    eventHandler = new ContentViewEventHandler<DialogueViewEvent>()
+                });
+
+            Parent.Register((IDialoguePlayProvider)m_DialogueViewSession);
 
             Vvr.Provider.Provider.Static.Connect<IContentViewRegistryProvider>(this);
         }
         protected override async UniTask OnReserve()
         {
+            Parent.Unregister<IDialoguePlayProvider>();
+
             Vvr.Provider.Provider.Static.Disconnect<IContentViewRegistryProvider>(this);
 
             await base.OnReserve();
@@ -131,11 +144,17 @@ namespace Vvr.Session.ContentView
         {
             m_ContentViewRegistryProvider = t;
 
-            Register<IResearchViewProvider>(t.ResearchViewProvider);
+            // ReSharper disable RedundantTypeArgumentsOfMethod
+            Register<IResearchViewProvider>(t.ResearchViewProvider)
+                .Register<IDialogueViewProvider>(t.DialogueViewProvider)
+                ;
+            // ReSharper restore RedundantTypeArgumentsOfMethod
         }
         public void Disconnect(IContentViewRegistryProvider t)
         {
-            Unregister<IResearchViewProvider>();
+            Unregister<IResearchViewProvider>()
+                .Unregister<IDialogueViewProvider>()
+                ;
 
             m_ContentViewRegistryProvider = null;
         }

@@ -30,7 +30,7 @@ namespace Vvr.Session.ContentView
     {
         UniTask Initialize(IContentViewEventHandler<TEvent> eventHandler);
 
-        UniTask Open(IAssetProvider assetProvider);
-        UniTask Close();
+        UniTask Open(IAssetProvider assetProvider, object ctx);
+        UniTask Close(object ctx);
     }
 }

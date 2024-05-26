@@ -21,15 +21,18 @@
 
 using Sirenix.OdinInspector;
 using UnityEngine;
+using Vvr.Session.ContentView.Dialogue;
 using Vvr.Session.ContentView.Research;
 
 namespace Vvr.Session.ContentView
 {
     public sealed class ContentViewRegistryProviderComponent : MonoBehaviour, IContentViewRegistryProvider
     {
+        [SerializeField, Required] private DialogueViewProviderComponent m_DialogueViewProvider;
         [SerializeField, Required] private ResearchViewProviderComponent m_ResearchViewProvider;
 
-        IResearchViewProvider IContentViewRegistryProvider.ResearchViewProvider => m_ResearchViewProvider;
+        IDialogueViewProvider IContentViewRegistryProvider.DialogueViewProvider => m_DialogueViewProvider;
+        IResearchViewProvider IContentViewRegistryProvider. ResearchViewProvider => m_ResearchViewProvider;
 
         private void Awake()
         {

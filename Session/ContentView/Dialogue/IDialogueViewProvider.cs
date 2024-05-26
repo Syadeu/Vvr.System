@@ -15,22 +15,31 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// File created : 2024, 05, 21 10:05
+// File created : 2024, 05, 26 01:05
 
 #endregion
 
+using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using UnityEngine;
 using Vvr.Model;
+using Vvr.Provider;
 
-namespace Vvr.Provider
+namespace Vvr.Session.ContentView.Dialogue
 {
-    public interface IDialogueViewProvider : IProvider
+    [LocalProvider]
+    public interface IDialogueViewProvider : IContentViewProvider<DialogueViewEvent>
     {
-        UniTask OpenAsync(string dialogueId, Sprite backgroundImage);
+        // UniTask OpenAsync(string  dialogueId, Sprite backgroundImage);
+        // UniTask CloseAsync(string dialogueId);
 
         UniTask SpeakAsync(string dialogueId, [CanBeNull] Sprite portraitImage, IDialogueSpeaker speaker);
-        UniTask CloseAsync(string dialogueId);
+    }
+
+    public enum DialogueViewEvent : short
+    {
+        Open,
+        Close,
     }
 }

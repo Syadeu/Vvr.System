@@ -30,7 +30,7 @@ namespace Vvr.Session.ContentView.Research
     public abstract class ResearchViewProviderComponent : MonoBehaviour, IResearchViewProvider
     {
         public abstract UniTask Initialize(IContentViewEventHandler<ResearchViewEvent> eventHandler);
-        public abstract UniTask Open(IAssetProvider assetProvider);
-        public abstract UniTask Close();
+        public abstract UniTask Open(IAssetProvider assetProvider, object ctx);
+        public abstract UniTask Close(object ctx);
     }
 }
