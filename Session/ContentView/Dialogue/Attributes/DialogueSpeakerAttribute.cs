@@ -20,6 +20,7 @@
 #endregion
 
 using System;
+using System.ComponentModel;
 using Cysharp.Threading.Tasks;
 using Sirenix.OdinInspector;
 using TMPro;
@@ -31,6 +32,7 @@ using Vvr.Provider;
 namespace Vvr.Session.ContentView.Dialogue.Attributes
 {
     [Serializable]
+    [DisplayName("Speaker")]
     public class DialogueSpeakerAttribute : IDialogueSpeaker
     {
         [SerializeField] private string m_DisplayName;
@@ -38,8 +40,6 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
 
         [Space] [SerializeField]   private TextAlignmentOptions m_Alignment = TextAlignmentOptions.TopLeft;
         [SerializeField, TextArea] private string               m_Message;
-
-        DialogueAttributeType IDialogueAttribute.AttributeType => DialogueAttributeType.Speaker;
 
         async UniTask IDialogueAttribute.ExecuteAsync(IDialogueData dialogue, IAssetProvider assetProvider, IDialogueViewProvider viewProvider)
         {

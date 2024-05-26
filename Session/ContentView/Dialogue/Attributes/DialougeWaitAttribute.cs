@@ -20,6 +20,7 @@
 #endregion
 
 using System;
+using System.ComponentModel;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 using Vvr.Provider;
@@ -27,12 +28,10 @@ using Vvr.Provider;
 namespace Vvr.Session.ContentView.Dialogue.Attributes
 {
     [Serializable]
+    [DisplayName("Wait")]
     class DialougeWaitAttribute : IDialogueAttribute
     {
         [SerializeField] private float m_Time = 1;
-
-        public DialogueAttributeType AttributeType => DialogueAttributeType.Wait;
-
 
         async UniTask IDialogueAttribute.ExecuteAsync(IDialogueData dialogue, IAssetProvider assetProvider, IDialogueViewProvider viewProvider)
         {

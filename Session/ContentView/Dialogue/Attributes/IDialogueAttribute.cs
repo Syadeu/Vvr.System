@@ -29,25 +29,22 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
 {
     public interface IDialogueAttribute
     {
-        DialogueAttributeType AttributeType { get; }
-
         UniTask ExecuteAsync(IDialogueData dialogue, IAssetProvider assetProvider, IDialogueViewProvider viewProvider);
     }
 
     [Serializable]
     sealed class RawDialogueAttribute : ISerializationCallbackReceiver
     {
-        [Delayed, OnValueChanged(nameof(Resolve))]
-        [SerializeField] private DialogueAttributeType m_Type;
-
-        [ReadOnly]
+        [OnValueChanged(nameof(Resolve))]
+        [ValueDropdown(
+            nameof(GetTypeNameList), IsUniqueList = true, OnlyChangeValueOnConfirm = true)]
         [SerializeField] private string m_TypeName;
 
         [HideInInspector] [SerializeField] private string m_Json;
 
         private IDialogueAttribute m_Attribute;
 
-        [ShowIf("@m_Attribute != null"), FoldoutGroup("@"+nameof(DisplayName), GroupID = "Attribute")]
+        [FoldoutGroup("@"+nameof(DisplayName), GroupID = "Attribute")]
         [ShowInInspector, InlineProperty, HideLabel]
         [HideReferenceObjectPicker]
         public IDialogueAttribute Value
@@ -60,6 +57,9 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
             }
             private set => m_Attribute = value;
         }
+#if UNITY_EDITOR
+        private ValueDropdownList<string> GetTypeNameList() => DialogueAttributeHelper.GetDropdownList();
+#endif
 
         private string DisplayName => m_Attribute == null ? "Attribute" : m_Attribute.ToString();
 
@@ -72,7 +72,6 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
                 return;
             }
 
-            m_Type     = Value.AttributeType;
             m_TypeName = Value.GetType().AssemblyQualifiedName;
 
             m_Json = JsonUtility.ToJson(Value);
@@ -80,41 +79,22 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
 
         void ISerializationCallbackReceiver.OnAfterDeserialize()
         {
-            // Resolve();
         }
 
         private void Resolve()
         {
-            Type type;
-            if (m_Type == DialogueAttributeType.Speaker)
-                type = VvrTypeHelper.TypeOf<DialogueSpeakerAttribute>.Type;
-            else if (m_Type == DialogueAttributeType.Wait)
-                type = VvrTypeHelper.TypeOf<DialougeWaitAttribute>.Type;
-            else if (m_Type == DialogueAttributeType.PortraitIn)
-                type = VvrTypeHelper.TypeOf<DialoguePortraitInAttribute>.Type;
-            else if (m_Type == DialogueAttributeType.PortraitOut)
-                type = VvrTypeHelper.TypeOf<DialoguePortraitOutAttribute>.Type;
-            else
+            if (m_TypeName.IsNullOrEmpty())
             {
                 m_Attribute = null;
                 return;
             }
+
+            Type type = Type.GetType(m_TypeName, true);
 
             m_Attribute =
                 m_Json.IsNullOrEmpty()
                     ? Activator.CreateInstance(type) as IDialogueAttribute
                     : JsonUtility.FromJson(m_Json, type) as IDialogueAttribute;
         }
-    }
-
-    public enum DialogueAttributeType : short
-    {
-        None = 0,
-
-        Speaker,
-        Wait,
-
-        PortraitIn,
-        PortraitOut,
     }
 }

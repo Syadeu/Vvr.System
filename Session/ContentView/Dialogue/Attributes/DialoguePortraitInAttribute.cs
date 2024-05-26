@@ -23,6 +23,7 @@
 using UnityEditor;
 #endif
 using System;
+using System.ComponentModel;
 using Cysharp.Threading.Tasks;
 using Sirenix.OdinInspector;
 using UnityEngine;
@@ -31,6 +32,7 @@ using Vvr.Provider;
 namespace Vvr.Session.ContentView.Dialogue.Attributes
 {
     [Serializable]
+    [DisplayName("Portrait In")]
     sealed class DialoguePortraitInAttribute : IDialogueAttribute, ISerializationCallbackReceiver
     {
 #if UNITY_EDITOR
@@ -75,8 +77,6 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
         [SerializeField] private bool    m_Right;
         [SerializeField] private Vector2 m_Offset   = new Vector2(100, 0);
         [SerializeField] private float   m_Duration = .5f;
-
-        DialogueAttributeType IDialogueAttribute.AttributeType => DialogueAttributeType.PortraitIn;
 
         void ISerializationCallbackReceiver.OnBeforeSerialize()
         {
