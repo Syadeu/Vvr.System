@@ -22,8 +22,6 @@
 using System;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
-using UnityEngine;
-using Vvr.Model;
 using Vvr.Provider;
 
 namespace Vvr.Session.ContentView.Dialogue
@@ -31,8 +29,7 @@ namespace Vvr.Session.ContentView.Dialogue
     [UsedImplicitly]
     public sealed class DialogueViewSession : ParentSession<DialogueViewSession.SessionData>,
         IDialoguePlayProvider,
-        IConnector<IDialogueViewProvider>,
-        IConnector<IActorDataProvider>
+        IConnector<IDialogueViewProvider>
     {
         public struct SessionData : ISessionData
         {
@@ -41,7 +38,6 @@ namespace Vvr.Session.ContentView.Dialogue
 
         private IAssetProvider        m_AssetProvider;
         private IDialogueViewProvider m_DialogueViewProvider;
-        private IActorDataProvider    m_ActorDataProvider;
 
         public override string DisplayName => nameof(DialogueViewSession);
 
@@ -88,43 +84,7 @@ namespace Vvr.Session.ContentView.Dialogue
             IDialogueData currentDialogue = dialogue;
             while (currentDialogue != null)
             {
-                currentDialogue.Build(m_ActorDataProvider.DataSheet);
-
-                // IImmutableObject<Sprite> backgroundImg = await m_AssetProvider.LoadAsync<Sprite>(
-                //     currentDialogue.Assets[AssetType.BackgroundImage]);
-
-                // UniTask<IImmutableObject<Sprite>>[] preloadedPortraits
-                //     = new UniTask<IImmutableObject<Sprite>>[currentDialogue.Speakers.Count];
-                // for (int i = 0; i < currentDialogue.Speakers.Count; i++)
-                // {
-                //     var speaker = currentDialogue.Speakers[i];
-                //     if (speaker.Actor == null) continue;
-                //
-                //     UniTask<IImmutableObject<Sprite>> portrait = default;
-                //     if (speaker.Portrait != null &&
-                //         speaker.Portrait.RuntimeKeyIsValid())
-                //     {
-                //         portrait = m_AssetProvider.LoadAsync<Sprite>(speaker.Portrait);
-                //     }
-                //
-                //     preloadedPortraits[i] = portrait;
-                // }
-
-                // await m_DialogueViewProvider.OpenAsync(currentDialogue.Id, backgroundImg?.Object);
                 await m_DialogueViewProvider.Open(m_AssetProvider, currentDialogue);
-                // for (var i = 0; i < currentDialogue.Speakers.Count; i++)
-                // {
-                //     var speaker     = currentDialogue.Speakers[i];
-                //     var portraitImg = await preloadedPortraits[i];
-                //
-                //     $"[Dialogue] Speak {i}".ToLog();
-                //     await m_DialogueViewProvider.SpeakAsync(
-                //         currentDialogue.Id,
-                //         portraitImg?.Object,
-                //         speaker);
-                //
-                //     // await UniTask.WaitForSeconds(speaker.Time);
-                // }
 
                 foreach (var attribute in currentDialogue.Attributes)
                 {
@@ -132,7 +92,6 @@ namespace Vvr.Session.ContentView.Dialogue
                 }
 
                 lastCloseTask = m_DialogueViewProvider.Close(currentDialogue);
-                // lastCloseTask   = m_DialogueViewProvider.CloseAsync(currentDialogue.Id);
                 currentDialogue = currentDialogue.NextDialogue;
             }
 
@@ -147,7 +106,5 @@ namespace Vvr.Session.ContentView.Dialogue
         }
 
         void IConnector<IDialogueViewProvider>.Disconnect(IDialogueViewProvider t) => m_DialogueViewProvider = null;
-        void IConnector<IActorDataProvider>.   Connect(IActorDataProvider       t) => m_ActorDataProvider = t;
-        void IConnector<IActorDataProvider>.   Disconnect(IActorDataProvider    t) => m_ActorDataProvider = null;
     }
 }

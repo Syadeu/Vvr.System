@@ -19,9 +19,6 @@
 
 #endregion
 
-using Cysharp.Threading.Tasks;
-using JetBrains.Annotations;
-using UnityEngine;
 using Vvr.Provider;
 
 namespace Vvr.Session.ContentView.Dialogue
@@ -30,8 +27,6 @@ namespace Vvr.Session.ContentView.Dialogue
     public interface IDialogueViewProvider : IContentViewProvider<DialogueViewEvent>
     {
         IDialogueView View { get; }
-
-        // UniTask SpeakAsync(string dialogueId, [CanBeNull] Sprite portraitImage, IDialogueSpeaker speaker);
     }
 
     public enum DialogueViewEvent : short

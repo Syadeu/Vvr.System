@@ -19,19 +19,16 @@
 
 #endregion
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
-using Vvr.Model;
 using Vvr.Session.ContentView.Dialogue.Attributes;
 
 namespace Vvr.Session.ContentView.Dialogue
 {
     [CreateAssetMenu(menuName = "Vvr/Create DialogueData", fileName = "DialogueData", order = 0)]
-    public class DialogueData : ScriptableObject, IDialogueData, IDisposable
+    public class DialogueData : ScriptableObject, IDialogueData
     {
         [SerializeField] private int    m_Index;
         [SerializeField] private AssetReferenceSprite m_BackgroundImage;
@@ -42,7 +39,6 @@ namespace Vvr.Session.ContentView.Dialogue
         private DialogueData m_NextDialogue;
 
         private IDialogueAttribute[] m_ResolvedAttributes;
-        private readonly Dictionary<AssetType, AssetReference> m_Assets = new();
 
         public string Id => name;
         public int Index => m_Index;
@@ -56,23 +52,8 @@ namespace Vvr.Session.ContentView.Dialogue
             }
         }
 
-        public IReadOnlyDictionary<AssetType, AssetReference> Assets     => m_Assets;
+        public AssetReferenceSprite BackgroundImage => m_BackgroundImage;
 
         public IDialogueData NextDialogue => m_NextDialogue;
-
-        public void Build(ActorSheet sheet)
-        {
-            // foreach (var speaker in m_Speakers)
-            // {
-            //     speaker.Build(sheet);
-            // }
-
-            m_Assets[AssetType.BackgroundImage] = m_BackgroundImage;
-        }
-
-        public void Dispose()
-        {
-            m_Assets.Clear();
-        }
     }
 }

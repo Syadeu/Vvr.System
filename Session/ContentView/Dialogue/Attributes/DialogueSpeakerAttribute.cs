@@ -33,7 +33,7 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
 {
     [Serializable]
     [DisplayName("Speaker")]
-    public class DialogueSpeakerAttribute : IDialogueSpeaker
+    public class DialogueSpeakerAttribute : IDialogueAttribute
     {
         [SerializeField] private string m_DisplayName;
         [SerializeField] private float  m_Time;

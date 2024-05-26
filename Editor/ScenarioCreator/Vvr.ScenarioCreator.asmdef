@@ -11,6 +11,8 @@
     "GUID:8d347b11736141808e283dcdaff81c22",
     "Vvr.Session.World",
     "Vvr.Session.ContentView",
+    "Vvr.Session.ContentView.Provider",
+    "Vvr.Session.ContentView.Dialogue",
 
     "Unity.Mathematics",
     "Unity.Collections",
