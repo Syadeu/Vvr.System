@@ -29,7 +29,8 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
     sealed class RawDialogueAttribute : ISerializationCallbackReceiver
     {
         [InfoBox(
-            "Type resolve has been failed. You should specify target type manually.", InfoMessageType.Error,
+            "Type resolve has been failed. You should specify target type manually.",
+            InfoMessageType.Error,
             visibleIfMemberName: nameof(m_TypeResolveFailed))]
         [OnValueChanged(nameof(Resolve))]
         [ValueDropdown(
@@ -78,6 +79,14 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
 
         void ISerializationCallbackReceiver.OnAfterDeserialize()
         {
+        }
+
+        [OnInspectorGUI, ShowIf(nameof(m_TypeResolveFailed))]
+        private void OnInspectorGUI()
+        {
+            GUI.enabled = false;
+            GUILayout.TextArea(m_TypeName);
+            GUI.enabled = true;
         }
 
         private void Resolve()
