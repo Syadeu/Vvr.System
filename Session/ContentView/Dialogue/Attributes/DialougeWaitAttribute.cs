@@ -15,25 +15,33 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// File created : 2024, 05, 26 10:05
+// File created : 2024, 05, 26 18:05
 
 #endregion
 
+using System;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
-using Vvr.Model;
 using Vvr.Provider;
 
-namespace Vvr.Session.ContentView.Dialogue
+namespace Vvr.Session.ContentView.Dialogue.Attributes
 {
-    public abstract class DialogueViewProviderComponent : MonoBehaviour, IDialogueViewProvider
+    [Serializable]
+    class DialougeWaitAttribute : IDialogueAttribute
     {
-        public abstract IDialogueView View { get; }
-        // public abstract UniTask       SpeakAsync(string dialogueId, Sprite portraitImage, IDialogueSpeaker speaker);
+        [SerializeField] private float m_Time = 1;
 
-        public abstract UniTask Initialize(IContentViewEventHandler<DialogueViewEvent> eventHandler);
+        public DialogueAttributeType AttributeType => DialogueAttributeType.Wait;
 
-        public abstract UniTask Open(IAssetProvider assetProvider, object ctx);
-        public abstract UniTask Close(object ctx);
+
+        async UniTask IDialogueAttribute.ExecuteAsync(IDialogueData dialogue, IAssetProvider assetProvider, IDialogueViewProvider viewProvider)
+        {
+            await UniTask.WaitForSeconds(m_Time);
+        }
+
+        public override string ToString()
+        {
+            return $"Wait: {m_Time}";
+        }
     }
 }

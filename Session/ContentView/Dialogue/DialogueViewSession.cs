@@ -93,37 +93,42 @@ namespace Vvr.Session.ContentView.Dialogue
                 // IImmutableObject<Sprite> backgroundImg = await m_AssetProvider.LoadAsync<Sprite>(
                 //     currentDialogue.Assets[AssetType.BackgroundImage]);
 
-                UniTask<IImmutableObject<Sprite>>[] preloadedPortraits
-                    = new UniTask<IImmutableObject<Sprite>>[currentDialogue.Speakers.Count];
-                for (int i = 0; i < currentDialogue.Speakers.Count; i++)
-                {
-                    var speaker = currentDialogue.Speakers[i];
-                    if (speaker.Actor == null) continue;
-
-                    UniTask<IImmutableObject<Sprite>> portrait = default;
-                    if (speaker.OverridePortrait != null &&
-                        speaker.OverridePortrait.RuntimeKeyIsValid())
-                    {
-                        portrait = m_AssetProvider.LoadAsync<Sprite>(speaker.OverridePortrait);
-                    }
-
-                    preloadedPortraits[i] = portrait;
-                }
+                // UniTask<IImmutableObject<Sprite>>[] preloadedPortraits
+                //     = new UniTask<IImmutableObject<Sprite>>[currentDialogue.Speakers.Count];
+                // for (int i = 0; i < currentDialogue.Speakers.Count; i++)
+                // {
+                //     var speaker = currentDialogue.Speakers[i];
+                //     if (speaker.Actor == null) continue;
+                //
+                //     UniTask<IImmutableObject<Sprite>> portrait = default;
+                //     if (speaker.Portrait != null &&
+                //         speaker.Portrait.RuntimeKeyIsValid())
+                //     {
+                //         portrait = m_AssetProvider.LoadAsync<Sprite>(speaker.Portrait);
+                //     }
+                //
+                //     preloadedPortraits[i] = portrait;
+                // }
 
                 // await m_DialogueViewProvider.OpenAsync(currentDialogue.Id, backgroundImg?.Object);
                 await m_DialogueViewProvider.Open(m_AssetProvider, currentDialogue);
-                for (var i = 0; i < currentDialogue.Speakers.Count; i++)
+                // for (var i = 0; i < currentDialogue.Speakers.Count; i++)
+                // {
+                //     var speaker     = currentDialogue.Speakers[i];
+                //     var portraitImg = await preloadedPortraits[i];
+                //
+                //     $"[Dialogue] Speak {i}".ToLog();
+                //     await m_DialogueViewProvider.SpeakAsync(
+                //         currentDialogue.Id,
+                //         portraitImg?.Object,
+                //         speaker);
+                //
+                //     // await UniTask.WaitForSeconds(speaker.Time);
+                // }
+
+                foreach (var attribute in currentDialogue.Attributes)
                 {
-                    var speaker     = currentDialogue.Speakers[i];
-                    var portraitImg = await preloadedPortraits[i];
-
-                    $"[Dialogue] Speak {i}".ToLog();
-                    await m_DialogueViewProvider.SpeakAsync(
-                        currentDialogue.Id,
-                        portraitImg?.Object,
-                        speaker);
-
-                    await UniTask.WaitForSeconds(speaker.Time);
+                    await attribute.ExecuteAsync(currentDialogue, m_AssetProvider, m_DialogueViewProvider);
                 }
 
                 lastCloseTask = m_DialogueViewProvider.Close(currentDialogue);

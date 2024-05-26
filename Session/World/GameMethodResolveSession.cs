@@ -28,9 +28,7 @@ using Vvr.Controller.Actor;
 using Vvr.Controller.BehaviorTree;
 using Vvr.Controller.Condition;
 using Vvr.Model;
-using Vvr.Model.Stat;
 using Vvr.Provider;
-using Vvr.Session.Actor;
 using Vvr.Session.ContentView.Dialogue;
 using Vvr.Session.Provider;
 

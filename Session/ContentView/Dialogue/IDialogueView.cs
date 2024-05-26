@@ -20,9 +20,10 @@
 #endregion
 
 using Cysharp.Threading.Tasks;
+using TMPro;
 using UnityEngine;
 
-namespace Vvr.Model
+namespace Vvr.Session.ContentView.Dialogue
 {
     public interface IDialogueView : IDialogueViewComponent
     {
@@ -39,16 +40,20 @@ namespace Vvr.Model
     }
     public interface IDialogueViewPortrait : IDialogueViewImageComponent
     {
+        bool WasIn { get; }
+
         void Clear();
 
-        void    Setup(Sprite            portrait, IDialogueSpeaker speaker);
-        UniTask CrossFadeAndWait(Sprite sprite,   IDialogueSpeaker speaker, float duration);
-        UniTask FadeInAndWait(Vector2   offset,   float            duration);
-        UniTask FadeOutAndWait(Vector2  offset,   float            duration);
+        void    Setup(Sprite            portrait, DialogueSpeakerPortrait speaker);
+        UniTask CrossFadeAndWait(Sprite sprite,   DialogueSpeakerPortrait speaker, float duration);
+        UniTask FadeInAndWait(Vector2   offset,   float                   duration);
+        UniTask FadeOutAndWait(Vector2  offset,   float                   duration);
     }
 
     public interface IDialogueViewText : IDialogueViewComponent
     {
+        TextMeshProUGUI Text { get; }
+
         void    Clear();
         UniTask SetTextAsync(string    title, string text);
         UniTask AppendTextAsync(string text);

@@ -21,16 +21,16 @@
 
 using System;
 using System.Collections.Generic;
-using Cathei.BakingSheet.Unity;
-using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
+using Vvr.Model;
+using Vvr.Session.ContentView.Dialogue.Attributes;
 
-namespace Vvr.Model
+namespace Vvr.Session.ContentView.Dialogue
 {
     public interface IDialogueData : IRawData
     {
-        IReadOnlyList<IDialogueSpeakerData> Speakers { get; }
+        IReadOnlyList<IDialogueAttribute> Attributes { get; }
 
         IReadOnlyDictionary<AssetType, AssetReference> Assets { get; }
 
@@ -39,28 +39,8 @@ namespace Vvr.Model
         void Build(ActorSheet sheet);
     }
 
-    public interface IDialogueSpeakerData : IDialogueSpeaker
+    public interface IDialogueSpeaker : IDialogueAttribute
     {
-        /// <summary>
-        /// View transform should reference only.
-        /// Actual awaiting logics will execute from Controller
-        /// </summary>
-        float Time { get; }
-
-        AssetReferenceSprite OverridePortrait { get; }
-        IDialogueAttribute   Attribute        { get; }
-    }
-    public interface IDialogueSpeaker
-    {
-        int        Id      { get; }
-        IActorData Actor   { get; }
-        string     Message { get; }
-
-        DialogueSpeakerOptions Options { get; }
-
-        Vector3 PositionOffset { get; }
-        Vector3 Rotation { get; }
-        Vector3 Scale { get; }
     }
 
     [Flags]
@@ -71,10 +51,5 @@ namespace Vvr.Model
 
         In  = 0b0100,
         Out = 0b1000
-    }
-
-    public interface IDialogueAttribute
-    {
-        UniTask Execute(RectTransform transform);
     }
 }

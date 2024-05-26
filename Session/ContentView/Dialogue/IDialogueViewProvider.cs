@@ -19,11 +19,9 @@
 
 #endregion
 
-using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using UnityEngine;
-using Vvr.Model;
 using Vvr.Provider;
 
 namespace Vvr.Session.ContentView.Dialogue
@@ -31,10 +29,9 @@ namespace Vvr.Session.ContentView.Dialogue
     [LocalProvider]
     public interface IDialogueViewProvider : IContentViewProvider<DialogueViewEvent>
     {
-        // UniTask OpenAsync(string  dialogueId, Sprite backgroundImage);
-        // UniTask CloseAsync(string dialogueId);
+        IDialogueView View { get; }
 
-        UniTask SpeakAsync(string dialogueId, [CanBeNull] Sprite portraitImage, IDialogueSpeaker speaker);
+        // UniTask SpeakAsync(string dialogueId, [CanBeNull] Sprite portraitImage, IDialogueSpeaker speaker);
     }
 
     public enum DialogueViewEvent : short

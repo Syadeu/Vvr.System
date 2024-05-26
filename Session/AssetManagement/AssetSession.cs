@@ -207,6 +207,12 @@ namespace Vvr.Session
                 key = addressablePath.FullPath;
             }
 
+            if (key is AssetReference assetReference &&
+                !assetReference.RuntimeKeyIsValid())
+            {
+                return null;
+            }
+
             Type type = VvrTypeHelper.TypeOf<TObject>.Type;
             Hash hash = new Hash(
                 FNV1a32.Calculate(key.ToString())

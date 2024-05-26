@@ -19,14 +19,12 @@
 
 #endregion
 
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
+
 using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 
-namespace Vvr.Model.Dialogue
+namespace Vvr.Session.ContentView.Dialogue
 {
     [CreateAssetMenu(menuName = "Vvr/Create DialogueSpeakerPortrait", fileName = "DialogueSpeakerPortrait", order = 0)]
     [HideMonoScript]

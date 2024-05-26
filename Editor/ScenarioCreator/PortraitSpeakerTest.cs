@@ -25,7 +25,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
 using Vvr.Model;
-using Vvr.Model.Dialogue;
+using Vvr.Session.ContentView.Dialogue;
 
 namespace Vvr.ScenarioCreator
 {

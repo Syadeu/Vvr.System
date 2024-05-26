@@ -19,26 +19,16 @@
 
 #endregion
 
+using Cysharp.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.UI;
 
-namespace Vvr.Model
+namespace Vvr.Session.ContentView.Dialogue
 {
-    public interface IDialogueViewComponent
+    public interface IDialogueViewImageComponent : IDialogueViewComponent
     {
-        RectTransform Transform { get; }
-    }
-
-    public static class DialogueViewComponentExtensions
-    {
-        public static IDialogueViewComponent FullScreen(this IDialogueViewComponent c)
-        {
-            c.Transform.localScale       = Vector3.one;
-            c.Transform.anchoredPosition = Vector2.zero;
-            c.Transform.sizeDelta        = Vector2.zero;
-            c.Transform.anchorMin        = Vector2.zero;
-            c.Transform.anchorMax        = Vector2.one;
-
-            return c;
-        }
+        Image   Image { get; }
+        UniTask SetColor(Color   color,  float duration);
+        UniTask CrossFadeAndWait(Sprite sprite, float duration);
     }
 }
