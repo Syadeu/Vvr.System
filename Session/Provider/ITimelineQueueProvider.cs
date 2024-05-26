@@ -82,7 +82,7 @@ namespace Vvr.Session.Provider
         /// The first actor in the timeline queue.
         /// </returns>
         [PublicAPI]
-        IStageActor Dequeue();
+        IStageActor Dequeue(out float time);
 
         /// <summary>
         /// Determines whether the given actor is the starting actor in the timeline queue.

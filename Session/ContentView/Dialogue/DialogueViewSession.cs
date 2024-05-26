@@ -100,14 +100,11 @@ namespace Vvr.Session.ContentView.Dialogue
                     var speaker = currentDialogue.Speakers[i];
                     if (speaker.Actor == null) continue;
 
-                    UniTask<IImmutableObject<Sprite>> portrait;
+                    UniTask<IImmutableObject<Sprite>> portrait = default;
                     if (speaker.OverridePortrait.RuntimeKeyIsValid())
                     {
                         portrait = m_AssetProvider.LoadAsync<Sprite>(speaker.OverridePortrait);
                     }
-                    else
-                        portrait = m_AssetProvider.LoadAsync<Sprite>(speaker.Actor.Assets[AssetType.DialoguePortrait]
-                            .FullPath);
 
                     preloadedPortraits[i] = portrait;
                 }

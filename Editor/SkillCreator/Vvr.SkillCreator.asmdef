@@ -9,6 +9,7 @@
         "GUID:0bebf4b98a2c47cd93c8f4c2f5f17d2a",
         "GUID:ca7a9d7f2d304e6d8e77b3a8931dc117",
         "GUID:8d347b11736141808e283dcdaff81c22",
+        "Vvr.Session.World",
 
         "Unity.Mathematics",
         "Unity.Collections",

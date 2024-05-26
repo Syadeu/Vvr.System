@@ -37,7 +37,8 @@ namespace Vvr.Session.World
         IConnector<ITimelineQueueProvider>,
         IConnector<IEventTimelineNodeViewProvider>
     {
-        private readonly ActorList         m_Timeline      = new();
+        private readonly ActorList   m_Timeline = new();
+        private readonly List<float> m_Times    = new();
 
         private ITimelineQueueProvider     m_TimelineQueueProvider;
         private IEventTimelineNodeViewProvider m_TimelineNodeViewProvider;
@@ -45,11 +46,18 @@ namespace Vvr.Session.World
         /// <summary>
         /// Dequeues the first actor from the timeline and updates it.
         /// </summary>
-        private partial void DequeueTimeline()
+        private partial float DequeueTimeline()
         {
-            if (m_Timeline.Count > 0) m_Timeline.RemoveAt(0);
+            float t = 0;
+            if (m_Timeline.Count > 0)
+            {
+                t = m_Times[0];
+                m_Timeline.RemoveAt(0);
+                m_Times.RemoveAt(0);
+            }
 
             UpdateTimeline();
+            return t;
         }
 
         /// <summary>
@@ -65,12 +73,14 @@ namespace Vvr.Session.World
                 for (int i = m_Timeline.Count - 1; i >= 1; i--)
                 {
                     m_Timeline.RemoveAt(i);
+                    m_Times.RemoveAt(i);
                 }
             }
 
             while (m_TimelineQueueProvider.Count > 0 && m_Timeline.Count < maxTimelineCount)
             {
-                m_Timeline.Add(m_TimelineQueueProvider.Dequeue());
+                m_Timeline.Add(m_TimelineQueueProvider.Dequeue(out float time));
+                m_Times.Add(time);
             }
         }
 
@@ -187,6 +197,7 @@ namespace Vvr.Session.World
                 if (0 < preserveCount--) continue;
 
                 m_Timeline.RemoveAt(i);
+                m_Times.RemoveAt(i);
                 i--;
             }
         }

@@ -162,18 +162,20 @@ namespace Vvr.Session
             m_Index++;
         }
 
-        public IStageActor Dequeue()
+        public IStageActor Dequeue(out float time)
         {
             using var timer = DebugTimer.Start();
 
             int count = m_Queue.Count;
             if (count == 0) throw new InvalidOperationException("queue empty");
 
+            time = 0;
             IStageActor result = null;
             for (int i = 0; i < count; i++)
             {
                 var min = m_Queue.Min;
                 m_Queue.Remove(min);
+                time           =  min.timeOffset;
                 min.timeOffset += min.Time;
                 m_Queue.Add(min);
 

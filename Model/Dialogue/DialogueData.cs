@@ -91,14 +91,6 @@ namespace Vvr.Model
 
         [Space]
         [SerializeField] private DialogueSpeakerPortrait m_PortraitReference;
-        [ShowIf("@" + nameof(m_PortraitReference) + " == null")]
-        [SerializeField] private AssetReferenceSprite    m_OverridePortrait;
-        [ShowIf("@" + nameof(m_PortraitReference) + " == null")]
-        [SerializeField] private Vector3                 m_PositionOffset;
-        [ShowIf("@" + nameof(m_PortraitReference) + " == null")]
-        [SerializeField] private Vector3                 m_Rotation;
-        [ShowIf("@" + nameof(m_PortraitReference) + " == null")]
-        [SerializeField] private Vector3                 m_Scale = Vector3.one;
 
         private IActorData m_ResolvedActor;
 
@@ -110,25 +102,10 @@ namespace Vvr.Model
 
         public DialogueSpeakerOptions Options          => m_Options;
 
-        public AssetReferenceSprite OverridePortrait =>
-            m_PortraitReference == null ? m_OverridePortrait : m_PortraitReference.Portrait;
-        public Vector3 PositionOffset
-        {
-            get => m_PortraitReference == null ? m_PositionOffset : m_PortraitReference.PositionOffset;
-            set => m_PositionOffset = value;
-        }
-
-        public Vector3 Rotation
-        {
-            get => m_PortraitReference == null ? m_Rotation : m_PortraitReference.Rotation;
-            set => m_Rotation = value;
-        }
-
-        public Vector3 Scale
-        {
-            get => m_PortraitReference == null ? m_Scale : m_PortraitReference.Scale;
-            set => m_Scale = value;
-        }
+        public AssetReferenceSprite OverridePortrait => m_PortraitReference.Portrait;
+        public Vector3              PositionOffset   => m_PortraitReference.PositionOffset;
+        public Vector3 Rotation => m_PortraitReference.Rotation;
+        public Vector3 Scale => m_PortraitReference.Scale;
 
 
         public IDialogueAttribute     Attribute        { get; } = null;

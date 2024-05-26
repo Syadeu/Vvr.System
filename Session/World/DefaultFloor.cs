@@ -216,9 +216,10 @@ namespace Vvr.Session.World
             {
                 IActor actor = (IActor)e;
 
-                var portraitImg = await m_AssetSession.LoadAsync<Sprite>(actor.Assets[AssetType.DialoguePortrait]);
                 await m_ViewRegistryProvider.StageViewProvider.OpenCornerIntersectionViewAsync(
-                    portraitImg.Object, "5252 그렇게 허약해보여서는 이 몸의 공격을 제대로 받아낼 수 있겠어?"
+                    // portraitImg.Object,
+                    null,
+                    "5252 그렇게 허약해보여서는 이 몸의 공격을 제대로 받아낼 수 있겠어?"
                 );
                 await UniTask.WaitForSeconds(2);
                 await m_ViewRegistryProvider.StageViewProvider.CloseCornerIntersectionViewAsync();

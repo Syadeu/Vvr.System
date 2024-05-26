@@ -29,12 +29,11 @@ using Vvr.Model;
 using Vvr.Provider;
 using Vvr.Session.Actor;
 using Vvr.Session.Provider;
-using Vvr.Session.World;
 
 namespace Vvr.Session
 {
     [UsedImplicitly]
-    [ParentSession(typeof(DefaultFloor), true)]
+    // [ParentSession(typeof(DefaultFloor), true)]
     public sealed class StageActorFactorySession : ChildSession<StageActorFactorySession.SessionData>,
         IStageActorProvider,
         IConnector<IResearchDataProvider>

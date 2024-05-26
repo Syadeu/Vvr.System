@@ -23,6 +23,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Cysharp.Threading.Tasks;
+using UnityEngine;
 using UnityEngine.Assertions;
 using UnityEngine.Scripting;
 using Vvr.Controller;
@@ -306,14 +307,25 @@ namespace Vvr.Session.World
                 await trigger.Execute(Model.Condition.OnBattleStart, Data.stage.Id);
             }
 
+            float previousTime = 0;
             while (m_Timeline.Count > 0 && m_PlayerField.Count > 0 && m_EnemyField.Count > 0)
             {
                 $"Timeline count {m_Timeline.Count}".ToLog();
                 await UpdateTimelineNodeView();
 
                 m_ResetEvent = new();
-                IStageActor current  = m_Timeline[0];
+                IStageActor current = m_Timeline[0];
                 Assert.IsFalse(current.Owner.Disposed);
+
+                {
+                    float sub = m_Times[0] - previousTime;
+                    float p   = Mathf.FloorToInt(sub / 5 * 100) * 0.01f;
+                    for (int i = 0; i < 4; i++)
+                    {
+                        await TimeController.Next(p);
+                    }
+                    await TimeController.Next(sub - (p * 4));
+                }
 
                 bool isPlayerActor = current.Owner.ConditionResolver[Condition.IsPlayerActor](null);
                 if (isPlayerActor)
@@ -333,7 +345,7 @@ namespace Vvr.Session.World
                     {
                         await trigger.Execute(Model.Condition.OnActorTurn, null);
                         await UniTask.WaitForSeconds(1f);
-                        await TimeController.Next(1);
+                        // await TimeController.Next(1);
 
                         ExecuteTurn(current)
                             .SuppressCancellationThrow()
@@ -394,7 +406,7 @@ namespace Vvr.Session.World
                     }
                 }
 
-                DequeueTimeline();
+                previousTime = DequeueTimeline();
                 // ObjectObserver<ActorList>.ChangedEvent(m_Timeline);
             }
 
@@ -434,7 +446,7 @@ namespace Vvr.Session.World
         private partial UniTask RemoveFromQueue(IStageActor    actor);
         private partial UniTask RemoveFromTimeline(IStageActor actor, int preserveCount = 0);
 
-        private partial void    DequeueTimeline();
+        private partial float   DequeueTimeline();
         private partial void    UpdateTimeline();
         private partial UniTask UpdateTimelineNodeView();
         private partial UniTask CloseTimelineNodeView();
