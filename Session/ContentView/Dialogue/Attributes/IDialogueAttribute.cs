@@ -39,8 +39,11 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
     {
         [Delayed, OnValueChanged(nameof(Resolve))]
         [SerializeField] private DialogueAttributeType m_Type;
-        [HideInInspector]
-        [SerializeField] private string                m_Json;
+
+        [ReadOnly]
+        [SerializeField] private string m_TypeName;
+
+        [HideInInspector] [SerializeField] private string m_Json;
 
         private IDialogueAttribute m_Attribute;
 
@@ -69,7 +72,9 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
                 return;
             }
 
-            m_Type = Value.AttributeType;
+            m_Type     = Value.AttributeType;
+            m_TypeName = Value.GetType().AssemblyQualifiedName;
+
             m_Json = JsonUtility.ToJson(Value);
         }
 
@@ -102,7 +107,7 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
         }
     }
 
-    public enum DialogueAttributeType
+    public enum DialogueAttributeType : short
     {
         None = 0,
 
