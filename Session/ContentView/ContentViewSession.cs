@@ -27,6 +27,7 @@ using JetBrains.Annotations;
 using Vvr.Provider;
 using Vvr.Session.ContentView.Dialogue;
 using Vvr.Session.ContentView.Research;
+using Vvr.Session.ContentView.WorldBackground;
 
 namespace Vvr.Session.ContentView
 {
@@ -147,6 +148,7 @@ namespace Vvr.Session.ContentView
             // ReSharper disable RedundantTypeArgumentsOfMethod
             Register<IResearchViewProvider>(t.ResearchViewProvider)
                 .Register<IDialogueViewProvider>(t.DialogueViewProvider)
+                .Register<IWorldBackgroundViewProvider>(t.WorldBackgroundViewProvider)
                 ;
             // ReSharper restore RedundantTypeArgumentsOfMethod
         }
@@ -154,6 +156,7 @@ namespace Vvr.Session.ContentView
         {
             Unregister<IResearchViewProvider>()
                 .Unregister<IDialogueViewProvider>()
+                .Unregister<IWorldBackgroundViewProvider>()
                 ;
 
             m_ContentViewRegistryProvider = null;

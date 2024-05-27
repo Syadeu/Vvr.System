@@ -29,8 +29,10 @@ namespace Vvr.Session.ContentView.Research
     [DisallowMultipleComponent]
     public abstract class ResearchViewProviderComponent : MonoBehaviour, IResearchViewProvider
     {
-        public abstract UniTask Initialize(IContentViewEventHandler<ResearchViewEvent> eventHandler);
-        public abstract UniTask Open(IAssetProvider assetProvider, object ctx);
-        public abstract UniTask Close(object ctx);
+        public abstract void Initialize(IContentViewEventHandler<ResearchViewEvent> eventHandler);
+        public abstract void Reserve();
+
+        public abstract UniTask OpenAsync(IAssetProvider assetProvider, object ctx);
+        public abstract UniTask CloseAsync(object ctx);
     }
 }

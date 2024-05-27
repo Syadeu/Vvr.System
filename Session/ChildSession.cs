@@ -251,9 +251,42 @@ namespace Vvr.Session
             return this;
         }
 
+        public IProvider GetProviderRecursive(Type providerType)
+        {
+            if (providerType is null)
+                throw new ArgumentException(nameof(providerType));
+            if (!VvrTypeHelper.InheritsFrom<IProvider>(providerType))
+                throw new InvalidOperationException("Type must " + nameof(IProvider));
+
+            if (VvrTypeHelper.InheritsFrom<IProvider>(Type)) return (IProvider)this;
+
+            foreach (var injectedProvider in m_ConnectedProviders)
+            {
+                if (VvrTypeHelper.InheritsFrom(providerType, injectedProvider.Key))
+                {
+                    return injectedProvider.Value;
+                }
+            }
+
+            IProvider result = null;
+            if (this is IParentSession parentSession)
+            {
+                foreach (var s in parentSession.ChildSessions)
+                {
+                    result = s.GetProviderRecursive(providerType);
+                    if (result != null) break;
+                }
+            }
+
+            return result;
+        }
         public TProvider GetProviderRecursive<TProvider>() where TProvider : class, IProvider
         {
             if (this is TProvider p) return p;
+            foreach (var injectedProvider in m_ConnectedProviders.Values)
+            {
+                if (injectedProvider is TProvider r) return r;
+            }
 
             TProvider result = null;
             if (this is IParentSession parentSession)

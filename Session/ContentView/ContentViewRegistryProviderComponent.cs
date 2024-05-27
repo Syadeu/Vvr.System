@@ -23,6 +23,7 @@ using Sirenix.OdinInspector;
 using UnityEngine;
 using Vvr.Session.ContentView.Dialogue;
 using Vvr.Session.ContentView.Research;
+using Vvr.Session.ContentView.WorldBackground;
 
 namespace Vvr.Session.ContentView
 {
@@ -30,15 +31,16 @@ namespace Vvr.Session.ContentView
     {
         [SerializeField, Required] private DialogueViewProviderComponent m_DialogueViewProvider;
         [SerializeField, Required] private ResearchViewProviderComponent m_ResearchViewProvider;
+        [SerializeField, Required] private WorldBackgroundViewProvider   m_WorldBackgroundViewProvider;
 
-        IDialogueViewProvider IContentViewRegistryProvider.DialogueViewProvider => m_DialogueViewProvider;
-        IResearchViewProvider IContentViewRegistryProvider. ResearchViewProvider => m_ResearchViewProvider;
+        IDialogueViewProvider IContentViewRegistryProvider.       DialogueViewProvider        => m_DialogueViewProvider;
+        IResearchViewProvider IContentViewRegistryProvider.       ResearchViewProvider        => m_ResearchViewProvider;
+        IWorldBackgroundViewProvider IContentViewRegistryProvider.WorldBackgroundViewProvider => m_WorldBackgroundViewProvider;
 
         private void Awake()
         {
             Vvr.Provider.Provider.Static.Register<IContentViewRegistryProvider>(this);
         }
-
         private void OnDestroy()
         {
             Vvr.Provider.Provider.Static.Unregister<IContentViewRegistryProvider>(this);

@@ -23,6 +23,7 @@ using System;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using Vvr.Provider;
+using Vvr.Session.ContentView.Dialogue.Attributes;
 
 namespace Vvr.Session.ContentView.Dialogue
 {
@@ -81,21 +82,26 @@ namespace Vvr.Session.ContentView.Dialogue
         {
             UniTask lastCloseTask = UniTask.CompletedTask;
 
+            DialogueProviderResolveDelegate
+                resolveProvider = Parent.GetProviderRecursive;
+
             IDialogueData currentDialogue = dialogue;
             while (currentDialogue != null)
             {
-                m_DialogueViewProvider.Open(m_AssetProvider, currentDialogue);
+                m_DialogueViewProvider.OpenAsync(m_AssetProvider, currentDialogue);
 
                 foreach (var attribute in currentDialogue.Attributes)
                 {
-                    await attribute.ExecuteAsync(currentDialogue, m_AssetProvider, m_DialogueViewProvider);
+                    await attribute.ExecuteAsync(
+                        currentDialogue, m_AssetProvider,
+                        m_DialogueViewProvider, resolveProvider);
                 }
 
                 while (!m_DialogueViewProvider.IsFullyOpened)
                 {
                     await UniTask.Yield();
                 }
-                lastCloseTask = m_DialogueViewProvider.Close(currentDialogue);
+                lastCloseTask = m_DialogueViewProvider.CloseAsync(currentDialogue);
                 currentDialogue = currentDialogue.NextDialogue;
             }
 
@@ -109,6 +115,10 @@ namespace Vvr.Session.ContentView.Dialogue
             m_DialogueViewProvider.Initialize(Data.eventHandler);
         }
 
-        void IConnector<IDialogueViewProvider>.Disconnect(IDialogueViewProvider t) => m_DialogueViewProvider = null;
+        void IConnector<IDialogueViewProvider>.Disconnect(IDialogueViewProvider t)
+        {
+            m_DialogueViewProvider.Reserve();
+            m_DialogueViewProvider = null;
+        }
     }
 }

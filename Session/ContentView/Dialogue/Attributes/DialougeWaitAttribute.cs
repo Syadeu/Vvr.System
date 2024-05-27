@@ -33,7 +33,10 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
     {
         [SerializeField] private float m_Time = 1;
 
-        async UniTask IDialogueAttribute.ExecuteAsync(IDialogueData dialogue, IAssetProvider assetProvider, IDialogueViewProvider viewProvider)
+        async UniTask IDialogueAttribute.ExecuteAsync(
+            IDialogueData                   dialogue, IAssetProvider assetProvider,
+            IDialogueViewProvider           viewProvider,
+            DialogueProviderResolveDelegate resolveProvider)
         {
             await UniTask.WaitForSeconds(m_Time);
         }

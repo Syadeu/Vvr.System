@@ -21,10 +21,10 @@
 
 using Cysharp.Threading.Tasks;
 using UnityEngine;
-using Vvr.Model;
 using Vvr.Provider;
+using Vvr.Session.ContentView.Dialogue;
 
-namespace Vvr.Session.ContentView.Dialogue
+namespace Vvr.Session.ContentView
 {
     public abstract class DialogueViewProviderComponent : MonoBehaviour, IDialogueViewProvider
     {
@@ -33,9 +33,10 @@ namespace Vvr.Session.ContentView.Dialogue
         public abstract bool IsFullyOpened { get; }
         // public abstract UniTask       SpeakAsync(string dialogueId, Sprite portraitImage, IDialogueSpeaker speaker);
 
-        public abstract UniTask Initialize(IContentViewEventHandler<DialogueViewEvent> eventHandler);
+        public abstract void Initialize(IContentViewEventHandler<DialogueViewEvent> eventHandler);
+        public abstract void Reserve();
 
-        public abstract UniTask Open(IAssetProvider assetProvider, object ctx);
-        public abstract UniTask Close(object ctx);
+        public abstract UniTask OpenAsync(IAssetProvider assetProvider, object ctx);
+        public abstract UniTask CloseAsync(object ctx);
     }
 }

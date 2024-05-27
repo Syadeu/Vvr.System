@@ -41,7 +41,8 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
         [Space] [SerializeField]   private TextAlignmentOptions m_Alignment = TextAlignmentOptions.TopLeft;
         [SerializeField, TextArea] private string               m_Message;
 
-        async UniTask IDialogueAttribute.ExecuteAsync(IDialogueData dialogue, IAssetProvider assetProvider, IDialogueViewProvider viewProvider)
+        async UniTask IDialogueAttribute.ExecuteAsync(IDialogueData dialogue, IAssetProvider assetProvider, IDialogueViewProvider viewProvider,
+            DialogueProviderResolveDelegate resolveProvider)
         {
             $"[Dialogue] Speak".ToLog();
 

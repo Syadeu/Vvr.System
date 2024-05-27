@@ -19,6 +19,7 @@
 
 #endregion
 
+using System;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using UnityEngine.Scripting;
@@ -97,7 +98,10 @@ namespace Vvr.Session
         /// </summary>
         /// <typeparam name="TProvider">The type of the provider to retrieve.</typeparam>
         /// <returns>The provider of the specified type if it exists, otherwise null.</returns>
-        [PublicAPI]
+        [PublicAPI, CanBeNull]
         TProvider GetProviderRecursive<TProvider>() where TProvider : class, IProvider;
+
+        [PublicAPI, CanBeNull]
+        IProvider GetProviderRecursive([NotNull] Type providerType);
     }
 }

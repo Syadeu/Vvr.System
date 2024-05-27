@@ -22,6 +22,7 @@
 using Vvr.Provider;
 using Vvr.Session.ContentView.Dialogue;
 using Vvr.Session.ContentView.Research;
+using Vvr.Session.ContentView.WorldBackground;
 
 namespace Vvr.Session.ContentView
 {
@@ -30,5 +31,7 @@ namespace Vvr.Session.ContentView
         IDialogueViewProvider DialogueViewProvider { get; }
 
         IResearchViewProvider ResearchViewProvider { get; }
+
+        IWorldBackgroundViewProvider WorldBackgroundViewProvider { get; }
     }
 }

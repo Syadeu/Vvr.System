@@ -19,13 +19,24 @@
 
 #endregion
 
+using System;
 using Cysharp.Threading.Tasks;
+using JetBrains.Annotations;
+using UnityEngine.Scripting;
 using Vvr.Provider;
 
 namespace Vvr.Session.ContentView.Dialogue.Attributes
 {
+    [CanBeNull]
+    public delegate IProvider DialogueProviderResolveDelegate([NotNull] Type providerType);
+
+    [PublicAPI, RequireImplementors]
     public interface IDialogueAttribute
     {
-        UniTask ExecuteAsync(IDialogueData dialogue, IAssetProvider assetProvider, IDialogueViewProvider viewProvider);
+        UniTask ExecuteAsync(
+            [NotNull] IDialogueData                   dialogue,
+            [NotNull] IAssetProvider                  assetProvider,
+            [NotNull] IDialogueViewProvider           viewProvider,
+            [NotNull] DialogueProviderResolveDelegate resolveProvider);
     }
 }

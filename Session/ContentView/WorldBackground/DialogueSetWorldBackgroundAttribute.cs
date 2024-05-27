@@ -15,7 +15,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// File created : 2024, 05, 27 09:05
+// File created : 2024, 05, 27 11:05
 
 #endregion
 
@@ -24,34 +24,32 @@ using System.ComponentModel;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 using Vvr.Provider;
+using Vvr.Session.ContentView.Dialogue;
+using Vvr.Session.ContentView.Dialogue.Attributes;
 
-namespace Vvr.Session.ContentView.Dialogue.Attributes
+namespace Vvr.Session.ContentView.WorldBackground
 {
-    [DisplayName("Set Background")]
     [Serializable]
-    class DialogueSetBackgroundAttribute : IDialogueAttribute
+    [DisplayName("Set World Background")]
+    class DialogueSetWorldBackgroundAttribute : IDialogueAttribute
     {
-        [SerializeField] private DialogueAssetReference<Sprite>
-            m_Image;
+        [SerializeField] private DialogueAssetReference<Sprite> m_Image;
 
-        [SerializeField] private float m_Duration = .5f;
-
-        public async UniTask ExecuteAsync(IDialogueData dialogue, IAssetProvider assetProvider, IDialogueViewProvider viewProvider,
+        public async UniTask ExecuteAsync(
+            IDialogueData                   dialogue, IAssetProvider assetProvider,
+            IDialogueViewProvider           viewProvider,
             DialogueProviderResolveDelegate resolveProvider)
         {
-            var sprite = await assetProvider.LoadAsync<Sprite>(m_Image.FullPath);
+            IWorldBackgroundViewProvider v =
+                resolveProvider(VvrTypeHelper.TypeOf<IWorldBackgroundViewProvider>.Type) as IWorldBackgroundViewProvider;
 
-            await viewProvider.View.Background.CrossFadeAndWait(sprite?.Object, m_Duration);
+            var img = await assetProvider.LoadAsync<Sprite>(m_Image.FullPath);
+            await v.View.SetBackgroundAsync(img.Object);
         }
 
         public override string ToString()
         {
-            if (m_Image.EditorAsset == null)
-            {
-                return "None";
-            }
-
-            return m_Image.EditorAsset.name;
+            return m_Image.EditorAsset is null ? "None" : m_Image.EditorAsset.name;
         }
     }
 }

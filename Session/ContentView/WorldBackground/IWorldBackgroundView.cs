@@ -15,27 +15,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// File created : 2024, 05, 23 21:05
+// File created : 2024, 05, 27 11:05
 
 #endregion
 
-using System;
 using Cysharp.Threading.Tasks;
-using Vvr.Provider;
+using UnityEngine;
 
-namespace Vvr.Session.ContentView
+namespace Vvr.Session.ContentView.WorldBackground
 {
-    public interface IContentViewProvider<TEvent> : IContentViewProvider
-        where TEvent : struct, IConvertible
+    public interface IWorldBackgroundView
     {
-        void Initialize(IContentViewEventHandler<TEvent> eventHandler);
-    }
-
-    public interface IContentViewProvider : IProvider
-    {
-        void Reserve();
-
-        UniTask OpenAsync(IAssetProvider assetProvider, object ctx);
-        UniTask CloseAsync(object        ctx);
+        UniTask SetBackgroundAsync(Sprite sprite);
     }
 }

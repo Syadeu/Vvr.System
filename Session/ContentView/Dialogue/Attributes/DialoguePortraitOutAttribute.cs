@@ -35,8 +35,8 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
         [SerializeField] private Vector2 m_Offset   = new Vector2(100, 0);
         [SerializeField] private float   m_Duration = .5f;
 
-        public async UniTask ExecuteAsync(IDialogueData dialogue, IAssetProvider assetProvider,
-            IDialogueViewProvider                       viewProvider)
+        public async UniTask ExecuteAsync(IDialogueData dialogue,     IAssetProvider                  assetProvider,
+            IDialogueViewProvider                       viewProvider, DialogueProviderResolveDelegate resolveProvider)
         {
             IDialogueViewPortrait target;
             if (m_Right)

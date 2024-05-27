@@ -73,14 +73,14 @@ namespace Vvr.Session.ContentView.Research
                 nodeGroup.RegisterAssetProvider(m_AssetSession);
             }
 
-            await m_ResearchViewProvider.Open(m_AssetSession, ctx);
+            await m_ResearchViewProvider.OpenAsync(m_AssetSession, ctx);
         }
         private async UniTask OnClose(ResearchViewEvent e, object ctx)
         {
             if (!m_Opened)
                 return;
 
-            await m_ResearchViewProvider.Close(ctx);
+            await m_ResearchViewProvider.CloseAsync(ctx);
 
             foreach (var nodeGroup in m_ResearchDataProvider)
             {
@@ -147,8 +147,12 @@ namespace Vvr.Session.ContentView.Research
 
             m_ResearchViewProvider.Initialize(Data.eventHandler);
         }
+        void IConnector<IResearchViewProvider>.Disconnect(IResearchViewProvider t)
+        {
+            m_ResearchViewProvider.Reserve();
+            m_ResearchViewProvider = null;
+        }
 
-        void IConnector<IResearchViewProvider>.Disconnect(IResearchViewProvider t) => m_ResearchViewProvider = null;
         void IConnector<IUserDataProvider>.    Connect(IUserDataProvider        t) => m_UserDataProvider = t;
         void IConnector<IUserDataProvider>.    Disconnect(IUserDataProvider     t) => m_UserDataProvider = null;
     }

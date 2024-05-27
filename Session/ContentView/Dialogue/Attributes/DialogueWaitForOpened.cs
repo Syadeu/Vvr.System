@@ -30,7 +30,8 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
     [Serializable]
     class DialogueWaitForOpened : IDialogueAttribute
     {
-        public async UniTask ExecuteAsync(IDialogueData dialogue, IAssetProvider assetProvider, IDialogueViewProvider viewProvider)
+        public async UniTask ExecuteAsync(IDialogueData dialogue, IAssetProvider assetProvider, IDialogueViewProvider viewProvider,
+            DialogueProviderResolveDelegate resolveProvider)
         {
             while (!viewProvider.IsFullyOpened)
             {

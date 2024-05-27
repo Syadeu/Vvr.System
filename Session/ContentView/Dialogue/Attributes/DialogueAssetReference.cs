@@ -46,12 +46,12 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
         [HideInInspector]
         [SerializeField] private string m_AssetFullPath;
 
-#if UNITY_EDITOR
         [ShowInInspector, InlineProperty, HideLabel]
         public TObject EditorAsset
         {
             get
             {
+#if UNITY_EDITOR
                 if (m_EditorAsset == null &&
                     !m_AssetGuid.IsNullOrEmpty())
                 {
@@ -60,8 +60,12 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
                 }
 
                 return m_EditorAsset;
+#else
+                return null;
+#endif
             }
-            set
+#if UNITY_EDITOR
+            private set
             {
                 m_EditorAsset = value;
                 if (m_EditorAsset != null)
@@ -70,8 +74,9 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
                         = AssetDatabase.GUIDFromAssetPath(AssetDatabase.GetAssetPath(m_EditorAsset)).ToString();
                 }
             }
-        }
 #endif
+        }
+
         public string FullPath => m_AssetFullPath;
 
         void ISerializationCallbackReceiver.OnBeforeSerialize()

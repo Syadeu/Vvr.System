@@ -43,7 +43,8 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
         [SerializeField] private float   m_Duration = .5f;
 
         async UniTask IDialogueAttribute.ExecuteAsync(IDialogueData dialogue, IAssetProvider assetProvider,
-            IDialogueViewProvider                                           viewProvider)
+            IDialogueViewProvider                                   viewProvider,
+            DialogueProviderResolveDelegate                         resolveProvider)
         {
             var portraitAsset = await assetProvider.LoadAsync<DialogueSpeakerPortrait>(m_Portrait.FullPath);
             var portrait      = await assetProvider.LoadAsync<Sprite>(portraitAsset.Object.Portrait);
