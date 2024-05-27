@@ -84,13 +84,17 @@ namespace Vvr.Session.ContentView.Dialogue
             IDialogueData currentDialogue = dialogue;
             while (currentDialogue != null)
             {
-                await m_DialogueViewProvider.Open(m_AssetProvider, currentDialogue);
+                m_DialogueViewProvider.Open(m_AssetProvider, currentDialogue);
 
                 foreach (var attribute in currentDialogue.Attributes)
                 {
                     await attribute.ExecuteAsync(currentDialogue, m_AssetProvider, m_DialogueViewProvider);
                 }
 
+                while (!m_DialogueViewProvider.IsFullyOpened)
+                {
+                    await UniTask.Yield();
+                }
                 lastCloseTask = m_DialogueViewProvider.Close(currentDialogue);
                 currentDialogue = currentDialogue.NextDialogue;
             }

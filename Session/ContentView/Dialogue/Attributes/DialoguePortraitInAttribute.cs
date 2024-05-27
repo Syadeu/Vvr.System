@@ -33,79 +33,19 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
 {
     [Serializable]
     [DisplayName("Portrait In")]
-    sealed class DialoguePortraitInAttribute : IDialogueAttribute, ISerializationCallbackReceiver
+    sealed class DialoguePortraitInAttribute : IDialogueAttribute
     {
-#if UNITY_EDITOR
-        const string EditorPrefix = "Assets/AddressableResources/";
-
-        private DialogueSpeakerPortrait m_EditorPortrait;
-
-#endif
-        [HideInInspector]
-        [SerializeField] private string m_PortraitGuid;
-
-        [HideInInspector]
-        [SerializeField] private string m_PortraitFullPath;
-
-#if UNITY_EDITOR
-        [ShowInInspector, PropertyOrder(-1)]
-        private DialogueSpeakerPortrait Portrait
-        {
-            get
-            {
-                if (m_EditorPortrait == null &&
-                    !m_PortraitGuid.IsNullOrEmpty())
-                {
-                    m_EditorPortrait = AssetDatabase.LoadAssetAtPath<DialogueSpeakerPortrait>(
-                        AssetDatabase.GUIDToAssetPath(m_PortraitGuid));
-                }
-
-                return m_EditorPortrait;
-            }
-            set
-            {
-                m_EditorPortrait = value;
-                if (value != null)
-                {
-                    m_PortraitGuid = value.GetGuid().ToString();
-                }
-            }
-        }
-#endif
+        [SerializeField] private DialogueAssetReference<DialogueSpeakerPortrait> m_Portrait;
 
         [Space]
         [SerializeField] private bool    m_Right;
         [SerializeField] private Vector2 m_Offset   = new Vector2(100, 0);
         [SerializeField] private float   m_Duration = .5f;
 
-        void ISerializationCallbackReceiver.OnBeforeSerialize()
-        {
-#if UNITY_EDITOR
-            // m_PortraitGuid     = Portrait.GetGuid().ToString();
-            m_PortraitFullPath = AssetDatabase.GUIDToAssetPath(m_PortraitGuid);
-            m_PortraitFullPath = m_PortraitFullPath.Replace(EditorPrefix, string.Empty);
-#endif
-        }
-
-        void ISerializationCallbackReceiver.OnAfterDeserialize()
-        {
-#if UNITY_EDITOR
-            if (m_PortraitGuid.IsNullOrEmpty())
-            {
-
-            }
-            else
-            {
-                m_PortraitFullPath = AssetDatabase.GUIDToAssetPath(m_PortraitGuid);
-                m_PortraitFullPath = m_PortraitFullPath.Replace(EditorPrefix, string.Empty);
-            }
-#endif
-        }
-
         async UniTask IDialogueAttribute.ExecuteAsync(IDialogueData dialogue, IAssetProvider assetProvider,
             IDialogueViewProvider                                           viewProvider)
         {
-            var portraitAsset = await assetProvider.LoadAsync<DialogueSpeakerPortrait>(m_PortraitFullPath);
+            var portraitAsset = await assetProvider.LoadAsync<DialogueSpeakerPortrait>(m_Portrait.FullPath);
             var portrait      = await assetProvider.LoadAsync<Sprite>(portraitAsset.Object.Portrait);
 
             IDialogueViewPortrait target;
@@ -131,10 +71,10 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
             string s = m_Right ? "Right" : "Left";
             string n = string.Empty;
 #if UNITY_EDITOR
-            if (Portrait == null)
+            if (m_Portrait.EditorAsset == null)
                 n = string.Empty;
             else
-                n = Portrait.name;
+                n = m_Portrait.EditorAsset.name;
 #endif
 
             return $"In {n} {s}: {m_Duration}s";

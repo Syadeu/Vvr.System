@@ -29,6 +29,8 @@ namespace Vvr.Session.ContentView.Dialogue
     public abstract class DialogueViewProviderComponent : MonoBehaviour, IDialogueViewProvider
     {
         public abstract IDialogueView View { get; }
+
+        public abstract bool IsFullyOpened { get; }
         // public abstract UniTask       SpeakAsync(string dialogueId, Sprite portraitImage, IDialogueSpeaker speaker);
 
         public abstract UniTask Initialize(IContentViewEventHandler<DialogueViewEvent> eventHandler);

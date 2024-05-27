@@ -15,25 +15,32 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// File created : 2024, 05, 26 01:05
+// File created : 2024, 05, 27 09:05
 
 #endregion
 
+using System;
+using System.ComponentModel;
+using Cysharp.Threading.Tasks;
 using Vvr.Provider;
 
-namespace Vvr.Session.ContentView.Dialogue
+namespace Vvr.Session.ContentView.Dialogue.Attributes
 {
-    [LocalProvider]
-    public interface IDialogueViewProvider : IContentViewProvider<DialogueViewEvent>
+    [DisplayName("Wait for opened")]
+    [Serializable]
+    class DialogueWaitForOpened : IDialogueAttribute
     {
-        IDialogueView View { get; }
+        public async UniTask ExecuteAsync(IDialogueData dialogue, IAssetProvider assetProvider, IDialogueViewProvider viewProvider)
+        {
+            while (!viewProvider.IsFullyOpened)
+            {
+                await UniTask.Yield();
+            }
+        }
 
-        bool IsFullyOpened { get; }
-    }
-
-    public enum DialogueViewEvent : short
-    {
-        Open,
-        Close,
+        public override string ToString()
+        {
+            return "Wait for opened";
+        }
     }
 }
