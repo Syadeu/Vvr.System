@@ -19,6 +19,7 @@
 
 #endregion
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -31,6 +32,7 @@ namespace Vvr.Session.ContentView.Dialogue
     public class DialogueData : ScriptableObject, IDialogueData
     {
         [SerializeField] private int    m_Index;
+        [Obsolete]
         [SerializeField] private AssetReferenceSprite m_BackgroundImage;
 
         [Space] [SerializeField] private RawDialogueAttribute[] m_Attributes;

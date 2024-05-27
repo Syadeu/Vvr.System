@@ -32,7 +32,8 @@ namespace Vvr.Session.ContentView.Dialogue
         IDialogueViewPortrait LeftPortrait { get; }
         IDialogueViewPortrait RightPortrait { get; }
 
-        IDialogueViewText Text { get; }
+        IDialogueViewText        Text { get; }
+        IDialogueViewOverlayText OverlayText { get; }
     }
 
     public interface IDialogueViewBackground : IDialogueViewImageComponent
@@ -57,5 +58,15 @@ namespace Vvr.Session.ContentView.Dialogue
         void    Clear();
         UniTask SetTextAsync(string    title, string text);
         UniTask AppendTextAsync(string text);
+    }
+
+    public interface IDialogueViewOverlayText : IDialogueViewComponent
+    {
+        UniTask SetTextAsync(string text);
+
+        UniTask OpenAsync(float duration);
+        UniTask CloseAsync(float duration);
+
+        void Clear();
     }
 }

@@ -19,6 +19,7 @@
 
 #endregion
 
+using System;
 using System.Collections.Generic;
 using UnityEngine.AddressableAssets;
 using Vvr.Model;
@@ -30,6 +31,7 @@ namespace Vvr.Session.ContentView.Dialogue
     {
         IReadOnlyList<IDialogueAttribute> Attributes { get; }
 
+        [Obsolete]
         AssetReferenceSprite BackgroundImage { get; }
 
         IDialogueData NextDialogue { get; }
