@@ -29,7 +29,7 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
 {
     [Serializable]
     [DisplayName("Wait")]
-    class DialougeWaitAttribute : IDialogueAttribute
+    class DialougeWaitAttribute : IDialogueAttribute, IDialogueSkipAttribute
     {
         [SerializeField] private float m_Time = 1;
 
@@ -44,6 +44,14 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
         public override string ToString()
         {
             return $"Wait: {m_Time}";
+        }
+
+        public bool CanSkip => true;
+
+        public UniTask OnSkip(IDialogueData        dialogue, IAssetProvider assetProvider, IDialogueViewProvider viewProvider,
+            DialogueProviderResolveDelegate resolveProvider)
+        {
+            return UniTask.CompletedTask;
         }
     }
 }

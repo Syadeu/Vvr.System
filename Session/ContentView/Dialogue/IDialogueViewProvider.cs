@@ -35,5 +35,7 @@ namespace Vvr.Session.ContentView.Dialogue
     {
         Open,
         Close,
+
+        Skip,
     }
 }

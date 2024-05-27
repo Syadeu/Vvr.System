@@ -39,4 +39,14 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
             [NotNull] IDialogueViewProvider           viewProvider,
             [NotNull] DialogueProviderResolveDelegate resolveProvider);
     }
+
+    public interface IDialogueSkipAttribute
+    {
+        bool    CanSkip { get; }
+        UniTask OnSkip(
+            [NotNull] IDialogueData                   dialogue,
+            [NotNull] IAssetProvider                  assetProvider,
+            [NotNull] IDialogueViewProvider           viewProvider,
+            [NotNull] DialogueProviderResolveDelegate resolveProvider);
+    }
 }

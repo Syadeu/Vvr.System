@@ -56,6 +56,7 @@ namespace Vvr.Session.ContentView.Dialogue
         TextMeshProUGUI Text { get; }
 
         void    Clear();
+        void    SkipText();
         UniTask SetTextAsync(string    title, string text);
         UniTask AppendTextAsync(string text);
     }

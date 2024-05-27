@@ -20,6 +20,8 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
+using System.Threading;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using Vvr.Provider;
@@ -40,6 +42,8 @@ namespace Vvr.Session.ContentView.Dialogue
         private IAssetProvider        m_AssetProvider;
         private IDialogueViewProvider m_DialogueViewProvider;
 
+        public CancellationTokenSource m_AttributeSkipToken;
+
         public override string DisplayName => nameof(DialogueViewSession);
 
         protected override async UniTask OnInitialize(IParentSession session, SessionData data)
@@ -49,6 +53,14 @@ namespace Vvr.Session.ContentView.Dialogue
             m_AssetProvider = await CreateSession<AssetSession>(default);
 
             data.eventHandler.Register(DialogueViewEvent.Open, OnOpen);
+            data.eventHandler.Register(DialogueViewEvent.Skip, OnSkip);
+        }
+
+        private  async UniTask OnSkip(DialogueViewEvent e, object ctx)
+        {
+            if (m_AttributeSkipToken is null) return;
+
+            m_AttributeSkipToken.Cancel();
         }
 
         private async UniTask OnOpen(DialogueViewEvent e, object ctx)
@@ -92,9 +104,35 @@ namespace Vvr.Session.ContentView.Dialogue
 
                 foreach (var attribute in currentDialogue.Attributes)
                 {
-                    await attribute.ExecuteAsync(
+                    m_AttributeSkipToken = new CancellationTokenSource();
+
+                    var task = attribute.ExecuteAsync(
                         currentDialogue, m_AssetProvider,
                         m_DialogueViewProvider, resolveProvider);
+
+                    // Attributes can be skipped if attribute has SkipAttribute
+                    if (attribute is IDialogueSkipAttribute skipAttribute &&
+                        skipAttribute.CanSkip)
+                    {
+                        bool canceled = await task.AttachExternalCancellation(m_AttributeSkipToken.Token)
+                            .SuppressCancellationThrow();
+
+                        if (canceled)
+                        {
+                            await skipAttribute.OnSkip(
+                                currentDialogue, m_AssetProvider,
+                                m_DialogueViewProvider, resolveProvider);
+
+                            "Wait for another skip event for proceed".ToLog();
+                            m_AttributeSkipToken = new CancellationTokenSource();
+                            while (!m_AttributeSkipToken.IsCancellationRequested)
+                            {
+                                await UniTask.Yield();
+                            }
+                        }
+                    }
+                    else
+                        await task;
                 }
 
                 while (!m_DialogueViewProvider.IsFullyOpened)
@@ -102,6 +140,7 @@ namespace Vvr.Session.ContentView.Dialogue
                     await UniTask.Yield();
                 }
                 lastCloseTask = m_DialogueViewProvider.CloseAsync(currentDialogue);
+
                 currentDialogue = currentDialogue.NextDialogue;
             }
 
