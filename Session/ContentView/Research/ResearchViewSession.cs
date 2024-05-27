@@ -123,7 +123,7 @@ namespace Vvr.Session.ContentView.Research
             m_UserDataProvider.SetInt(UserDataKeyCollection.Research.NodeLevel(node.Id), lvl);
             node.SetLevel(lvl);
 
-            Data.eventHandler.Execute(ResearchViewEvent.Update, node)
+            Data.eventHandler.ExecuteAsync(ResearchViewEvent.Update, node)
                 .Forget();
         }
 
@@ -132,10 +132,10 @@ namespace Vvr.Session.ContentView.Research
             int index = (int)ctx;
 
             IResearchNodeGroup group = m_ResearchDataProvider[index];
-            await Data.eventHandler.Execute(ResearchViewEvent.SelectGroup, group);
+            await Data.eventHandler.ExecuteAsync(ResearchViewEvent.SelectGroup, group);
 
             // TODO: select last upgraded node
-            await Data.eventHandler.Execute(ResearchViewEvent.Select, group.Root);
+            await Data.eventHandler.ExecuteAsync(ResearchViewEvent.Select, group.Root);
         }
 
         void IConnector<IResearchDataProvider>.Connect(IResearchDataProvider    t) => m_ResearchDataProvider = t;

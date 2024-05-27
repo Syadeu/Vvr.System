@@ -20,6 +20,7 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
@@ -29,27 +30,34 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
 {
     static class DialogueAttributeHelper
     {
-        private static readonly Type[] s_AttributeTypes
-            = VvrTypeHelper.GetTypesIter(VvrTypeHelper.InheritsFrom<IDialogueAttribute>)
-                .Where(VvrTypeHelper.IsNotAbstract)
-                .ToArray();
+        private static readonly Dictionary<string, Type>
+            s_AttributeTypeMap = new();
+        private static          ValueDropdownList<string> s_Values;
 
-        private static ValueDropdownList<string> s_Values;
+        public static IReadOnlyDictionary<string, Type>
+            AttributeTypeMap => s_AttributeTypeMap;
+
+        static DialogueAttributeHelper()
+        {
+            foreach (var type in VvrTypeHelper.GetTypesIter(VvrTypeHelper.InheritsFrom<IDialogueAttribute>)
+                         .Where(VvrTypeHelper.IsNotAbstract))
+            {
+                s_AttributeTypeMap[type.AssemblyQualifiedName] = type;
+            }
+        }
 
         internal static ValueDropdownList<string> GetDropdownList()
         {
             if (s_Values != null) return s_Values;
 
             s_Values = new ValueDropdownList<string>();
-            for (int i = 0; i < s_AttributeTypes.Length; i++)
+            foreach (var e in s_AttributeTypeMap)
             {
-                var e = s_AttributeTypes[i];
-
-                var displayNameAtt = e.GetCustomAttribute<DisplayNameAttribute>();
+                var displayNameAtt = e.Value.GetCustomAttribute<DisplayNameAttribute>();
                 if (displayNameAtt == null)
-                    s_Values.Add(new ValueDropdownItem<string>(e.Name, e.AssemblyQualifiedName));
+                    s_Values.Add(new ValueDropdownItem<string>(e.Value.Name, e.Key));
                 else
-                    s_Values.Add(new ValueDropdownItem<string>(displayNameAtt.DisplayName, e.AssemblyQualifiedName));
+                    s_Values.Add(new ValueDropdownItem<string>(displayNameAtt.DisplayName, e.Key));
             }
 
             return s_Values;

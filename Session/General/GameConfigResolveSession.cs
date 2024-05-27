@@ -19,6 +19,7 @@
 
 #endregion
 
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
@@ -58,7 +59,7 @@ namespace Vvr.Session
 
         private IEnumerable<GameConfigSheet.Row> m_Configs;
 
-        private readonly Dictionary<Hash, int> m_ExecutionCount = new();
+        private readonly ConcurrentDictionary<IEventTarget, int> m_ExecutionCount = new();
         private readonly Dictionary<string, int> m_LimitCounter   = new();
 
         public override string DisplayName => nameof(GameConfigResolveSession);
@@ -66,9 +67,10 @@ namespace Vvr.Session
         protected override UniTask OnInitialize(IParentSession session, SessionData data)
         {
             m_Configs = m_GameConfigProvider[data.configType];
-
             if (data.autoResolve)
+            {
                 ConditionTrigger.OnEventExecutedAsync += Resolve;
+            }
 
             TimeController.Register(this);
 
@@ -76,8 +78,7 @@ namespace Vvr.Session
         }
         protected override UniTask OnReserve()
         {
-            if (Data.autoResolve)
-                ConditionTrigger.OnEventExecutedAsync -= Resolve;
+            ConditionTrigger.OnEventExecutedAsync -= Resolve;
 
             TimeController.Unregister(this);
 
@@ -88,6 +89,7 @@ namespace Vvr.Session
         {
             Assert.IsFalse(e.Disposed);
 
+            UniTask task = UniTask.CompletedTask;
             // TODO: temp
             if (e is IConditionTarget target)
             {
@@ -96,22 +98,33 @@ namespace Vvr.Session
                     // Prevent infinite loop
                     await UniTask.Yield();
 
-                    if (!EvaluateConfig(config, target)) continue;
-                    if (!EvaluateExecutionCount(config, target, out int executedCount)) continue;
+                    if (config.Lifecycle.Map != Data.configType)
+                    {
+                        $"??: {config.Lifecycle.Map} != {Data.configType}".ToLogError();
+                        continue;
+                    }
 
-                    $"[World] execute config : {target.DisplayName} : {condition}, {value}".ToLog();
+                    if (config.Evaluation.Condition != condition) continue;
+
+                    if (!EvaluateExecutionCount(config, target, out int executedCount)) continue;
+                    if (!EvaluateConfig(config, target)) continue;
+
+                    $"[World] execute config : {target.DisplayName} : {condition}, {value}. {executedCount}".ToLog();
 
                     // These method must be executed before config method execute.
                     // Config methods also can trigger another config method recursively.
-                    m_ExecutionCount[target.GetHash()] = ++executedCount;
+                    m_ExecutionCount[target] = executedCount + 1;
+                    $"[World] incre count {m_ExecutionCount[target]}".ToLog();
                     IncrementLimitCounter(config);
 
-                    await ExecuteMethod(
+                    var t = ExecuteMethod(
                         config,
                         target, config.Execution.Method, config.Parameters);
+
+                    task = UniTask.WhenAll(task, t);
                 }
 
-                return;
+                await task;
             }
         }
 
@@ -187,8 +200,7 @@ namespace Vvr.Session
         {
             using var timer = DebugTimer.Start();
 
-            Hash hash = target.GetHash();
-            m_ExecutionCount.TryGetValue(hash, out executedCount);
+            m_ExecutionCount.TryGetValue(target, out executedCount);
 
             if (0 > config.Evaluation.MaxCount) return true;
 
@@ -274,11 +286,21 @@ namespace Vvr.Session
         UniTask ITimeUpdate.OnEndUpdateTime()
         {
             m_ExecutionCount.Clear();
+            "Clear execution count config".ToLog();
             return UniTask.CompletedTask;
         }
 
-        void IConnector<IGameConfigProvider>.Connect(IGameConfigProvider    t) => m_GameConfigProvider = t;
-        void IConnector<IGameConfigProvider>.Disconnect(IGameConfigProvider t) => m_GameConfigProvider = null;
+        void IConnector<IGameConfigProvider>.Connect(IGameConfigProvider    t)
+        {
+            m_GameConfigProvider = t;
+        }
+
+        void IConnector<IGameConfigProvider>.Disconnect(IGameConfigProvider t)
+        {
+            ConditionTrigger.OnEventExecutedAsync -= Resolve;
+            m_GameConfigProvider                  =  null;
+        }
+
         void IConnector<IGameMethodProvider>.Connect(IGameMethodProvider    t) => m_GameMethodProvider = t;
         void IConnector<IGameMethodProvider>.Disconnect(IGameMethodProvider t) => m_GameMethodProvider = null;
 

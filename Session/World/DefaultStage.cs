@@ -429,13 +429,10 @@ namespace Vvr.Session.World
         async UniTask IStageInfoProvider.Delete(IActor actor)
         {
             IStageActor sta;
-            if (actor.ConditionResolver[Condition.IsPlayerActor](null))
-            {
-                if (m_HandActors.TryGetActor(actor, out sta))
-                    await Delete(m_HandActors, sta);
-                else if (m_PlayerField.TryGetActor(actor, out sta))
-                    await Delete(m_PlayerField, sta);
-            }
+            if (m_HandActors.TryGetActor(actor, out sta))
+                await Delete(m_HandActors, sta);
+            else if (m_PlayerField.TryGetActor(actor, out sta))
+                await Delete(m_PlayerField, sta);
             else if (m_EnemyField.TryGetActor(actor, out sta))
                 await Delete(m_EnemyField, sta);
         }

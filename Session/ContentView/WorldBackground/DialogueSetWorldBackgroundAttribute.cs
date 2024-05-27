@@ -36,6 +36,7 @@ namespace Vvr.Session.ContentView.WorldBackground
     {
         [SerializeField] private string                         m_BackgroundID = "0";
         [SerializeField] private DialogueAssetReference<Sprite> m_Image;
+        [SerializeField] private bool                           m_WaitForComplete = true;
 
         public async UniTask ExecuteAsync(
             IDialogueData                   dialogue, IAssetProvider assetProvider,
@@ -55,12 +56,15 @@ namespace Vvr.Session.ContentView.WorldBackground
                 view = v.GetView(m_BackgroundID);
             }
 
-            await view.SetBackgroundAsync(img.Object);
+            if (m_WaitForComplete)
+                await view.SetBackgroundAsync(img.Object);
+            else
+                view.SetBackgroundAsync(img.Object).Forget();
         }
 
         public override string ToString()
         {
-            string assetName = m_Image.EditorAsset is null ? "None" : m_Image.EditorAsset.name;
+            string assetName = m_Image?.EditorAsset is null ? "None" : m_Image.EditorAsset.name;
 
             return $"Open World Background: {m_BackgroundID}({assetName})";
         }

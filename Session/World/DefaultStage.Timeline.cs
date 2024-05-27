@@ -25,6 +25,7 @@ using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using UnityEngine;
 using UnityEngine.Assertions;
+using Vvr.Controller.Actor;
 using Vvr.Controller.Condition;
 using Vvr.Model;
 using Vvr.Provider;
@@ -163,12 +164,20 @@ namespace Vvr.Session.World
             await RemoveFromTimeline(actor);
             await RemoveFromQueue(actor);
 
-            m_StageActorProvider.Reserve(actor);
             await m_TimelineNodeViewProvider.Release(actor.Owner);
             await m_ViewProvider.CardViewProvider.Release(actor.Owner);
-            actor.Owner.Release();
+            // actor.Owner.Release();
+            DelayedDelete(actor).Forget();
 
             UpdateTimeline();
+        }
+
+        private async UniTaskVoid DelayedDelete(IStageActor actor)
+        {
+            await UniTask.WaitForSeconds(0.5f);
+
+            m_StageActorProvider.Reserve(actor);
+            actor.Owner.Release();
         }
 
         /// <summary>

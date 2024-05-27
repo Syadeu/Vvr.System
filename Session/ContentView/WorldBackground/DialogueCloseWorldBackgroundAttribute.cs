@@ -49,6 +49,8 @@ namespace Vvr.Session.ContentView.WorldBackground
 
             if (m_WaitForClose)
                 await v.CloseAsync(m_BackgroundID);
+            else
+                v.CloseAsync(m_BackgroundID).Forget();
         }
 
         public override string ToString()

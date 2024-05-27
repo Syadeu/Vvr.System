@@ -32,8 +32,9 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
     class DialoguePortraitOutAttribute : IDialogueAttribute
     {
         [SerializeField] private bool    m_Right;
-        [SerializeField] private Vector2 m_Offset   = new Vector2(100, 0);
-        [SerializeField] private float   m_Duration = .5f;
+        [SerializeField] private Vector2 m_Offset          = new Vector2(100, 0);
+        [SerializeField] private float   m_Duration        = .5f;
+        [SerializeField] private bool    m_WaitForComplete = true;
 
         public async UniTask ExecuteAsync(IDialogueData dialogue,     IAssetProvider                  assetProvider,
             IDialogueViewProvider                       viewProvider, DialogueProviderResolveDelegate resolveProvider)
@@ -46,7 +47,10 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
 
             Vector2 offset         = m_Offset;
             if (!m_Right) offset.x *= -1f;
-            await target.FadeOutAndWait(offset, m_Duration);
+
+            var task = target.FadeOutAndWait(offset, m_Duration);
+            if (m_WaitForComplete)
+                await task;
         }
 
         public override string ToString()

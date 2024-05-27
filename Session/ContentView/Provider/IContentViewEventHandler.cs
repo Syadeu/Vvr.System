@@ -33,8 +33,8 @@ namespace Vvr.Session.ContentView
         IContentViewEventHandler<TEvent> Register(TEvent   e, ContentViewEventDelegate<TEvent> x);
         IContentViewEventHandler<TEvent> Unregister(TEvent e, ContentViewEventDelegate<TEvent> x);
 
-        UniTask Execute(TEvent e);
-        UniTask Execute(TEvent e, object ctx);
+        UniTask ExecuteAsync(TEvent e);
+        UniTask ExecuteAsync(TEvent e, object ctx);
     }
 
     [LocalProvider]

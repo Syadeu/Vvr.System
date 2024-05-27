@@ -63,23 +63,30 @@ namespace Vvr.Session
 
             StatProvider.GetOrCreate(SheetContainer.StatTable);
 
-            var gameConfigSession = await CreateSession<GameConfigSession>(
+            var gameConfigSessionTask = CreateSession<GameConfigSession>(
                 new GameConfigSession.SessionData(SheetContainer.GameConfigTable));
-            var actorDataSession = await CreateSession<ActorDataSession>(
+            var actorDataSessionTask = CreateSession<ActorDataSession>(
                 new ActorDataSession.SessionData(SheetContainer.Actors));
-            var customMethodSession = await CreateSession<CustomMethodSession>(
+            var customMethodSessionTask = CreateSession<CustomMethodSession>(
                 new CustomMethodSession.SessionData(SheetContainer.CustomMethodTable));
-            var stageDataSession = await CreateSession<StageDataSession>(
+            var stageDataSessionTask = CreateSession<StageDataSession>(
                 new StageDataSession.SessionData(SheetContainer.Stages));
-            var researchDataSession = await CreateSession<ResearchDataSession>(
+            var researchDataSessionTask = CreateSession<ResearchDataSession>(
                 new ResearchDataSession.SessionData(SheetContainer.ResearchTable));
 
+            await UniTask.WhenAll(
+                gameConfigSessionTask,
+                actorDataSessionTask,
+                customMethodSessionTask,
+                stageDataSessionTask,
+                researchDataSessionTask);
+
             Parent
-                .Register<IGameConfigProvider>(gameConfigSession)
-                .Register<IActorDataProvider>(actorDataSession)
-                .Register<ICustomMethodProvider>(customMethodSession)
-                .Register<IStageDataProvider>(stageDataSession)
-                .Register<IResearchDataProvider>(researchDataSession)
+                .Register<IGameConfigProvider>(await gameConfigSessionTask)
+                .Register<IActorDataProvider>(await actorDataSessionTask)
+                .Register<ICustomMethodProvider>(await customMethodSessionTask)
+                .Register<IStageDataProvider>(await stageDataSessionTask)
+                .Register<IResearchDataProvider>(await researchDataSessionTask)
                 ;
         }
         protected override UniTask OnReserve()

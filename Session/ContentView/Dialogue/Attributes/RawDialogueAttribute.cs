@@ -68,13 +68,15 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
         {
             if (Value == null || m_TypeResolveFailed)
             {
-                // m_Type = 0;
-                // m_Json = null;
                 return;
             }
 
+#if UNITY_EDITOR
+            if (Application.isPlaying) return;
+
             m_TypeName = Value.GetType().AssemblyQualifiedName;
-            m_Json = JsonUtility.ToJson(Value);
+            m_Json     = JsonUtility.ToJson(Value);
+#endif
         }
 
         void ISerializationCallbackReceiver.OnAfterDeserialize()
@@ -97,8 +99,7 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
                 return;
             }
 
-            Type type = Type.GetType(m_TypeName);
-            if (type == null)
+            if (!DialogueAttributeHelper.AttributeTypeMap.TryGetValue(m_TypeName, out Type type))
             {
                 m_TypeResolveFailed = true;
                 return;

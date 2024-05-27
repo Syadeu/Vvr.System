@@ -68,7 +68,7 @@ namespace Vvr.Session.ContentView
                 return this;
             }
 
-            public async UniTask Execute(TEvent e)
+            public async UniTask ExecuteAsync(TEvent e)
             {
                 if (!m_Actions.TryGetValue(e, out var list)) return;
 
@@ -78,7 +78,7 @@ namespace Vvr.Session.ContentView
                         .SuppressCancellationThrow()
                     ;
             }
-            public async UniTask Execute(TEvent e, object ctx)
+            public async UniTask ExecuteAsync(TEvent e, object ctx)
             {
                 if (!m_Actions.TryGetValue(e, out var list)) return;
 
