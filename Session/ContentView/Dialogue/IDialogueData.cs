@@ -31,9 +31,6 @@ namespace Vvr.Session.ContentView.Dialogue
     {
         IReadOnlyList<IDialogueAttribute> Attributes { get; }
 
-        [Obsolete]
-        AssetReferenceSprite BackgroundImage { get; }
-
         IDialogueData NextDialogue { get; }
     }
 }

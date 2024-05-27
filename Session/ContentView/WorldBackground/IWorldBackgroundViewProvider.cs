@@ -19,11 +19,16 @@
 
 #endregion
 
+using JetBrains.Annotations;
+
 namespace Vvr.Session.ContentView.WorldBackground
 {
     public interface IWorldBackgroundViewProvider : IContentViewProvider<WorldBackgroundViewEvent>
     {
-        IWorldBackgroundView View { get; }
+        // IWorldBackgroundView View { get; }
+
+        [CanBeNull]
+        IWorldBackgroundView GetView([NotNull] object ctx);
     }
 
     public enum WorldBackgroundViewEvent

@@ -19,11 +19,9 @@
 
 #endregion
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using UnityEngine.AddressableAssets;
 using Vvr.Session.ContentView.Dialogue.Attributes;
 
 namespace Vvr.Session.ContentView.Dialogue
@@ -32,8 +30,6 @@ namespace Vvr.Session.ContentView.Dialogue
     public class DialogueData : ScriptableObject, IDialogueData
     {
         [SerializeField] private int    m_Index;
-        [Obsolete]
-        [SerializeField] private AssetReferenceSprite m_BackgroundImage;
 
         [Space] [SerializeField] private RawDialogueAttribute[] m_Attributes;
 
@@ -53,8 +49,6 @@ namespace Vvr.Session.ContentView.Dialogue
                 return m_ResolvedAttributes;
             }
         }
-
-        public AssetReferenceSprite BackgroundImage => m_BackgroundImage;
 
         public IDialogueData NextDialogue => m_NextDialogue;
     }

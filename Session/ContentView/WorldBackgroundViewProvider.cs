@@ -28,12 +28,12 @@ namespace Vvr.Session.ContentView
 {
     public abstract class WorldBackgroundViewProvider : MonoBehaviour, IWorldBackgroundViewProvider
     {
-        public abstract IWorldBackgroundView View { get; }
-
         public abstract void Initialize(IContentViewEventHandler<WorldBackgroundViewEvent> eventHandler);
         public abstract void Reserve();
 
         public abstract UniTask OpenAsync(IAssetProvider assetProvider, object ctx);
         public abstract UniTask CloseAsync(object        ctx);
+
+        public abstract IWorldBackgroundView GetView(object ctx);
     }
 }

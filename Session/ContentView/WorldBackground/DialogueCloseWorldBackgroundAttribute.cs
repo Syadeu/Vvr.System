@@ -15,7 +15,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// File created : 2024, 05, 27 11:05
+// File created : 2024, 05, 27 15:05
 
 #endregion
 
@@ -31,11 +31,11 @@ using Vvr.Session.ContentView.Dialogue.Attributes;
 namespace Vvr.Session.ContentView.WorldBackground
 {
     [Serializable]
-    [DisplayName("Set World Background")]
-    class DialogueSetWorldBackgroundAttribute : IDialogueAttribute
+    [DisplayName("Close World Background")]
+    class DialogueCloseWorldBackgroundAttribute : IDialogueAttribute
     {
-        [SerializeField] private string                         m_BackgroundID = "0";
-        [SerializeField] private DialogueAssetReference<Sprite> m_Image;
+        [SerializeField] private string m_BackgroundID = "0";
+        [SerializeField] private bool   m_WaitForClose = true;
 
         public async UniTask ExecuteAsync(
             IDialogueData                   dialogue, IAssetProvider assetProvider,
@@ -43,26 +43,17 @@ namespace Vvr.Session.ContentView.WorldBackground
             DialogueProviderResolveDelegate resolveProvider)
         {
             IWorldBackgroundViewProvider v =
-                resolveProvider(VvrTypeHelper.TypeOf<IWorldBackgroundViewProvider>.Type) as IWorldBackgroundViewProvider;
+                resolveProvider(VvrTypeHelper.TypeOf<IWorldBackgroundViewProvider>
+                    .Type) as IWorldBackgroundViewProvider;
             Assert.IsNotNull(v, "v != null");
 
-            var img = await assetProvider.LoadAsync<Sprite>(m_Image.FullPath);
-
-            var view = v.GetView(m_BackgroundID);
-            if (view == null)
-            {
-                v.OpenAsync(assetProvider, m_BackgroundID);
-                view = v.GetView(m_BackgroundID);
-            }
-
-            await view.SetBackgroundAsync(img.Object);
+            if (m_WaitForClose)
+                await v.CloseAsync(m_BackgroundID);
         }
 
         public override string ToString()
         {
-            string assetName = m_Image.EditorAsset is null ? "None" : m_Image.EditorAsset.name;
-
-            return $"Open World Background: {m_BackgroundID}({assetName})";
+            return $"Close World Background: {m_BackgroundID}";
         }
     }
 }
