@@ -25,6 +25,7 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using Vvr.Provider;
+using Vvr.Session.ContentView.BattleSign;
 using Vvr.Session.ContentView.Dialogue;
 using Vvr.Session.ContentView.Research;
 using Vvr.Session.ContentView.WorldBackground;
@@ -149,6 +150,7 @@ namespace Vvr.Session.ContentView
             Register<IResearchViewProvider>(t.ResearchViewProvider)
                 .Register<IDialogueViewProvider>(t.DialogueViewProvider)
                 .Register<IWorldBackgroundViewProvider>(t.WorldBackgroundViewProvider)
+                .Register<IBattleSignViewProvider>(t.BattleSignViewProvider)
                 ;
             // ReSharper restore RedundantTypeArgumentsOfMethod
         }
@@ -157,6 +159,7 @@ namespace Vvr.Session.ContentView
             Unregister<IResearchViewProvider>()
                 .Unregister<IDialogueViewProvider>()
                 .Unregister<IWorldBackgroundViewProvider>()
+                .Unregister<IBattleSignViewProvider>()
                 ;
 
             m_ContentViewRegistryProvider = null;

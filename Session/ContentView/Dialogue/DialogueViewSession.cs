@@ -42,7 +42,7 @@ namespace Vvr.Session.ContentView.Dialogue
         private IAssetProvider        m_AssetProvider;
         private IDialogueViewProvider m_DialogueViewProvider;
 
-        public CancellationTokenSource m_AttributeSkipToken;
+        private CancellationTokenSource m_AttributeSkipToken;
 
         public override string DisplayName => nameof(DialogueViewSession);
 

@@ -15,26 +15,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// File created : 2024, 05, 24 00:05
+// File created : 2024, 05, 27 16:05
 
 #endregion
 
+using Cysharp.Threading.Tasks;
+using UnityEngine;
 using Vvr.Provider;
 using Vvr.Session.ContentView.BattleSign;
-using Vvr.Session.ContentView.Dialogue;
-using Vvr.Session.ContentView.Research;
-using Vvr.Session.ContentView.WorldBackground;
 
 namespace Vvr.Session.ContentView
 {
-    public interface IContentViewRegistryProvider : IProvider
+    public abstract class BattleSignViewProviderComponent : MonoBehaviour, IBattleSignViewProvider
     {
-        IDialogueViewProvider DialogueViewProvider { get; }
+        public abstract void Initialize(IContentViewEventHandler<BattleSignViewEvent> eventHandler);
+        public abstract void Reserve();
 
-        IResearchViewProvider ResearchViewProvider { get; }
-
-        IWorldBackgroundViewProvider WorldBackgroundViewProvider { get; }
-
-        IBattleSignViewProvider BattleSignViewProvider { get; }
+        public abstract UniTask OpenAsync(IAssetProvider assetProvider, object ctx);
+        public abstract UniTask CloseAsync(object ctx);
     }
 }

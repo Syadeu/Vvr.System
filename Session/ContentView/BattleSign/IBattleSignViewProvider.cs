@@ -15,26 +15,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// File created : 2024, 05, 24 00:05
+// File created : 2024, 05, 27 16:05
 
 #endregion
 
-using Vvr.Provider;
-using Vvr.Session.ContentView.BattleSign;
-using Vvr.Session.ContentView.Dialogue;
-using Vvr.Session.ContentView.Research;
-using Vvr.Session.ContentView.WorldBackground;
-
-namespace Vvr.Session.ContentView
+namespace Vvr.Session.ContentView.BattleSign
 {
-    public interface IContentViewRegistryProvider : IProvider
+    public interface IBattleSignViewProvider : IContentViewProvider<BattleSignViewEvent>
     {
-        IDialogueViewProvider DialogueViewProvider { get; }
 
-        IResearchViewProvider ResearchViewProvider { get; }
+    }
 
-        IWorldBackgroundViewProvider WorldBackgroundViewProvider { get; }
-
-        IBattleSignViewProvider BattleSignViewProvider { get; }
+    public enum BattleSignViewEvent : short
+    {
+        Open,
     }
 }

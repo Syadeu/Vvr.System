@@ -1,5 +1,5 @@
 {
-  "name": "Vvr.Session.ContentView",
+  "name": "Vvr.Session.ContentView.BattleSign",
   "references": [
     "Vvr",
     "GUID:3957eefabf624d2485d569ea058bfc85",
@@ -8,20 +8,14 @@
     "GUID:ca7a9d7f2d304e6d8e77b3a8931dc117",
     "GUID:4c2fd494a0434077a0c81cdd1f4fadaf",
     "GUID:530f3d2cd2284054a85c3e2de9be9798",
-    "GUID:bb0f5151924446e7ae180518fc61c3ea",
-    "GUID:34e74be858f3414abb19c6176a7365fa",
 
     "Unity.Mathematics",
     "Unity.Collections",
     "Unity.Addressables",
     "Unity.ResourceManager",
-
     "Unity.TextMeshPro",
 
     "UniTask",
-    "UniTask.Addressables",
-
-    "BakingSheet",
-    "BakingSheet.ScriptableObject"
+    "UniTask.Addressables"
   ]
 }

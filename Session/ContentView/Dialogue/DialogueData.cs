@@ -21,17 +21,23 @@
 
 using System.Collections.Generic;
 using System.Linq;
+using Sirenix.OdinInspector;
 using UnityEngine;
 using Vvr.Session.ContentView.Dialogue.Attributes;
 
 namespace Vvr.Session.ContentView.Dialogue
 {
+    [HideMonoScript]
     [CreateAssetMenu(menuName = "Vvr/Create DialogueData", fileName = "DialogueData", order = 0)]
     public class DialogueData : ScriptableObject, IDialogueData
     {
         [SerializeField] private int    m_Index;
 
-        [Space] [SerializeField] private RawDialogueAttribute[] m_Attributes;
+        [Space]
+        [ListDrawerSettings(
+            AlwaysAddDefaultValue = true,
+            ShowPaging = false)]
+        [SerializeField] private RawDialogueAttribute[] m_Attributes;
 
         [Space] [SerializeField]
         private DialogueData m_NextDialogue;
