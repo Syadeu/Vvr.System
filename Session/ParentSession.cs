@@ -56,7 +56,7 @@ namespace Vvr.Session
 
             if (session is IChildSessionConnector sessionConnector)
             {
-                $"[Session: {Type.FullName}] Chain connector to {childType.FullName}".ToLog();
+                // $"[Session: {Type.FullName}] Chain connector to {childType.FullName}".ToLog();
                 using var debugTimer = DebugTimer.Start();
                 foreach (var item in ConnectedProviders)
                 {
@@ -64,7 +64,7 @@ namespace Vvr.Session
                     sessionConnector.Register(pType, item.Value);
                 }
             }
-            else $"[Session: {Type.FullName}] No connector for {childType.FullName}".ToLog();
+            // else $"[Session: {Type.FullName}] No connector for {childType.FullName}".ToLog();
 
             m_ChildSessions.Add(session);
 

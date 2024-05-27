@@ -10,6 +10,7 @@
     "Vvr.Session",
     "Vvr.Session.ContentView",
     "Vvr.Session.ContentView.Dialogue",
+    "Vvr.Session.Firebase",
 
     "Unity.Mathematics",
     "Unity.Collections",

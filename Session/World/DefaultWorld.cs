@@ -24,6 +24,7 @@ using UnityEngine.Scripting;
 using Vvr.Model;
 using Vvr.Provider;
 using Vvr.Session.ContentView;
+using Vvr.Session.Firebase;
 using Vvr.Session.Provider;
 
 namespace Vvr.Session.World
@@ -51,7 +52,8 @@ namespace Vvr.Session.World
                 dataSessionTask,
                 gameMethodResolverTask,
 
-                CreateSession<ContentViewSession>(default)
+                CreateSession<ContentViewSession>(default),
+                CreateSession<FirebaseSession>(default)
             );
 
             await CreateSession<GameConfigResolveSession>(
