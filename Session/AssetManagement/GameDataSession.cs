@@ -56,38 +56,17 @@ namespace Vvr.Session
                 new AddressableSession.SessionData("GameData"));
             await addressableSession.Reserve();
 
-            // var list = await Addressables.CheckForCatalogUpdates(true).Task;
-            // $"update: {string.Join(", ", list)}".ToLog();
-            // if (list.c)
-            // // await Addressables.UpdateCatalogs(list).ToUniTask();
-            //
-            // // await Addressables
-            // //     .LoadContentCatalogAsync("https://storage.googleapis.com/vvr-cdn-0/ServerData/iOS/catalog_0.1.json")
-            // //     .Task;
-            //
-            //
-            // long downloadSize = await Addressables.GetDownloadSizeAsync("GameData").Task;
-            //
-            // var  downloadHandle = Addressables.DownloadDependenciesAsync("GameData", true);
-            // await downloadHandle.Task;
-
-
-            // await Addressables.LoadContentCatalogAsync("Game Data")
-
-            // var assetSession = await CreateSession<AssetSession>(
-            //     new AssetSession.SessionData(
-            //         // "GameData"
-            //     ));
-            // Register<IAssetProvider>(assetSession);
+            var assetSession = await CreateSession<AssetSession>(
+                new AssetSession.SessionData(
+                    // "GameData"
+                ));
+            Register<IAssetProvider>(assetSession);
 
             SheetContainer = new GameDataSheets(UnityLogger.Default);
-            // var dataContainer
-            //     = await assetSession.LoadAsync<SheetContainerScriptableObject>(DATA_KEY);
-            var dataContainer =
-                await Addressables.LoadAssetAsync<SheetContainerScriptableObject>(
-                    DATA_KEY).Task;
+            var dataContainer
+                = await assetSession.LoadAsync<SheetContainerScriptableObject>(DATA_KEY);
 
-            ScriptableObjectSheetImporter imp = new(dataContainer);
+            ScriptableObjectSheetImporter imp = new(dataContainer.Object);
             await SheetContainer.Bake(imp).AsUniTask();
 
             StatProvider.GetOrCreate(SheetContainer.StatTable);

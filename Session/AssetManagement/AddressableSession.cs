@@ -45,6 +45,11 @@ namespace Vvr.Session
 
         public override string DisplayName => nameof(AddressableSession);
 
+        /**
+         * Do not use UniTask if operation is server request.
+         * It will not work
+         */
+
         protected override async UniTask OnInitialize(IParentSession session, SessionData data)
         {
             await base.OnInitialize(session, data);
