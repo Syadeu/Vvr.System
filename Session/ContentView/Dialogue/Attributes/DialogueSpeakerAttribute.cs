@@ -44,7 +44,7 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
         async UniTask IDialogueAttribute.ExecuteAsync(IDialogueData dialogue, IAssetProvider assetProvider, IDialogueViewProvider viewProvider,
             DialogueProviderResolveDelegate resolveProvider)
         {
-            $"[Dialogue] Speak".ToLog();
+            // $"[Dialogue] Speak".ToLog();
 
             var view = viewProvider.View;
 

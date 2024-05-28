@@ -124,7 +124,8 @@ namespace Vvr.Session.ContentView.Research
             m_UserDataProvider.SetInt(UserDataKeyCollection.Research.NodeLevel(node.Id), lvl);
             node.SetLevel(lvl);
 
-            Data.eventHandler.ExecuteAsync(ResearchViewEvent.Update, node)
+            Data.eventHandler
+                .ExecuteAsync(ResearchViewEvent.Update, node)
                 .Forget();
         }
 

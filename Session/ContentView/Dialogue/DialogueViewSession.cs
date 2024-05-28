@@ -118,7 +118,9 @@ namespace Vvr.Session.ContentView.Dialogue
             // IDialogueData   currentDialogue = dialogue;
             while (wrapper.Data != null)
             {
-                m_DialogueViewProvider.OpenAsync(m_AssetProvider, wrapper.Data);
+                m_DialogueViewProvider
+                    .OpenAsync(m_AssetProvider, wrapper.Data)
+                    .Forget();
 
                 foreach (var attribute in wrapper.Attributes)
                 {
@@ -162,8 +164,11 @@ namespace Vvr.Session.ContentView.Dialogue
                 }
 
                 var prevData = wrapper.Data;
-                lastCloseTask = UniTask.WhenAll(wrapper.Tasks)
-                    .ContinueWith(() => m_DialogueViewProvider.CloseAsync(prevData));
+                var newTask = UniTask.WhenAll(wrapper.Tasks.ToArray())
+                    .ContinueWith(async () => await m_DialogueViewProvider.CloseAsync(prevData));
+                lastCloseTask = UniTask.WhenAll(lastCloseTask, newTask);
+
+                wrapper.Tasks.Clear();
                 // lastCloseTask = m_DialogueViewProvider.CloseAsync(wrapper.Data);
 
                 wrapper.Data = wrapper.Data.NextDialogue;

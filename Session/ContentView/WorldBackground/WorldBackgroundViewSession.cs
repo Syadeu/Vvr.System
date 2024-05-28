@@ -19,7 +19,6 @@
 
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
-using UnityEngine;
 using Vvr.Provider;
 using Vvr.Session.AssetManagement;
 
