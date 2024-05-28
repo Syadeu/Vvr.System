@@ -56,7 +56,7 @@ namespace Vvr.TestClass
         protected abstract UniTask OnStart(TWorld world);
 
         [Button]
-        private async void Download()
+        private async void DownloadExcelSheets()
         {
             await TestUtils.DownloadSheet();
         }

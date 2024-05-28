@@ -31,11 +31,9 @@ using UnityEngine.AddressableAssets;
 using UnityEngine.Assertions;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.ResourceManagement.ResourceLocations;
-using UnityEngine.ResourceManagement.Util;
 using Vvr.Provider;
-using Vvr.Session.Provider;
 
-namespace Vvr.Session
+namespace Vvr.Session.AssetManagement
 {
     /// <summary>
     /// Represents a session for managing asset loading and caching.

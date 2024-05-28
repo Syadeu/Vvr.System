@@ -67,7 +67,10 @@ namespace Vvr.Session.World
 
             Vvr.Provider.Provider.Static.Connect<IManualInputProvider>(this);
 
-            await Start();
+            Start()
+                .AttachExternalCancellation(ReserveToken)
+                .SuppressCancellationThrow()
+                .Forget();
         }
 
         protected override UniTask OnReserve()
@@ -92,10 +95,12 @@ namespace Vvr.Session.World
             {
                 list.AddLast(currentStage);
 
-                var nextStage = m_StageDataProvider.ElementAt(currentStage.Index + 1);
-                if (nextStage == null ||
-                    nextStage.Region != startStage.Region ||
-                    nextStage.Floor != currentStage.Floor)
+                // var nextStage = m_StageDataProvider.ElementAt(currentStage.Index + 1);
+                // if (nextStage == null ||
+                //     nextStage.Region != startStage.Region ||
+                //     nextStage.Floor != currentStage.Floor)
+                if (currentStage.IsLastStage ||
+                    currentStage.IsLastOfRegion)
                 {
                     var floor = await CreateSession<DefaultFloor>(new DefaultFloor.SessionData(list, aliveActors));
 
@@ -114,9 +119,13 @@ namespace Vvr.Session.World
                     }
                 }
 
-                currentStage = nextStage;
+                if (currentStage.IsLastOfRegion) break;
+
+                currentStage = m_StageDataProvider.ElementAt(currentStage.Index + 1);
                 await UniTask.Yield();
             } while (currentStage != null);
+
+            "Region end".ToLog();
         }
 
         private async UniTask<IChildSession> SwitchControl(IChildSession existing)

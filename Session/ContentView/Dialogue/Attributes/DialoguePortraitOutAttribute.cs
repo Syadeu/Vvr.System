@@ -48,9 +48,12 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
             Vector2 offset         = m_Offset;
             if (!m_Right) offset.x *= -1f;
 
-            var task = target.FadeOutAndWait(offset, m_Duration);
             if (m_WaitForComplete)
-                await task;
+                await target.FadeOutAndWait(offset, m_Duration);
+            else
+            {
+                dialogue.RegisterTask(target.FadeOutAndWait(offset, m_Duration));
+            }
         }
 
         public override string ToString()

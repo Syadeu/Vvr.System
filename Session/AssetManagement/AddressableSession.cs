@@ -20,14 +20,12 @@
 #endregion
 
 using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
 
-namespace Vvr.Session
+namespace Vvr.Session.AssetManagement
 {
     [UsedImplicitly]
     [ParentSession(typeof(GameDataSession))]

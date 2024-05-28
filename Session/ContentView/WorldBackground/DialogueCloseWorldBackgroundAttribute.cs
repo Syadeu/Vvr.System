@@ -50,7 +50,9 @@ namespace Vvr.Session.ContentView.WorldBackground
             if (m_WaitForClose)
                 await v.CloseAsync(m_BackgroundID);
             else
-                v.CloseAsync(m_BackgroundID).Forget();
+            {
+                dialogue.RegisterTask(v.CloseAsync(m_BackgroundID));
+            }
         }
 
         public override string ToString()

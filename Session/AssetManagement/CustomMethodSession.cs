@@ -19,15 +19,11 @@
 
 #endregion
 
-using System;
-using System.Collections.Generic;
 using JetBrains.Annotations;
-using UnityEngine.Assertions;
 using Vvr.Model;
-using Vvr.Model.Stat;
 using Vvr.Provider;
 
-namespace Vvr.Session
+namespace Vvr.Session.AssetManagement
 {
     /// <summary>
     /// Represents a custom method session.

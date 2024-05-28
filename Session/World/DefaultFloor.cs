@@ -30,6 +30,7 @@ using Vvr.Controller.Condition;
 using Vvr.Model;
 using Vvr.Provider;
 using Vvr.Session.Actor;
+using Vvr.Session.AssetManagement;
 using Vvr.Session.Provider;
 
 namespace Vvr.Session.World

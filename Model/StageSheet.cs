@@ -42,20 +42,20 @@ namespace Vvr.Model
             [UsedImplicitly] public string Name { get; private set; }
             [UsedImplicitly] public int Population { get; private set; }
 
-            [UsedImplicitly] public Definition                 Definition   { get; private set; }
-
-            // [UsedImplicitly] public StageSheet.Reference       NextStage    { get; private set; }
-            // [UsedImplicitly] public bool                       IsFinalStage { get; private set; }
-            [UsedImplicitly] public List<ActorSheet.Reference> Actors       { get; private set; }
+            [UsedImplicitly] public Definition                 Definition  { get; private set; }
+            [UsedImplicitly] public List<ActorSheet.Reference> Actors         { get; private set; }
 
             [UsedImplicitly] public Dictionary<AssetType, AddressablePath> Assets { get; private set; }
 
             private IActorData[] m_Actors;
+            private bool         m_IsLastStage;
+            private bool         m_IsLastOfRegion;
 
-            int IStageData.Region => Definition.Region;
-            int IStageData.Floor => Definition.Floor;
+            int IStageData. Region         => Definition.Region;
+            int IStageData. Floor          => Definition.Floor;
+            bool IStageData.IsLastStage    => m_IsLastStage;
+            bool IStageData.IsLastOfRegion => m_IsLastOfRegion;
 
-            // IStageData IStageData.                                     NextStage => NextStage.Ref;
             IReadOnlyList<IActorData> IStageData.                      Actors    => m_Actors;
             IReadOnlyDictionary<AssetType, AddressablePath> IStageData.Assets    => Assets;
 
@@ -69,11 +69,35 @@ namespace Vvr.Model
                         :
                     Array.Empty<IActorData>();
             }
+
+            internal void Build(StageSheet stageSheet)
+            {
+                m_IsLastOfRegion = Index + 1 >= stageSheet.Count;
+
+                if (!m_IsLastOfRegion)
+                {
+                    var nextRow = stageSheet[Index + 1];
+                    m_IsLastStage = nextRow.Definition.Region != Definition.Region ||
+                                    nextRow.Definition.Floor  != Definition.Floor;
+                }
+                else m_IsLastStage = true;
+            }
         }
 
         public StageSheet()
         {
             Name = "Stages";
+        }
+
+        public override void PostLoad(SheetConvertingContext context)
+        {
+            base.PostLoad(context);
+
+            var stageSheet = context.Container.Find<StageSheet>(nameof(GameDataSheets.Stages));
+            foreach (var row in stageSheet)
+            {
+                row.Build(stageSheet);
+            }
         }
     }
 }

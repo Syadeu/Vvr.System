@@ -22,13 +22,11 @@
 using Cathei.BakingSheet.Unity;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
-using UnityEditor;
-using UnityEngine.AddressableAssets;
 using Vvr.Model;
 using Vvr.Provider;
 using Vvr.Session.Provider;
 
-namespace Vvr.Session
+namespace Vvr.Session.AssetManagement
 {
     /// <summary>
     /// Represents a session used for managing game data.

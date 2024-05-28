@@ -48,6 +48,9 @@ namespace Vvr.TestClass
         public int    Region => m_Region;
         public int    Floor  => m_Floor;
 
+        public bool IsLastStage    => true;
+        public bool IsLastOfRegion => true;
+
         public IReadOnlyList<IActorData>                       Actors => m_ResolvedActors;
         public IReadOnlyDictionary<AssetType, AddressablePath> Assets => m_Assets;
 

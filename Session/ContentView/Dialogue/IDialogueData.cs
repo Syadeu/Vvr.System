@@ -19,9 +19,8 @@
 
 #endregion
 
-using System;
 using System.Collections.Generic;
-using UnityEngine.AddressableAssets;
+using Cysharp.Threading.Tasks;
 using Vvr.Model;
 using Vvr.Session.ContentView.Dialogue.Attributes;
 
@@ -32,5 +31,7 @@ namespace Vvr.Session.ContentView.Dialogue
         IReadOnlyList<IDialogueAttribute> Attributes { get; }
 
         IDialogueData NextDialogue { get; }
+
+        void RegisterTask(UniTask task);
     }
 }

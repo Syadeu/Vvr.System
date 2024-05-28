@@ -19,7 +19,9 @@
 
 using Cysharp.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.Assertions;
 using Vvr.Controller;
+using Vvr.Session.ContentView.Dialogue;
 using Vvr.Session.World;
 using Vvr.TestClass;
 
@@ -27,6 +29,9 @@ namespace Vvr.ScenarioCreator
 {
     public class ScenarioCreatorSystem : TestSystem<DefaultWorld>
     {
+        [Space] [SerializeField] private DialogueData m_DialogueData;
+
+        [Space]
         [SerializeField] private string[]      m_Actors;
         [SerializeField] private string        m_CurrentStageId;
         [SerializeField] private TestStageData m_StageData;
@@ -45,7 +50,11 @@ namespace Vvr.ScenarioCreator
                     new FakeUserSession.SessionData(m_Actors, m_CurrentStageId));
             }
 
-            world.DefaultMap.CreateSession<DefaultRegion>(default).Forget();
+            // world.DefaultMap.CreateSession<DefaultRegion>(default).Forget();
+
+            IDialoguePlayProvider dialoguePlayProvider = world.GetProviderRecursive<IDialoguePlayProvider>();
+            Assert.IsNotNull(dialoguePlayProvider);
+            dialoguePlayProvider.Play(m_DialogueData).Forget();
         }
 
         public void TimeUpdate()

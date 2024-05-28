@@ -21,6 +21,7 @@
 
 using System.Collections.Generic;
 using System.Linq;
+using Cysharp.Threading.Tasks;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using Vvr.Session.ContentView.Dialogue.Attributes;
@@ -57,5 +58,10 @@ namespace Vvr.Session.ContentView.Dialogue
         }
 
         public IDialogueData NextDialogue => m_NextDialogue;
+        void IDialogueData.RegisterTask(UniTask task)
+        {
+            // Raw data should not be used.
+            throw new System.NotImplementedException();
+        }
     }
 }

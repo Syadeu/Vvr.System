@@ -22,6 +22,7 @@ using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using Vvr.Controller.Research;
 using Vvr.Provider;
+using Vvr.Session.AssetManagement;
 using Vvr.Session.Provider;
 
 namespace Vvr.Session.ContentView.Research

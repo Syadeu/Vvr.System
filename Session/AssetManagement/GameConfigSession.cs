@@ -26,7 +26,7 @@ using JetBrains.Annotations;
 using Vvr.Model;
 using Vvr.Provider;
 
-namespace Vvr.Session
+namespace Vvr.Session.AssetManagement
 {
     /// <summary>
     /// Represents a session for game configuration.

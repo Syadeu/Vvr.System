@@ -46,7 +46,8 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
             return $"Wait: {m_Time}";
         }
 
-        public bool CanSkip => true;
+        public bool CanSkip            => true;
+        public bool ShouldWaitForInput => false;
 
         public UniTask OnSkip(IDialogueData        dialogue, IAssetProvider assetProvider, IDialogueViewProvider viewProvider,
             DialogueProviderResolveDelegate resolveProvider)

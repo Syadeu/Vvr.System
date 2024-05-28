@@ -42,7 +42,8 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
 
     public interface IDialogueSkipAttribute
     {
-        bool    CanSkip { get; }
+        bool CanSkip            { get; }
+        bool ShouldWaitForInput { get; }
         UniTask OnSkip(
             [NotNull] IDialogueData                   dialogue,
             [NotNull] IAssetProvider                  assetProvider,

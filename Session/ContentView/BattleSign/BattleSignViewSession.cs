@@ -20,6 +20,7 @@
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using Vvr.Provider;
+using Vvr.Session.AssetManagement;
 
 namespace Vvr.Session.ContentView.BattleSign
 {

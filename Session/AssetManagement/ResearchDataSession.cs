@@ -28,7 +28,7 @@ using Vvr.Model;
 using Vvr.Provider;
 using Vvr.Session.Provider;
 
-namespace Vvr.Session
+namespace Vvr.Session.AssetManagement
 {
     [UsedImplicitly]
     [ParentSession(typeof(GameDataSession))]

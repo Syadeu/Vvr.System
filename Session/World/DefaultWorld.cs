@@ -23,6 +23,7 @@ using Cysharp.Threading.Tasks;
 using UnityEngine.Scripting;
 using Vvr.Model;
 using Vvr.Provider;
+using Vvr.Session.AssetManagement;
 using Vvr.Session.ContentView;
 using Vvr.Session.Provider;
 #if VVR_FIREBASE
