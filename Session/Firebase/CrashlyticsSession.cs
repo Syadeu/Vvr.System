@@ -1,4 +1,5 @@
 #region Copyrights
+
 // Copyright 2024 Syadeu
 // Author : Seung Ha Kim
 //
@@ -15,43 +16,37 @@
 // limitations under the License.
 //
 // File created : 2024, 05, 27 23:05
+
 #endregion
 
 using Cysharp.Threading.Tasks;
 using Firebase;
+using Firebase.Crashlytics;
 using JetBrains.Annotations;
-using UnityEngine.Analytics;
 
 namespace Vvr.Session.Firebase
 {
     [UsedImplicitly]
-    public class FirebaseSession : ParentSession<FirebaseSession.SessionData>
+    class CrashlyticsSession : ChildSession<CrashlyticsSession.SessionData>
     {
-        // https://developers.google.com/unity/packages#vr
+        // https://firebase.google.com/docs/crashlytics/get-started?_gl=1*1o55qxr*_up*MQ..*_ga*MTQxMjI4MDkxLjE3MTY4MTk0NzA.*_ga_CW55HF8NVT*MTcxNjgxOTQ3MC4xLjAuMTcxNjgxOTQ3MC4wLjAuMA..&platform=unity
 
         public struct SessionData : ISessionData
         {
-
+            public FirebaseApp app;
         }
 
-        public override string DisplayName => nameof(FirebaseSession);
+        public override string DisplayName => nameof(CrashlyticsSession);
 
-        protected override async UniTask OnInitialize(IParentSession session, SessionData data)
+        protected override UniTask OnInitialize(IParentSession session, SessionData data)
         {
-            await base.OnInitialize(session, data);
-
-            var result = await FirebaseApp.CheckAndFixDependenciesAsync().AsUniTask();
-            if (result != DependencyStatus.Available)
+            if (!VvrApplication.IsDevelopment)
             {
-                $"[Firebase] {result}".ToLogError();
-                return;
+                Crashlytics.ReportUncaughtExceptionsAsFatal = true;
+                Crashlytics.IsCrashlyticsCollectionEnabled  = true;
             }
 
-            var app = FirebaseApp.DefaultInstance;
-            await UniTask.WhenAll(
-                CreateSession<CrashlyticsSession>(new CrashlyticsSession.SessionData() { app = app }),
-                CreateSession<AnalyticsSession>(new AnalyticsSession.SessionData() { app   = app })
-            );
+            return base.OnInitialize(session, data);
         }
     }
 }

@@ -6,7 +6,6 @@
         "GUID:60df735478b04dd3aa2c4819aa583f3c",
         "GUID:0bebf4b98a2c47cd93c8f4c2f5f17d2a",
         "GUID:ca7a9d7f2d304e6d8e77b3a8931dc117",
-
         "GUID:d8b63aba1907145bea998dd612889d6b",
         "GUID:e0cd26848372d4e5c891c569017e11f1",
         "GUID:f51ebe6a0ceec4240a699833d6309b23"
@@ -23,7 +22,9 @@
         "Firebase.TaskExtension.dll"
     ],
     "autoReferenced": true,
-    "defineConstraints": [],
+    "defineConstraints": [
+        "VVR_FIREBASE"
+    ],
     "versionDefines": [],
     "noEngineReferences": false
 }

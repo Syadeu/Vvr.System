@@ -21,9 +21,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Text.RegularExpressions;
-using Sirenix.Utilities.Editor;
 using Vvr.Model;
 using Vvr.Model.Stat;
 

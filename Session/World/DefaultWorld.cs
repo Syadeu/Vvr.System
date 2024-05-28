@@ -24,8 +24,10 @@ using UnityEngine.Scripting;
 using Vvr.Model;
 using Vvr.Provider;
 using Vvr.Session.ContentView;
-using Vvr.Session.Firebase;
 using Vvr.Session.Provider;
+#if VVR_FIREBASE
+using Vvr.Session.Firebase;
+#endif
 
 namespace Vvr.Session.World
 {
@@ -44,23 +46,21 @@ namespace Vvr.Session.World
         {
             Vvr.Provider.Provider.Static.Connect<IViewRegistryProvider>(this);
 
-            var dataSessionTask = CreateSession<GameDataSession>(default);
-            var gameMethodResolverTask = CreateSession<GameMethodResolveSession>(default);
-
+            DataSession = await CreateSession<GameDataSession>(default);
 
             var results = await UniTask.WhenAll(
-                dataSessionTask,
-                gameMethodResolverTask,
+                CreateSession<GameMethodResolveSession>(default),
 
-                CreateSession<ContentViewSession>(default),
-                CreateSession<FirebaseSession>(default)
+                CreateSession<ContentViewSession>(default)
+#if VVR_FIREBASE
+                , CreateSession<FirebaseSession>(default)
+#endif
             );
 
             await CreateSession<GameConfigResolveSession>(
                 new GameConfigResolveSession.SessionData(MapType.Global, true));
 
-            DataSession = results.Item1;
-            Register<IGameMethodProvider>(results.Item2);
+            Register<IGameMethodProvider>(results.Item1);
 
             // TODO: skip map load
             DefaultMap = await CreateSession<DefaultMap>(default);

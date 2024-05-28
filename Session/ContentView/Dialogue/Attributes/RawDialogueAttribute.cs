@@ -28,6 +28,7 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
     [Serializable]
     sealed class RawDialogueAttribute : ISerializationCallbackReceiver
     {
+#if UNITY_EDITOR
         [InfoBox(
             "Type resolve has been failed. You should specify target type manually.",
             InfoMessageType.Error,
@@ -35,6 +36,7 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
         [OnValueChanged(nameof(Resolve))]
         [ValueDropdown(
             nameof(GetTypeNameList), IsUniqueList = true, OnlyChangeValueOnConfirm = true)]
+#endif
         [SerializeField] private string m_TypeName;
 
         [HideInInspector]

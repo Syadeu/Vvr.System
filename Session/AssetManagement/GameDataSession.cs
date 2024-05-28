@@ -22,6 +22,8 @@
 using Cathei.BakingSheet.Unity;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
+using UnityEditor;
+using UnityEngine.AddressableAssets;
 using Vvr.Model;
 using Vvr.Provider;
 using Vvr.Session.Provider;
@@ -48,17 +50,44 @@ namespace Vvr.Session
         {
             await base.OnInitialize(session, data);
 
-            var assetSession = await CreateSession<AssetSession>(
-                new AssetSession.SessionData(
-                    "GameData"
-                    ));
-            Register<IAssetProvider>(assetSession);
+            const string DATA_KEY = "Data/_Container.asset";
+
+            var addressableSession = await CreateSession<AddressableSession>(
+                new AddressableSession.SessionData("GameData"));
+            await addressableSession.Reserve();
+
+            // var list = await Addressables.CheckForCatalogUpdates(true).Task;
+            // $"update: {string.Join(", ", list)}".ToLog();
+            // if (list.c)
+            // // await Addressables.UpdateCatalogs(list).ToUniTask();
+            //
+            // // await Addressables
+            // //     .LoadContentCatalogAsync("https://storage.googleapis.com/vvr-cdn-0/ServerData/iOS/catalog_0.1.json")
+            // //     .Task;
+            //
+            //
+            // long downloadSize = await Addressables.GetDownloadSizeAsync("GameData").Task;
+            //
+            // var  downloadHandle = Addressables.DownloadDependenciesAsync("GameData", true);
+            // await downloadHandle.Task;
+
+
+            // await Addressables.LoadContentCatalogAsync("Game Data")
+
+            // var assetSession = await CreateSession<AssetSession>(
+            //     new AssetSession.SessionData(
+            //         // "GameData"
+            //     ));
+            // Register<IAssetProvider>(assetSession);
 
             SheetContainer = new GameDataSheets(UnityLogger.Default);
-            var dataContainer
-                = await assetSession.LoadAsync<SheetContainerScriptableObject>("Data/_Container.asset");
+            // var dataContainer
+            //     = await assetSession.LoadAsync<SheetContainerScriptableObject>(DATA_KEY);
+            var dataContainer =
+                await Addressables.LoadAssetAsync<SheetContainerScriptableObject>(
+                    DATA_KEY).Task;
 
-            ScriptableObjectSheetImporter imp = new(dataContainer.Object);
+            ScriptableObjectSheetImporter imp = new(dataContainer);
             await SheetContainer.Bake(imp).AsUniTask();
 
             StatProvider.GetOrCreate(SheetContainer.StatTable);

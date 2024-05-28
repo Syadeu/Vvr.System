@@ -22,6 +22,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Net.Http;
 using Cathei.BakingSheet.Unity;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
@@ -30,6 +31,7 @@ using UnityEngine.AddressableAssets;
 using UnityEngine.Assertions;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.ResourceManagement.ResourceLocations;
+using UnityEngine.ResourceManagement.Util;
 using Vvr.Provider;
 using Vvr.Session.Provider;
 
@@ -230,17 +232,34 @@ namespace Vvr.Session
                 return (ImmutableObject<TObject>)existingValue;
             }
 
-            AsyncOperationHandle<TObject> handle = Addressables.LoadAssetAsync<TObject>(key);
+            var handle = Addressables.LoadAssetAsync<TObject>(key);
+            handle.CompletedTypeless += HandleOnCompletedTypeless;
+
             m_Handles.AddLast(handle);
 
             await handle.ToUniTask()
                 .SuppressCancellationThrow()
                 .AttachExternalCancellation(ReserveToken);
 
+            if (handle.OperationException is HttpRequestException http)
+            {
+                Debug.LogException(http);
+                $"{http.Message}".ToLog();
+            }
+
             ImmutableObject<TObject> obj = new(handle.Result);
             m_LoadedObjects[hash] = obj;
 
             return obj;
+        }
+
+        private void HandleOnCompletedTypeless(AsyncOperationHandle obj)
+        {
+            if (obj.OperationException != null)
+            {
+                var ex = obj.OperationException.GetBaseException();
+                $"{ex.GetType().Name}, {ex.Message}".ToLogError();
+            }
         }
     }
 }
