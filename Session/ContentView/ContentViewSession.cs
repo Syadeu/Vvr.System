@@ -72,25 +72,31 @@ namespace Vvr.Session.ContentView
             {
                 if (!m_Actions.TryGetValue(e, out var list)) return;
 
-                await UniTask
-                        .WhenAll(list.Select(x => x(e, null)))
-                        .AttachExternalCancellation(m_CancellationTokenSource.Token)
-                        .SuppressCancellationThrow()
-                    ;
+                UniTask sum = UniTask.CompletedTask;
+                for (LinkedListNode<ContentViewEventDelegate<TEvent>> item = list.First;
+                     item != null;
+                     item = item.Next)
+                {
+                    var t0 = item.Value(e, null);
+                    sum = UniTask.WhenAll(sum, t0);
+                }
+
+                await sum;
             }
             public async UniTask ExecuteAsync(TEvent e, object ctx)
             {
                 if (!m_Actions.TryGetValue(e, out var list)) return;
 
-                // foreach (var item in list)
-                // {
-                //     await item(e, ctx);
-                // }
-                await UniTask
-                        .WhenAll(list.Select(x => x(e, ctx)))
-                        .AttachExternalCancellation(m_CancellationTokenSource.Token)
-                        .SuppressCancellationThrow()
-                    ;
+                UniTask sum = UniTask.CompletedTask;
+                for (var item = list.First;
+                     item != null;
+                     item = item.Next)
+                {
+                    var t0 = item.Value(e, ctx);
+                    sum = UniTask.WhenAll(sum, t0);
+                }
+
+                await sum;
             }
 
             public void Dispose()

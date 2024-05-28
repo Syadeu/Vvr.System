@@ -52,9 +52,12 @@ namespace Vvr.ScenarioCreator
 
             // world.DefaultMap.CreateSession<DefaultRegion>(default).Forget();
 
-            IDialoguePlayProvider dialoguePlayProvider = world.GetProviderRecursive<IDialoguePlayProvider>();
-            Assert.IsNotNull(dialoguePlayProvider);
-            dialoguePlayProvider.Play(m_DialogueData).Forget();
+            if (m_DialogueData != null)
+            {
+                IDialoguePlayProvider dialoguePlayProvider = world.GetProviderRecursive<IDialoguePlayProvider>();
+                Assert.IsNotNull(dialoguePlayProvider);
+                dialoguePlayProvider.Play(m_DialogueData).Forget();
+            }
         }
 
         public void TimeUpdate()
