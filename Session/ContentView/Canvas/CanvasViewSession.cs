@@ -21,11 +21,12 @@ using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
 using UnityEngine.UI;
 using Vvr.Provider;
-using Vvr.Session;
+using Vvr.Session.ContentView.Provider;
 
-namespace Vvr.MPC.Session.ContentView.Canvas
+namespace Vvr.Session.ContentView.Canvas
 {
     [UsedImplicitly]
     public sealed class CanvasViewSession : ParentSession<CanvasViewSession.SessionData>,
@@ -65,12 +66,12 @@ namespace Vvr.MPC.Session.ContentView.Canvas
             GameObject obj = new GameObject(nameof(CanvasViewSession));
             m_CanvasParent = obj.transform;
 
-            Provider.Provider.Static.Connect<ICanvasCameraProvider>(this);
+            Vvr.Provider.Provider.Static.Connect<ICanvasCameraProvider>(this);
         }
 
         protected override UniTask OnReserve()
         {
-            Provider.Provider.Static.Disconnect<ICanvasCameraProvider>(this);
+            Vvr.Provider.Provider.Static.Disconnect<ICanvasCameraProvider>(this);
 
             return base.OnReserve();
         }
@@ -82,17 +83,20 @@ namespace Vvr.MPC.Session.ContentView.Canvas
             string nameFormat         = $"Overlay {(short)sortOrder}";
             if (raycast) nameFormat += " Raycast";
 
-            GameObject         obj    = new GameObject(nameFormat);
+            GameObject obj = new GameObject(nameFormat);
+            obj.transform.SetParent(m_CanvasParent);
+
             canvas = obj.AddComponent<UnityEngine.Canvas>();
             canvas.sortingOrder = (short)sortOrder;
 
             var scaler = obj.AddComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution =
                 Data.referenceResolution ?? DefaultResolution;
             if (raycast)
             {
                 var raycaster = obj.AddComponent<GraphicRaycaster>();
-                raycaster.blockingMask           = LayerMask.NameToLayer("UI");
+                raycaster.blockingMask           = LayerMask.GetMask("UI");
                 raycaster.blockingObjects        = GraphicRaycaster.BlockingObjects.TwoD;
                 raycaster.ignoreReversedGraphics = true;
             }
@@ -137,15 +141,5 @@ namespace Vvr.MPC.Session.ContentView.Canvas
 
         void IConnector<ICanvasCameraProvider>.Connect(ICanvasCameraProvider    t) => m_CameraProvider = t;
         void IConnector<ICanvasCameraProvider>.Disconnect(ICanvasCameraProvider t) => m_CameraProvider = null;
-    }
-
-    public enum CanvasLayerName : short
-    {
-        Background,
-        CardUI,
-        OverlayUI,
-    }
-    public enum CanvasSortOrder : short
-    {
     }
 }

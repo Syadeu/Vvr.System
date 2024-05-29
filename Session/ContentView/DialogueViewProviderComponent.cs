@@ -23,6 +23,7 @@ using Cysharp.Threading.Tasks;
 using UnityEngine;
 using Vvr.Provider;
 using Vvr.Session.ContentView.Dialogue;
+using Vvr.Session.ContentView.Provider;
 
 namespace Vvr.Session.ContentView
 {
@@ -36,7 +37,7 @@ namespace Vvr.Session.ContentView
         public abstract void Initialize(IContentViewEventHandler<DialogueViewEvent> eventHandler);
         public abstract void Reserve();
 
-        public abstract UniTask OpenAsync(IAssetProvider assetProvider, object ctx);
-        public abstract UniTask CloseAsync(object ctx);
+        public abstract UniTask OpenAsync(ICanvasViewProvider canvasProvider, IAssetProvider assetProvider, object ctx);
+        public abstract UniTask CloseAsync(object             ctx);
     }
 }

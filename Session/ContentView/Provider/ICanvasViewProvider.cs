@@ -19,14 +19,35 @@
 
 #endregion
 
-using UnityEngine;
 using Vvr.Provider;
 
-namespace Vvr.Session.ContentView.Canvas
+namespace Vvr.Session.ContentView.Provider
 {
-    public interface ICanvasCameraProvider : IProvider
+    [LocalProvider]
+    public interface ICanvasViewProvider : IProvider
     {
-        Camera Default  { get; }
-        Camera UICamera { get; }
+        IImmutableObject<UnityEngine.Canvas> ResolveOverlay(CanvasSortOrder sortOrder, bool raycaster);
+
+        IImmutableObject<UnityEngine.Canvas> ResolveCamera(
+            CanvasCameraType cameraType,
+            CanvasLayerName  sortingLayerName, CanvasSortOrder sortOrder,
+            bool             raycaster);
+    }
+
+    public enum CanvasCameraType : short
+    {
+        Default = 0,
+        UICamera
+    }
+
+    public enum CanvasLayerName : short
+    {
+        Background,
+        CardUI,
+        OverlayUI,
+    }
+
+    public enum CanvasSortOrder : short
+    {
     }
 }

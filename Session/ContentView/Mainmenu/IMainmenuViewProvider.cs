@@ -31,6 +31,8 @@ namespace Vvr.MPC.Session.ContentView.Mainmenu
     public enum MainmenuViewEvent : short
     {
         Show,
-        Hide
+        Hide,
+
+        OpenResearch
     }
 }

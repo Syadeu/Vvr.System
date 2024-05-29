@@ -26,13 +26,16 @@ using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using Vvr.Provider;
 using Vvr.Session.AssetManagement;
+using Vvr.Session.ContentView.Core;
 using Vvr.Session.ContentView.Dialogue.Attributes;
+using Vvr.Session.ContentView.Provider;
 
 namespace Vvr.Session.ContentView.Dialogue
 {
     [UsedImplicitly]
-    public sealed class DialogueViewSession : ParentSession<DialogueViewSession.SessionData>,
+    public sealed class DialogueViewSession : ContentViewChildSession<DialogueViewSession.SessionData>,
         IDialoguePlayProvider,
+        IConnector<ICanvasViewProvider>,
         IConnector<IDialogueViewProvider>
     {
         public struct SessionData : ISessionData
@@ -119,7 +122,7 @@ namespace Vvr.Session.ContentView.Dialogue
             while (wrapper.Data != null)
             {
                 m_DialogueViewProvider
-                    .OpenAsync(m_AssetProvider, wrapper.Data)
+                    .OpenAsync(CanvasViewProvider, m_AssetProvider, wrapper.Data)
                     .Forget();
 
                 foreach (var attribute in wrapper.Attributes)

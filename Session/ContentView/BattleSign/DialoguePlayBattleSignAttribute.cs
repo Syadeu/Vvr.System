@@ -27,6 +27,7 @@ using UnityEngine.Assertions;
 using Vvr.Provider;
 using Vvr.Session.ContentView.Dialogue;
 using Vvr.Session.ContentView.Dialogue.Attributes;
+using Vvr.Session.ContentView.Provider;
 
 namespace Vvr.Session.ContentView.BattleSign
 {
@@ -46,10 +47,12 @@ namespace Vvr.Session.ContentView.BattleSign
                 VvrTypeHelper.TypeOf<IBattleSignViewProvider>.Type) as IBattleSignViewProvider;
             Assert.IsNotNull(provider, "provider != null");
 
+            var canvas = resolveProvider(VvrTypeHelper.TypeOf<ICanvasViewProvider>.Type) as ICanvasViewProvider;
+
             if (m_WaitForClose)
-                await provider.OpenAsync(assetProvider, m_Text);
+                await provider.OpenAsync(canvas, assetProvider, m_Text);
             else
-                provider.OpenAsync(assetProvider, m_Text).Forget();
+                provider.OpenAsync(canvas, assetProvider, m_Text).Forget();
         }
 
         public override string ToString()

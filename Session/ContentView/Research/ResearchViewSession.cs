@@ -21,16 +21,16 @@ using System;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using Vvr.Controller.Research;
-using Vvr.MPC.Session.ContentView.Canvas;
 using Vvr.Provider;
 using Vvr.Session.AssetManagement;
+using Vvr.Session.ContentView.Core;
+using Vvr.Session.ContentView.Provider;
 using Vvr.Session.Provider;
 
 namespace Vvr.Session.ContentView.Research
 {
     [UsedImplicitly]
-    public sealed class ResearchViewSession : ParentSession<ResearchViewSession.SessionData>,
-        IConnector<ICanvasViewProvider>,
+    public sealed class ResearchViewSession : ContentViewChildSession<ResearchViewSession.SessionData>,
         IConnector<IUserDataProvider>,
         IConnector<IResearchDataProvider>,
         IConnector<IResearchViewProvider>
@@ -44,12 +44,11 @@ namespace Vvr.Session.ContentView.Research
 
         private AssetSession m_AssetSession;
 
-        private ICanvasViewProvider   m_CanvasViewProvider;
         private IUserDataProvider     m_UserDataProvider;
         private IResearchDataProvider m_ResearchDataProvider;
         private IResearchViewProvider m_ResearchViewProvider;
 
-        private bool m_Opened = false;
+        private bool m_Opened;
 
         protected override async UniTask OnInitialize(IParentSession session, SessionData data)
         {
@@ -77,7 +76,22 @@ namespace Vvr.Session.ContentView.Research
                 nodeGroup.RegisterAssetProvider(m_AssetSession);
             }
 
-            await m_ResearchViewProvider.OpenAsync(m_AssetSession, ctx);
+            await m_ResearchViewProvider.OpenAsync(
+                CanvasViewProvider,
+                m_AssetSession, ctx);
+
+            if (ctx is int groupIndex)
+            {
+                Data.eventHandler
+                    .ExecuteAsync(ResearchViewEvent.SelectGroupWithIndex, groupIndex)
+                    .Forget();
+            }
+            else
+            {
+                Data.eventHandler
+                    .ExecuteAsync(ResearchViewEvent.SelectGroupWithIndex, 0)
+                    .Forget();
+            }
         }
         private async UniTask OnClose(ResearchViewEvent e, object ctx)
         {
@@ -160,8 +174,5 @@ namespace Vvr.Session.ContentView.Research
 
         void IConnector<IUserDataProvider>.    Connect(IUserDataProvider        t) => m_UserDataProvider = t;
         void IConnector<IUserDataProvider>.    Disconnect(IUserDataProvider     t) => m_UserDataProvider = null;
-
-        void IConnector<ICanvasViewProvider>.Connect(ICanvasViewProvider    t) => m_CanvasViewProvider = t;
-        void IConnector<ICanvasViewProvider>.Disconnect(ICanvasViewProvider t) => m_CanvasViewProvider = null;
     }
 }

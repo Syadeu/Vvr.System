@@ -24,11 +24,12 @@ using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
-using Vvr.MPC.Session.ContentView.Canvas;
 using Vvr.MPC.Session.ContentView.Mainmenu;
 using Vvr.Provider;
 using Vvr.Session.ContentView.BattleSign;
+using Vvr.Session.ContentView.Canvas;
 using Vvr.Session.ContentView.Dialogue;
+using Vvr.Session.ContentView.Provider;
 using Vvr.Session.ContentView.Research;
 using Vvr.Session.ContentView.WorldBackground;
 
@@ -40,7 +41,6 @@ namespace Vvr.Session.ContentView
     {
         public struct SessionData : ISessionData
         {
-
         }
 
         class ContentViewEventHandler<TEvent> : IContentViewEventHandler<TEvent>
@@ -85,6 +85,7 @@ namespace Vvr.Session.ContentView
 
                 await sum;
             }
+
             public async UniTask ExecuteAsync(TEvent e, object ctx)
             {
                 if (!m_Actions.TryGetValue(e, out var list)) return;
@@ -117,6 +118,7 @@ namespace Vvr.Session.ContentView
         private IContentViewRegistryProvider m_ContentViewRegistryProvider;
 
         private IChildSession
+            m_MainmenuViewSession,
             m_ResearchViewSession,
             m_DialogueViewSession;
 
@@ -129,6 +131,11 @@ namespace Vvr.Session.ContentView
             var canvasSession = await CreateSession<CanvasViewSession>(default);
             Register<ICanvasViewProvider>(canvasSession);
 
+            m_MainmenuViewSession = await CreateSession<MainmenuViewSession>(
+                new MainmenuViewSession.SessionData()
+                {
+                    eventHandler = new ContentViewEventHandler<MainmenuViewEvent>()
+                });
             m_ResearchViewSession = await CreateSession<ResearchViewSession>(
                 new ResearchViewSession.SessionData()
                 {
@@ -144,6 +151,7 @@ namespace Vvr.Session.ContentView
 
             Vvr.Provider.Provider.Static.Connect<IContentViewRegistryProvider>(this);
         }
+
         protected override async UniTask OnReserve()
         {
             Parent.Unregister<IDialoguePlayProvider>();
@@ -167,6 +175,7 @@ namespace Vvr.Session.ContentView
                 ;
             // ReSharper restore RedundantTypeArgumentsOfMethod
         }
+
         public void Disconnect(IContentViewRegistryProvider t)
         {
             Unregister<IResearchViewProvider>()

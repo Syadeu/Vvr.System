@@ -19,7 +19,9 @@
 
 #endregion
 
+using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
+using UnityEngine;
 
 namespace Vvr.Provider
 {
@@ -54,6 +56,14 @@ namespace Vvr.Provider
             where TObject : UnityEngine.Object
         {
             return UnityEngine.Object.Instantiate(t.Object);
+        }
+
+        public static TObject CreateChild<TObject>(
+            this IImmutableObject<UnityEngine.Canvas> t,
+            TObject                                template)
+            where TObject : UnityEngine.Object
+        {
+            return UnityEngine.Object.Instantiate(template, t.Object.transform, false);
         }
     }
 }

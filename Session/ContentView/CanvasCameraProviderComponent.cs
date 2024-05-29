@@ -21,7 +21,7 @@
 
 using Sirenix.OdinInspector;
 using UnityEngine;
-using Vvr.MPC.Session.ContentView.Canvas;
+using Vvr.Session.ContentView.Canvas;
 
 namespace Vvr.Session.ContentView
 {

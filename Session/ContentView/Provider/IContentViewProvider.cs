@@ -22,6 +22,7 @@
 using System;
 using Cysharp.Threading.Tasks;
 using Vvr.Provider;
+using Vvr.Session.ContentView.Provider;
 
 namespace Vvr.Session.ContentView
 {
@@ -35,7 +36,7 @@ namespace Vvr.Session.ContentView
     {
         void Reserve();
 
-        UniTask OpenAsync(IAssetProvider assetProvider, object ctx);
+        UniTask OpenAsync(ICanvasViewProvider canvasProvider, IAssetProvider assetProvider, object ctx);
         UniTask CloseAsync(object        ctx);
     }
 }

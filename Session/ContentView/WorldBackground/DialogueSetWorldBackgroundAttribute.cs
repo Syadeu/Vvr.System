@@ -27,6 +27,7 @@ using UnityEngine.Assertions;
 using Vvr.Provider;
 using Vvr.Session.ContentView.Dialogue;
 using Vvr.Session.ContentView.Dialogue.Attributes;
+using Vvr.Session.ContentView.Provider;
 
 namespace Vvr.Session.ContentView.WorldBackground
 {
@@ -52,7 +53,8 @@ namespace Vvr.Session.ContentView.WorldBackground
             var view = v.GetView(m_BackgroundID);
             if (view == null)
             {
-                v.OpenAsync(assetProvider, m_BackgroundID);
+                var canvas = resolveProvider(VvrTypeHelper.TypeOf<ICanvasViewProvider>.Type) as ICanvasViewProvider;
+                v.OpenAsync(canvas, assetProvider, m_BackgroundID);
                 view = v.GetView(m_BackgroundID);
             }
 

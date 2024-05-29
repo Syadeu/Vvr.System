@@ -23,6 +23,7 @@ using Cysharp.Threading.Tasks;
 using UnityEngine;
 using Vvr.Controller.Research;
 using Vvr.Provider;
+using Vvr.Session.ContentView.Provider;
 
 namespace Vvr.Session.ContentView.Research
 {
@@ -32,7 +33,7 @@ namespace Vvr.Session.ContentView.Research
         public abstract void Initialize(IContentViewEventHandler<ResearchViewEvent> eventHandler);
         public abstract void Reserve();
 
-        public abstract UniTask OpenAsync(IAssetProvider assetProvider, object ctx);
-        public abstract UniTask CloseAsync(object ctx);
+        public abstract UniTask OpenAsync(ICanvasViewProvider canvasProvider, IAssetProvider assetProvider, object ctx);
+        public abstract UniTask CloseAsync(object             ctx);
     }
 }
