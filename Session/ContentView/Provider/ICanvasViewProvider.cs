@@ -19,6 +19,9 @@
 
 #endregion
 
+using JetBrains.Annotations;
+using UnityEngine;
+using UnityEngine.UI;
 using Vvr.Provider;
 
 namespace Vvr.Session.ContentView.Provider
@@ -26,7 +29,7 @@ namespace Vvr.Session.ContentView.Provider
     /// <summary>
     /// Represents a provider for canvas views.
     /// </summary>
-    [LocalProvider]
+    [LocalProvider, PublicAPI]
     public interface ICanvasViewProvider : IProvider
     {
         /// <summary>
