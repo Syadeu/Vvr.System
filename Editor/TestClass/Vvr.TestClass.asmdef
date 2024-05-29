@@ -8,16 +8,20 @@
     "GUID:60df735478b04dd3aa2c4819aa583f3c",
     "GUID:0bebf4b98a2c47cd93c8f4c2f5f17d2a",
     "GUID:ca7a9d7f2d304e6d8e77b3a8931dc117",
-    "Vvr.Session.World",
+    "GUID:c50d8ffc87be4e20ba3b3346627338d8",
+    "GUID:7245b3bb95394913996142b4774d6c3f",
+
     "Unity.Mathematics",
     "Unity.Collections",
     "Unity.Addressables",
     "Unity.ResourceManager",
+    "Unity.InputSystem",
+
     "UniTask",
     "UniTask.Addressables",
+
     "BakingSheet",
     "BakingSheet.ScriptableObject",
-    "Unity.InputSystem",
     "GUID:f2e4e751cc80e493bb01487f3fdb9536"
   ],
   "defineConstraints": [

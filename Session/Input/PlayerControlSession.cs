@@ -19,32 +19,33 @@
 
 #endregion
 
+using System;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using Vvr.Controller.Actor;
 using Vvr.Provider;
+using Vvr.Session.ContentView.Provider;
 
 namespace Vvr.Session.Input
 {
     [UsedImplicitly]
     public sealed class PlayerControlSession : AIControlSession,
-        IConnector<IManualInputProvider>
+        IConnector<IContentViewEventHandlerProvider>
     {
-        private IManualInputProvider m_ManualInputProvider;
+        private IContentViewEventHandlerProvider m_ContentViewEventHandlerProvider;
+
+        private UniTaskCompletionSource m_ActionCompletionSource;
+        private IActor                  m_CurrentControl;
 
         public override string DisplayName => nameof(PlayerControlSession);
 
         protected override UniTask OnInitialize(IParentSession session, SessionData data)
         {
-            Vvr.Provider.Provider.Static.Connect<IManualInputProvider>(this);
-
             return base.OnInitialize(session, data);
         }
 
         protected override UniTask OnReserve()
         {
-            Vvr.Provider.Provider.Static.Disconnect<IManualInputProvider>(this);
-
             return base.OnReserve();
         }
 
@@ -56,28 +57,93 @@ namespace Vvr.Session.Input
         protected override async UniTask OnControl(IEventTarget  target)
         {
             // TODO: testing
-            if (Owner != target.Owner)
+            if (Owner != target.Owner || target is not IActor actor)
             {
                 // AI
                 await base.OnControl(target);
                 return;
             }
 
-            if (m_ManualInputProvider == null)
-            {
-                "[Input] No manual input provider found".ToLog();
-                await base.OnControl(target);
-            }
-            else
-            {
-                IActor actor     = (IActor)target;
-                var    actorData = ActorDataProvider.Resolve(actor.Id);
+            m_CurrentControl = actor;
 
-                await m_ManualInputProvider.OnControl(actor, actorData);
-            }
+            m_ActionCompletionSource = new();
+            RegisterInput();
+
+            await m_ActionCompletionSource.Task;
+
+            UnregisterInput();
+            m_CurrentControl = null;
+
+            // if (m_ManualInputProvider == null)
+            // {
+            //     "[Input] No manual input provider found".ToLog();
+            //     await base.OnControl(target);
+            // }
+            // else
+            // {
+            //     IActor actor     = (IActor)target;
+            //     var    actorData = ActorDataProvider.Resolve(actor.Id);
+            //
+            //     await m_ManualInputProvider.OnControl(actor, actorData);
+            // }
         }
 
-        void IConnector<IManualInputProvider>.Connect(IManualInputProvider    t) => m_ManualInputProvider = t;
-        void IConnector<IManualInputProvider>.Disconnect(IManualInputProvider t) => m_ManualInputProvider = null;
+        private bool m_InputRegistered;
+
+        private void RegisterInput()
+        {
+            if (m_InputRegistered) return;
+
+            m_ContentViewEventHandlerProvider.Mainmenu
+                .Register(MainmenuViewEvent.Skill1Button, OnSkill1Button)
+                .Register(MainmenuViewEvent.Skill2Button, OnSkill2Button)
+                ;
+
+            m_ContentViewEventHandlerProvider.Mainmenu
+                .ExecuteAsync(MainmenuViewEvent.ShowActorInputs)
+                .Forget();
+
+            m_InputRegistered = true;
+        }
+        private void UnregisterInput()
+        {
+            if (!m_InputRegistered) return;
+
+            m_ContentViewEventHandlerProvider.Mainmenu
+                .Unregister(MainmenuViewEvent.Skill1Button, OnSkill1Button)
+                .Unregister(MainmenuViewEvent.Skill2Button, OnSkill2Button)
+                ;
+            m_ContentViewEventHandlerProvider.Mainmenu
+                .ExecuteAsync(MainmenuViewEvent.HideActorInputs)
+                .Forget();
+
+            m_InputRegistered = false;
+        }
+
+        private async UniTask OnSkill2Button(MainmenuViewEvent e, object ctx)
+        {
+            if (m_CurrentControl == null)
+                throw new InvalidOperationException();
+
+            UnregisterInput();
+            await m_CurrentControl.Skill.Queue(1);
+
+            if (!m_ActionCompletionSource.TrySetResult())
+                throw new InvalidOperationException("Already executed");
+        }
+        private async UniTask OnSkill1Button(MainmenuViewEvent e, object ctx)
+        {
+            if (m_CurrentControl == null)
+                throw new InvalidOperationException();
+
+            UnregisterInput();
+            await m_CurrentControl.Skill.Queue(0);
+
+            if (!m_ActionCompletionSource.TrySetResult())
+                throw new InvalidOperationException("Already executed");
+        }
+
+        void IConnector<IContentViewEventHandlerProvider>.Connect(IContentViewEventHandlerProvider    t) => m_ContentViewEventHandlerProvider = t;
+        void IConnector<IContentViewEventHandlerProvider>.Disconnect(IContentViewEventHandlerProvider t) => m_ContentViewEventHandlerProvider = null;
     }
 }

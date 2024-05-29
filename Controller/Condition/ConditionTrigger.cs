@@ -104,6 +104,9 @@ namespace Vvr.Controller.Condition
         /// <returns>A new instance of ConditionTrigger</returns>
         public static ConditionTrigger Push(IEventTarget target, string displayName = null)
         {
+            const string debugName  = "ConditionTrigger.Push";
+            using var    debugTimer = DebugTimer.StartWithCustomName(debugName);
+
             Assert.IsFalse(target.Disposed);
             // $"[Condition:{target.Owner}:{target.name}] Push trigger stack depth: {s_Stack.Count}".ToLog();
 
@@ -132,7 +135,8 @@ namespace Vvr.Controller.Condition
         /// <returns>True if the trigger is found, otherwise false</returns>
         public static bool Last(IEventTarget target, Model.Condition condition, string value)
         {
-            using var debugTimer = DebugTimer.Start();
+            const string debugName  = "ConditionTrigger.Last";
+            using var    debugTimer = DebugTimer.StartWithCustomName(debugName);
 
             var d = s_Stack
                 .Where(x => x.m_Target == target)
@@ -150,7 +154,8 @@ namespace Vvr.Controller.Condition
 
         public static bool Any(IEventTarget target, Model.Condition condition, string value)
         {
-            using var debugTimer = DebugTimer.Start();
+            const string debugName  = "ConditionTrigger.Any";
+            using var    debugTimer = DebugTimer.StartWithCustomName(debugName);
 
             // if value is null, should check only condition
             if (value.IsNullOrEmpty())

@@ -21,6 +21,7 @@
 
 using System;
 using Cysharp.Threading.Tasks;
+using JetBrains.Annotations;
 using Vvr.Provider;
 
 namespace Vvr.Session.ContentView.Provider
@@ -32,7 +33,7 @@ namespace Vvr.Session.ContentView.Provider
     /// <param name="e">The event.</param>
     /// <param name="ctx">The context.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    public delegate UniTask ContentViewEventDelegate<in TEvent>(TEvent e, object ctx) where TEvent : struct, IConvertible;
+    public delegate UniTask ContentViewEventDelegate<in TEvent>(TEvent e, [CanBeNull] object ctx) where TEvent : struct, IConvertible;
 
     /// <summary>
     /// Event handler interface for ContentView events.
@@ -40,11 +41,11 @@ namespace Vvr.Session.ContentView.Provider
     public interface IContentViewEventHandler<TEvent> : IContentViewEventHandler
         where TEvent : struct, IConvertible
     {
-        IContentViewEventHandler<TEvent> Register(TEvent   e, ContentViewEventDelegate<TEvent> x);
-        IContentViewEventHandler<TEvent> Unregister(TEvent e, ContentViewEventDelegate<TEvent> x);
+        IContentViewEventHandler<TEvent> Register(TEvent   e, [NotNull] ContentViewEventDelegate<TEvent> x);
+        IContentViewEventHandler<TEvent> Unregister(TEvent e, [NotNull] ContentViewEventDelegate<TEvent> x);
 
         UniTask ExecuteAsync(TEvent e);
-        UniTask ExecuteAsync(TEvent e, object ctx);
+        UniTask ExecuteAsync(TEvent e, [CanBeNull] object ctx);
     }
 
     /// <summary>

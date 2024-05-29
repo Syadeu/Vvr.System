@@ -72,6 +72,9 @@ namespace Vvr.Provider
         /// <returns>The base interface of the given type.</returns>
         public static Type ExtractType(Type t)
         {
+            const string debugName  = "Provider.ExtractType";
+            using var    debugTimer = DebugTimer.StartWithCustomName(debugName);
+
             if (!VvrTypeHelper.InheritsFrom<IProvider>(t))
                 throw new InvalidOperationException();
 

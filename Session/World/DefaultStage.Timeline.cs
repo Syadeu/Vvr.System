@@ -19,6 +19,7 @@
 
 #endregion
 
+using System.Buffers;
 using System.Collections.Generic;
 using System.Linq;
 using Cysharp.Threading.Tasks;
@@ -85,28 +86,53 @@ namespace Vvr.Session.World
             }
         }
 
-        private partial async UniTask UpdateTimelineNodeView()
+        private int FindTimelineIndex(IStageActor x)
         {
-            UniTask tasks = UniTask.CompletedTask;
-            foreach (var stageActor in m_PlayerField.Concat(m_EnemyField))
+            for (int i = 0; i < m_Timeline.Count; i++)
             {
-                int index = m_Timeline.FindIndex(x => ReferenceEquals(x.Owner, stageActor.Owner));
-                tasks = UniTask.WhenAll(tasks,
-                    m_TimelineNodeViewProvider.Resolve(stageActor.Owner, index));
+                var e = m_Timeline[i];
+                if (ReferenceEquals(e.Owner, x.Owner)) return i;
             }
 
-            await tasks;
+            return -1;
+        }
+        private partial async UniTask UpdateTimelineNodeView()
+        {
+            int       count = m_PlayerField.Count + m_EnemyField.Count;
+            UniTask[] tasks = ArrayPool<UniTask>.Shared.Rent(count);
+            int       i     = 0;
+            for (; i < m_PlayerField.Count; i++)
+            {
+                var e     = m_PlayerField[i];
+                int index = FindTimelineIndex(e);
+                tasks[i] = m_TimelineNodeViewProvider.Resolve(e.Owner, index);
+            }
+            for (int j = 0; j < m_EnemyField.Count; j++, i++)
+            {
+                var e     = m_EnemyField[j];
+                int index = FindTimelineIndex(e);
+                tasks[i] = m_TimelineNodeViewProvider.Resolve(e.Owner, index);
+            }
+
+            await UniTask.WhenAll(tasks);
+            ArrayPool<UniTask>.Shared.Return(tasks);
         }
         private partial async UniTask CloseTimelineNodeView()
         {
-            UniTask tasks = UniTask.CompletedTask;
-            foreach (var stageActor in m_PlayerField.Concat(m_EnemyField))
+            int       count = m_PlayerField.Count + m_EnemyField.Count;
+            UniTask[] tasks = ArrayPool<UniTask>.Shared.Rent(count);
+            int       i     = 0;
+            for (; i < m_PlayerField.Count; i++)
             {
-                tasks = UniTask.WhenAll(tasks,
-                    m_TimelineNodeViewProvider.Release(stageActor.Owner));
+                tasks[i] = m_TimelineNodeViewProvider.Release(m_PlayerField[i].Owner);
+            }
+            for (int j = 0; j < m_EnemyField.Count; j++, i++)
+            {
+                tasks[i] = m_TimelineNodeViewProvider.Release(m_EnemyField[j].Owner);
             }
 
-            await tasks;
+            await UniTask.WhenAll(tasks);
+            ArrayPool<UniTask>.Shared.Return(tasks);
         }
 
         /// <summary>
@@ -167,7 +193,9 @@ namespace Vvr.Session.World
             await m_TimelineNodeViewProvider.Release(actor.Owner);
             await m_ViewProvider.CardViewProvider.Release(actor.Owner);
             // actor.Owner.Release();
-            DelayedDelete(actor).Forget();
+            m_StageActorProvider.Reserve(actor);
+            actor.Owner.Release();
+            // DelayedDelete(actor).Forget();
 
             UpdateTimeline();
         }

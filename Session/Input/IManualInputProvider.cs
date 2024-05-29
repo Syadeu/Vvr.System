@@ -19,6 +19,7 @@
 
 #endregion
 
+using System;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using Vvr.Controller.Actor;
@@ -27,6 +28,7 @@ using Vvr.Provider;
 
 namespace Vvr.Session.Input
 {
+    [Obsolete("", true)]
     public interface IManualInputProvider : IProvider
     {
         [PublicAPI]

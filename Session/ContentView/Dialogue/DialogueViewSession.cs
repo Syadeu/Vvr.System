@@ -40,7 +40,7 @@ namespace Vvr.Session.ContentView.Dialogue
         public struct SessionData : ISessionData
         {
             public IContentViewEventHandler<DialogueViewEvent> eventHandler;
-            public IViewEventHandlerProvider                   viewEventHandlerProvider;
+            public IContentViewEventHandlerProvider                   viewEventHandlerProvider;
         }
 
         class DialogueWrapper : IDialogue

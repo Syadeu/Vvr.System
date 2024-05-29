@@ -19,6 +19,7 @@
 
 #endregion
 
+using System;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 using Vvr.Controller;
@@ -27,6 +28,7 @@ using Vvr.Session.Input;
 
 namespace Vvr.TestClass
 {
+    [Obsolete("", true)]
     class TestActorInputProvider : ActorInputProviderComponent
     {
         [SerializeField] private bool m_SkipSkillCooltime;

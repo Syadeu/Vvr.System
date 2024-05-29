@@ -28,7 +28,7 @@ namespace Vvr.Session.ContentView.Provider
     /// Represents a provider of view event handlers.
     /// </summary>
     [PublicAPI, LocalProvider]
-    public interface IViewEventHandlerProvider : IProvider
+    public interface IContentViewEventHandlerProvider : IProvider
     {
         IContentViewEventHandler<ResearchViewEvent>        Research        { get; }
         IContentViewEventHandler<DialogueViewEvent>        Dialogue        { get; }

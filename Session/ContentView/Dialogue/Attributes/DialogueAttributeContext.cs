@@ -32,14 +32,14 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
         [NotNull] public readonly IAssetProvider                  assetProvider;
         [NotNull] public readonly IDialogueViewProvider           viewProvider;
         [NotNull] public readonly DialogueProviderResolveDelegate resolveProvider;
-        [NotNull] public readonly IViewEventHandlerProvider       eventHandlerProvider;
+        [NotNull] public readonly IContentViewEventHandlerProvider       eventHandlerProvider;
 
         internal DialogueAttributeContext(
             [NotNull] IDialogue                       dialogue,
             [NotNull] IAssetProvider                  assetProvider,
             [NotNull] IDialogueViewProvider           viewProvider,
             [NotNull] DialogueProviderResolveDelegate resolveProvider,
-            [NotNull] IViewEventHandlerProvider       eventHandlerProvider)
+            [NotNull] IContentViewEventHandlerProvider       eventHandlerProvider)
         {
             this.dialogue             = dialogue;
             this.assetProvider        = assetProvider;

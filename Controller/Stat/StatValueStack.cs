@@ -175,7 +175,8 @@ namespace Vvr.Controller.Stat
 
         public IStatValueStack AddModifier(IStatModifier modifier)
         {
-            using var debugTimer = DebugTimer.Start();
+            const string debugName  = "StatValueStack.AddModifier";
+            using var    debugTimer = DebugTimer.StartWithCustomName(debugName);
 
             Assert.IsFalse(m_Modifiers.Contains(modifier));
             m_Modifiers.Add(modifier);
@@ -183,7 +184,8 @@ namespace Vvr.Controller.Stat
         }
         public IStatValueStack RemoveModifier(IStatModifier modifier)
         {
-            using var debugTimer = DebugTimer.Start();
+            const string debugName  = "StatValueStack.RemoveModifier";
+            using var    debugTimer = DebugTimer.StartWithCustomName(debugName);
 
             m_Modifiers.Remove(modifier);
             return this;

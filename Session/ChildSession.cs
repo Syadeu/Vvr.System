@@ -267,6 +267,9 @@ namespace Vvr.Session
 
         public IProvider GetProviderRecursive(Type providerType)
         {
+            const string debugName  = "ChildSession.GetProviderRecursive";
+            using var    debugTimer = DebugTimer.StartWithCustomName(debugName);
+
             if (providerType is null)
                 throw new ArgumentException(nameof(providerType));
             if (!VvrTypeHelper.InheritsFrom<IProvider>(providerType))
@@ -296,6 +299,9 @@ namespace Vvr.Session
         }
         public TProvider GetProviderRecursive<TProvider>() where TProvider : class, IProvider
         {
+            const string debugName  = "ChildSession.GetProviderRecursive<TProvider>";
+            using var    debugTimer = DebugTimer.StartWithCustomName(debugName);
+
             if (this is TProvider p) return p;
             foreach (var injectedProvider in m_ConnectedProviders.Values)
             {
@@ -317,6 +323,9 @@ namespace Vvr.Session
 
         public IGameSessionBase Connect<TProvider>(IConnector<TProvider> c) where TProvider : IProvider
         {
+            const string debugName  = "ChildSession.Connect<TProvider>";
+            using var    debugTimer = DebugTimer.StartWithCustomName(debugName);
+
             Assert.IsNotNull(c);
             Assert.IsFalse(ReferenceEquals(this, c), "cannot connect self");
             Type t = typeof(TProvider);
@@ -348,6 +357,9 @@ namespace Vvr.Session
         }
         public IGameSessionBase Disconnect<TProvider>(IConnector<TProvider> c) where TProvider : IProvider
         {
+            const string debugName  = "ChildSession.Disconnect<TProvider>";
+            using var    debugTimer = DebugTimer.StartWithCustomName(debugName);
+
             Type t = typeof(TProvider);
             t = Vvr.Provider.Provider.ExtractType(t);
 

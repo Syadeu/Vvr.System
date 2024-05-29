@@ -29,6 +29,7 @@ using Cysharp.Threading.Tasks.Linq;
 using JetBrains.Annotations;
 using UnityEngine;
 using UnityEngine.Assertions;
+using Vvr.Buffer;
 using Vvr.Controller.Actor;
 using Vvr.Controller.Condition;
 using Vvr.Controller.Provider;
@@ -62,17 +63,34 @@ namespace Vvr.Controller.Skill
             public SkillSheet.Position Position => skill.Definition.Position;
         }
 
+        readonly struct SkillExecutionScope : IDisposable
+        {
+            private readonly SkillController m_Ctr;
+
+            public SkillExecutionScope(SkillController ctr)
+            {
+                m_Ctr             = ctr;
+                m_Ctr.IsInExecution = true;
+            }
+
+            public void Dispose()
+            {
+                m_Ctr.IsInExecution = false;
+            }
+        }
+
         private IEventViewProvider m_ViewProvider;
         private IActorDataProvider m_DataProvider;
         private ITargetProvider    m_TargetProvider;
 
-        private readonly List<Value> m_Values = new();
+        private readonly List<Value> m_Values = new(2);
 
-        private readonly List<Hash>              m_SkillCooltimeKeys = new();
-        private readonly Dictionary<Hash, float> m_SkillCooltimes    = new();
+        private readonly List<Hash>              m_SkillCooltimeKeys = new(2);
+        private readonly Dictionary<Hash, float> m_SkillCooltimes    = new(2);
 
-        private IActor Owner { get; }
-        private bool Disposed { get; set; }
+        private IActor Owner         { get; }
+        private bool   IsInExecution { get; set; }
+        private bool   Disposed      { get; set; }
 
         public SkillController(IActor o)
         {
@@ -150,7 +168,12 @@ namespace Vvr.Controller.Skill
             Assert.IsFalse(m_Values.Any(x=>x.skill == data),
                 $"Skill {data.Id} already queued but trying to queue another one. {m_Values.Count}");
 
+            if (IsInExecution)
+                throw new InvalidOperationException("Skill is in execution");
+
             $"[Skill:{Owner.DisplayName}]: SKILL QUEUED {data.Id}, {m_Values.Count}".ToLog();
+
+            using var skillExecutionScope = new SkillExecutionScope(this);
 
             SkillSheet.Row skillRow;
             if (data is SkillSheet.Row row) skillRow = row;
@@ -449,6 +472,8 @@ namespace Vvr.Controller.Skill
             }
         }
 
+        #region Connector
+
         void IConnector<ITargetProvider>.Connect(ITargetProvider t)
         {
             if (Disposed)
@@ -495,5 +520,7 @@ namespace Vvr.Controller.Skill
                 throw new ObjectDisposedException(nameof(SkillController));
             m_ViewProvider = null;
         }
+
+        #endregion
     }
 }

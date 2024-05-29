@@ -39,7 +39,7 @@ namespace Vvr.Session.World
  	// [ParentSession(typeof(DefaultRegion), true)]
     public partial class DefaultFloor : ParentSession<DefaultFloor.SessionData>,
         IConnector<IViewRegistryProvider>,
-        IConnector<IViewEventHandlerProvider>
+        IConnector<IContentViewEventHandlerProvider>
     {
         public struct SessionData : ISessionData
         {
@@ -67,7 +67,7 @@ namespace Vvr.Session.World
 
         private IAssetProvider            m_AssetProvider;
         private IViewRegistryProvider     m_ViewRegistryProvider;
-        private IViewEventHandlerProvider m_ViewEventHandlerProvider;
+        private IContentViewEventHandlerProvider m_ViewEventHandlerProvider;
 
         private int m_CurrentStageIndex;
 
@@ -243,7 +243,7 @@ namespace Vvr.Session.World
         void IConnector<IViewRegistryProvider>.Connect(IViewRegistryProvider    t) => m_ViewRegistryProvider = t;
         void IConnector<IViewRegistryProvider>.Disconnect(IViewRegistryProvider t) => m_ViewRegistryProvider = null;
 
-        void IConnector<IViewEventHandlerProvider>.Connect(IViewEventHandlerProvider t) => m_ViewEventHandlerProvider = t;
-        void IConnector<IViewEventHandlerProvider>.Disconnect(IViewEventHandlerProvider t) => m_ViewEventHandlerProvider = null;
+        void IConnector<IContentViewEventHandlerProvider>.Connect(IContentViewEventHandlerProvider t) => m_ViewEventHandlerProvider = t;
+        void IConnector<IContentViewEventHandlerProvider>.Disconnect(IContentViewEventHandlerProvider t) => m_ViewEventHandlerProvider = null;
     }
 }

@@ -51,7 +51,11 @@ namespace Vvr.Session.ContentView.Mainmenu
 
             m_AssetProvider = await CreateSession<AssetSession>(default);
 
-            data.eventHandler.Register(MainmenuViewEvent.OpenResearch, OnOpenResearch);
+            data.eventHandler
+                .Register(MainmenuViewEvent.OpenResearch, OnOpenResearch)
+                .Register(MainmenuViewEvent.Skill1Button, OnSkill1Button)
+                .Register(MainmenuViewEvent.Skill2Button, OnSkill2Button)
+                ;
 
             data.dialogueEventHandler
                 .Register(DialogueViewEvent.Open, OnDialogueOpen)
@@ -60,8 +64,21 @@ namespace Vvr.Session.ContentView.Mainmenu
             Setup().Forget();
         }
 
+        private async UniTask OnSkill1Button(MainmenuViewEvent e, object ctx)
+        {
+        }
+        private async UniTask OnSkill2Button(MainmenuViewEvent e, object ctx)
+        {
+        }
+
         protected override UniTask OnReserve()
         {
+            Data.eventHandler
+                .Unregister(MainmenuViewEvent.OpenResearch, OnOpenResearch)
+                .Unregister(MainmenuViewEvent.Skill1Button, OnSkill1Button)
+                .Unregister(MainmenuViewEvent.Skill2Button, OnSkill2Button)
+                ;
+
             Data.dialogueEventHandler
                 .Unregister(DialogueViewEvent.Open, OnDialogueOpen)
                 .Unregister(DialogueViewEvent.Close, OnDialogueClose);

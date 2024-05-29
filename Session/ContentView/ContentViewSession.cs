@@ -49,19 +49,39 @@ namespace Vvr.Session.ContentView
         class ContentViewEventHandler<TEvent> : IContentViewEventHandler<TEvent>
             where TEvent : struct, IConvertible
         {
-            private readonly Dictionary<TEvent, LinkedList<ContentViewEventDelegate<TEvent>>> m_Actions = new();
+            private readonly Dictionary<TEvent, List<uint>>                     m_Actions   = new();
+            private readonly Dictionary<uint, ContentViewEventDelegate<TEvent>> m_ActionMap = new();
 
             private readonly CancellationTokenSource m_CancellationTokenSource = new();
 
+            private uint CalculateHash(ContentViewEventDelegate<TEvent> x)
+            {
+                uint hash =
+                    FNV1a32.Calculate(x.Method.Name)
+                    ^ 267;
+                if (x.Method.DeclaringType is not null)
+                    hash ^= FNV1a32.Calculate(x.Method.DeclaringType.FullName);
+                if (x.Target is not null)
+                    hash ^= unchecked((uint)x.Target.GetHashCode());
+
+                return hash;
+            }
             public IContentViewEventHandler<TEvent> Register(TEvent e, ContentViewEventDelegate<TEvent> x)
             {
                 if (!m_Actions.TryGetValue(e, out var list))
                 {
-                    list         = new();
+                    list         = new(8);
                     m_Actions[e] = list;
                 }
 
-                list.AddLast(x);
+                uint hash = CalculateHash(x);
+                if (!m_ActionMap.TryAdd(hash, x))
+                {
+                    throw new InvalidOperationException("hash collusion");
+                }
+                m_ActionMap[hash] = x;
+
+                list.Add(hash);
                 return this;
             }
 
@@ -69,7 +89,10 @@ namespace Vvr.Session.ContentView
             {
                 if (!m_Actions.TryGetValue(e, out var list)) return this;
 
-                list.Remove(x);
+                uint hash = CalculateHash(x);
+                if (!m_ActionMap.Remove(hash)) return this;
+
+                list.Remove(hash);
                 return this;
             }
 
@@ -78,12 +101,9 @@ namespace Vvr.Session.ContentView
                 if (!m_Actions.TryGetValue(e, out var list)) return;
 
                 UniTask sum = UniTask.CompletedTask;
-                for (LinkedListNode<ContentViewEventDelegate<TEvent>> item = list.First;
-                     item != null;
-                     item = item.Next)
+                for (int i = 0; i < list.Count; i++)
                 {
-                    var t0 = item.Value(e, null);
-                    sum = UniTask.WhenAll(sum, t0);
+                    sum = UniTask.WhenAll(sum, m_ActionMap[list[i]](e, null));
                 }
 
                 await sum;
@@ -94,12 +114,9 @@ namespace Vvr.Session.ContentView
                 if (!m_Actions.TryGetValue(e, out var list)) return;
 
                 UniTask sum = UniTask.CompletedTask;
-                for (var item = list.First;
-                     item != null;
-                     item = item.Next)
+                for (int i = 0; i < list.Count; i++)
                 {
-                    var t0 = item.Value(e, ctx);
-                    sum = UniTask.WhenAll(sum, t0);
+                    sum = UniTask.WhenAll(sum, m_ActionMap[list[i]](e, ctx));
                 }
 
                 await sum;
@@ -115,10 +132,11 @@ namespace Vvr.Session.ContentView
                 }
 
                 m_Actions.Clear();
+                m_ActionMap.Clear();
             }
         }
 
-        class ViewEventHandlerProvider : IViewEventHandlerProvider, IDisposable
+        class ViewEventHandlerProvider : IContentViewEventHandlerProvider, IDisposable
         {
             public IContentViewEventHandler<ResearchViewEvent>        Research        { get; set; }
             public IContentViewEventHandler<DialogueViewEvent>        Dialogue        { get; set; }
@@ -182,7 +200,7 @@ namespace Vvr.Session.ContentView
 
             Parent
                 .Register<IDialoguePlayProvider>(dialogueViewSession)
-                .Register<IViewEventHandlerProvider>(m_ViewEventHandlerProvider)
+                .Register<IContentViewEventHandlerProvider>(m_ViewEventHandlerProvider)
                 ;
 
             Vvr.Provider.Provider.Static.Connect<IContentViewRegistryProvider>(this);
@@ -194,7 +212,7 @@ namespace Vvr.Session.ContentView
 
             Parent
                 .Unregister<IDialoguePlayProvider>()
-                .Unregister<IViewEventHandlerProvider>()
+                .Unregister<IContentViewEventHandlerProvider>()
                 ;
 
             Vvr.Provider.Provider.Static.Disconnect<IContentViewRegistryProvider>(this);

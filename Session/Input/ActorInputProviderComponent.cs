@@ -29,6 +29,7 @@ using Vvr.Model;
 namespace Vvr.Session.Input
 {
     [DisallowMultipleComponent]
+    [Obsolete("", true)]
     public class ActorInputProviderComponent : MonoBehaviour, IManualInputProvider
     {
         private readonly LinkedList<UniTask> m_Tasks = new();
