@@ -1,5 +1,4 @@
 #region Copyrights
-
 // Copyright 2024 Syadeu
 // Author : Seung Ha Kim
 //
@@ -15,29 +14,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// File created : 2024, 05, 10 01:05
-
+// File created : 2024, 05, 30 00:05
 #endregion
 
+using Cysharp.Threading.Tasks;
+using JetBrains.Annotations;
 using UnityEngine.Scripting;
 
-namespace Vvr.Provider
+namespace Vvr.Provider.Command
 {
-    /// <summary>
-    /// Base connector for connects <see cref="Provider"/>
-    /// </summary>
-    /// <typeparam name="T"></typeparam>
-    [RequireImplementors]
-    public interface IConnector<in T>
+    [PublicAPI, RequireImplementors]
+    public interface ICommand
     {
-        /// <summary>
-        /// Method when T has been resolved.
-        /// </summary>
-        /// <param name="t"></param>
-        void Connect(T    t);
-        /// <summary>
-        /// Method when T has been disconnected.
-        /// </summary>
-        void Disconnect(T t);
+        UniTask ExecuteAsync(IEventTarget target);
     }
 }

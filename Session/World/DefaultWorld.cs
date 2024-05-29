@@ -23,6 +23,7 @@ using Cysharp.Threading.Tasks;
 using UnityEngine.Scripting;
 using Vvr.Model;
 using Vvr.Provider;
+using Vvr.Provider.Command;
 using Vvr.Session.AssetManagement;
 using Vvr.Session.ContentView;
 using Vvr.Session.Provider;
@@ -50,6 +51,7 @@ namespace Vvr.Session.World
             DataSession = await CreateSession<GameDataSession>(default);
 
             var results = await UniTask.WhenAll(
+                CreateSession<CommandSession>(default),
                 CreateSession<GameMethodResolveSession>(default),
 
                 CreateSession<ContentViewSession>(default)
@@ -61,13 +63,17 @@ namespace Vvr.Session.World
             await CreateSession<GameConfigResolveSession>(
                 new GameConfigResolveSession.SessionData(MapType.Global, true));
 
-            Register<IGameMethodProvider>(results.Item1);
+            Register<ICommandProvider>(results.Item1)
+                .Register<IGameMethodProvider>(results.Item2)
+                ;
 
             // TODO: skip map load
             DefaultMap = await CreateSession<DefaultMap>(default);
         }
         protected override UniTask OnReserve()
         {
+            Unregister<IGameMethodProvider>();
+
             Vvr.Provider.Provider.Static.Disconnect<IViewRegistryProvider>(this);
 
             // Unregister<IActorProvider>();

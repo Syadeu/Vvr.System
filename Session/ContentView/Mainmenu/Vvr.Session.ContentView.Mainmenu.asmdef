@@ -19,6 +19,8 @@
     "Unity.TextMeshPro",
 
     "UniTask",
-    "UniTask.Addressables"
+    "UniTask.Addressables",
+
+    "BakingSheet"
   ]
 }

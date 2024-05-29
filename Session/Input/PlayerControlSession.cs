@@ -24,30 +24,25 @@ using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using Vvr.Controller.Actor;
 using Vvr.Provider;
+using Vvr.Provider.Command;
+using Vvr.Session.Actor;
 using Vvr.Session.ContentView.Provider;
 
 namespace Vvr.Session.Input
 {
     [UsedImplicitly]
     public sealed class PlayerControlSession : AIControlSession,
-        IConnector<IContentViewEventHandlerProvider>
+        IConnector<IContentViewEventHandlerProvider>,
+        IConnector<ICommandProvider>
     {
         private IContentViewEventHandlerProvider m_ContentViewEventHandlerProvider;
 
         private UniTaskCompletionSource m_ActionCompletionSource;
         private IActor                  m_CurrentControl;
 
+        private ICommandProvider m_CommandProvider;
+
         public override string DisplayName => nameof(PlayerControlSession);
-
-        protected override UniTask OnInitialize(IParentSession session, SessionData data)
-        {
-            return base.OnInitialize(session, data);
-        }
-
-        protected override UniTask OnReserve()
-        {
-            return base.OnReserve();
-        }
 
         public override bool CanControl(IEventTarget target)
         {
@@ -67,30 +62,17 @@ namespace Vvr.Session.Input
             m_CurrentControl = actor;
 
             m_ActionCompletionSource = new();
-            RegisterInput();
+            RegisterInput(actor);
 
             await m_ActionCompletionSource.Task;
 
             UnregisterInput();
             m_CurrentControl = null;
-
-            // if (m_ManualInputProvider == null)
-            // {
-            //     "[Input] No manual input provider found".ToLog();
-            //     await base.OnControl(target);
-            // }
-            // else
-            // {
-            //     IActor actor     = (IActor)target;
-            //     var    actorData = ActorDataProvider.Resolve(actor.Id);
-            //
-            //     await m_ManualInputProvider.OnControl(actor, actorData);
-            // }
         }
 
         private bool m_InputRegistered;
 
-        private void RegisterInput()
+        private async UniTask RegisterInput(IActor actor)
         {
             if (m_InputRegistered) return;
 
@@ -99,8 +81,11 @@ namespace Vvr.Session.Input
                 .Register(MainmenuViewEvent.Skill2Button, OnSkill2Button)
                 ;
 
+            await m_ContentViewEventHandlerProvider.Mainmenu
+                .ExecuteAsync(MainmenuViewEvent.SetupActorInputs, actor);
+
             m_ContentViewEventHandlerProvider.Mainmenu
-                .ExecuteAsync(MainmenuViewEvent.ShowActorInputs)
+                .ExecuteAsync(MainmenuViewEvent.ShowActorInputs, actor)
                 .Forget();
 
             m_InputRegistered = true;
@@ -126,7 +111,7 @@ namespace Vvr.Session.Input
                 throw new InvalidOperationException();
 
             UnregisterInput();
-            await m_CurrentControl.Skill.Queue(1);
+            await m_CommandProvider.EnqueueAsync(m_CurrentControl, new SkillExecuteCommand(1));
 
             if (!m_ActionCompletionSource.TrySetResult())
                 throw new InvalidOperationException("Already executed");
@@ -137,7 +122,7 @@ namespace Vvr.Session.Input
                 throw new InvalidOperationException();
 
             UnregisterInput();
-            await m_CurrentControl.Skill.Queue(0);
+            await m_CommandProvider.EnqueueAsync(m_CurrentControl, new SkillExecuteCommand(0));
 
             if (!m_ActionCompletionSource.TrySetResult())
                 throw new InvalidOperationException("Already executed");
@@ -145,5 +130,8 @@ namespace Vvr.Session.Input
 
         void IConnector<IContentViewEventHandlerProvider>.Connect(IContentViewEventHandlerProvider    t) => m_ContentViewEventHandlerProvider = t;
         void IConnector<IContentViewEventHandlerProvider>.Disconnect(IContentViewEventHandlerProvider t) => m_ContentViewEventHandlerProvider = null;
+
+        void IConnector<ICommandProvider>.Connect(ICommandProvider    t) => m_CommandProvider = t;
+        void IConnector<ICommandProvider>.Disconnect(ICommandProvider t) => m_CommandProvider = null;
     }
 }

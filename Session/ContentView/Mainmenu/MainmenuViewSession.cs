@@ -19,18 +19,20 @@
 
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
+using UnityEngine;
+using Vvr.Controller.Actor;
+using Vvr.Model;
 using Vvr.Provider;
 using Vvr.Session.AssetManagement;
 using Vvr.Session.ContentView.Core;
-using Vvr.Session.ContentView.Dialogue;
 using Vvr.Session.ContentView.Provider;
-using Vvr.Session.ContentView.Research;
 
 namespace Vvr.Session.ContentView.Mainmenu
 {
     [UsedImplicitly]
     public sealed class MainmenuViewSession : ContentViewChildSession<MainmenuViewSession.SessionData>,
-        IConnector<IMainmenuViewProvider>
+        IConnector<IMainmenuViewProvider>,
+        IConnector<IActorDataProvider>
     {
         public struct SessionData : ISessionData
         {
@@ -42,6 +44,7 @@ namespace Vvr.Session.ContentView.Mainmenu
 
         private IAssetProvider        m_AssetProvider;
         private IMainmenuViewProvider m_MainmenuViewProvider;
+        private IActorDataProvider    m_ActorDataProvider;
 
         public override string DisplayName => nameof(MainmenuViewSession);
 
@@ -53,6 +56,7 @@ namespace Vvr.Session.ContentView.Mainmenu
 
             data.eventHandler
                 .Register(MainmenuViewEvent.OpenResearch, OnOpenResearch)
+                .Register(MainmenuViewEvent.SetupActorInputs, OnSetupActorInputs)
                 .Register(MainmenuViewEvent.Skill1Button, OnSkill1Button)
                 .Register(MainmenuViewEvent.Skill2Button, OnSkill2Button)
                 ;
@@ -64,17 +68,11 @@ namespace Vvr.Session.ContentView.Mainmenu
             Setup().Forget();
         }
 
-        private async UniTask OnSkill1Button(MainmenuViewEvent e, object ctx)
-        {
-        }
-        private async UniTask OnSkill2Button(MainmenuViewEvent e, object ctx)
-        {
-        }
-
         protected override UniTask OnReserve()
         {
             Data.eventHandler
                 .Unregister(MainmenuViewEvent.OpenResearch, OnOpenResearch)
+                .Unregister(MainmenuViewEvent.SetupActorInputs, OnSetupActorInputs)
                 .Unregister(MainmenuViewEvent.Skill1Button, OnSkill1Button)
                 .Unregister(MainmenuViewEvent.Skill2Button, OnSkill2Button)
                 ;
@@ -84,6 +82,33 @@ namespace Vvr.Session.ContentView.Mainmenu
                 .Unregister(DialogueViewEvent.Close, OnDialogueClose);
 
             return base.OnReserve();
+        }
+
+        private async UniTask OnSetupActorInputs(MainmenuViewEvent e, object ctx)
+        {
+            IActor actor = (IActor)ctx;
+
+            IActorData data = m_ActorDataProvider.Resolve(actor.Id);
+
+            var skillIcons = await UniTask.WhenAll(
+                m_AssetProvider.LoadAsync<Sprite>(data.Skills[0].Presentation.Icon),
+                m_AssetProvider.LoadAsync<Sprite>(data.Skills[1].Presentation.Icon)
+                );
+
+            await UniTask.WhenAll(
+                Data.eventHandler
+                    .ExecuteAsync(MainmenuViewEvent.SetSkill1Image, skillIcons.Item1?.Object),
+                Data.eventHandler
+                    .ExecuteAsync(MainmenuViewEvent.SetSkill2Image, skillIcons.Item2?.Object)
+                );
+        }
+
+        private async UniTask OnSkill1Button(MainmenuViewEvent e, object ctx)
+        {
+        }
+
+        private async UniTask OnSkill2Button(MainmenuViewEvent e, object ctx)
+        {
         }
 
         private async UniTask OnDialogueClose(DialogueViewEvent e, object ctx)
@@ -122,5 +147,8 @@ namespace Vvr.Session.ContentView.Mainmenu
             m_MainmenuViewProvider.Reserve();
             m_MainmenuViewProvider = null;
         }
+
+        void IConnector<IActorDataProvider>.Connect(IActorDataProvider t) => m_ActorDataProvider = t;
+        void IConnector<IActorDataProvider>.Disconnect(IActorDataProvider t) => m_ActorDataProvider = null;
     }
 }

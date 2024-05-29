@@ -25,12 +25,16 @@ namespace Vvr.Session.ContentView.Provider
     {
         Show,
         Hide,
+        SetupActorInputs,
         ShowActorInputs,
         HideActorInputs,
 
         Skill1Button = 1000,
         Skill2Button,
         AutoBattleButton,
+
+        SetSkill1Image = 1100,
+        SetSkill2Image,
 
         OpenResearch = 2000
     }

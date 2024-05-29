@@ -28,7 +28,6 @@ using UnityEngine.Assertions;
 using UnityEngine.Scripting;
 using Vvr.Controller;
 using Vvr.Controller.Actor;
-using Vvr.Controller.Asset;
 using Vvr.Controller.Condition;
 using Vvr.Controller.Provider;
 using Vvr.Model;
@@ -163,8 +162,6 @@ namespace Vvr.Session.World
         private IInputControlProvider m_InputControlProvider;
         private IViewRegistryProvider m_ViewProvider;
 
-        // private AssetController m_StageAssetController;
-
         private Owner m_EnemyId;
 
         private readonly ActorList
@@ -189,13 +186,6 @@ namespace Vvr.Session.World
                 .Register<IStageInfoProvider>(this)
                 ;
 
-            // m_StageAssetController      = new(data.stage.Assets);
-
-            // Connects stage asset to asset provider.
-            // This makes use injected asset container from parent.
-            // Which stages can share assets within same floor session.
-            // Connect<IAssetProvider>(m_StageAssetController);
-
             m_EnemyId = Owner.Issue;
 
             Vvr.Provider.Provider.Static.Register<IStageActorTagInOutProvider>(this);
@@ -215,10 +205,6 @@ namespace Vvr.Session.World
                 .Unregister<IEventConditionProvider>()
                 .Unregister<IStageInfoProvider>()
                 ;
-
-            // Disconnect<IAssetProvider>(m_StageAssetController);
-
-            // m_StageAssetController = null;
 
             m_HandActors.Clear();
             m_PlayerField.Clear();
@@ -289,14 +275,9 @@ namespace Vvr.Session.World
                 await Join(m_EnemyField, runtimeActor);
             }
 
-            // ObjectObserver<ActorList>.ChangedEvent(m_HandActors);
-            // ObjectObserver<ActorList>.ChangedEvent(m_PlayerField);
-            // ObjectObserver<ActorList>.ChangedEvent(m_EnemyField);
-
             TimeController.ResetTime();
 
             UpdateTimeline();
-            // ObjectObserver<ActorList>.ChangedEvent(m_Timeline);
 
             foreach (var item in m_PlayerField
                          .Concat<IStageActor>(m_HandActors)
@@ -450,7 +431,6 @@ namespace Vvr.Session.World
 
         private partial UniTask TagIn(int index);
 
-        // TODO: Test auto play method
         private async UniTask ExecuteTurn(IStageActor runtimeActor)
         {
             using var triggerEvent = ConditionTrigger.Scope(OnActorAction);
