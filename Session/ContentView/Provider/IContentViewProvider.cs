@@ -22,9 +22,8 @@
 using System;
 using Cysharp.Threading.Tasks;
 using Vvr.Provider;
-using Vvr.Session.ContentView.Provider;
 
-namespace Vvr.Session.ContentView
+namespace Vvr.Session.ContentView.Provider
 {
     public interface IContentViewProvider<TEvent> : IContentViewProvider
         where TEvent : struct, IConvertible

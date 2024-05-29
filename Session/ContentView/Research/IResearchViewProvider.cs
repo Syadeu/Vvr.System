@@ -20,8 +20,9 @@
 #endregion
 
 using Vvr.Provider;
+using Vvr.Session.ContentView.Provider;
 
-namespace Vvr.Session.ContentView.Research
+namespace Vvr.MPC.Session.ContentView.Research
 {
     [LocalProvider]
     public interface IResearchViewProvider : IContentViewProvider<ResearchViewEvent>

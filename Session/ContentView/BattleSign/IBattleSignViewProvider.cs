@@ -19,6 +19,8 @@
 
 #endregion
 
+using Vvr.Session.ContentView.Provider;
+
 namespace Vvr.Session.ContentView.BattleSign
 {
     public interface IBattleSignViewProvider : IContentViewProvider<BattleSignViewEvent>

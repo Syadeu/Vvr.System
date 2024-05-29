@@ -24,13 +24,13 @@ using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
-using Vvr.MPC.Session.ContentView.Mainmenu;
+using Vvr.MPC.Session.ContentView.Research;
 using Vvr.Provider;
 using Vvr.Session.ContentView.BattleSign;
 using Vvr.Session.ContentView.Canvas;
 using Vvr.Session.ContentView.Dialogue;
+using Vvr.Session.ContentView.Mainmenu;
 using Vvr.Session.ContentView.Provider;
-using Vvr.Session.ContentView.Research;
 using Vvr.Session.ContentView.WorldBackground;
 
 namespace Vvr.Session.ContentView

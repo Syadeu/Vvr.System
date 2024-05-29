@@ -21,11 +21,10 @@
 
 using Cysharp.Threading.Tasks;
 using UnityEngine;
-using Vvr.Controller.Research;
 using Vvr.Provider;
 using Vvr.Session.ContentView.Provider;
 
-namespace Vvr.Session.ContentView.Research
+namespace Vvr.MPC.Session.ContentView.Research
 {
     [DisallowMultipleComponent]
     public abstract class ResearchViewProviderComponent : MonoBehaviour, IResearchViewProvider

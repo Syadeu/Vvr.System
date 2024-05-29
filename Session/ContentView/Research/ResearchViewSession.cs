@@ -22,12 +22,13 @@ using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using Vvr.Controller.Research;
 using Vvr.Provider;
+using Vvr.Session;
 using Vvr.Session.AssetManagement;
 using Vvr.Session.ContentView.Core;
 using Vvr.Session.ContentView.Provider;
 using Vvr.Session.Provider;
 
-namespace Vvr.Session.ContentView.Research
+namespace Vvr.MPC.Session.ContentView.Research
 {
     [UsedImplicitly]
     public sealed class ResearchViewSession : ContentViewChildSession<ResearchViewSession.SessionData>,

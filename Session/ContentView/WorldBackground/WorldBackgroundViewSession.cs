@@ -21,6 +21,7 @@ using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using Vvr.Provider;
 using Vvr.Session.AssetManagement;
+using Vvr.Session.ContentView.Provider;
 
 namespace Vvr.Session.ContentView.WorldBackground
 {

@@ -23,7 +23,7 @@ using System;
 using Cysharp.Threading.Tasks;
 using Vvr.Provider;
 
-namespace Vvr.Session.ContentView
+namespace Vvr.Session.ContentView.Provider
 {
     public delegate UniTask ContentViewEventDelegate<in TEvent>(TEvent e, object ctx) where TEvent : struct, IConvertible;
 

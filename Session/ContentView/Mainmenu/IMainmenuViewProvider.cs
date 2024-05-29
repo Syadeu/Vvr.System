@@ -19,9 +19,9 @@
 
 #endregion
 
-using Vvr.Session.ContentView;
+using Vvr.Session.ContentView.Provider;
 
-namespace Vvr.MPC.Session.ContentView.Mainmenu
+namespace Vvr.Session.ContentView.Mainmenu
 {
     public interface IMainmenuViewProvider : IContentViewProvider<MainmenuViewEvent>
     {

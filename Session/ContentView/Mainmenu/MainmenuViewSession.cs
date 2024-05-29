@@ -19,14 +19,13 @@
 
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
+using Vvr.MPC.Session.ContentView.Research;
 using Vvr.Provider;
-using Vvr.Session;
 using Vvr.Session.AssetManagement;
-using Vvr.Session.ContentView;
 using Vvr.Session.ContentView.Core;
-using Vvr.Session.ContentView.Research;
+using Vvr.Session.ContentView.Provider;
 
-namespace Vvr.MPC.Session.ContentView.Mainmenu
+namespace Vvr.Session.ContentView.Mainmenu
 {
     [UsedImplicitly]
     public sealed class MainmenuViewSession : ContentViewChildSession<MainmenuViewSession.SessionData>,

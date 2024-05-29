@@ -20,6 +20,7 @@
 #endregion
 
 using JetBrains.Annotations;
+using Vvr.Session.ContentView.Provider;
 
 namespace Vvr.Session.ContentView.WorldBackground
 {

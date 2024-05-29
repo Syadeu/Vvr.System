@@ -20,6 +20,7 @@
 #endregion
 
 using Vvr.Provider;
+using Vvr.Session.ContentView.Provider;
 
 namespace Vvr.Session.ContentView.Dialogue
 {

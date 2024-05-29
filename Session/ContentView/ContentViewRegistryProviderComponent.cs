@@ -21,10 +21,10 @@
 
 using Sirenix.OdinInspector;
 using UnityEngine;
-using Vvr.MPC.Session.ContentView.Mainmenu;
+using Vvr.MPC.Session.ContentView.Research;
 using Vvr.Session.ContentView.BattleSign;
 using Vvr.Session.ContentView.Dialogue;
-using Vvr.Session.ContentView.Research;
+using Vvr.Session.ContentView.Mainmenu;
 using Vvr.Session.ContentView.WorldBackground;
 
 namespace Vvr.Session.ContentView
