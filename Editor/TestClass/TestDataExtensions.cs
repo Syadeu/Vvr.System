@@ -28,6 +28,9 @@ namespace Vvr.TestClass
     {
         public static AddressablePath Resolve(this AssetReference t)
         {
+            if (t.SubObjectName.IsNullOrEmpty())
+                return new AddressablePath(t.RuntimeKey.ToString());
+
             return new AddressablePath(
                 $"{t.RuntimeKey}[{t.SubObjectName}]");
         }

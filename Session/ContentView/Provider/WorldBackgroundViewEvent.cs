@@ -19,11 +19,31 @@
 
 #endregion
 
+using JetBrains.Annotations;
+using UnityEngine;
+
 namespace Vvr.Session.ContentView.Provider
 {
     public enum WorldBackgroundViewEvent : short
     {
         Open,
         Close
+    }
+
+    /// <summary>
+    /// Represents the event context for the WorldBackgroundViewEvent.
+    /// </summary>
+    [PublicAPI]
+    public struct WorldBackgroundViewEventContext
+    {
+        public object key;
+        public Sprite image;
+
+        public WorldBackgroundViewEventContext(
+            object k, Sprite img)
+        {
+            key   = k;
+            image = img;
+        }
     }
 }

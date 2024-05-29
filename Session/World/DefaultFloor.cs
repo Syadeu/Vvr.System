@@ -31,13 +31,15 @@ using Vvr.Model;
 using Vvr.Provider;
 using Vvr.Session.Actor;
 using Vvr.Session.AssetManagement;
+using Vvr.Session.ContentView.Provider;
 using Vvr.Session.Provider;
 
 namespace Vvr.Session.World
 {
  	// [ParentSession(typeof(DefaultRegion), true)]
     public partial class DefaultFloor : ParentSession<DefaultFloor.SessionData>,
-        IConnector<IViewRegistryProvider>
+        IConnector<IViewRegistryProvider>,
+        IConnector<IViewEventHandlerProvider>
     {
         public struct SessionData : ISessionData
         {
@@ -62,9 +64,10 @@ namespace Vvr.Session.World
         }
 
         private DefaultStage          m_CurrentStage;
-        private IViewRegistryProvider m_ViewRegistryProvider;
 
-        private AssetSession m_AssetSession;
+        private IAssetProvider            m_AssetProvider;
+        private IViewRegistryProvider     m_ViewRegistryProvider;
+        private IViewEventHandlerProvider m_ViewEventHandlerProvider;
 
         private int m_CurrentStageIndex;
 
@@ -79,7 +82,7 @@ namespace Vvr.Session.World
             // We dont need to manually close these sessions
             // When this session close, child session also closed.
             var timelineSession = await CreateSession<TimelineQueueSession>(default);
-            m_AssetSession = await CreateSession<AssetSession>(default);
+            m_AssetProvider = await CreateSession<AssetSession>(default);
             var stageActorCreateSession = await CreateSession<StageActorFactorySession>(default);
 
             m_FloorConfigResolveSession = await CreateSession<GameConfigResolveSession>(
@@ -92,7 +95,7 @@ namespace Vvr.Session.World
 
             // Register providers to inject child sessions.
             Register<ITimelineQueueProvider>(timelineSession)
-                .Register<IAssetProvider>(m_AssetSession)
+                .Register<IAssetProvider>(m_AssetProvider)
                 .Register<IStageActorProvider>(stageActorCreateSession);
 
             await base.OnInitialize(session, data);
@@ -108,7 +111,7 @@ namespace Vvr.Session.World
                 .Unregister<IStageActorProvider>()
                 ;
 
-            m_AssetSession              = null;
+            m_AssetProvider              = null;
             m_FloorConfigResolveSession = null;
             m_StageConfigResolveSession = null;
 
@@ -141,6 +144,8 @@ namespace Vvr.Session.World
 
             foreach (IStageData stage in Data.stages)
             {
+                await BeforeStageStartAsync(stage);
+
                 DefaultStage.SessionData sessionData;
                 if (prevPlayers.Count == 0)
                 {
@@ -157,7 +162,6 @@ namespace Vvr.Session.World
                 using (ConditionTrigger.Scope(m_StageConfigResolveSession.Resolve))
                 {
                     m_CurrentStage = await CreateSession<DefaultStage>(sessionData);
-                    // Parent.Register<IStageInfoProvider>(m_CurrentStage);
                     {
                         await trigger.Execute(Model.Condition.OnStageStarted, sessionData.stage.Id);
                         stageResult = await m_CurrentStage.Start();
@@ -170,13 +174,9 @@ namespace Vvr.Session.World
                             enemy.Owner.Release();
                         }
 
-                        // if (stageResult.playerActors.Any())
-                        {
-                            prevPlayers.Clear();
-                            prevPlayers.AddRange(stageResult.playerActors);
-                        }
+                        prevPlayers.Clear();
+                        prevPlayers.AddRange(stageResult.playerActors);
                     }
-                    // Parent.Unregister<IStageInfoProvider>();
                     await m_CurrentStage.Reserve();
                 }
 
@@ -209,6 +209,19 @@ namespace Vvr.Session.World
             return base.OnCreateSession(session);
         }
 
+        private async UniTask BeforeStageStartAsync(IStageData stageData)
+        {
+            var backgroundImg = await m_AssetProvider.LoadAsync<Sprite>(stageData.Assets[AssetType.BackgroundImage]);
+
+            if (backgroundImg is not null)
+            {
+                m_ViewEventHandlerProvider.WorldBackground.ExecuteAsync(
+                        WorldBackgroundViewEvent.Open,
+                        new WorldBackgroundViewEventContext(DisplayName, backgroundImg.Object))
+                    .Forget();
+            }
+        }
+
         private async UniTask OnConditionTriggered(IEventTarget e, Condition condition, string value)
         {
             // TODO : test code for testing corner intersection view
@@ -227,7 +240,10 @@ namespace Vvr.Session.World
             }
         }
 
-        public void Connect(IViewRegistryProvider    t) => m_ViewRegistryProvider = t;
-        public void Disconnect(IViewRegistryProvider t) => m_ViewRegistryProvider = null;
+        void IConnector<IViewRegistryProvider>.Connect(IViewRegistryProvider    t) => m_ViewRegistryProvider = t;
+        void IConnector<IViewRegistryProvider>.Disconnect(IViewRegistryProvider t) => m_ViewRegistryProvider = null;
+
+        void IConnector<IViewEventHandlerProvider>.Connect(IViewEventHandlerProvider t) => m_ViewEventHandlerProvider = t;
+        void IConnector<IViewEventHandlerProvider>.Disconnect(IViewEventHandlerProvider t) => m_ViewEventHandlerProvider = null;
     }
 }

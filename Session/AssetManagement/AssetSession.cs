@@ -200,11 +200,12 @@ namespace Vvr.Session.AssetManagement
         public async UniTask<IImmutableObject<TObject>> LoadAsync<TObject>(object key)
             where TObject : UnityEngine.Object
         {
-            if (key == null) return null;
+            if (key is null) return null;
 
             if (key is AddressablePath addressablePath)
             {
                 key = addressablePath.FullPath;
+                Assert.IsNotNull(key);
             }
 
             if (key is AssetReference assetReference &&
