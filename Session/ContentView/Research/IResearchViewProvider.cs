@@ -28,17 +28,4 @@ namespace Vvr.Session.ContentView.Research
     public interface IResearchViewProvider : IContentViewProvider<ResearchViewEvent>
     {
     }
-
-    public enum ResearchViewEvent : short
-    {
-        Open,
-        Close,
-
-        Update,
-
-        SelectGroupWithIndex,
-        SelectGroup,
-        Select,
-        Upgrade
-    }
 }

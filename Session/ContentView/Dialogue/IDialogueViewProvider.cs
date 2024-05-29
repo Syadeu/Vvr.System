@@ -44,15 +44,4 @@ namespace Vvr.Session.ContentView.Dialogue
         /// </remarks>
         bool IsFullyOpened { get; }
     }
-
-    /// <summary>
-    /// Represents the different events that can occur in a dialogue view.
-    /// </summary>
-    public enum DialogueViewEvent : short
-    {
-        Open,
-        Close,
-
-        Skip,
-    }
 }

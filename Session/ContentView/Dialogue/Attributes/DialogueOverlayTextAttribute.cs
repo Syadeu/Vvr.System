@@ -41,12 +41,9 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
         [SerializeField] private float m_Duration      = 2f;
         [SerializeField] private float m_CloseDuration = .25f;
 
-        public async UniTask ExecuteAsync(
-            IDialogue                       dialogue, IAssetProvider assetProvider,
-            IDialogueViewProvider           viewProvider,
-            DialogueProviderResolveDelegate resolveProvider)
+        public async UniTask ExecuteAsync(DialogueAttributeContext ctx)
         {
-            IDialogueViewOverlayText overlayText = viewProvider.View.OverlayText;
+            IDialogueViewOverlayText overlayText = ctx.viewProvider.View.OverlayText;
 
             await overlayText.OpenAsync(m_OpenDuration);
             await overlayText.SetTextAsync(m_Text);

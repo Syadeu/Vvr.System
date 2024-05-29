@@ -27,12 +27,4 @@ namespace Vvr.Session.ContentView.Mainmenu
     {
 
     }
-
-    public enum MainmenuViewEvent : short
-    {
-        Show,
-        Hide,
-
-        OpenResearch
-    }
 }

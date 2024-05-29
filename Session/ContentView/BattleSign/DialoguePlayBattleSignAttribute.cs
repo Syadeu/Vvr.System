@@ -38,21 +38,18 @@ namespace Vvr.Session.ContentView.BattleSign
         [SerializeField] private string m_Text;
         [SerializeField] private bool   m_WaitForClose = true;
 
-        public async UniTask ExecuteAsync(
-            IDialogue                       dialogue, IAssetProvider assetProvider,
-            IDialogueViewProvider           viewProvider,
-            DialogueProviderResolveDelegate resolveProvider)
+        public async UniTask ExecuteAsync(DialogueAttributeContext ctx)
         {
-            var provider = resolveProvider(
+            var provider = ctx.resolveProvider(
                 VvrTypeHelper.TypeOf<IBattleSignViewProvider>.Type) as IBattleSignViewProvider;
             Assert.IsNotNull(provider, "provider != null");
 
-            var canvas = resolveProvider(VvrTypeHelper.TypeOf<ICanvasViewProvider>.Type) as ICanvasViewProvider;
+            var canvas = ctx.resolveProvider(VvrTypeHelper.TypeOf<ICanvasViewProvider>.Type) as ICanvasViewProvider;
 
             if (m_WaitForClose)
-                await provider.OpenAsync(canvas, assetProvider, m_Text);
+                await provider.OpenAsync(canvas, ctx.assetProvider, m_Text);
             else
-                provider.OpenAsync(canvas, assetProvider, m_Text).Forget();
+                provider.OpenAsync(canvas, ctx.assetProvider, m_Text).Forget();
         }
 
         public override string ToString()

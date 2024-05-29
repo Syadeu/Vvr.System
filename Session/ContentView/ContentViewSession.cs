@@ -118,7 +118,29 @@ namespace Vvr.Session.ContentView
             }
         }
 
-        private IContentViewRegistryProvider m_ContentViewRegistryProvider;
+        class ViewEventHandlerProvider : IViewEventHandlerProvider, IDisposable
+        {
+            public IContentViewEventHandler<ResearchViewEvent>        Research        { get; set; }
+            public IContentViewEventHandler<DialogueViewEvent>        Dialogue        { get; set; }
+            public IContentViewEventHandler<MainmenuViewEvent>        Mainmenu        { get; set; }
+            public IContentViewEventHandler<WorldBackgroundViewEvent> WorldBackground { get; set; }
+
+            public void Dispose()
+            {
+                Research?.Dispose();
+                Dialogue?.Dispose();
+                Mainmenu?.Dispose();
+                WorldBackground?.Dispose();
+
+                Research        = null;
+                Dialogue        = null;
+                Mainmenu        = null;
+                WorldBackground = null;
+            }
+        }
+
+        private          IContentViewRegistryProvider m_ContentViewRegistryProvider;
+        private readonly ViewEventHandlerProvider     m_ViewEventHandlerProvider = new();
 
         public override string DisplayName => nameof(ContentViewSession);
 
@@ -126,35 +148,54 @@ namespace Vvr.Session.ContentView
         {
             await base.OnInitialize(session, data);
 
+            m_ViewEventHandlerProvider.Research        = new ContentViewEventHandler<ResearchViewEvent>();
+            m_ViewEventHandlerProvider.Dialogue        = new ContentViewEventHandler<DialogueViewEvent>();
+            m_ViewEventHandlerProvider.Mainmenu        = new ContentViewEventHandler<MainmenuViewEvent>();
+            m_ViewEventHandlerProvider.WorldBackground = new ContentViewEventHandler<WorldBackgroundViewEvent>();
+
             var canvasSession = await CreateSession<CanvasViewSession>(default);
             Register<ICanvasViewProvider>(canvasSession);
 
             var researchViewSession = await CreateSession<ResearchViewSession>(
                 new ResearchViewSession.SessionData()
                 {
-                    eventHandler = new ContentViewEventHandler<ResearchViewEvent>()
+                    eventHandler = m_ViewEventHandlerProvider.Research
                 });
             var dialogueViewSession = await CreateSession<DialogueViewSession>(
                 new DialogueViewSession.SessionData()
                 {
-                    eventHandler = new ContentViewEventHandler<DialogueViewEvent>()
+                    eventHandler = m_ViewEventHandlerProvider.Dialogue,
+                    viewEventHandlerProvider = m_ViewEventHandlerProvider
                 });
             var mainmenuViewSession = await CreateSession<MainmenuViewSession>(
                 new MainmenuViewSession.SessionData()
                 {
-                    eventHandler = new ContentViewEventHandler<MainmenuViewEvent>(),
+                    eventHandler = m_ViewEventHandlerProvider.Mainmenu,
                     researchEventHandler = researchViewSession.Data.eventHandler,
                     dialogueEventHandler = dialogueViewSession.Data.eventHandler
                 });
+            var worldBackgroundViewSession = await CreateSession<WorldBackgroundViewSession>(
+                new WorldBackgroundViewSession.SessionData()
+                {
+                    eventHandler = m_ViewEventHandlerProvider.WorldBackground
+                });
 
-            Parent.Register<IDialoguePlayProvider>(dialogueViewSession);
+            Parent
+                .Register<IDialoguePlayProvider>(dialogueViewSession)
+                .Register<IViewEventHandlerProvider>(m_ViewEventHandlerProvider)
+                ;
 
             Vvr.Provider.Provider.Static.Connect<IContentViewRegistryProvider>(this);
         }
 
         protected override async UniTask OnReserve()
         {
-            Parent.Unregister<IDialoguePlayProvider>();
+            m_ViewEventHandlerProvider.Dispose();
+
+            Parent
+                .Unregister<IDialoguePlayProvider>()
+                .Unregister<IViewEventHandlerProvider>()
+                ;
 
             Vvr.Provider.Provider.Static.Disconnect<IContentViewRegistryProvider>(this);
 

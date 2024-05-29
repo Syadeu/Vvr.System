@@ -40,6 +40,7 @@ namespace Vvr.Session.ContentView.Dialogue
         public struct SessionData : ISessionData
         {
             public IContentViewEventHandler<DialogueViewEvent> eventHandler;
+            public IViewEventHandlerProvider                   viewEventHandlerProvider;
         }
 
         class DialogueWrapper : IDialogue
@@ -155,8 +156,9 @@ namespace Vvr.Session.ContentView.Dialogue
                 foreach (var attribute in wrapper.Attributes)
                 {
                     var task = attribute.ExecuteAsync(
-                        wrapper, m_AssetProvider,
-                        m_DialogueViewProvider, resolveProvider);
+                        new DialogueAttributeContext(
+                            wrapper, m_AssetProvider, m_DialogueViewProvider, resolveProvider,
+                            Data.viewEventHandlerProvider));
 
                     // Attributes can be skipped if attribute has SkipAttribute
                     if (attribute is IDialogueSkipAttribute skipAttribute &&
@@ -167,9 +169,9 @@ namespace Vvr.Session.ContentView.Dialogue
 
                         if (canceled)
                         {
-                            await skipAttribute.OnSkip(
-                                wrapper, m_AssetProvider,
-                                m_DialogueViewProvider, resolveProvider);
+                            await skipAttribute.OnSkip(new DialogueAttributeContext(
+                                wrapper, m_AssetProvider, m_DialogueViewProvider, resolveProvider,
+                                Data.viewEventHandlerProvider));
 
                             m_AttributeSkipToken = new CancellationTokenSource();
                             if (skipAttribute.ShouldWaitForInput)

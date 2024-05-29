@@ -39,22 +39,19 @@ namespace Vvr.Session.ContentView.WorldBackground
         [SerializeField] private DialogueAssetReference<Sprite> m_Image;
         [SerializeField] private bool                           m_WaitForComplete = true;
 
-        public async UniTask ExecuteAsync(
-            IDialogue                       dialogue, IAssetProvider assetProvider,
-            IDialogueViewProvider           viewProvider,
-            DialogueProviderResolveDelegate resolveProvider)
+        public async UniTask ExecuteAsync(DialogueAttributeContext ctx)
         {
             IWorldBackgroundViewProvider v =
-                resolveProvider(VvrTypeHelper.TypeOf<IWorldBackgroundViewProvider>.Type) as IWorldBackgroundViewProvider;
+                ctx.resolveProvider(VvrTypeHelper.TypeOf<IWorldBackgroundViewProvider>.Type) as IWorldBackgroundViewProvider;
             Assert.IsNotNull(v, "v != null");
 
-            var img = await assetProvider.LoadAsync<Sprite>(m_Image.FullPath);
+            var img = await ctx.assetProvider.LoadAsync<Sprite>(m_Image.FullPath);
 
             var view = v.GetView(m_BackgroundID);
             if (view == null)
             {
-                var canvas = resolveProvider(VvrTypeHelper.TypeOf<ICanvasViewProvider>.Type) as ICanvasViewProvider;
-                v.OpenAsync(canvas, assetProvider, m_BackgroundID);
+                var canvas = ctx.resolveProvider(VvrTypeHelper.TypeOf<ICanvasViewProvider>.Type) as ICanvasViewProvider;
+                v.OpenAsync(canvas, ctx.assetProvider, m_BackgroundID);
                 view = v.GetView(m_BackgroundID);
             }
 

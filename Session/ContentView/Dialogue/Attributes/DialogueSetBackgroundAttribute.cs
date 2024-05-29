@@ -39,12 +39,11 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
 
         [SerializeField] private float m_Duration = .5f;
 
-        public async UniTask ExecuteAsync(IDialogue dialogue, IAssetProvider assetProvider, IDialogueViewProvider viewProvider,
-            DialogueProviderResolveDelegate resolveProvider)
+        public async UniTask ExecuteAsync(DialogueAttributeContext ctx)
         {
-            var sprite = await assetProvider.LoadAsync<Sprite>(m_Image.FullPath);
+            var sprite = await ctx.assetProvider.LoadAsync<Sprite>(m_Image.FullPath);
 
-            await viewProvider.View.Background.CrossFadeAndWait(sprite?.Object, m_Duration);
+            await ctx.viewProvider.View.Background.CrossFadeAndWait(sprite?.Object, m_Duration);
         }
 
         public override string ToString()

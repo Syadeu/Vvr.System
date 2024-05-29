@@ -45,18 +45,16 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
         [SerializeField] private Vector2 m_Offset   = new Vector2(100, 0);
         [SerializeField] private float   m_Duration = .5f;
 
-        async UniTask IDialogueAttribute.ExecuteAsync(IDialogue dialogue, IAssetProvider assetProvider,
-            IDialogueViewProvider                               viewProvider,
-            DialogueProviderResolveDelegate                     resolveProvider)
+        async UniTask IDialogueAttribute.ExecuteAsync(DialogueAttributeContext ctx)
         {
-            var portraitAsset = await assetProvider.LoadAsync<DialogueSpeakerPortrait>(m_Portrait.FullPath);
-            var portrait      = await assetProvider.LoadAsync<Sprite>(portraitAsset.Object.Portrait);
+            var portraitAsset = await ctx.assetProvider.LoadAsync<DialogueSpeakerPortrait>(m_Portrait.FullPath);
+            var portrait      = await ctx.assetProvider.LoadAsync<Sprite>(portraitAsset.Object.Portrait);
 
             IDialogueViewPortrait target;
             if (m_Right)
-                target = viewProvider.View.RightPortrait;
+                target = ctx.viewProvider.View.RightPortrait;
             else
-                target = viewProvider.View.LeftPortrait;
+                target = ctx.viewProvider.View.LeftPortrait;
 
             if (target.WasIn)
                 await target.CrossFadeAndWait(portrait.Object, portraitAsset.Object, m_Duration);

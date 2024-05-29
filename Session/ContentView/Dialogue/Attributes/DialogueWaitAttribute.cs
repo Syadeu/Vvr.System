@@ -36,10 +36,7 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
     {
         [SerializeField] private float m_Time = 1;
 
-        async UniTask IDialogueAttribute.ExecuteAsync(
-            IDialogue                   dialogue, IAssetProvider assetProvider,
-            IDialogueViewProvider           viewProvider,
-            DialogueProviderResolveDelegate resolveProvider)
+        async UniTask IDialogueAttribute.ExecuteAsync(DialogueAttributeContext ctx)
         {
             await UniTask.WaitForSeconds(m_Time);
         }
@@ -52,8 +49,7 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
         public bool CanSkip            => true;
         public bool ShouldWaitForInput => false;
 
-        public UniTask OnSkip(IDialogue        dialogue, IAssetProvider assetProvider, IDialogueViewProvider viewProvider,
-            DialogueProviderResolveDelegate resolveProvider)
+        public UniTask OnSkip(DialogueAttributeContext ctx)
         {
             return UniTask.CompletedTask;
         }

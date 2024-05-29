@@ -15,20 +15,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// File created : 2024, 05, 27 11:05
+// File created : 2024, 05, 29 17:05
 
 #endregion
 
 using JetBrains.Annotations;
-using Vvr.Session.ContentView.Provider;
+using Vvr.Provider;
 
-namespace Vvr.Session.ContentView.WorldBackground
+namespace Vvr.Session.ContentView.Provider
 {
-    public interface IWorldBackgroundViewProvider : IContentViewProvider<WorldBackgroundViewEvent>
+    /// <summary>
+    /// Represents a provider of view event handlers.
+    /// </summary>
+    [PublicAPI, LocalProvider]
+    public interface IViewEventHandlerProvider : IProvider
     {
-        // IWorldBackgroundView View { get; }
-
-        [CanBeNull]
-        IWorldBackgroundView GetView([NotNull] object ctx);
+        IContentViewEventHandler<ResearchViewEvent>        Research        { get; }
+        IContentViewEventHandler<DialogueViewEvent>        Dialogue        { get; }
+        IContentViewEventHandler<MainmenuViewEvent>        Mainmenu        { get; }
+        IContentViewEventHandler<WorldBackgroundViewEvent> WorldBackground { get; }
     }
 }

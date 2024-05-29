@@ -44,12 +44,11 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
         [Space] [SerializeField]   private TextAlignmentOptions m_Alignment = TextAlignmentOptions.TopLeft;
         [SerializeField, TextArea] private string               m_Message;
 
-        async UniTask IDialogueAttribute.ExecuteAsync(IDialogue dialogue, IAssetProvider assetProvider, IDialogueViewProvider viewProvider,
-            DialogueProviderResolveDelegate resolveProvider)
+        async UniTask IDialogueAttribute.ExecuteAsync(DialogueAttributeContext ctx)
         {
             // $"[Dialogue] Speak".ToLog();
 
-            var view = viewProvider.View;
+            var view = ctx.viewProvider.View;
 
             if (m_Message.IsNullOrEmpty())
                 view.Text.Clear();
@@ -70,10 +69,9 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
         public bool CanSkip            => true;
         public bool ShouldWaitForInput => true;
 
-        public async UniTask OnSkip(IDialogue        dialogue, IAssetProvider assetProvider, IDialogueViewProvider viewProvider,
-            DialogueProviderResolveDelegate resolveProvider)
+        public async UniTask OnSkip(DialogueAttributeContext ctx)
         {
-            viewProvider.View.Text.SkipText();
+            ctx.viewProvider.View.Text.SkipText();
         }
     }
 }

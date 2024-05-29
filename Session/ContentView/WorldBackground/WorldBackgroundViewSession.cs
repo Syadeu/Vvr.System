@@ -21,12 +21,13 @@ using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using Vvr.Provider;
 using Vvr.Session.AssetManagement;
+using Vvr.Session.ContentView.Core;
 using Vvr.Session.ContentView.Provider;
 
 namespace Vvr.Session.ContentView.WorldBackground
 {
     [UsedImplicitly]
-    public class WorldBackgroundViewSession : ParentSession<WorldBackgroundViewSession.SessionData>,
+    public class WorldBackgroundViewSession : ContentViewChildSession<WorldBackgroundViewSession.SessionData>,
         IConnector<IWorldBackgroundViewProvider>
     {
         public struct SessionData : ISessionData
@@ -45,6 +46,17 @@ namespace Vvr.Session.ContentView.WorldBackground
 
             m_AssetProvider = await CreateSession<AssetSession>(default);
 
+            data.eventHandler.Register(WorldBackgroundViewEvent.Open, OnOpen);
+            data.eventHandler.Register(WorldBackgroundViewEvent.Close, OnClose);
+        }
+
+        private async UniTask OnOpen(WorldBackgroundViewEvent e, object ctx)
+        {
+            await m_ViewProvider.OpenAsync(CanvasViewProvider, m_AssetProvider, ctx);
+        }
+        private async UniTask OnClose(WorldBackgroundViewEvent e, object ctx)
+        {
+            await m_ViewProvider.CloseAsync(ctx);
         }
 
         // public async UniTask OpenAsync(Sprite sprite)

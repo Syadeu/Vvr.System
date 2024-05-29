@@ -163,7 +163,7 @@ namespace Vvr.Session.World
         private IInputControlProvider m_InputControlProvider;
         private IViewRegistryProvider m_ViewProvider;
 
-        private AssetController m_StageAssetController;
+        // private AssetController m_StageAssetController;
 
         private Owner m_EnemyId;
 
@@ -189,12 +189,12 @@ namespace Vvr.Session.World
                 .Register<IStageInfoProvider>(this)
                 ;
 
-            m_StageAssetController      = new(data.stage.Assets);
+            // m_StageAssetController      = new(data.stage.Assets);
 
             // Connects stage asset to asset provider.
             // This makes use injected asset container from parent.
             // Which stages can share assets within same floor session.
-            Connect<IAssetProvider>(m_StageAssetController);
+            // Connect<IAssetProvider>(m_StageAssetController);
 
             m_EnemyId = Owner.Issue;
 
@@ -216,9 +216,9 @@ namespace Vvr.Session.World
                 .Unregister<IStageInfoProvider>()
                 ;
 
-            Disconnect<IAssetProvider>(m_StageAssetController);
+            // Disconnect<IAssetProvider>(m_StageAssetController);
 
-            m_StageAssetController = null;
+            // m_StageAssetController = null;
 
             m_HandActors.Clear();
             m_PlayerField.Clear();

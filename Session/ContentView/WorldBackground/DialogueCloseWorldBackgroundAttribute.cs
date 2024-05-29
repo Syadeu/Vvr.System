@@ -37,13 +37,10 @@ namespace Vvr.Session.ContentView.WorldBackground
         [SerializeField] private string m_BackgroundID = "0";
         [SerializeField] private bool   m_WaitForClose = true;
 
-        public async UniTask ExecuteAsync(
-            IDialogue                       dialogue, IAssetProvider assetProvider,
-            IDialogueViewProvider           viewProvider,
-            DialogueProviderResolveDelegate resolveProvider)
+        public async UniTask ExecuteAsync(DialogueAttributeContext ctx)
         {
             IWorldBackgroundViewProvider v =
-                resolveProvider(VvrTypeHelper.TypeOf<IWorldBackgroundViewProvider>
+                ctx.resolveProvider(VvrTypeHelper.TypeOf<IWorldBackgroundViewProvider>
                     .Type) as IWorldBackgroundViewProvider;
             Assert.IsNotNull(v, "v != null");
 
@@ -53,7 +50,7 @@ namespace Vvr.Session.ContentView.WorldBackground
                 await v.CloseAsync(m_BackgroundID);
             else
             {
-                dialogue.RegisterTask(v.CloseAsync(m_BackgroundID));
+                ctx.dialogue.RegisterTask(v.CloseAsync(m_BackgroundID));
             }
         }
 

@@ -39,14 +39,13 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
         [SerializeField] private float   m_Duration        = .5f;
         [SerializeField] private bool    m_WaitForComplete = true;
 
-        public async UniTask ExecuteAsync(IDialogue dialogue,     IAssetProvider                  assetProvider,
-            IDialogueViewProvider                   viewProvider, DialogueProviderResolveDelegate resolveProvider)
+        public async UniTask ExecuteAsync(DialogueAttributeContext ctx)
         {
             IDialogueViewPortrait target;
             if (m_Right)
-                target = viewProvider.View.RightPortrait;
+                target = ctx.viewProvider.View.RightPortrait;
             else
-                target = viewProvider.View.LeftPortrait;
+                target = ctx.viewProvider.View.LeftPortrait;
 
             Vector2 offset         = m_Offset;
             if (!m_Right) offset.x *= -1f;
@@ -55,7 +54,7 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
                 await target.FadeOutAndWait(offset, m_Duration);
             else
             {
-                dialogue.RegisterTask(target.FadeOutAndWait(offset, m_Duration));
+                ctx.dialogue.RegisterTask(target.FadeOutAndWait(offset, m_Duration));
             }
         }
 

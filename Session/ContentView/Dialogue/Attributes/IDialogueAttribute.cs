@@ -50,16 +50,8 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
         /// <summary>
         /// Executes the dialogue attribute asynchronously.
         /// </summary>
-        /// <param name="dialogue">The dialogue data.</param>
-        /// <param name="assetProvider">The asset provider.</param>
-        /// <param name="viewProvider">The dialogue view provider.</param>
-        /// <param name="resolveProvider">The dialogue provider resolve delegate.</param>
         /// <returns>A <see cref="UniTask"/> representing the asynchronous operation.</returns>
-        UniTask ExecuteAsync(
-            [NotNull] IDialogue                       dialogue,
-            [NotNull] IAssetProvider                  assetProvider,
-            [NotNull] IDialogueViewProvider           viewProvider,
-            [NotNull] DialogueProviderResolveDelegate resolveProvider);
+        UniTask ExecuteAsync(DialogueAttributeContext ctx);
     }
 
     /// <summary>
@@ -90,15 +82,7 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
         /// <summary>
         /// Represents a method that is called when the dialogue is being skipped.
         /// </summary>
-        /// <param name="dialogue">The dialogue data.</param>
-        /// <param name="assetProvider">The asset provider.</param>
-        /// <param name="viewProvider">The dialogue view provider.</param>
-        /// <param name="resolveProvider">The dialogue provider resolve delegate.</param>
         /// <returns>A task representing the asynchronous operation.</returns>
-        UniTask OnSkip(
-            [NotNull] IDialogue                       dialogue,
-            [NotNull] IAssetProvider                  assetProvider,
-            [NotNull] IDialogueViewProvider           viewProvider,
-            [NotNull] DialogueProviderResolveDelegate resolveProvider);
+        UniTask OnSkip(DialogueAttributeContext ctx);
     }
 }

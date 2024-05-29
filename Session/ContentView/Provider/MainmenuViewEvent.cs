@@ -15,20 +15,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// File created : 2024, 05, 27 11:05
+// File created : 2024, 05, 29 16:05
 
 #endregion
 
-using JetBrains.Annotations;
-using Vvr.Session.ContentView.Provider;
-
-namespace Vvr.Session.ContentView.WorldBackground
+namespace Vvr.Session.ContentView.Provider
 {
-    public interface IWorldBackgroundViewProvider : IContentViewProvider<WorldBackgroundViewEvent>
+    public enum MainmenuViewEvent : short
     {
-        // IWorldBackgroundView View { get; }
+        Show,
+        Hide,
 
-        [CanBeNull]
-        IWorldBackgroundView GetView([NotNull] object ctx);
+        Skill1Button,
+        Skill2Button,
+        AutoBattleButton,
+
+        OpenResearch
     }
 }
