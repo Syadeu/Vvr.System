@@ -52,6 +52,8 @@ namespace Vvr.Session
         private CancellationTokenSource m_ReserveTokenSource;
 
         private ConditionResolver m_ConditionResolver;
+        private TSessionData      m_SessionData;
+        private bool              m_Initialized;
 
         protected IReadOnlyDictionary<Type, IProvider> ConnectedProviders => m_ConnectedProviders;
 
@@ -100,7 +102,16 @@ namespace Vvr.Session
         /// It can be accessed and modified by the child session and its parent session.
         /// </remarks>
         [PublicAPI]
-        public TSessionData   Data   { get; private set; }
+        public TSessionData Data
+        {
+            get
+            {
+                if (!m_Initialized)
+                    throw new InvalidOperationException("You are trying to access session data before initialized");
+                return m_SessionData;
+            }
+            private set => m_SessionData = value;
+        }
 
         /// <summary>
         /// Represents a resolver used for resolving conditions in a session.
@@ -160,6 +171,8 @@ namespace Vvr.Session
             Parent = parent;
             Data   = data != null ? (TSessionData)data : default;
 
+            m_Initialized = true;
+
             m_ConditionResolver = Controller.Condition.ConditionResolver.Create(this, parent?.ConditionResolver);
             Register(m_ConditionResolver);
 
@@ -196,12 +209,13 @@ namespace Vvr.Session
             m_ReserveTokenSource.Dispose();
             m_ConditionResolver.Dispose();
 
-            Parent              = null;
-            Data                = default;
-            m_ConditionResolver = null;
-            m_ReserveTokenSource   = null;
+            Parent               = null;
+            Data                 = default;
+            m_ConditionResolver  = null;
+            m_ReserveTokenSource = null;
 
-            Disposed = true;
+            m_Initialized = false;
+            Disposed      = true;
             // TODO: recycling
             ((IDisposable)this).Dispose();
         }

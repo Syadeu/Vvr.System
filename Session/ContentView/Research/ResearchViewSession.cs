@@ -21,6 +21,7 @@ using System;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using Vvr.Controller.Research;
+using Vvr.MPC.Session.ContentView.Canvas;
 using Vvr.Provider;
 using Vvr.Session.AssetManagement;
 using Vvr.Session.Provider;
@@ -29,6 +30,7 @@ namespace Vvr.Session.ContentView.Research
 {
     [UsedImplicitly]
     public sealed class ResearchViewSession : ParentSession<ResearchViewSession.SessionData>,
+        IConnector<ICanvasViewProvider>,
         IConnector<IUserDataProvider>,
         IConnector<IResearchDataProvider>,
         IConnector<IResearchViewProvider>
@@ -42,6 +44,7 @@ namespace Vvr.Session.ContentView.Research
 
         private AssetSession m_AssetSession;
 
+        private ICanvasViewProvider   m_CanvasViewProvider;
         private IUserDataProvider     m_UserDataProvider;
         private IResearchDataProvider m_ResearchDataProvider;
         private IResearchViewProvider m_ResearchViewProvider;
@@ -157,5 +160,8 @@ namespace Vvr.Session.ContentView.Research
 
         void IConnector<IUserDataProvider>.    Connect(IUserDataProvider        t) => m_UserDataProvider = t;
         void IConnector<IUserDataProvider>.    Disconnect(IUserDataProvider     t) => m_UserDataProvider = null;
+
+        void IConnector<ICanvasViewProvider>.Connect(ICanvasViewProvider    t) => m_CanvasViewProvider = t;
+        void IConnector<ICanvasViewProvider>.Disconnect(ICanvasViewProvider t) => m_CanvasViewProvider = null;
     }
 }

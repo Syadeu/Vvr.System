@@ -24,6 +24,8 @@ using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
+using Vvr.MPC.Session.ContentView.Canvas;
+using Vvr.MPC.Session.ContentView.Mainmenu;
 using Vvr.Provider;
 using Vvr.Session.ContentView.BattleSign;
 using Vvr.Session.ContentView.Dialogue;
@@ -124,6 +126,9 @@ namespace Vvr.Session.ContentView
         {
             await base.OnInitialize(session, data);
 
+            var canvasSession = await CreateSession<CanvasViewSession>(default);
+            Register<ICanvasViewProvider>(canvasSession);
+
             m_ResearchViewSession = await CreateSession<ResearchViewSession>(
                 new ResearchViewSession.SessionData()
                 {
@@ -153,10 +158,12 @@ namespace Vvr.Session.ContentView
             m_ContentViewRegistryProvider = t;
 
             // ReSharper disable RedundantTypeArgumentsOfMethod
+
             Register<IResearchViewProvider>(t.ResearchViewProvider)
                 .Register<IDialogueViewProvider>(t.DialogueViewProvider)
                 .Register<IWorldBackgroundViewProvider>(t.WorldBackgroundViewProvider)
                 .Register<IBattleSignViewProvider>(t.BattleSignViewProvider)
+                .Register<IMainmenuViewProvider>(t.MainmenuViewProvider)
                 ;
             // ReSharper restore RedundantTypeArgumentsOfMethod
         }
@@ -166,6 +173,7 @@ namespace Vvr.Session.ContentView
                 .Unregister<IDialogueViewProvider>()
                 .Unregister<IWorldBackgroundViewProvider>()
                 .Unregister<IBattleSignViewProvider>()
+                .Unregister<IMainmenuViewProvider>()
                 ;
 
             m_ContentViewRegistryProvider = null;

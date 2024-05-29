@@ -21,6 +21,7 @@
 
 using Sirenix.OdinInspector;
 using UnityEngine;
+using Vvr.MPC.Session.ContentView.Mainmenu;
 using Vvr.Session.ContentView.BattleSign;
 using Vvr.Session.ContentView.Dialogue;
 using Vvr.Session.ContentView.Research;
@@ -30,11 +31,13 @@ namespace Vvr.Session.ContentView
 {
     public sealed class ContentViewRegistryProviderComponent : MonoBehaviour, IContentViewRegistryProvider
     {
+        [SerializeField, Required] private MainmenuViewProviderComponent   m_MainmenuViewProvider;
         [SerializeField, Required] private DialogueViewProviderComponent   m_DialogueViewProvider;
         [SerializeField, Required] private ResearchViewProviderComponent   m_ResearchViewProvider;
         [SerializeField, Required] private WorldBackgroundViewProvider     m_WorldBackgroundViewProvider;
         [SerializeField, Required] private BattleSignViewProviderComponent m_BattleSignViewProvider;
 
+        IMainmenuViewProvider IContentViewRegistryProvider.      MainmenuViewProvider        => m_MainmenuViewProvider;
         IDialogueViewProvider IContentViewRegistryProvider.       DialogueViewProvider        => m_DialogueViewProvider;
         IResearchViewProvider IContentViewRegistryProvider.       ResearchViewProvider        => m_ResearchViewProvider;
         IWorldBackgroundViewProvider IContentViewRegistryProvider.WorldBackgroundViewProvider => m_WorldBackgroundViewProvider;
