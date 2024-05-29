@@ -47,6 +47,8 @@ namespace Vvr.Session.ContentView.WorldBackground
                     .Type) as IWorldBackgroundViewProvider;
             Assert.IsNotNull(v, "v != null");
 
+            if (v.GetView(m_BackgroundID) == null) return;
+
             if (m_WaitForClose)
                 await v.CloseAsync(m_BackgroundID);
             else

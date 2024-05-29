@@ -63,7 +63,12 @@ namespace Vvr.Provider
             TObject                                template)
             where TObject : UnityEngine.Object
         {
-            return UnityEngine.Object.Instantiate(template, t.Object.transform, false);
+            var ins = UnityEngine.Object.Instantiate(template, t.Object.transform, false);
+
+            if (ins is UnityEngine.Component com) com.GetOrAddComponent<Canvas>();
+            else if (ins is GameObject obj) obj.GetOrAddComponent<CanvasGroup>();
+
+            return ins;
         }
     }
 }

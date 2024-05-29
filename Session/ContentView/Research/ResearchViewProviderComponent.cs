@@ -24,7 +24,7 @@ using UnityEngine;
 using Vvr.Provider;
 using Vvr.Session.ContentView.Provider;
 
-namespace Vvr.MPC.Session.ContentView.Research
+namespace Vvr.Session.ContentView.Research
 {
     [DisallowMultipleComponent]
     public abstract class ResearchViewProviderComponent : MonoBehaviour, IResearchViewProvider

@@ -24,13 +24,13 @@ using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
-using Vvr.MPC.Session.ContentView.Research;
 using Vvr.Provider;
 using Vvr.Session.ContentView.BattleSign;
 using Vvr.Session.ContentView.Canvas;
 using Vvr.Session.ContentView.Dialogue;
 using Vvr.Session.ContentView.Mainmenu;
 using Vvr.Session.ContentView.Provider;
+using Vvr.Session.ContentView.Research;
 using Vvr.Session.ContentView.WorldBackground;
 
 namespace Vvr.Session.ContentView
@@ -120,11 +120,6 @@ namespace Vvr.Session.ContentView
 
         private IContentViewRegistryProvider m_ContentViewRegistryProvider;
 
-        private IChildSession
-            m_MainmenuViewSession,
-            m_ResearchViewSession,
-            m_DialogueViewSession;
-
         public override string DisplayName => nameof(ContentViewSession);
 
         protected override async UniTask OnInitialize(IParentSession session, SessionData data)
@@ -134,23 +129,25 @@ namespace Vvr.Session.ContentView
             var canvasSession = await CreateSession<CanvasViewSession>(default);
             Register<ICanvasViewProvider>(canvasSession);
 
-            m_MainmenuViewSession = await CreateSession<MainmenuViewSession>(
-                new MainmenuViewSession.SessionData()
-                {
-                    eventHandler = new ContentViewEventHandler<MainmenuViewEvent>()
-                });
-            m_ResearchViewSession = await CreateSession<ResearchViewSession>(
+            var researchViewSession = await CreateSession<ResearchViewSession>(
                 new ResearchViewSession.SessionData()
                 {
                     eventHandler = new ContentViewEventHandler<ResearchViewEvent>()
                 });
-            m_DialogueViewSession = await CreateSession<DialogueViewSession>(
+            var dialogueViewSession = await CreateSession<DialogueViewSession>(
                 new DialogueViewSession.SessionData()
                 {
                     eventHandler = new ContentViewEventHandler<DialogueViewEvent>()
                 });
+            var mainmenuViewSession = await CreateSession<MainmenuViewSession>(
+                new MainmenuViewSession.SessionData()
+                {
+                    eventHandler = new ContentViewEventHandler<MainmenuViewEvent>(),
+                    researchEventHandler = researchViewSession.Data.eventHandler,
+                    dialogueEventHandler = dialogueViewSession.Data.eventHandler
+                });
 
-            Parent.Register((IDialoguePlayProvider)m_DialogueViewSession);
+            Parent.Register<IDialoguePlayProvider>(dialogueViewSession);
 
             Vvr.Provider.Provider.Static.Connect<IContentViewRegistryProvider>(this);
         }

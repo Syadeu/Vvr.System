@@ -66,6 +66,9 @@ namespace Vvr.Session.ContentView.Canvas
             await base.OnInitialize(session, data);
 
             GameObject obj = new GameObject(nameof(CanvasViewSession));
+#if UNITY_EDITOR
+            obj.hideFlags = HideFlags.NotEditable;
+#endif
             m_CanvasParent = obj.transform;
 
             Vvr.Provider.Provider.Static.Connect<ICanvasCameraProvider>(this);
@@ -78,14 +81,11 @@ namespace Vvr.Session.ContentView.Canvas
             return base.OnReserve();
         }
 
-        private void CreateCanvas(
-            CanvasSortOrder sortOrder, bool                   raycast,
+        private void               CreateCanvas(string objName,
+            CanvasSortOrder        sortOrder, bool                   raycast,
             out UnityEngine.Canvas canvas)
         {
-            string nameFormat         = $"Overlay {(short)sortOrder}";
-            if (raycast) nameFormat += " Raycast";
-
-            GameObject obj = new GameObject(nameFormat);
+            GameObject obj = new GameObject(objName);
             obj.transform.SetParent(m_CanvasParent);
 
             canvas = obj.AddComponent<UnityEngine.Canvas>();
@@ -111,7 +111,10 @@ namespace Vvr.Session.ContentView.Canvas
 
             if (m_CanvasMap.TryGetValue(h, out var v)) return v;
 
-            CreateCanvas(sortOrder, raycaster, out var canvas);
+            string nameFormat       = $"Overlay {(short)sortOrder}";
+            if (raycaster) nameFormat += " Raycast";
+
+            CreateCanvas(nameFormat, sortOrder, raycaster, out var canvas);
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
 
             var result = new ImmutableCanvas(canvas);
@@ -126,7 +129,10 @@ namespace Vvr.Session.ContentView.Canvas
 
             if (m_CanvasMap.TryGetValue(h, out var v)) return v;
 
-            CreateCanvas(sortOrder, raycaster, out var canvas);
+            string nameFormat         = $"Camera {(short)sortOrder}";
+            if (raycaster) nameFormat += " Raycast";
+
+            CreateCanvas(nameFormat, sortOrder, raycaster, out var canvas);
             canvas.renderMode = RenderMode.ScreenSpaceCamera;
             if (cameraType == CanvasCameraType.UICamera)
                 canvas.worldCamera = m_CameraProvider.UICamera;

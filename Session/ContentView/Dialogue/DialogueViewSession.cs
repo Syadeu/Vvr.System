@@ -35,7 +35,6 @@ namespace Vvr.Session.ContentView.Dialogue
     [UsedImplicitly]
     public sealed class DialogueViewSession : ContentViewChildSession<DialogueViewSession.SessionData>,
         IDialoguePlayProvider,
-        IConnector<ICanvasViewProvider>,
         IConnector<IDialogueViewProvider>
     {
         public struct SessionData : ISessionData
@@ -72,7 +71,16 @@ namespace Vvr.Session.ContentView.Dialogue
             m_AssetProvider = await CreateSession<AssetSession>(default);
 
             data.eventHandler.Register(DialogueViewEvent.Open, OnOpen);
+            data.eventHandler.Register(DialogueViewEvent.Close, OnClose);
             data.eventHandler.Register(DialogueViewEvent.Skip, OnSkip);
+        }
+
+        private async UniTask OnClose(DialogueViewEvent e, object ctx)
+        {
+            if (ctx is not IDialogueData data)
+                throw new NotImplementedException();
+
+            await m_DialogueViewProvider.CloseAsync(data);
         }
 
         private  async UniTask OnSkip(DialogueViewEvent e, object ctx)
@@ -84,9 +92,14 @@ namespace Vvr.Session.ContentView.Dialogue
 
         private async UniTask OnOpen(DialogueViewEvent e, object ctx)
         {
+            if (ctx is IImmutableObject<DialogueData> da)
+            {
+                PlayInternal(da.Object).Forget();
+                return;
+            }
             if (ctx is IDialogueData d)
             {
-                Play(d).Forget();
+                PlayInternal(d).Forget();
                 return;
             }
 
@@ -94,22 +107,33 @@ namespace Vvr.Session.ContentView.Dialogue
             {
                 if (str.EndsWith(".asset"))
                 {
-                    Play(str).Forget();
+                    PlayInternal(str).Forget();
                 }
             }
 
             throw new NotImplementedException();
         }
 
-        public async UniTask Play(string dialogueAssetPath)
+        async UniTask IDialoguePlayProvider.Play(IDialogueData dialogue)
+        {
+            await Data.eventHandler.ExecuteAsync(DialogueViewEvent.Open, dialogue);
+        }
+        async UniTask IDialoguePlayProvider.Play(string dialogueAssetPath)
+        {
+            await Data.eventHandler.ExecuteAsync(DialogueViewEvent.Open, dialogueAssetPath);
+        }
+
+        private async UniTask PlayInternal(string dialogueAssetPath)
         {
             if (!dialogueAssetPath.EndsWith(".asset"))
                 throw new InvalidOperationException($"{dialogueAssetPath}");
 
             var asset = await m_AssetProvider.LoadAsync<DialogueData>(dialogueAssetPath);
-            await Play(asset.Object);
+            // await Play(asset.Object);
+
+            await Data.eventHandler.ExecuteAsync(DialogueViewEvent.Open, asset.Object);
         }
-        public async UniTask Play(IDialogueData dialogue)
+        private async UniTask PlayInternal(IDialogueData dialogue)
         {
             UniTask lastCloseTask = UniTask.CompletedTask;
 
@@ -119,6 +143,9 @@ namespace Vvr.Session.ContentView.Dialogue
             DialogueWrapper wrapper         = new DialogueWrapper();
             wrapper.Data = dialogue;
             // IDialogueData   currentDialogue = dialogue;
+
+            m_AttributeSkipToken = new CancellationTokenSource();
+
             while (wrapper.Data != null)
             {
                 m_DialogueViewProvider
@@ -127,8 +154,6 @@ namespace Vvr.Session.ContentView.Dialogue
 
                 foreach (var attribute in wrapper.Attributes)
                 {
-                    m_AttributeSkipToken = new CancellationTokenSource();
-
                     var task = attribute.ExecuteAsync(
                         wrapper, m_AssetProvider,
                         m_DialogueViewProvider, resolveProvider);
@@ -156,6 +181,8 @@ namespace Vvr.Session.ContentView.Dialogue
                                 }
                             }
                         }
+
+                        m_AttributeSkipToken = new();
                     }
                     else
                         await task;
@@ -166,9 +193,10 @@ namespace Vvr.Session.ContentView.Dialogue
                     await UniTask.Yield();
                 }
 
-                var prevData = wrapper.Data;
+                IDialogueData prevData = wrapper.Data;
                 var newTask = UniTask.WhenAll(wrapper.Tasks.ToArray())
-                    .ContinueWith(async () => await m_DialogueViewProvider.CloseAsync(prevData));
+                    // .ContinueWith(async () => await m_DialogueViewProvider.CloseAsync(prevData));
+                    .ContinueWith(async () => await Data.eventHandler.ExecuteAsync(DialogueViewEvent.Close, prevData));
                 lastCloseTask = UniTask.WhenAll(lastCloseTask, newTask);
 
                 wrapper.Tasks.Clear();

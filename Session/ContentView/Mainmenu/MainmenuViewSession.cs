@@ -19,11 +19,12 @@
 
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
-using Vvr.MPC.Session.ContentView.Research;
 using Vvr.Provider;
 using Vvr.Session.AssetManagement;
 using Vvr.Session.ContentView.Core;
+using Vvr.Session.ContentView.Dialogue;
 using Vvr.Session.ContentView.Provider;
+using Vvr.Session.ContentView.Research;
 
 namespace Vvr.Session.ContentView.Mainmenu
 {
@@ -34,6 +35,9 @@ namespace Vvr.Session.ContentView.Mainmenu
         public struct SessionData : ISessionData
         {
             public IContentViewEventHandler<MainmenuViewEvent> eventHandler;
+
+            public IContentViewEventHandler<ResearchViewEvent> researchEventHandler;
+            public IContentViewEventHandler<DialogueViewEvent> dialogueEventHandler;
         }
 
         private IAssetProvider        m_AssetProvider;
@@ -47,17 +51,40 @@ namespace Vvr.Session.ContentView.Mainmenu
 
             m_AssetProvider = await CreateSession<AssetSession>(default);
 
-            Data.eventHandler.Register(MainmenuViewEvent.OpenResearch, OnOpenResearch);
+            data.eventHandler.Register(MainmenuViewEvent.OpenResearch, OnOpenResearch);
+
+            data.dialogueEventHandler
+                .Register(DialogueViewEvent.Open, OnDialogueOpen)
+                .Register(DialogueViewEvent.Close, OnDialogueClose);
 
             Setup().Forget();
+        }
+
+        protected override UniTask OnReserve()
+        {
+            Data.dialogueEventHandler
+                .Unregister(DialogueViewEvent.Open, OnDialogueOpen)
+                .Unregister(DialogueViewEvent.Close, OnDialogueClose);
+
+            return base.OnReserve();
+        }
+
+        private async UniTask OnDialogueClose(DialogueViewEvent e, object ctx)
+        {
+            await Data.eventHandler.ExecuteAsync(MainmenuViewEvent.Show);
+        }
+
+        private async UniTask OnDialogueOpen(DialogueViewEvent e, object ctx)
+        {
+            await Data.eventHandler.ExecuteAsync(MainmenuViewEvent.Hide);
         }
 
         private async UniTask OnOpenResearch(MainmenuViewEvent e, object ctx)
         {
             // TODO: remove parent dependency
-            var researchEventHandler = Parent.GetSession<ResearchViewSession>().Data.eventHandler;
+            // var researchEventHandler = Parent.GetSession<ResearchViewSession>().Data.eventHandler;
 
-            await researchEventHandler.ExecuteAsync(ResearchViewEvent.Open, 0);
+            await Data.researchEventHandler.ExecuteAsync(ResearchViewEvent.Open, 0);
         }
 
         private async UniTaskVoid Setup()
