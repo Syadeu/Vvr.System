@@ -20,25 +20,62 @@
 #endregion
 
 using Cysharp.Threading.Tasks;
-using TMPro;
 using UnityEngine;
 
 namespace Vvr.Session.ContentView.Dialogue
 {
+    /// <summary>
+    /// Represents a dialogue view.
+    /// </summary>
     public interface IDialogueView : IDialogueViewComponent
     {
+        /// <summary>
+        /// Represents a background image component for a dialogue view.
+        /// </summary>
         IDialogueViewBackground Background { get; }
 
+        /// <summary>
+        /// Represents the left portrait component for a dialogue view.
+        /// </summary>
+        /// <remarks>
+        /// This component represents the portrait displayed on the left side of the dialogue view.
+        /// </remarks>
+        /// <seealso cref="IDialogueViewPortrait"/>
         IDialogueViewPortrait LeftPortrait { get; }
+
+        /// <summary>
+        /// Represents a dialogue view for the right portrait.
+        /// </summary>
+        /// <remarks>
+        /// This interface is implemented by classes that represent the right portrait component in a dialogue view.
+        /// The right portrait is typically displayed alongside the text in a dialogue scene.
+        /// </remarks>
         IDialogueViewPortrait RightPortrait { get; }
 
+        /// <summary>
+        /// Represents a component of a dialogue view that displays text.
+        /// </summary>
+        /// <remarks>
+        /// This property is used to access the text component of a dialogue view. It provides methods for clearing the text, skipping the text animation, setting the text content asynchronously, and appending text to the existing content.
+        /// </remarks>
         IDialogueViewText        Text { get; }
+
+        /// <summary>
+        /// Represents the overlay text component of a dialogue view.
+        /// </summary>
         IDialogueViewOverlayText OverlayText { get; }
     }
 
+    /// <summary>
+    /// Represents a background image component for a dialogue view.
+    /// </summary>
     public interface IDialogueViewBackground : IDialogueViewImageComponent
     {
     }
+
+    /// <summary>
+    /// Represents a dialogue view for a portrait.
+    /// </summary>
     public interface IDialogueViewPortrait : IDialogueViewImageComponent
     {
         bool WasIn { get; }
@@ -49,25 +86,5 @@ namespace Vvr.Session.ContentView.Dialogue
         UniTask CrossFadeAndWait(Sprite sprite,   DialogueSpeakerPortrait speaker, float duration);
         UniTask FadeInAndWait(Vector2   offset,   float                   duration);
         UniTask FadeOutAndWait(Vector2  offset,   float                   duration);
-    }
-
-    public interface IDialogueViewText : IDialogueViewComponent
-    {
-        TextMeshProUGUI Text { get; }
-
-        void    Clear();
-        void    SkipText();
-        UniTask SetTextAsync(string    title, string text);
-        UniTask AppendTextAsync(string text);
-    }
-
-    public interface IDialogueViewOverlayText : IDialogueViewComponent
-    {
-        UniTask SetTextAsync(string text);
-
-        UniTask OpenAsync(float duration);
-        UniTask CloseAsync(float duration);
-
-        void Clear();
     }
 }

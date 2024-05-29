@@ -27,14 +27,17 @@ using Vvr.Provider;
 
 namespace Vvr.Session.ContentView.Dialogue.Attributes
 {
+    /// <summary>
+    /// Represents an attribute that indicates a wait time in a dialogue.
+    /// </summary>
     [Serializable]
     [DisplayName("Wait")]
-    class DialougeWaitAttribute : IDialogueAttribute, IDialogueSkipAttribute
+    internal sealed class DialogueWaitAttribute : IDialogueAttribute, IDialogueSkipAttribute
     {
         [SerializeField] private float m_Time = 1;
 
         async UniTask IDialogueAttribute.ExecuteAsync(
-            IDialogueData                   dialogue, IAssetProvider assetProvider,
+            IDialogue                   dialogue, IAssetProvider assetProvider,
             IDialogueViewProvider           viewProvider,
             DialogueProviderResolveDelegate resolveProvider)
         {
@@ -49,7 +52,7 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
         public bool CanSkip            => true;
         public bool ShouldWaitForInput => false;
 
-        public UniTask OnSkip(IDialogueData        dialogue, IAssetProvider assetProvider, IDialogueViewProvider viewProvider,
+        public UniTask OnSkip(IDialogue        dialogue, IAssetProvider assetProvider, IDialogueViewProvider viewProvider,
             DialogueProviderResolveDelegate resolveProvider)
         {
             return UniTask.CompletedTask;

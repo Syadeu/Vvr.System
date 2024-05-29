@@ -20,18 +20,27 @@
 #endregion
 
 using System.Collections.Generic;
-using Cysharp.Threading.Tasks;
+using JetBrains.Annotations;
 using Vvr.Model;
 using Vvr.Session.ContentView.Dialogue.Attributes;
 
 namespace Vvr.Session.ContentView.Dialogue
 {
+    /// <summary>
+    /// Represents the interface for dialogue data in a content view session.
+    /// </summary>
+    [PublicAPI]
     public interface IDialogueData : IRawData
     {
+        /// <summary>
+        /// Represents the data for a dialogue in a content view session.
+        /// </summary>
         IReadOnlyList<IDialogueAttribute> Attributes { get; }
 
+        /// <summary>
+        /// Represents the data for a dialogue in a content view session.
+        /// </summary>
+        [CanBeNull]
         IDialogueData NextDialogue { get; }
-
-        void RegisterTask(UniTask task);
     }
 }

@@ -19,19 +19,35 @@
 
 #endregion
 
+using JetBrains.Annotations;
 using Vvr.Provider;
 using Vvr.Session.ContentView.Provider;
 
 namespace Vvr.Session.ContentView.Dialogue
 {
-    [LocalProvider]
+    /// <summary>
+    /// Represents a provider for dialogue views.
+    /// </summary>
+    [LocalProvider, PublicAPI]
     public interface IDialogueViewProvider : IContentViewProvider<DialogueViewEvent>
     {
+        /// <summary>
+        /// Represents a provider for dialogue views.
+        /// </summary>
         IDialogueView View { get; }
 
+        /// <summary>
+        /// Gets a value indicating whether the dialogue view is fully opened.
+        /// </summary>
+        /// <remarks>
+        /// The value of this property determines whether the dialogue view has completed its opening animation and is fully visible to the user.
+        /// </remarks>
         bool IsFullyOpened { get; }
     }
 
+    /// <summary>
+    /// Represents the different events that can occur in a dialogue view.
+    /// </summary>
     public enum DialogueViewEvent : short
     {
         Open,

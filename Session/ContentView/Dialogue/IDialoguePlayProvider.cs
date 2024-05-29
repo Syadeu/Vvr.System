@@ -25,11 +25,25 @@ using Vvr.Provider;
 
 namespace Vvr.Session.ContentView.Dialogue
 {
+    /// <summary>
+    /// Provides methods to play dialogues.
+    /// </summary>
     [LocalProvider]
     [PublicAPI]
     public interface IDialoguePlayProvider : IProvider
     {
+        /// <summary>
+        /// Plays a dialogue.
+        /// </summary>
+        /// <param name="dialogue">The dialogue data to play.</param>
+        /// <returns>A task representing the asynchronous operation.</returns>
         UniTask Play(IDialogueData dialogue);
+
+        /// <summary>
+        /// Plays a dialogue.
+        /// </summary>
+        /// <param name="dialogueAssetPath">The path to the dialogue asset to play.</param>
+        /// <returns>A task representing the asynchronous operation.</returns>
         UniTask Play(string        dialogueAssetPath);
     }
 }

@@ -29,6 +29,10 @@ using UnityEngine;
 
 namespace Vvr.Session.ContentView.Dialogue.Attributes
 {
+    /// <summary>
+    /// Represents a reference to a dialogue asset.
+    /// </summary>
+    /// <typeparam name="TObject">The type of the dialogue asset.</typeparam>
     [PublicAPI, Serializable]
     [HideReferenceObjectPicker, InlineProperty]
     public sealed class DialogueAssetReference<TObject> : ISerializationCallbackReceiver
@@ -46,6 +50,19 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
         [HideInInspector]
         [SerializeField] private string m_AssetFullPath;
 
+        /// <summary>
+        /// Represents a reference to an editor asset.
+        /// </summary>
+        /// <typeparam name="TObject">The type of the editor asset.</typeparam>
+        /// <remarks>
+        /// <para>
+        /// The <see cref="EditorAsset"/> property allows the editor asset to be loaded
+        /// at runtime in the Unity Editor.
+        /// </para>
+        /// <para>
+        /// The reference to the editor asset is stored using its GUID in the Unity asset database.
+        /// </para>
+        /// </remarks>
         [ShowInInspector, InlineProperty, HideLabel]
         public TObject EditorAsset
         {
@@ -77,6 +94,12 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
 #endif
         }
 
+        /// <summary>
+        /// Gets the full path of the asset.
+        /// </summary>
+        /// <value>
+        /// The full path of the asset.
+        /// </value>
         public string FullPath => m_AssetFullPath;
 
         void ISerializationCallbackReceiver.OnBeforeSerialize()

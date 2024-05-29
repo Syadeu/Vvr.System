@@ -26,11 +26,14 @@ using Vvr.Provider;
 
 namespace Vvr.Session.ContentView.Dialogue.Attributes
 {
+    /// <summary>
+    /// Represents a dialogue attribute that waits for the dialogue view to be fully opened.
+    /// </summary>
     [DisplayName("Wait for opened")]
     [Serializable]
     class DialogueWaitForOpened : IDialogueAttribute
     {
-        public async UniTask ExecuteAsync(IDialogueData dialogue, IAssetProvider assetProvider, IDialogueViewProvider viewProvider,
+        public async UniTask ExecuteAsync(IDialogue dialogue, IAssetProvider assetProvider, IDialogueViewProvider viewProvider,
             DialogueProviderResolveDelegate resolveProvider)
         {
             while (!viewProvider.IsFullyOpened)

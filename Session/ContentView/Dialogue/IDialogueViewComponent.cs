@@ -19,17 +19,36 @@
 
 #endregion
 
+using JetBrains.Annotations;
 using UnityEngine;
 
 namespace Vvr.Session.ContentView.Dialogue
 {
+    /// <summary>
+    /// Represents a view component for a dialogue.
+    /// </summary>
+    [PublicAPI]
     public interface IDialogueViewComponent
     {
+        /// <summary>
+        /// Gets the transformation component of the game object.
+        /// </summary>
+        /// <value>
+        /// The transformation component of the game object.
+        /// </value>
         RectTransform Transform { get; }
     }
 
+    /// <summary>
+    /// Contains extension methods for the DialogueViewComponent interface.
+    /// </summary>
     public static class DialogueViewComponentExtensions
     {
+        /// <summary>
+        /// Makes the dialogue view component occupy the entire screen.
+        /// </summary>
+        /// <param name="c">The dialogue view component.</param>
+        /// <returns>The same dialogue view component.</returns>
         public static IDialogueViewComponent FullScreen(this IDialogueViewComponent c)
         {
             c.Transform.localScale       = Vector3.one;

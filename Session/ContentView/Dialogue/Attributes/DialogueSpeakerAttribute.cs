@@ -31,6 +31,9 @@ using Vvr.Provider;
 
 namespace Vvr.Session.ContentView.Dialogue.Attributes
 {
+    /// <summary>
+    /// Represents a dialogue speaker attribute.
+    /// </summary>
     [Serializable]
     [DisplayName("Speaker")]
     public class DialogueSpeakerAttribute : IDialogueAttribute, IDialogueSkipAttribute
@@ -41,7 +44,7 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
         [Space] [SerializeField]   private TextAlignmentOptions m_Alignment = TextAlignmentOptions.TopLeft;
         [SerializeField, TextArea] private string               m_Message;
 
-        async UniTask IDialogueAttribute.ExecuteAsync(IDialogueData dialogue, IAssetProvider assetProvider, IDialogueViewProvider viewProvider,
+        async UniTask IDialogueAttribute.ExecuteAsync(IDialogue dialogue, IAssetProvider assetProvider, IDialogueViewProvider viewProvider,
             DialogueProviderResolveDelegate resolveProvider)
         {
             // $"[Dialogue] Speak".ToLog();
@@ -67,7 +70,7 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
         public bool CanSkip            => true;
         public bool ShouldWaitForInput => true;
 
-        public async UniTask OnSkip(IDialogueData        dialogue, IAssetProvider assetProvider, IDialogueViewProvider viewProvider,
+        public async UniTask OnSkip(IDialogue        dialogue, IAssetProvider assetProvider, IDialogueViewProvider viewProvider,
             DialogueProviderResolveDelegate resolveProvider)
         {
             viewProvider.View.Text.SkipText();

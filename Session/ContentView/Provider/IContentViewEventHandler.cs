@@ -25,8 +25,18 @@ using Vvr.Provider;
 
 namespace Vvr.Session.ContentView.Provider
 {
+    /// <summary>
+    /// Delegate for ContentView events.
+    /// </summary>
+    /// <typeparam name="TEvent">The type of event.</typeparam>
+    /// <param name="e">The event.</param>
+    /// <param name="ctx">The context.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
     public delegate UniTask ContentViewEventDelegate<in TEvent>(TEvent e, object ctx) where TEvent : struct, IConvertible;
 
+    /// <summary>
+    /// Event handler interface for ContentView events.
+    /// </summary>
     public interface IContentViewEventHandler<TEvent> : IContentViewEventHandler
         where TEvent : struct, IConvertible
     {
@@ -37,6 +47,14 @@ namespace Vvr.Session.ContentView.Provider
         UniTask ExecuteAsync(TEvent e, object ctx);
     }
 
+    /// <summary>
+    /// Event handler interface for ContentView events.
+    /// </summary>
+    /// <typeparam name="TEvent">The type of the ContentView event.</typeparam>
+    /// <remarks>
+    /// This interface extends the <see cref="IContentViewEventHandler"/> interface and is used for handling specific ContentView events.
+    /// It provides methods for registering and unregistering event delegates, as well as executing the events asynchronously.
+    /// </remarks>
     [LocalProvider]
     public interface IContentViewEventHandler : IProvider, IDisposable
     {

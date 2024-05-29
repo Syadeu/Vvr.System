@@ -40,7 +40,7 @@ namespace Vvr.Session.ContentView.WorldBackground
         [SerializeField] private bool                           m_WaitForComplete = true;
 
         public async UniTask ExecuteAsync(
-            IDialogueData                   dialogue, IAssetProvider assetProvider,
+            IDialogue                       dialogue, IAssetProvider assetProvider,
             IDialogueViewProvider           viewProvider,
             DialogueProviderResolveDelegate resolveProvider)
         {

@@ -43,7 +43,7 @@ namespace Vvr.Session.ContentView.Dialogue
             public IContentViewEventHandler<DialogueViewEvent> eventHandler;
         }
 
-        class DialogueWrapper : IDialogueData
+        class DialogueWrapper : IDialogue
         {
             public IDialogueData Data  { get; set; }
             public List<UniTask> Tasks { get; } = new List<UniTask>(32);

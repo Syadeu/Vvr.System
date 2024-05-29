@@ -27,9 +27,12 @@ using Vvr.Provider;
 
 namespace Vvr.Session.ContentView.Dialogue.Attributes
 {
+    /// <summary>
+    /// Represents an attribute for overlaying text in a dialogue.
+    /// </summary>
     [Serializable]
     [DisplayName("Overlay Text")]
-    class DialogueOverlayTextAttribute : IDialogueAttribute
+    internal sealed class DialogueOverlayTextAttribute : IDialogueAttribute
     {
         [SerializeField, TextArea] private string m_Text;
 
@@ -39,9 +42,9 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
         [SerializeField] private float m_CloseDuration = .25f;
 
         public async UniTask ExecuteAsync(
-            IDialogueData dialogue, IAssetProvider assetProvider,
-            IDialogueViewProvider viewProvider,
-            DialogueProviderResolveDelegate             resolveProvider)
+            IDialogue                       dialogue, IAssetProvider assetProvider,
+            IDialogueViewProvider           viewProvider,
+            DialogueProviderResolveDelegate resolveProvider)
         {
             IDialogueViewOverlayText overlayText = viewProvider.View.OverlayText;
 

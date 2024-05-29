@@ -25,8 +25,19 @@ using Vvr.Model;
 
 namespace Vvr.Provider
 {
+    /// <summary>
+    /// Represents a provider for game configuration data.
+    /// </summary>
+    /// <remarks>
+    /// This interface is implemented by classes that provide game configuration data.
+    /// </remarks>
     public interface IGameConfigProvider : IProvider
     {
+        /// <summary>
+        /// Gets the game configuration data for the specified map type.
+        /// </summary>
+        /// <param name="t">The map type.</param>
+        /// <returns>The game configuration data for the specified map type.</returns>
         IEnumerable<GameConfigSheet.Row> this[MapType t] { get; }
     }
 }

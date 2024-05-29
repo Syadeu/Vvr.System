@@ -28,6 +28,13 @@ using Vvr.Session.ContentView.Dialogue.Attributes;
 
 namespace Vvr.Session.ContentView.Dialogue
 {
+    /// <summary>
+    /// Represents a class that holds data for a dialogue in a content view session.
+    /// </summary>
+    /// <remarks>
+    /// This class is used to store information about a dialogue in a content view session.
+    /// It implements the <see cref="IDialogueData"/> interface.
+    /// </remarks>
     [HideMonoScript]
     [CreateAssetMenu(menuName = "Vvr/Create DialogueData", fileName = "DialogueData", order = 0)]
     public class DialogueData : ScriptableObject, IDialogueData
@@ -58,10 +65,5 @@ namespace Vvr.Session.ContentView.Dialogue
         }
 
         public IDialogueData NextDialogue => m_NextDialogue;
-        void IDialogueData.RegisterTask(UniTask task)
-        {
-            // Raw data should not be used.
-            throw new System.NotImplementedException();
-        }
     }
 }

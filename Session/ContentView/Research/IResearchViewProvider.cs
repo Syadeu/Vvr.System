@@ -41,6 +41,4 @@ namespace Vvr.MPC.Session.ContentView.Research
         Select,
         Upgrade
     }
-
-
 }

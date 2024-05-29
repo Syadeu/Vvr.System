@@ -25,11 +25,27 @@ using Vvr.Model.Stat;
 
 namespace Vvr.Provider
 {
+    /// <summary>
+    /// Represents a delegate for a custom method.
+    /// </summary>
+    /// <param name="argumentResolver">The argument resolver for resolving method arguments.</param>
+    /// <returns>The result of the custom method.</returns>
     public delegate float CustomMethodDelegate(IMethodArgumentResolver argumentResolver);
 
+    /// <summary>
+    /// Interface for providing custom methods.
+    /// </summary>
     [LocalProvider]
     public interface ICustomMethodProvider : IProvider
     {
+        /// <summary>
+        /// Represents an indexer that provides access to custom methods.
+        /// </summary>
+        /// <param name="method">The name of the custom method to access.</param>
+        /// <returns>The delegate representing the custom method.</returns>
+        /// <remarks>
+        /// The custom method delegate is used to invoke a custom method with an argument resolver and return the result.
+        /// </remarks>
         CustomMethodDelegate this[CustomMethodNames method] { get; }
     }
 }

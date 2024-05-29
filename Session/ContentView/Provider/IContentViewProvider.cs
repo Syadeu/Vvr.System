@@ -25,17 +25,50 @@ using Vvr.Provider;
 
 namespace Vvr.Session.ContentView.Provider
 {
+    /// <summary>
+    /// Represents a content view provider interface.
+    /// </summary>
     public interface IContentViewProvider<TEvent> : IContentViewProvider
         where TEvent : struct, IConvertible
     {
+        /// <summary>
+        /// Initializes the ContentViewProvider with the given event handler.
+        /// </summary>
+        /// <typeparam name="TEvent">The type of event.</typeparam>
+        /// <param name="eventHandler">The event handler to initialize with.</param>
+        /// <remarks>
+        /// This method is used to initialize the ContentViewProvider by providing an event handler.
+        /// The event handler is used to handle events specific to the ContentViewProvider.
+        /// </remarks>
         void Initialize(IContentViewEventHandler<TEvent> eventHandler);
     }
-
+    /// <summary>
+    /// Represents a content view provider interface.
+    /// </summary>
     public interface IContentViewProvider : IProvider
     {
+        /// <summary>
+        /// Reserves the content view provider.
+        /// </summary>
+        /// <remarks>
+        /// This method is used to reserve the content view provider.
+        /// </remarks>
         void Reserve();
 
+        /// <summary>
+        /// Opens the ContentViewProvider asynchronously.
+        /// </summary>
+        /// <param name="canvasProvider">The ICanvasViewProvider instance used for opening the ContentViewProvider.</param>
+        /// <param name="assetProvider">The IAssetProvider instance used for opening the ContentViewProvider.</param>
+        /// <param name="ctx">The context object passed to OpenAsync method.</param>
+        /// <returns>A UniTask representing the asynchronous operation. It completes when the ContentViewProvider is opened.</returns>
         UniTask OpenAsync(ICanvasViewProvider canvasProvider, IAssetProvider assetProvider, object ctx);
+
+        /// <summary>
+        /// Closes the ContentViewProvider asynchronously with the given context.
+        /// </summary>
+        /// <param name="ctx">The context to close with.</param>
+        /// <returns>A task representing the asynchronous operation.</returns>
         UniTask CloseAsync(object        ctx);
     }
 }

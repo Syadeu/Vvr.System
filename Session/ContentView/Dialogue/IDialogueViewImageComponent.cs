@@ -20,15 +20,42 @@
 #endregion
 
 using Cysharp.Threading.Tasks;
+using JetBrains.Annotations;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace Vvr.Session.ContentView.Dialogue
 {
+    /// <summary>
+    /// Represents a view component for an image in a dialogue.
+    /// </summary>
+    [PublicAPI]
     public interface IDialogueViewImageComponent : IDialogueViewComponent
     {
+        /// <summary>
+        /// Represents a view component for an image in a dialogue.
+        /// </summary>
+        /// <remarks>
+        /// This interface is used to define a view component for displaying images in a dialogue.
+        /// It provides properties and methods for manipulating the image component, such as setting the color and crossfading to a new sprite.
+        /// The interface inherits from the <see cref="IDialogueViewComponent"/> interface, which represents a base component for a dialogue view.
+        /// </remarks>
         Image   Image { get; }
+
+        /// <summary>
+        /// Sets the color of the image component with a given duration.
+        /// </summary>
+        /// <param name="color">The color to set the image component.</param>
+        /// <param name="duration">The duration in which the color transition should happen.</param>
+        /// <returns>A UniTask representing the asynchronous operation.</returns>
         UniTask SetColor(Color   color,  float duration);
+
+        /// <summary>
+        /// Cross-fades the image of a dialogue view component with a given duration and waits for the transition to complete.
+        /// </summary>
+        /// <param name="sprite">The sprite to fade to.</param>
+        /// <param name="duration">The duration in which the fade transition should happen.</param>
+        /// <returns>A UniTask representing the asynchronous operation.</returns>
         UniTask CrossFadeAndWait(Sprite sprite, float duration);
     }
 }

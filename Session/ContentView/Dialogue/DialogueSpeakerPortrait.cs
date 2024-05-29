@@ -25,6 +25,9 @@ using UnityEngine.AddressableAssets;
 
 namespace Vvr.Session.ContentView.Dialogue
 {
+    /// <summary>
+    /// Represents a speaker portrait used in a dialogue.
+    /// </summary>
     [CreateAssetMenu(menuName = "Vvr/Create DialogueSpeakerPortrait", fileName = "DialogueSpeakerPortrait", order = 0)]
     [HideMonoScript]
     public class DialogueSpeakerPortrait : ScriptableObject

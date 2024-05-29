@@ -21,13 +21,15 @@ using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using UnityEngine;
-using UnityEngine.AddressableAssets;
 using UnityEngine.UI;
 using Vvr.Provider;
 using Vvr.Session.ContentView.Provider;
 
 namespace Vvr.Session.ContentView.Canvas
 {
+    /// <summary>
+    /// Represents a canvas view session for displaying canvas elements.
+    /// </summary>
     [UsedImplicitly]
     public sealed class CanvasViewSession : ParentSession<CanvasViewSession.SessionData>,
         ICanvasViewProvider,

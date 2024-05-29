@@ -31,9 +31,12 @@ using Vvr.Provider;
 
 namespace Vvr.Session.ContentView.Dialogue.Attributes
 {
+    /// <summary>
+    /// Represents an attribute for the dialogues to specify a portrait on the screen during the dialogue.
+    /// </summary>
     [Serializable]
     [DisplayName("Portrait In")]
-    sealed class DialoguePortraitInAttribute : IDialogueAttribute
+    internal sealed class DialoguePortraitInAttribute : IDialogueAttribute
     {
         [SerializeField] private DialogueAssetReference<DialogueSpeakerPortrait> m_Portrait;
 
@@ -42,9 +45,9 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
         [SerializeField] private Vector2 m_Offset   = new Vector2(100, 0);
         [SerializeField] private float   m_Duration = .5f;
 
-        async UniTask IDialogueAttribute.ExecuteAsync(IDialogueData dialogue, IAssetProvider assetProvider,
-            IDialogueViewProvider                                   viewProvider,
-            DialogueProviderResolveDelegate                         resolveProvider)
+        async UniTask IDialogueAttribute.ExecuteAsync(IDialogue dialogue, IAssetProvider assetProvider,
+            IDialogueViewProvider                               viewProvider,
+            DialogueProviderResolveDelegate                     resolveProvider)
         {
             var portraitAsset = await assetProvider.LoadAsync<DialogueSpeakerPortrait>(m_Portrait.FullPath);
             var portrait      = await assetProvider.LoadAsync<Sprite>(portraitAsset.Object.Portrait);

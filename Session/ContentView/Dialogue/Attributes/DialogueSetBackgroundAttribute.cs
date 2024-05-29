@@ -27,16 +27,19 @@ using Vvr.Provider;
 
 namespace Vvr.Session.ContentView.Dialogue.Attributes
 {
+    /// <summary>
+    /// Represents an attribute for setting the background of a dialogue.
+    /// </summary>
     [DisplayName("Set Background")]
     [Serializable]
-    class DialogueSetBackgroundAttribute : IDialogueAttribute
+    internal sealed class DialogueSetBackgroundAttribute : IDialogueAttribute
     {
         [SerializeField] private DialogueAssetReference<Sprite>
             m_Image;
 
         [SerializeField] private float m_Duration = .5f;
 
-        public async UniTask ExecuteAsync(IDialogueData dialogue, IAssetProvider assetProvider, IDialogueViewProvider viewProvider,
+        public async UniTask ExecuteAsync(IDialogue dialogue, IAssetProvider assetProvider, IDialogueViewProvider viewProvider,
             DialogueProviderResolveDelegate resolveProvider)
         {
             var sprite = await assetProvider.LoadAsync<Sprite>(m_Image.FullPath);

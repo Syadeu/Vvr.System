@@ -27,9 +27,16 @@ using UnityEngine.ResourceManagement.AsyncOperations;
 
 namespace Vvr.Session.AssetManagement
 {
+    /// <summary>
+    /// Represents a child session for addressable assets management.
+    /// </summary>
+    /// <remarks>
+    /// This session provides all necessary network addressable methods
+    /// includes download content catalogs from remote.
+    /// </remarks>
     [UsedImplicitly]
     [ParentSession(typeof(GameDataSession))]
-    class AddressableSession : ChildSession<AddressableSession.SessionData>
+    internal sealed class AddressableSession : ChildSession<AddressableSession.SessionData>
     {
         public struct SessionData : ISessionData
         {

@@ -24,16 +24,21 @@ using Vvr.Session.ContentView.Provider;
 
 namespace Vvr.Session.ContentView.Core
 {
+    /// <summary>
+    /// Represents an abstract child session that is used in a content view and can be managed by a parent session.
+    /// </summary>
+    /// <typeparam name="TSessionData">The type of session data stored in the child session.</typeparam>
     public abstract class ContentViewChildSession<TSessionData> : ParentSession<TSessionData>,
         IConnector<ICanvasViewProvider>
 
         where TSessionData : ISessionData
     {
-        private ICanvasViewProvider m_CanvasViewProvider;
+        /// <summary>
+        /// Represents a provider for accessing a canvas view.
+        /// </summary>
+        protected ICanvasViewProvider CanvasViewProvider { get; private set; }
 
-        protected ICanvasViewProvider CanvasViewProvider => m_CanvasViewProvider;
-
-        void IConnector<ICanvasViewProvider>.Connect(ICanvasViewProvider t) => m_CanvasViewProvider = t;
-        void IConnector<ICanvasViewProvider>.Disconnect(ICanvasViewProvider t) => m_CanvasViewProvider = null;
+        void IConnector<ICanvasViewProvider>.Connect(ICanvasViewProvider t) => CanvasViewProvider = t;
+        void IConnector<ICanvasViewProvider>.Disconnect(ICanvasViewProvider t) => CanvasViewProvider = null;
     }
 }

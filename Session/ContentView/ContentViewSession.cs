@@ -35,6 +35,9 @@ using Vvr.Session.ContentView.WorldBackground;
 
 namespace Vvr.Session.ContentView
 {
+    /// <summary>
+    /// Represents a session for content view functionality.
+    /// </summary>
     [UsedImplicitly]
     public sealed class ContentViewSession : ParentSession<ContentViewSession.SessionData>,
         IConnector<IContentViewRegistryProvider>

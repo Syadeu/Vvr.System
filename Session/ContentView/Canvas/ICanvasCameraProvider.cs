@@ -24,9 +24,27 @@ using Vvr.Provider;
 
 namespace Vvr.Session.ContentView.Canvas
 {
+    /// <summary>
+    /// Represents a canvas camera provider interface.
+    /// </summary>
     public interface ICanvasCameraProvider : IProvider
     {
+        /// <summary>
+        /// Represents the default camera used in the canvas.
+        /// </summary>
+        /// <remarks>
+        /// The Default property is used in the CanvasCameraProviderComponent class to provide access to the default camera.
+        /// The camera is used for rendering canvas elements.
+        /// </remarks>
         Camera Default  { get; }
+
+        /// <summary>
+        /// Represents the UI camera used in the canvas.
+        /// </summary>
+        /// <remarks>
+        /// The UICamera property is used in the CanvasCameraProviderComponent class to provide access to the UI camera.
+        /// The camera is used for rendering UI elements on the canvas.
+        /// </remarks>
         Camera UICamera { get; }
     }
 }

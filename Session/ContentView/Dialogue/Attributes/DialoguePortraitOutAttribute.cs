@@ -27,17 +27,20 @@ using Vvr.Provider;
 
 namespace Vvr.Session.ContentView.Dialogue.Attributes
 {
+    /// <summary>
+    /// Represents a dialogue attribute for fading out a portrait in a dialogue view.
+    /// </summary>
     [Serializable]
     [DisplayName("Portrait Out")]
-    class DialoguePortraitOutAttribute : IDialogueAttribute
+    internal sealed class DialoguePortraitOutAttribute : IDialogueAttribute
     {
         [SerializeField] private bool    m_Right;
         [SerializeField] private Vector2 m_Offset          = new Vector2(100, 0);
         [SerializeField] private float   m_Duration        = .5f;
         [SerializeField] private bool    m_WaitForComplete = true;
 
-        public async UniTask ExecuteAsync(IDialogueData dialogue,     IAssetProvider                  assetProvider,
-            IDialogueViewProvider                       viewProvider, DialogueProviderResolveDelegate resolveProvider)
+        public async UniTask ExecuteAsync(IDialogue dialogue,     IAssetProvider                  assetProvider,
+            IDialogueViewProvider                   viewProvider, DialogueProviderResolveDelegate resolveProvider)
         {
             IDialogueViewPortrait target;
             if (m_Right)

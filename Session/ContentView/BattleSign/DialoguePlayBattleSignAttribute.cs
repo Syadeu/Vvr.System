@@ -39,8 +39,8 @@ namespace Vvr.Session.ContentView.BattleSign
         [SerializeField] private bool   m_WaitForClose = true;
 
         public async UniTask ExecuteAsync(
-            IDialogueData  dialogue, IAssetProvider assetProvider,
-            IDialogueViewProvider viewProvider,
+            IDialogue                       dialogue, IAssetProvider assetProvider,
+            IDialogueViewProvider           viewProvider,
             DialogueProviderResolveDelegate resolveProvider)
         {
             var provider = resolveProvider(

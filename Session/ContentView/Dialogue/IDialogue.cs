@@ -15,31 +15,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // 
-// File created : 2024, 05, 23 01:05
+// File created : 2024, 05, 29 14:05
 
 #endregion
 
+using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 
-namespace Vvr.Model
+namespace Vvr.Session.ContentView.Dialogue
 {
     /// <summary>
-    /// Represents a method argument resolver.
+    /// Represents the interface for a dialogue in a content view session.
     /// </summary>
     [PublicAPI]
-    public interface IMethodArgumentResolver
+    public interface IDialogue : IDialogueData
     {
         /// <summary>
-        /// Resolves the value of a method argument.
+        /// Registers a task for the dialogue.
         /// </summary>
-        /// <param name="arg">The argument name to resolve the value for.</param>
-        /// <returns>The resolved value of the argument.</returns>
-        /// <exception cref="System.ObjectDisposedException">Thrown if the research node is disposed.</exception>
-        /// <exception cref="System.ArgumentException">Thrown if the provided argument name is not valid.</exception>
-        /// <remarks>
-        /// This method resolves the value of a method argument based on the provided argument name.
-        /// </remarks>
-        [PublicAPI]
-        float Resolve(string arg);
+        /// <remarks>Registered task will be waited before close dialogue view.</remarks>
+        /// <param name="task">The task to register.</param>
+        void RegisterTask(UniTask task);
     }
 }

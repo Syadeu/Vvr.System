@@ -25,6 +25,13 @@ using UnityEngine;
 
 namespace Vvr.Session.ContentView.Dialogue.Attributes
 {
+    /// <summary>
+    /// Represents a serializable attribute used to store raw dialogue attribute data.
+    /// </summary>
+    /// <remarks>
+    /// This class is used to store raw dialogue attribute data that can be resolved into an instance of <see cref="IDialogueAttribute"/>.
+    /// It implements the <see cref="ISerializationCallbackReceiver"/> interface for serialization purposes.
+    /// </remarks>
     [Serializable]
     sealed class RawDialogueAttribute : ISerializationCallbackReceiver
     {
@@ -46,8 +53,15 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
 
         private IDialogueAttribute m_Attribute;
 
-        [HideIf("@" + nameof(m_TypeResolveFailed))]
-        [FoldoutGroup("@"+nameof(DisplayName), GroupID = "Attribute")]
+        /// <summary>
+        /// Represents a serializable attribute used to store raw dialogue attribute data.
+        /// </summary>
+        /// <remarks>
+        /// This class is used to store raw dialogue attribute data that can be resolved into an instance of <see cref="IDialogueAttribute"/>.
+        /// It implements the <see cref="ISerializationCallbackReceiver"/> interface for serialization purposes.
+        /// </remarks>
+        [HideIf("@"       + nameof(m_TypeResolveFailed))]
+        [FoldoutGroup("@" + nameof(DisplayName), GroupID = "Attribute")]
         [ShowInInspector, InlineProperty, HideLabel]
         [HideReferenceObjectPicker]
         public IDialogueAttribute Value
@@ -85,6 +99,7 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
         {
         }
 
+#if UNITY_EDITOR
         [OnInspectorGUI, ShowIf(nameof(m_TypeResolveFailed))]
         private void OnInspectorGUI()
         {
@@ -92,7 +107,20 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
             GUILayout.TextArea(m_TypeName);
             GUI.enabled = true;
         }
+#endif
 
+        /// <summary>
+        /// Resolves raw dialogue attribute data into an instance of <see cref="IDialogueAttribute"/>.
+        /// </summary>
+        /// <remarks>
+        /// This method takes the raw dialogue attribute data stored in the <see cref="RawDialogueAttribute"/> class and resolves it into an actual instance of <see cref="IDialogueAttribute"/>.
+        /// It first checks if the type name is specified. If not, it sets the attribute to null and returns.
+        /// If the type name is valid, it retrieves the corresponding type from the <see cref="DialogueAttributeHelper.AttributeTypeMap"/>.
+        /// If the type is not found, it sets the <see cref="RawDialogueAttribute.m_TypeResolveFailed"/> flag to true and returns.
+        /// If the type is found, it deserializes the serialized JSON data stored in the <see cref="RawDialogueAttribute.m_Json"/> string into an instance of the type using <see cref="JsonUtility.FromJson"/>.
+        /// If the JSON data is empty, it creates a new instance of the type using <see cref="Activator.CreateInstance{T}"/> and casts it to <see cref="IDialogueAttribute"/>.
+        /// Finally, it sets the resolved attribute instance to the <see cref="RawDialogueAttribute.m_Attribute"/> property.
+        /// </remarks>
         private void Resolve()
         {
             if (m_TypeName.IsNullOrEmpty())

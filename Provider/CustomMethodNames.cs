@@ -23,6 +23,9 @@ using System;
 
 namespace Vvr.Provider
 {
+    /// <summary>
+    /// Represents custom method names used in the application.
+    /// </summary>
     public readonly ref struct CustomMethodNames
     {
         // ReSharper disable InconsistentNaming

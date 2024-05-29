@@ -31,6 +31,10 @@ namespace Vvr.Session.AssetManagement
     /// <summary>
     /// Represents a session for game configuration.
     /// </summary>
+    /// <remarks>
+    /// This class is used to manage and provide game configuration data.
+    /// It implements the <see cref="IChildSession"/> and <see cref="IGameConfigProvider"/> interfaces.
+    /// </remarks>
     [UsedImplicitly]
     [ParentSession(typeof(GameDataSession))]
     public class GameConfigSession : ChildSession<GameConfigSession.SessionData>,

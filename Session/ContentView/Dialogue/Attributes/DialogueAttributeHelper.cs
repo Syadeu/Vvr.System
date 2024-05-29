@@ -28,14 +28,21 @@ using Sirenix.OdinInspector;
 
 namespace Vvr.Session.ContentView.Dialogue.Attributes
 {
-    static class DialogueAttributeHelper
+    /// <summary>
+    /// Helper class for handling dialogue attributes.
+    /// </summary>
+    internal static class DialogueAttributeHelper
     {
-        private static readonly Dictionary<string, Type>
-            s_AttributeTypeMap = new();
+        private static readonly Dictionary<string, Type>  s_AttributeTypeMap = new();
         private static          ValueDropdownList<string> s_Values;
 
-        public static IReadOnlyDictionary<string, Type>
-            AttributeTypeMap => s_AttributeTypeMap;
+        /// <summary>
+        /// Gets the attribute type map, which maps attribute names to attribute types.
+        /// </summary>
+        /// <value>
+        /// The attribute type map.
+        /// </value>
+        public static IReadOnlyDictionary<string, Type> AttributeTypeMap => s_AttributeTypeMap;
 
         static DialogueAttributeHelper()
         {
@@ -46,6 +53,10 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
             }
         }
 
+        /// <summary>
+        /// Gets the dropdown list of dialogue attribute types.
+        /// </summary>
+        /// <returns>The dropdown list of dialogue attribute types.</returns>
         internal static ValueDropdownList<string> GetDropdownList()
         {
             if (s_Values != null) return s_Values;
