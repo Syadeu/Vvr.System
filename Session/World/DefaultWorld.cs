@@ -74,7 +74,6 @@ namespace Vvr.Session.World
                 .Register<IGameMethodProvider>(results.Item2)
                 ;
 
-            // TODO: skip map load
             DefaultMap = await CreateSession<DefaultMap>(default);
         }
 
@@ -90,11 +89,6 @@ namespace Vvr.Session.World
             session.Register(m_ViewRegistryProvider);
 
             return base.OnCreateSession(session);
-        }
-
-        public async UniTask StartDataSession()
-        {
-            DataSession = await CreateSession<GameDataSession>(default);
         }
 
         void IConnector<IViewRegistryProvider>.Connect(IViewRegistryProvider    t)

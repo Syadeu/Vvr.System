@@ -133,7 +133,9 @@ namespace Vvr.Session.World
             // LinkedListNode<StageSheet.Row> startStage  = Data.stages.First;
             List<IStageActor>              prevPlayers = new(Data.existingActors);
 
-            var cachedStartStage = Data.stages.First();
+            IStageData cachedStartStage = Data.stages.First();
+            await BeforeStageStartAsync(cachedStartStage);
+
             await trigger.Execute(Model.Condition.OnFloorStarted, $"{cachedStartStage.Floor}");
 
             // TODO: test
@@ -142,9 +144,11 @@ namespace Vvr.Session.World
             await UniTask.WaitForSeconds(2);
             await m_ViewRegistryProvider.StageViewProvider.CloseEntryViewAsync();
 
+            int count = 0;
             foreach (IStageData stage in Data.stages)
             {
-                await BeforeStageStartAsync(stage);
+                if (count++ > 0)
+                    await BeforeStageStartAsync(stage);
 
                 DefaultStage.SessionData sessionData;
                 if (prevPlayers.Count == 0)

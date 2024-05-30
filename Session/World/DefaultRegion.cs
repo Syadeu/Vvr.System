@@ -37,7 +37,6 @@ namespace Vvr.Session.World
     public class DefaultRegion : ParentSession<DefaultRegion.SessionData>,
         IConnector<IUserActorProvider>,
         IConnector<IUserStageProvider>,
-        // IConnector<IManualInputProvider>,
 
     // TODO: Temp
         IConnector<IStageDataProvider>
@@ -54,19 +53,15 @@ namespace Vvr.Session.World
 
         public override string DisplayName => nameof(DefaultRegion);
 
-        // private UniTask<IChildSession> CurrentControlSession { get; set; }
 
         protected override async UniTask OnInitialize(IParentSession session, SessionData data)
         {
             await base.OnInitialize(session, data);
 
             await CreateSession<PlayerControlSession>(default);
-            // CurrentControlSession = SwitchControl(null);
 
             var actorProvider = await CreateSession<ActorFactorySession>(default);
             Register<IActorProvider>(actorProvider);
-
-            // Vvr.Provider.Provider.Static.Connect<IManualInputProvider>(this);
 
             Start()
                 .AttachExternalCancellation(ReserveToken)
@@ -84,8 +79,6 @@ namespace Vvr.Session.World
         private async UniTask Start()
         {
             using var trigger = ConditionTrigger.Push(this, DisplayName);
-            // StageSheet.Row startStage = Data.sheet[Data.startStageId];
-            // var startStage = m_StageDataProvider.First().Value;
             var startStage = m_UserStageProvider.CurrentStage;
 
             var             currentStage = startStage;
@@ -96,10 +89,6 @@ namespace Vvr.Session.World
             {
                 list.AddLast(currentStage);
 
-                // var nextStage = m_StageDataProvider.ElementAt(currentStage.Index + 1);
-                // if (nextStage == null ||
-                //     nextStage.Region != startStage.Region ||
-                //     nextStage.Floor != currentStage.Floor)
                 if (currentStage.IsLastStage ||
                     currentStage.IsLastOfRegion)
                 {
@@ -149,18 +138,6 @@ namespace Vvr.Session.World
 
         void IConnector<IStageDataProvider>.Connect(IStageDataProvider t) => m_StageDataProvider = t;
         void IConnector<IStageDataProvider>.Disconnect(IStageDataProvider t) => m_StageDataProvider = null;
-
-        // void IConnector<IManualInputProvider>.Connect(IManualInputProvider t)
-        // {
-        //     m_IsAutoControl = false;
-        //     CurrentControlSession = CurrentControlSession.ContinueWith(SwitchControl);
-        // }
-        //
-        // void IConnector<IManualInputProvider>.Disconnect(IManualInputProvider t)
-        // {
-        //     m_IsAutoControl     = true;
-        //     CurrentControlSession = CurrentControlSession.ContinueWith(SwitchControl);
-        // }
 
         void IConnector<IUserStageProvider>.Connect(IUserStageProvider    t) => m_UserStageProvider = t;
         void IConnector<IUserStageProvider>.Disconnect(IUserStageProvider t) => m_UserStageProvider = null;

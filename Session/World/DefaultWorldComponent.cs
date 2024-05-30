@@ -44,8 +44,10 @@ namespace Vvr.Session.World
             yield break;
         }
 
-        private async UniTaskVoid Startup()
+        protected async UniTask<DefaultWorld> Startup()
         {
+            if (GameWorld.World is not null) return GameWorld.World as DefaultWorld;
+
             var world = await GameWorld.GetOrCreate<DefaultWorld>(Owner.Issue);
 
             var addressableSession
@@ -67,14 +69,14 @@ namespace Vvr.Session.World
 #if UNITY_EDITOR
                     UnityEditor.EditorApplication.isPlaying = false;
 #endif
-                    return;
+                    return null;
                 }
             }
 
             await addressableSession.DownloadAsync(m_DownloadPopup);
             await addressableSession.Reserve();
 
-            world.Booting().Forget();
+            return world;
         }
     }
 }
