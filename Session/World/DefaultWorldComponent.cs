@@ -74,8 +74,16 @@ namespace Vvr.Session.World
             }
 
             await addressableSession.DownloadAsync(m_DownloadPopup);
-            await addressableSession.Reserve();
 
+            while (m_DownloadPopup.DownloadSlider.value < m_DownloadPopup.DownloadSlider.maxValue - .01f)
+            {
+                await UniTask.Yield();
+            }
+
+            await UniTask.WhenAll(
+                m_DownloadPopup.CloseAsync(),
+                addressableSession.Reserve()
+                );
             return world;
         }
     }

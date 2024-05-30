@@ -32,10 +32,16 @@ namespace Vvr.Session.World
     {
         [SerializeField, Required] private Slider m_DownloadSlider;
 
-        protected Slider DownloadSlider => m_DownloadSlider;
+        public Slider DownloadSlider => m_DownloadSlider;
 
         public virtual UniTask OpenAsync(long downloadBytes, UniTaskCompletionSource<bool> confirmation)
         {
+            return UniTask.CompletedTask;
+        }
+
+        public virtual UniTask CloseAsync()
+        {
+            gameObject.SetActive(false);
             return UniTask.CompletedTask;
         }
 
