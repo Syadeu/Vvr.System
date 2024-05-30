@@ -115,7 +115,7 @@ namespace Vvr.Session.World
             }
 
             await UniTask.WhenAll(tasks);
-            ArrayPool<UniTask>.Shared.Return(tasks);
+            ArrayPool<UniTask>.Shared.Return(tasks, true);
         }
         private partial async UniTask CloseTimelineNodeView()
         {
@@ -132,7 +132,7 @@ namespace Vvr.Session.World
             }
 
             await UniTask.WhenAll(tasks);
-            ArrayPool<UniTask>.Shared.Return(tasks);
+            ArrayPool<UniTask>.Shared.Return(tasks, true);
         }
 
         /// <summary>

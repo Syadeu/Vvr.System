@@ -20,6 +20,7 @@
 #endregion
 
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
@@ -54,7 +55,7 @@ namespace Vvr.Session.ContentView
 
             private readonly CancellationTokenSource m_CancellationTokenSource = new();
 
-            private uint CalculateHash(ContentViewEventDelegate<TEvent> x)
+            private static uint CalculateHash(ContentViewEventDelegate<TEvent> x)
             {
                 uint hash =
                     FNV1a32.Calculate(x.Method.Name)
@@ -100,26 +101,32 @@ namespace Vvr.Session.ContentView
             {
                 if (!m_Actions.TryGetValue(e, out var list)) return;
 
-                UniTask sum = UniTask.CompletedTask;
-                for (int i = 0; i < list.Count; i++)
+                int count = list.Count;
+                var array = ArrayPool<UniTask>.Shared.Rent(count);
+
+                for (int i = 0; i < count; i++)
                 {
-                    sum = UniTask.WhenAll(sum, m_ActionMap[list[i]](e, null));
+                    array[i] = m_ActionMap[list[i]](e, null);
                 }
 
-                await sum;
+                await UniTask.WhenAll(array);
+                ArrayPool<UniTask>.Shared.Return(array, true);
             }
 
             public async UniTask ExecuteAsync(TEvent e, object ctx)
             {
                 if (!m_Actions.TryGetValue(e, out var list)) return;
 
-                UniTask sum = UniTask.CompletedTask;
-                for (int i = 0; i < list.Count; i++)
+                int count = list.Count;
+                var array = ArrayPool<UniTask>.Shared.Rent(count);
+
+                for (int i = 0; i < count; i++)
                 {
-                    sum = UniTask.WhenAll(sum, m_ActionMap[list[i]](e, ctx));
+                    array[i] = m_ActionMap[list[i]](e, ctx);
                 }
 
-                await sum;
+                await UniTask.WhenAll(array);
+                ArrayPool<UniTask>.Shared.Return(array, true);
             }
 
             public void Dispose()

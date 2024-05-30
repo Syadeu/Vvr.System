@@ -32,7 +32,6 @@ namespace Vvr.Session.ContentView
         public abstract IDialogueView View { get; }
 
         public abstract bool IsFullyOpened { get; }
-        // public abstract UniTask       SpeakAsync(string dialogueId, Sprite portraitImage, IDialogueSpeaker speaker);
 
         public abstract void Initialize(IContentViewEventHandler<DialogueViewEvent> eventHandler);
         public abstract void Reserve();
