@@ -23,7 +23,10 @@ using Cysharp.Threading.Tasks;
 
 namespace Vvr.Session
 {
-    public interface IGameSessionCallback
+    /// <summary>
+    /// Interface for game session callbacks.
+    /// </summary>
+    internal interface IGameSessionCallback
     {
         /// <summary>
         /// Executed from child session that child of this session has been closed.

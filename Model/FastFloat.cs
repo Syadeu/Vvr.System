@@ -21,9 +21,13 @@
 
 using System;
 using System.Diagnostics;
+using JetBrains.Annotations;
 
 namespace Vvr.Model
 {
+    /// <summary>
+    /// Represents a struct that provides fast parsing of floating-point numbers.
+    /// </summary>
     public ref struct FastFloat
     {
         [Conditional("UNITY_EDITOR")]
@@ -39,6 +43,12 @@ namespace Vvr.Model
                 }
             }
         }
+
+        /// <summary>
+        /// Parses a string representation of a float value into a float.
+        /// </summary>
+        /// <param name="value">The string representation of the float value.</param>
+        /// <returns>The parsed float value.</returns>
         public static float Parse(ReadOnlySpan<char> value)
         {
             const char delimiter = '.';

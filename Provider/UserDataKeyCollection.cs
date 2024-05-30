@@ -26,8 +26,11 @@ using Vvr.Model;
 
 namespace Vvr.Provider
 {
+    /// <summary>
+    /// Represents a collection of user data keys related to game configuration and research.
+    /// </summary>
     [PublicAPI]
-    public ref struct UserDataKeyCollection
+    public readonly ref struct UserDataKeyCollection
     {
         private static readonly ThreadLocal<StringBuilder> s_StringBuilder
             = new(() => new StringBuilder(256));
@@ -44,7 +47,10 @@ namespace Vvr.Provider
             return sb.ToString();
         }
 
-        public ref struct GameConfig
+        /// <summary>
+        /// Represents the game configuration related to user data keys.
+        /// </summary>
+        public readonly ref struct GameConfig
         {
             public static UserDataKey ExecutedCount(string id)
             {
@@ -55,7 +61,10 @@ namespace Vvr.Provider
             }
         }
 
-        public ref struct Research
+        /// <summary>
+        /// Represents a collection of user data keys related to game configuration and research.
+        /// </summary>
+        public readonly ref struct Research
         {
             public static UserDataKey NodeLevel(string id)
             {

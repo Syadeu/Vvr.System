@@ -25,9 +25,15 @@ using UnityEngine.Assertions;
 
 namespace Vvr.Model
 {
+    /// <summary>
+    /// Represents an unresolved custom method.
+    /// </summary>
     public sealed class UnresolvedCustomMethod : IUnresolvedCustomMethod
     {
-        abstract class Element
+        /// <summary>
+        /// Represents an abstract base element in the unresolved custom method.
+        /// </summary>
+        private abstract class Element
         {
             public readonly string rawValue;
 
@@ -36,29 +42,46 @@ namespace Vvr.Model
                 rawValue = r;
             }
         }
-        abstract class Variable : Element
+
+        /// <summary>
+        /// Represents a variable within an unresolved custom method.
+        /// </summary>
+        private abstract class Variable : Element
         {
             protected Variable(string r) : base(r)
             {
 
             }
+
+            /// <summary>
+            /// Resolves an unresolved custom method.
+            /// </summary>
+            /// <param name="resolver">The method argument resolver used to resolve method arguments.</param>
+            /// <returns>The resolved result of the custom method.</returns>
             public abstract float Resolve(IMethodArgumentResolver resolver);
         }
 
-        class RawValue : Variable
+        /// <summary>
+        /// Represents a variable within an unresolved custom method.
+        /// </summary>
+        private sealed class RawValue : Variable
         {
-            public readonly float value;
+            private readonly float m_Value;
 
             public RawValue(string r, float v) : base(r)
             {
-                value = v;
+                m_Value = v;
             }
 
-            public override float Resolve(IMethodArgumentResolver resolver) => value;
+            public override float Resolve(IMethodArgumentResolver resolver) => m_Value;
         }
-        class UnresolvedReferenceValue : Variable
+
+        /// <summary>
+        /// Represents a variable within an unresolved custom method that references another value.
+        /// </summary>
+        private sealed class UnresolvedReferenceValue : Variable
         {
-            private string m_Reference;
+            private readonly string m_Reference;
 
             public UnresolvedReferenceValue(string r, string re) : base(r)
             {
@@ -68,28 +91,48 @@ namespace Vvr.Model
             public override float Resolve(IMethodArgumentResolver resolver) => resolver.Resolve(m_Reference);
         }
 
-        class MethodValue : Element
+        /// <summary>
+        /// Represents a method value in an unresolved custom method.
+        /// </summary>
+        /// <remarks>
+        /// This class is a derived class of the abstract base element <see cref="Element"/>.
+        /// It represents a method value in an unresolved custom method.
+        /// Method values are used in custom calculations to perform mathematical operations.
+        /// </remarks>
+        private sealed class MethodValue : Element
         {
-            public readonly MethodImplDelegate method;
+            private readonly MethodImplDelegate m_Method;
             public readonly short              methodType;
 
             public MethodValue(string r, Method m) : base(r)
             {
-                method     = m.ToDelegate();
+                m_Method     = m.ToDelegate();
                 methodType = (short)((short)m < (short)Method.Multiplier ? 0 : 1);
             }
 
             public float Resolve(float prev, float next)
             {
-                return method(prev, next);
+                return m_Method(prev, next);
             }
         }
 
-        private readonly List<Element>           m_Elements = new();
+        private readonly List<Element> m_Elements;
 
         public UnresolvedCustomMethod(CustomMethodSheet.Row row)
         {
             Assert.IsNotNull(row);
+
+            m_Elements = ParseElements(row);
+        }
+
+        /// <summary>
+        /// Parses the elements of an unresolved custom method.
+        /// </summary>
+        /// <param name="row">The row containing the custom method information.</param>
+        /// <returns>A list of parsed elements representing the unresolved custom method.</returns>
+        private static List<Element> ParseElements(CustomMethodSheet.Row row)
+        {
+            List<Element> elements = new();
 
             Dictionary<string, string> refValues = new();
             foreach (var e in row)
@@ -105,21 +148,23 @@ namespace Vvr.Model
                     if (refValues.TryGetValue(entry, out var refVal))
                     {
                         if (!float.TryParse(refVal, out float v))
-                            m_Elements.Add(new UnresolvedReferenceValue(entry, refVal));
+                            elements.Add(new UnresolvedReferenceValue(entry, refVal));
                         else
-                            m_Elements.Add(new RawValue(entry, v));
+                            elements.Add(new RawValue(entry, v));
                     }
                     else
-                        m_Elements.Add(new RawValue(entry, float.Parse(entry)));
+                        elements.Add(new RawValue(entry, float.Parse(entry)));
 
                     wasMethod = false;
                     continue;
                 }
 
                 Method m = VvrTypeHelper.Enum<Method>.ToEnum(entry);
-                m_Elements.Add(new MethodValue(entry, m));
+                elements.Add(new MethodValue(entry, m));
                 wasMethod = true;
             }
+
+            return elements;
         }
 
         public float Execute(IMethodArgumentResolver resolver)
@@ -169,10 +214,5 @@ namespace Vvr.Model
 
             return resolvedValues.Pop();
         }
-    }
-
-    public interface IUnresolvedCustomMethod
-    {
-        float Execute(IMethodArgumentResolver resolver);
     }
 }

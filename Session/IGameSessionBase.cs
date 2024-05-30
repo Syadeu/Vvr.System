@@ -57,6 +57,7 @@ namespace Vvr.Session
         /// <typeparam name="TProvider">The type of the provider.</typeparam>
         /// <param name="provider">The provider instance to connect.</param>
         [PublicAPI]
+        [ContractAnnotation("provider:null => halt")]
         IGameSessionBase Register<TProvider>([NotNull] TProvider provider) where TProvider : IProvider;
 
         /// <summary>
@@ -83,7 +84,8 @@ namespace Vvr.Session
         /// <param name="c">The connector to connect.</param>
         /// <returns>void</returns>
         [PublicAPI]
-        IGameSessionBase Connect<TProvider>([NotNull] IConnector<TProvider>    c) where TProvider : IProvider;
+        [ContractAnnotation("c:null => halt")]
+        IGameSessionBase Connect<TProvider>([NotNull] IConnector<TProvider> c) where TProvider : IProvider;
 
         /// <summary>
         /// Disconnects the specified provider from the game session.
@@ -91,6 +93,7 @@ namespace Vvr.Session
         /// <typeparam name="TProvider">The type of provider to disconnect.</typeparam>
         /// <param name="c">The connector of the provider.</param>
         [PublicAPI]
+        [ContractAnnotation("c:null => halt")]
         IGameSessionBase Disconnect<TProvider>([NotNull] IConnector<TProvider> c) where TProvider : IProvider;
 
         /// <summary>
@@ -112,6 +115,7 @@ namespace Vvr.Session
         /// <returns>The provider of the specified type, or null if not found.</returns>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="providerType"/> is null.</exception>
         [PublicAPI, CanBeNull]
+        [ContractAnnotation("providerType:null => halt")]
         IProvider GetProviderRecursive([NotNull] Type providerType);
     }
 }

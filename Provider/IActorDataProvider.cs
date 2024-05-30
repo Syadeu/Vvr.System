@@ -20,16 +20,29 @@
 #endregion
 
 using System.Collections.Generic;
+using JetBrains.Annotations;
 using Vvr.Model;
 
 namespace Vvr.Provider
 {
-    [LocalProvider]
+    /// <summary>
+    /// Represents a data provider for actors.
+    /// </summary>
+    /// <remarks>
+    /// This interface provides access to actor data, including information about actor types, population,
+    /// stats, passive abilities, skills, and assets.
+    /// </remarks>
+    [PublicAPI, LocalProvider]
     public interface IActorDataProvider : IProvider,
         IReadOnlyList<IActorData>
     {
-        public ActorSheet DataSheet { get; }
+        // public ActorSheet DataSheet { get; }
 
+        /// <summary>
+        /// Resolves the actor data with the specified key.
+        /// </summary>
+        /// <param name="key">The key used to locate the actor data.</param>
+        /// <returns>The actor data with the specified key.</returns>
         IActorData Resolve(string key);
     }
 }

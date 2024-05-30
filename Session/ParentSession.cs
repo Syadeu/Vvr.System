@@ -114,9 +114,9 @@ namespace Vvr.Session
         }
         public IChildSession GetSession(Type sessionType)
         {
-            IChildSession found;
             foreach (var session in m_ChildSessions)
             {
+                IChildSession found;
                 if (session is IParentSession parentSession &&
                     (found = parentSession.GetSession(sessionType)) != null)
                 {

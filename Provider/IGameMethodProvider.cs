@@ -24,11 +24,22 @@ using Cysharp.Threading.Tasks;
 
 namespace Vvr.Provider
 {
+    /// <summary>
+    /// Represents a delegate for game method implementation.
+    /// </summary>
+    /// <param name="target">The event target on which the method will be invoked.</param>
+    /// <param name="parameters">The list of parameters for the method.</param>
+    /// <returns>A UniTask representing the async operation of the method.</returns>
     public delegate UniTask GameMethodImplDelegate(IEventTarget target, IReadOnlyList<string> parameters);
 
     [LocalProvider]
     public interface IGameMethodProvider : IProvider
     {
+        /// <summary>
+        /// Resolves the specified game method.
+        /// </summary>
+        /// <param name="method">The game method to resolve.</param>
+        /// <returns>The resolved game method delegate.</returns>
         GameMethodImplDelegate Resolve(Model.GameMethod method);
     }
 }

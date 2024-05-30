@@ -45,11 +45,11 @@ namespace Vvr.Provider
         bool   Disposed    { get; }
     }
 
-    public static class EventTargetExtensions
-    {
-        public static Hash GetHash(this IEventTarget o)
-        {
-            return new Hash(unchecked((uint)o.GetHashCode()));
-        }
-    }
+    // public static class EventTargetExtensions
+    // {
+    //     public static Hash GetHash(this IEventTarget o)
+    //     {
+    //         return new Hash(unchecked((uint)o.GetHashCode()));
+    //     }
+    // }
 }

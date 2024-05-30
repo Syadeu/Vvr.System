@@ -55,7 +55,8 @@ namespace Vvr.Session
         /// <param name="sessionType">The type of the session to wait for.</param>
         /// <returns>A UniTask representing the asynchronous wait operation, which completes when the session becomes available.</returns>
         [PublicAPI]
-        UniTask<IChildSession> WaitUntilSessionAvailableAsync(Type sessionType);
+        [ContractAnnotation("sessionType:null => halt")]
+        UniTask<IChildSession> WaitUntilSessionAvailableAsync([NotNull] Type sessionType);
 
         /// <summary>
         /// Waits until a session of type TChildSession becomes available.
@@ -72,7 +73,8 @@ namespace Vvr.Session
         /// <param name="sessionType">The session type.</param>
         /// <returns>The child session of the specified session type, or null if not found.</returns>
         [PublicAPI, MustUseReturnValue]
-        IChildSession GetSession(Type sessionType);
+        [ContractAnnotation("sessionType:null => halt")]
+        IChildSession GetSession([NotNull] Type sessionType);
         /// <summary>
         /// Gets the child session of the specified session type.
         /// </summary>

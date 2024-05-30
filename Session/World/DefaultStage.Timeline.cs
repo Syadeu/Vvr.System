@@ -96,7 +96,7 @@ namespace Vvr.Session.World
 
             return -1;
         }
-        private partial async UniTask UpdateTimelineNodeView()
+        private partial async UniTask UpdateTimelineNodeViewAsync()
         {
             int       count = m_PlayerField.Count + m_EnemyField.Count;
             UniTask[] tasks = ArrayPool<UniTask>.Shared.Rent(count);
@@ -117,7 +117,7 @@ namespace Vvr.Session.World
             await UniTask.WhenAll(tasks);
             ArrayPool<UniTask>.Shared.Return(tasks, true);
         }
-        private partial async UniTask CloseTimelineNodeView()
+        private partial async UniTask CloseTimelineNodeViewAsync()
         {
             int       count = m_PlayerField.Count + m_EnemyField.Count;
             UniTask[] tasks = ArrayPool<UniTask>.Shared.Rent(count);
@@ -141,7 +141,7 @@ namespace Vvr.Session.World
         /// <param name="field">The field in the stage where the actor will be joined.</param>
         /// <param name="actor">The actor to be joined.</param>
         /// <returns>A UniTask representing the asynchronous operation.</returns>
-        private partial async UniTask Join(ActorList field, IStageActor actor)
+        private partial async UniTask JoinAsync(ActorList field, IStageActor actor)
         {
             Assert.IsFalse(field.Contains(actor));
             field.Add(actor, ActorPositionComparer.Static);
@@ -161,7 +161,7 @@ namespace Vvr.Session.World
         /// <param name="field">The field to which the actor should be added.</param>
         /// <param name="actor">The actor to be added.</param>
         /// <returns>A <see cref="UniTask"/> representing the asynchronous operation.</returns>
-        private partial async UniTask JoinAfter(IStageActor target, ActorList field, IStageActor actor)
+        private partial async UniTask JoinAfterAsync(IStageActor target, ActorList field, IStageActor actor)
         {
             Assert.IsFalse(field.Contains(actor));
             field.Add(actor, ActorPositionComparer.Static);
@@ -182,13 +182,13 @@ namespace Vvr.Session.World
         /// <param name="field">The actor list from which to delete the actor.</param>
         /// <param name="actor">The actor to delete.</param>
         /// <returns>A <see cref="UniTask"/> representing the asynchronous operation.</returns>
-        private partial async UniTask Delete(ActorList field, IStageActor actor)
+        private partial async UniTask DeleteAsync(ActorList field, IStageActor actor)
         {
             bool result = field.Remove(actor);
             Assert.IsTrue(result);
 
-            await RemoveFromTimeline(actor);
-            await RemoveFromQueue(actor);
+            RemoveFromTimeline(actor);
+            RemoveFromQueue(actor);
 
             await m_TimelineNodeViewProvider.Release(actor.Owner);
             await m_ViewProvider.CardViewProvider.Release(actor.Owner);
@@ -200,20 +200,11 @@ namespace Vvr.Session.World
             UpdateTimeline();
         }
 
-        private async UniTaskVoid DelayedDelete(IStageActor actor)
-        {
-            await UniTask.WaitForSeconds(0.5f);
-
-            m_StageActorProvider.Reserve(actor);
-            actor.Owner.Release();
-        }
-
         /// <summary>
         /// Removes the specified actor from the queue.
         /// </summary>
         /// <param name="actor">The actor to remove from the queue.</param>
-        /// <returns>A <see cref="UniTask"/> representing the asynchronous removal of the actor from the queue.</returns>
-        private partial async UniTask RemoveFromQueue(IStageActor actor)
+        private partial void RemoveFromQueue(IStageActor actor)
         {
             m_TimelineQueueProvider.Remove(actor);
         }
@@ -224,7 +215,7 @@ namespace Vvr.Session.World
         /// <param name="actor">The actor to be removed from the timeline.</param>
         /// <param name="preserveCount">The number of actors to preserve after removing the specified actor from the timeline. Default is 0.</param>
         /// <returns>A <see cref="UniTask"/> representing the asynchronous operation.</returns>
-        private partial async UniTask RemoveFromTimeline(IStageActor actor, int preserveCount = 0)
+        private partial void RemoveFromTimeline(IStageActor actor, int preserveCount)
         {
             for (int i = 0; i < m_Timeline.Count; i++)
             {

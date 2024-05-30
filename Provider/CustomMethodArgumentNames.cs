@@ -22,6 +22,13 @@
 namespace Vvr.Provider
 {
 #pragma warning disable CS0660, CS0661
+    /// <summary>
+    /// Represents a struct for custom method argument names.
+    /// </summary>
+    /// <remarks>
+    /// This struct is used to define custom argument names for methods.
+    /// It is readonly and ref struct, so it cannot be used as a regular variable or be modified.
+    /// </remarks>
     public readonly ref struct CustomMethodArgumentNames
 #pragma warning restore CS0660, CS0661
     {

@@ -236,7 +236,7 @@ namespace Vvr.Session.World
                         }
                         else
                         {
-                            await Join(m_PlayerField, runtimeActor);
+                            await JoinAsync(m_PlayerField, runtimeActor);
                         }
 
                         playerIndex++;
@@ -258,7 +258,7 @@ namespace Vvr.Session.World
                         }
                         else
                         {
-                            await Join(m_PlayerField, runtimeActor);
+                            await JoinAsync(m_PlayerField, runtimeActor);
                         }
 
                         playerIndex++;
@@ -272,7 +272,7 @@ namespace Vvr.Session.World
 
                 IStageActor runtimeActor = m_StageActorProvider.Create(target, data);
 
-                await Join(m_EnemyField, runtimeActor);
+                await JoinAsync(m_EnemyField, runtimeActor);
             }
 
             TimeController.ResetTime();
@@ -292,7 +292,7 @@ namespace Vvr.Session.World
             while (m_Timeline.Count > 0 && m_PlayerField.Count > 0 && m_EnemyField.Count > 0)
             {
                 $"Timeline count {m_Timeline.Count}".ToLog();
-                await UpdateTimelineNodeView();
+                await UpdateTimelineNodeViewAsync();
 
                 m_ResetEvent = new();
                 IStageActor current = m_Timeline[0];
@@ -346,7 +346,7 @@ namespace Vvr.Session.World
                             m_HandActors.Add(current);
 
                             current.TagOutRequested = false;
-                            await RemoveFromQueue(current);
+                            RemoveFromQueue(current);
 
                             await trigger.Execute(Condition.OnTagOut, current.Owner.Id);
 
@@ -411,23 +411,23 @@ namespace Vvr.Session.World
         {
             IStageActor sta;
             if (m_HandActors.TryGetActor(actor, out sta))
-                await Delete(m_HandActors, sta);
+                await DeleteAsync(m_HandActors, sta);
             else if (m_PlayerField.TryGetActor(actor, out sta))
-                await Delete(m_PlayerField, sta);
+                await DeleteAsync(m_PlayerField, sta);
             else if (m_EnemyField.TryGetActor(actor, out sta))
-                await Delete(m_EnemyField, sta);
+                await DeleteAsync(m_EnemyField, sta);
         }
 
-        private partial UniTask Join(ActorList                 field,  IStageActor actor);
-        private partial UniTask JoinAfter(IStageActor          target, ActorList   field, IStageActor actor);
-        private partial UniTask Delete(ActorList               field,  IStageActor actor);
-        private partial UniTask RemoveFromQueue(IStageActor    actor);
-        private partial UniTask RemoveFromTimeline(IStageActor actor, int preserveCount = 0);
+        private partial UniTask JoinAsync(ActorList                 field,  IStageActor actor);
+        private partial UniTask JoinAfterAsync(IStageActor          target, ActorList   field, IStageActor actor);
+        private partial UniTask DeleteAsync(ActorList               field,  IStageActor actor);
+        private partial void    RemoveFromQueue(IStageActor    actor);
+        private partial void    RemoveFromTimeline(IStageActor actor, int preserveCount = 0);
 
         private partial float   DequeueTimeline();
         private partial void    UpdateTimeline();
-        private partial UniTask UpdateTimelineNodeView();
-        private partial UniTask CloseTimelineNodeView();
+        private partial UniTask UpdateTimelineNodeViewAsync();
+        private partial UniTask CloseTimelineNodeViewAsync();
 
         private partial UniTask TagIn(int index);
 
@@ -466,14 +466,14 @@ namespace Vvr.Session.World
         {
             if (e is not IActor) return;
 
-            await CloseTimelineNodeView();
+            await CloseTimelineNodeViewAsync();
 
             await UniTask.WaitForSeconds(0.1f);
 
             if (condition == Condition.OnTagIn ||
                 condition == Condition.OnTagOut)
             {
-                await UpdateTimelineNodeView();
+                await UpdateTimelineNodeViewAsync();
             }
         }
 

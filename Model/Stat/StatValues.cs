@@ -31,7 +31,18 @@ using UnityEngine.Assertions;
 
 namespace Vvr.Model.Stat
 {
+    /// <summary>
+    /// Represents a delegate that retrieves a float value from an instance of IReadOnlyStatValues.
+    /// </summary>
+    /// <param name="stat">The instance of IReadOnlyStatValues to retrieve the value from.</param>
+    /// <returns>The float value retrieved from the IReadOnlyStatValues instance.</returns>
     public delegate float StatValueGetterDelegate(in IReadOnlyStatValues stat);
+
+    /// <summary>
+    /// Represents a delegate that sets a float value in an instance of StatValues.
+    /// </summary>
+    /// <param name="stat">The instance of StatValues to set the value in.</param>
+    /// <param name="value">The float value to set.</param>
     public delegate void StatValueSetterDelegate(ref StatValues stat, float value);
 
     /// <summary>

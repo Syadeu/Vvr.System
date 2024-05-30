@@ -38,6 +38,12 @@ namespace Vvr.Provider
 
         public static CustomMethod Static => default;
 
+        /// <summary>
+        /// Represents the current object instance.
+        /// </summary>
+        /// <remarks>
+        /// This refers to the current object instance in the context where it is used.
+        /// </remarks>
         public CustomMethodDelegate this[CustomMethodSheet.Row method]
         {
             get

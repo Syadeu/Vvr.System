@@ -65,16 +65,16 @@ namespace Vvr.Session.World
                 IStageActor currentFieldRuntimeActor = m_PlayerField[0];
                 currentFieldRuntimeActor.TagOutRequested = true;
 
-                await JoinAfter(currentFieldRuntimeActor, m_PlayerField, temp);
+                await JoinAfterAsync(currentFieldRuntimeActor, m_PlayerField, temp);
 
                 m_TimelineQueueProvider.SetEnable(currentFieldRuntimeActor, false);
-                await RemoveFromTimeline(currentFieldRuntimeActor, 1);
+                RemoveFromTimeline(currentFieldRuntimeActor, 1);
 
                 await m_ViewProvider.CardViewProvider.Resolve(currentFieldRuntimeActor.Owner);
             }
             else
             {
-                await Join(m_PlayerField, temp);
+                await JoinAsync(m_PlayerField, temp);
             }
 
             UpdateTimeline();

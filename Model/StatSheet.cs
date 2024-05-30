@@ -41,12 +41,15 @@ namespace Vvr.Model
     }
     public static class StatSheetExtensions
     {
+        /// <summary>
+        /// Converts the given <see cref="StatSheet.Row"/> object to a <see cref="StatType"/>.
+        /// </summary>
+        /// <param name="t">The <see cref="StatSheet.Row"/> object to convert.</param>
+        /// <returns>The <see cref="StatType"/> converted from the <see cref="StatSheet.Row"/> object.</returns>
         public static StatType ToStat(this StatSheet.Row t)
         {
             int i = t.Index;
             return (StatType)(1L << i);
         }
-
-        // public static StatSheet.Row Resolve(this StatType t) => StatProvider.Static[t];
     }
 }

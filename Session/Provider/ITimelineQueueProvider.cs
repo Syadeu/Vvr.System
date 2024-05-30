@@ -47,7 +47,8 @@ namespace Vvr.Session.Provider
         /// <param name="actor">The actor whose enabled state needs to be set.</param>
         /// <param name="enabled">Specifies whether the actor should be enabled or disabled.</param>
         [PublicAPI]
-        void SetEnable(IStageActor actor, bool enabled);
+        [ContractAnnotation("actor:null => halt")]
+        void SetEnable([NotNull] IStageActor actor, bool enabled);
 
         /// <summary>
         /// Finds the index of the specified actor in the timeline queue.
@@ -58,14 +59,16 @@ namespace Vvr.Session.Provider
         /// -1 is returned.
         /// </returns>
         [PublicAPI]
-        int IndexOf(IStageActor actor);
+        [ContractAnnotation("actor:null => halt")]
+        int IndexOf([NotNull] IStageActor actor);
 
         /// <summary>
         /// Adds the specified actor to the timeline queue.
         /// </summary>
         /// <param name="actor">The actor to add to the timeline queue.</param>
         [PublicAPI]
-        void   Enqueue(IStageActor actor);
+        [ContractAnnotation("actor:null => halt")]
+        void   Enqueue([NotNull] IStageActor actor);
 
         /// <summary>
         /// Inserts an actor after the specified index in the timeline queue.
@@ -73,7 +76,8 @@ namespace Vvr.Session.Provider
         /// <param name="index">The index after which to insert the actor.</param>
         /// <param name="actor">The actor to insert.</param>
         [PublicAPI]
-        void   InsertAfter(int index, IStageActor actor);
+        [ContractAnnotation("actor:null => halt")]
+        void   InsertAfter(int index, [NotNull] IStageActor actor);
 
         /// <summary>
         /// Removes and returns the first actor in the timeline queue.
@@ -92,21 +96,24 @@ namespace Vvr.Session.Provider
         /// <c>true</c> if the given actor is the starting actor in the timeline queue; otherwise, <c>false</c>.
         /// </returns>
         [PublicAPI]
-        bool   IsStartFrom(IStageActor actor);
+        [ContractAnnotation("actor:null => halt")]
+        bool   IsStartFrom([NotNull] IStageActor actor);
 
         /// <summary>
         /// Sets the starting point of the timeline queue to the specified actor.
         /// </summary>
         /// <param name="actor">The actor to set as the starting point of the timeline queue.</param>
         [PublicAPI]
-        void   StartFrom(IStageActor actor);
+        [ContractAnnotation("actor:null => halt")]
+        void   StartFrom([NotNull] IStageActor actor);
 
         /// <summary>
         /// Removes the specified actor from the timeline queue.
         /// </summary>
         /// <param name="actor">The actor to be removed from the queue.</param>
         [PublicAPI]
-        void   Remove(IStageActor      actor);
+        [ContractAnnotation("actor:null => halt")]
+        void Remove([NotNull] IStageActor actor);
 
         /// <summary>
         /// Clears the timeline queue, removing all actors from it.

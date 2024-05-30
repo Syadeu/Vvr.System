@@ -23,6 +23,9 @@ using Vvr.Provider;
 
 namespace Vvr.Controller.Condition
 {
+    /// <summary>
+    /// Represents a condition target that can be held any conditions.
+    /// </summary>
     public interface IConditionTarget : IEventTarget
     {
         /// <summary>

@@ -23,8 +23,17 @@ using UnityEngine;
 
 namespace Vvr.Model
 {
+    /// <summary>
+    /// Delegate that represents a method implementation that takes in a float as the source value and another float as the parameter value, and returns a float.
+    /// </summary>
+    /// <param name="source">The source value.</param>
+    /// <param name="value">The parameter value.</param>
+    /// <returns>The result of the method.</returns>
     public delegate float MethodImplDelegate(float source, float value);
 
+    /// <summary>
+    /// Represents a method implementation that can be applied to calculate a result based on a source value and a parameter value.
+    /// </summary>
     public enum Method : short
     {
         Override = 0,
@@ -43,9 +52,13 @@ namespace Vvr.Model
         Log,
     }
 
+    /// <summary>
+    /// Helper class for working with the Method enum and method delegates.
+    /// </summary>
     public static class MethodHelper
     {
         public static readonly MethodImplDelegate
+        // ReSharper disable MemberCanBePrivate.Global
             Override      = (_,      value) => value,
             Addictive     = (source, value) => source + value,
             Subtract      = (source, value) => source - value,
@@ -56,7 +69,13 @@ namespace Vvr.Model
             AddDivide     = (source, value) => source + source / value,
             SubDivide     = (source, value) => source - source / value,
             Log           = Mathf.Log;
+        // ReSharper restore MemberCanBePrivate.Global
 
+        /// <summary>
+        /// Converts the given Method enum value to its corresponding MethodImplDelegate delegate.
+        /// </summary>
+        /// <param name="method">The Method enum value to convert.</param>
+        /// <returns>The MethodImplDelegate delegate corresponding to the given Method enum value.</returns>
         public static MethodImplDelegate ToDelegate(this Method method)
         {
             switch (method)

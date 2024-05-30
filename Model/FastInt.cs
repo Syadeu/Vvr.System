@@ -24,6 +24,9 @@ using System.Diagnostics;
 
 namespace Vvr.Model
 {
+    /// <summary>
+    /// Represents a fast and efficient way to parse numeric values from strings.
+    /// </summary>
     public ref struct FastInt
     {
         public const char Zero = '0';
@@ -41,6 +44,12 @@ namespace Vvr.Model
                 }
             }
         }
+
+        /// <summary>
+        /// Parses a numeric value from a string.
+        /// </summary>
+        /// <param name="value">The string to parse.</param>
+        /// <returns>The parsed numeric value.</returns>
         public static int Parse(ReadOnlySpan<char> value)
         {
             EvaluateInputString(value);

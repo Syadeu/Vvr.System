@@ -23,6 +23,9 @@ using Vvr.Controller.Condition;
 
 namespace Vvr.Session
 {
+    /// <summary>
+    /// Represents a session target
+    /// </summary>
     public interface ISessionTarget : IConditionTarget
     {
     }

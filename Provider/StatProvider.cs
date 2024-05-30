@@ -94,14 +94,8 @@ namespace Vvr.Provider
             }
 
             bool result;
-            // var  percentMatch = Regex.Match(indexString, @"([0-9]+)%$");
-            // if (percentMatch.Success)
             if (indexString[^1] == PercentChar)
             {
-                // float v = float.Parse(percentMatch.Groups[1].Value);
-                // float v = float.Parse(
-                //     indexString[..^1].ToString()
-                //     );
                 float v = FastFloat.Parse(indexString[..^1]);
 
                 float percent = stats[statType] / centerStats[statType] * 100;
@@ -122,11 +116,6 @@ namespace Vvr.Provider
             else
             {
                 float v = FastFloat.Parse(indexString);
-                // if (!float.TryParse(indexString, out float v))
-                // {
-                //     $"[Condition] Invalid index: {indexString.ToString()}".ToLogError();
-                //     return false;
-                // }
 
                 switch (condition)
                 {
