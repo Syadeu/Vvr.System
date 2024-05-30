@@ -20,6 +20,7 @@
 #endregion
 
 using Cysharp.Threading.Tasks;
+using JetBrains.Annotations;
 using UnityEngine.Scripting;
 using Vvr.Model;
 using Vvr.Provider;
@@ -44,10 +45,16 @@ namespace Vvr.Session.World
         public DefaultMap      DefaultMap  { get; private set; }
         public GameDataSession DataSession { get; private set; }
 
-        protected override async UniTask OnInitialize(IParentSession session, RootData data)
+        protected override UniTask OnInitialize(IParentSession session, RootData data)
         {
             Vvr.Provider.Provider.Static.Connect<IViewRegistryProvider>(this);
 
+            return UniTask.CompletedTask;
+        }
+
+        [PublicAPI]
+        public async UniTask Booting()
+        {
             DataSession = await CreateSession<GameDataSession>(default);
 
             var results = await UniTask.WhenAll(
@@ -70,13 +77,10 @@ namespace Vvr.Session.World
             // TODO: skip map load
             DefaultMap = await CreateSession<DefaultMap>(default);
         }
+
         protected override UniTask OnReserve()
         {
-            Unregister<IGameMethodProvider>();
-
             Vvr.Provider.Provider.Static.Disconnect<IViewRegistryProvider>(this);
-
-            // Unregister<IActorProvider>();
 
             return base.OnReserve();
         }
@@ -86,6 +90,11 @@ namespace Vvr.Session.World
             session.Register(m_ViewRegistryProvider);
 
             return base.OnCreateSession(session);
+        }
+
+        public async UniTask StartDataSession()
+        {
+            DataSession = await CreateSession<GameDataSession>(default);
         }
 
         void IConnector<IViewRegistryProvider>.Connect(IViewRegistryProvider    t)

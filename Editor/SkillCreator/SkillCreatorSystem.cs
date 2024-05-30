@@ -25,13 +25,13 @@ using Vvr.TestClass;
 
 namespace Vvr.System.SkillCreator
 {
-    public sealed class SkillCreatorSystem : TestSystem<DefaultWorld>
+    public sealed class SkillCreatorSystem : TestSystem<TestWorld>
     {
         [SerializeField] private string[]      m_Actors;
         [SerializeField] private string        m_CurrentStageId;
         [SerializeField] private TestStageData m_StageData;
 
-        protected override async UniTask OnStart(DefaultWorld world)
+        protected override async UniTask OnStart(TestWorld world)
         {
             if (m_CurrentStageId.IsNullOrEmpty())
             {

@@ -33,7 +33,7 @@ using Vvr.Session.Provider;
 
 namespace Vvr.Session.World
 {
-    [UsedImplicitly, ParentSession(typeof(DefaultMap))]
+    [UsedImplicitly, ParentSession(typeof(DefaultMap), true)]
     public class DefaultRegion : ParentSession<DefaultRegion.SessionData>,
         IConnector<IUserActorProvider>,
         IConnector<IUserStageProvider>,

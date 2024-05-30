@@ -27,7 +27,7 @@ using Vvr.TestClass;
 
 namespace Vvr.ScenarioCreator
 {
-    public class ScenarioCreatorSystem : TestSystem<DefaultWorld>
+    public class ScenarioCreatorSystem : TestSystem<TestWorld>
     {
         [Space] [SerializeField] private DialogueData m_DialogueData;
 
@@ -36,7 +36,7 @@ namespace Vvr.ScenarioCreator
         [SerializeField] private string        m_CurrentStageId;
         [SerializeField] private TestStageData m_StageData;
 
-        protected override async UniTask OnStart(DefaultWorld world)
+        protected override async UniTask OnStart(TestWorld world)
         {
             if (m_CurrentStageId.IsNullOrEmpty())
             {

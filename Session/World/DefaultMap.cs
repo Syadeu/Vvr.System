@@ -26,14 +26,12 @@ using Vvr.Session.Provider;
 
 namespace Vvr.Session.World
 {
-    [ParentSession(typeof(DefaultWorld))]
+    [ParentSession(typeof(DefaultWorld), true)]
     public class DefaultMap : ParentSession<DefaultMap.Data>
         // , IConnector<IActorProvider>
     {
         public struct Data : ISessionData
         {
-            public object Id    { get; }
-            public int    Index { get; }
         }
 
         public override string DisplayName => nameof(DefaultMap);

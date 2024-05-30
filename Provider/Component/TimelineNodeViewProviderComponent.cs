@@ -25,6 +25,7 @@ using UnityEngine;
 
 namespace Vvr.Provider.Component
 {
+    [Obsolete("Should move to ContentView")]
     public abstract class TimelineNodeViewProviderComponent : MonoBehaviour, IEventTimelineNodeViewProvider
     {
         public abstract UniTask<Transform> Resolve(IEventTarget actor, int order);

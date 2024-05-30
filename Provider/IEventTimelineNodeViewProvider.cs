@@ -19,12 +19,14 @@
 
 #endregion
 
+using System;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 
 namespace Vvr.Provider
 {
     [LocalProvider]
+    [Obsolete("Should move to ContentView")]
     public interface IEventTimelineNodeViewProvider : IProvider
     {
         UniTask<Transform> Resolve(IEventTarget actor, int order);

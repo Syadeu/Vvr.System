@@ -24,6 +24,7 @@ using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
+using Vvr.Provider;
 
 namespace Vvr.Session.AssetManagement
 {
@@ -35,8 +36,8 @@ namespace Vvr.Session.AssetManagement
     /// includes download content catalogs from remote.
     /// </remarks>
     [UsedImplicitly]
-    [ParentSession(typeof(GameDataSession))]
-    internal sealed class AddressableSession : ChildSession<AddressableSession.SessionData>
+    public sealed class AddressableSession : ChildSession<AddressableSession.SessionData>,
+        IAddressableDownloadProvider
     {
         public struct SessionData : ISessionData
         {
@@ -55,21 +56,9 @@ namespace Vvr.Session.AssetManagement
          * It will not work
          */
 
-        protected override async UniTask OnInitialize(IParentSession session, SessionData data)
-        {
-            await base.OnInitialize(session, data);
+        // https://forum.unity.com/threads/unable-to-load-dependent-bundle-from-location.1336874/
 
-            // https://forum.unity.com/threads/unable-to-load-dependent-bundle-from-location.1336874/
-
-            await UpdateCatalogAsync();
-
-            long downloadSize = await GetTotalDownloadSizeAsync();
-            $"Data download: {downloadSize}bytes, {downloadSize / 1024 / 1024}mb".ToLog();
-
-            await DownloadAsync();
-        }
-
-        private async UniTask UpdateCatalogAsync()
+        public async UniTask UpdateCatalogAsync()
         {
             var updateCheckOperation    = Addressables.CheckForCatalogUpdates(true);
             var requireUpdatedList = await updateCheckOperation.Task;
@@ -89,7 +78,7 @@ namespace Vvr.Session.AssetManagement
             }
         }
 
-        private async UniTask<long> GetTotalDownloadSizeAsync()
+        public async UniTask<long> GetTotalDownloadSizeAsync()
         {
             long size = 0;
             for (int i = 0; i < Data.labels.Length; i++)
@@ -103,13 +92,22 @@ namespace Vvr.Session.AssetManagement
             return size;
         }
 
-        private async UniTask DownloadAsync()
+        public async UniTask DownloadAsync(IProgress<float> progress)
         {
-            // List<Task> ops = new();
+            float vs = 1f / Data.labels.Length;
+
+            float current = 0;
             for (int i = 0; i < Data.labels.Length; i++)
             {
                 var operation = Addressables.DownloadDependenciesAsync(Data.labels[i]);
-                // ops.Add(operation.Task);
+                while (!operation.IsDone &&
+                       operation.Status != AsyncOperationStatus.Failed)
+                {
+                    progress?.Report(current + operation.PercentComplete * vs);
+
+                    await UniTask.Yield();
+                }
+
                 await operation.Task;
                 if (operation.Status == AsyncOperationStatus.Failed)
                 {
@@ -117,9 +115,18 @@ namespace Vvr.Session.AssetManagement
                 }
 
                 Addressables.Release(operation);
+                current += vs;
             }
 
-            // await Task.WhenAll(ops);
+            progress?.Report(1);
         }
+    }
+
+    [PublicAPI, LocalProvider]
+    public interface IAddressableDownloadProvider : IProvider
+    {
+        UniTask       UpdateCatalogAsync();
+        UniTask<long> GetTotalDownloadSizeAsync();
+        UniTask       DownloadAsync([CanBeNull] IProgress<float> progress);
     }
 }

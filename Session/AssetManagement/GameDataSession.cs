@@ -50,10 +50,6 @@ namespace Vvr.Session.AssetManagement
 
             const string DATA_KEY = "Data/_Container.asset";
 
-            var addressableSession = await CreateSession<AddressableSession>(
-                new AddressableSession.SessionData("GameData"));
-            await addressableSession.Reserve();
-
             var assetSession = await CreateSession<AssetSession>(
                 new AssetSession.SessionData(
                     // "GameData"
