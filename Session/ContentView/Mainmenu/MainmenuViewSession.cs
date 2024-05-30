@@ -63,9 +63,9 @@ namespace Vvr.Session.ContentView.Mainmenu
                 .Register(MainmenuViewEvent.Skill2Button, OnSkill2Button)
                 ;
 
-            data.dialogueEventHandler
-                .Register(DialogueViewEvent.Open, OnDialogueOpen)
-                .Register(DialogueViewEvent.Close, OnDialogueClose);
+            // data.dialogueEventHandler
+            //     .Register(DialogueViewEvent.Open, OnDialogueOpen)
+            //     .Register(DialogueViewEvent.Close, OnDialogueClose);
 
             Setup().Forget();
         }
@@ -79,9 +79,9 @@ namespace Vvr.Session.ContentView.Mainmenu
                 .Unregister(MainmenuViewEvent.Skill2Button, OnSkill2Button)
                 ;
 
-            Data.dialogueEventHandler
-                .Unregister(DialogueViewEvent.Open, OnDialogueOpen)
-                .Unregister(DialogueViewEvent.Close, OnDialogueClose);
+            // Data.dialogueEventHandler
+            //     .Unregister(DialogueViewEvent.Open, OnDialogueOpen)
+            //     .Unregister(DialogueViewEvent.Close, OnDialogueClose);
 
             return base.OnReserve();
         }
@@ -132,15 +132,15 @@ namespace Vvr.Session.ContentView.Mainmenu
         {
         }
 
-        private async UniTask OnDialogueClose(DialogueViewEvent e, object ctx)
-        {
-            await Data.eventHandler.ExecuteAsync(MainmenuViewEvent.Show);
-        }
-
-        private async UniTask OnDialogueOpen(DialogueViewEvent e, object ctx)
-        {
-            await Data.eventHandler.ExecuteAsync(MainmenuViewEvent.Hide);
-        }
+        // private async UniTask OnDialogueClose(DialogueViewEvent e, object ctx)
+        // {
+        //     await Data.eventHandler.ExecuteAsync(MainmenuViewEvent.Show);
+        // }
+        //
+        // private async UniTask OnDialogueOpen(DialogueViewEvent e, object ctx)
+        // {
+        //     await Data.eventHandler.ExecuteAsync(MainmenuViewEvent.Hide);
+        // }
 
         private async UniTask OnOpenResearch(MainmenuViewEvent e, object ctx)
         {
