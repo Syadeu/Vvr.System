@@ -19,7 +19,7 @@
 
 #endregion
 
-using Vvr.Session.ContentView.Provider;
+using Vvr.Session.ContentView.Core;
 
 namespace Vvr.Session.ContentView.BattleSign
 {

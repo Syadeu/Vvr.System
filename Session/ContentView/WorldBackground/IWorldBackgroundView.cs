@@ -24,8 +24,11 @@ using UnityEngine;
 
 namespace Vvr.Session.ContentView.WorldBackground
 {
+    /// <summary>
+    /// Represents the interface for a world background view.
+    /// </summary>
     public interface IWorldBackgroundView
     {
-        UniTask SetBackgroundAsync(Sprite sprite);
+        void SetBackground(Sprite sprite);
     }
 }

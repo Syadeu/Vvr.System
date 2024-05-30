@@ -15,26 +15,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// File created : 2024, 05, 27 11:05
+// File created : 2024, 05, 29 17:05
 
 #endregion
 
-using JetBrains.Annotations;
-using Vvr.Session.ContentView.Core;
-
-namespace Vvr.Session.ContentView.WorldBackground
+namespace Vvr.Session.ContentView.Core
 {
-    /// <summary>
-    /// Represents a world background view provider interface.
-    /// </summary>
-    public interface IWorldBackgroundViewProvider : IContentViewProvider<WorldBackgroundViewEvent>
+    public enum ResearchViewEvent : short
     {
-        /// <summary>
-        /// Gets the world background view.
-        /// </summary>
-        /// <param name="ctx">The context object.</param>
-        /// <returns>The world background view.</returns>
-        [CanBeNull]
-        IWorldBackgroundView GetView([NotNull] object ctx);
+        Open,
+        Close,
+
+        Update,
+
+        SelectGroupWithIndex,
+        SelectGroup,
+        Select,
+        Upgrade
     }
 }

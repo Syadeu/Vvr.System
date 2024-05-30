@@ -24,7 +24,6 @@ using JetBrains.Annotations;
 using UnityEngine;
 using UnityEngine.UI;
 using Vvr.Provider;
-using Vvr.Session.ContentView.Provider;
 
 namespace Vvr.Session.ContentView.Core
 {

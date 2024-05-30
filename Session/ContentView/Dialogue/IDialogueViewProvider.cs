@@ -21,7 +21,7 @@
 
 using JetBrains.Annotations;
 using Vvr.Provider;
-using Vvr.Session.ContentView.Provider;
+using Vvr.Session.ContentView.Core;
 
 namespace Vvr.Session.ContentView.Dialogue
 {

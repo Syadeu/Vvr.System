@@ -26,7 +26,7 @@ using Vvr.Controller.Actor;
 using Vvr.Provider;
 using Vvr.Provider.Command;
 using Vvr.Session.Actor;
-using Vvr.Session.ContentView.Provider;
+using Vvr.Session.ContentView.Core;
 
 namespace Vvr.Session.Input
 {

@@ -25,9 +25,9 @@ using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Assertions;
 using Vvr.Provider;
+using Vvr.Session.ContentView.Core;
 using Vvr.Session.ContentView.Dialogue;
 using Vvr.Session.ContentView.Dialogue.Attributes;
-using Vvr.Session.ContentView.Provider;
 
 namespace Vvr.Session.ContentView.BattleSign
 {

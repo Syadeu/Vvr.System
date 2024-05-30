@@ -25,10 +25,12 @@ using Vvr.Model;
 using Vvr.Provider;
 using Vvr.Session.AssetManagement;
 using Vvr.Session.ContentView.Core;
-using Vvr.Session.ContentView.Provider;
 
 namespace Vvr.Session.ContentView.Mainmenu
 {
+    /// <summary>
+    /// Represents a session for the main menu view.
+    /// </summary>
     [UsedImplicitly]
     public sealed class MainmenuViewSession : ContentViewChildSession<MainmenuViewSession.SessionData>,
         IConnector<IMainmenuViewProvider>,
@@ -150,6 +152,8 @@ namespace Vvr.Session.ContentView.Mainmenu
 
         private async UniTaskVoid Setup()
         {
+            // Because main menu view should be provided right away
+            // after world has been initialized
             await UniTask.WaitWhile(() => m_MainmenuViewProvider == null);
 
             await m_MainmenuViewProvider.OpenAsync(CanvasViewProvider, m_AssetProvider, null);

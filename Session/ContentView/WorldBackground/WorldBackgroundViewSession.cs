@@ -22,10 +22,12 @@ using JetBrains.Annotations;
 using Vvr.Provider;
 using Vvr.Session.AssetManagement;
 using Vvr.Session.ContentView.Core;
-using Vvr.Session.ContentView.Provider;
 
 namespace Vvr.Session.ContentView.WorldBackground
 {
+    /// <summary>
+    /// Represents a session for the world background view.
+    /// </summary>
     [UsedImplicitly]
     public class WorldBackgroundViewSession : ContentViewChildSession<WorldBackgroundViewSession.SessionData>,
         IConnector<IWorldBackgroundViewProvider>

@@ -20,11 +20,9 @@
 #endregion
 
 using JetBrains.Annotations;
-using UnityEngine;
-using UnityEngine.UI;
 using Vvr.Provider;
 
-namespace Vvr.Session.ContentView.Provider
+namespace Vvr.Session.ContentView.Core
 {
     /// <summary>
     /// Represents a provider for canvas views.
@@ -52,31 +50,5 @@ namespace Vvr.Session.ContentView.Provider
             CanvasCameraType cameraType,
             CanvasLayerName  sortingLayerName, CanvasSortOrder sortOrder,
             bool             raycaster);
-    }
-
-    /// <summary>
-    /// Represents the type of camera to be used for the canvas.
-    /// </summary>
-    public enum CanvasCameraType : short
-    {
-        Default = 0,
-        UICamera
-    }
-
-    /// <summary>
-    /// Represents the names of canvas layers.
-    /// </summary>
-    public enum CanvasLayerName : short
-    {
-        Background,
-        CardUI,
-        OverlayUI,
-    }
-
-    /// <summary>
-    /// Represents the sort order of a canvas.
-    /// </summary>
-    public enum CanvasSortOrder : short
-    {
     }
 }

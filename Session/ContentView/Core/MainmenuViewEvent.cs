@@ -15,26 +15,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// File created : 2024, 05, 27 11:05
+// File created : 2024, 05, 29 16:05
 
 #endregion
 
-using JetBrains.Annotations;
-using Vvr.Session.ContentView.Core;
-
-namespace Vvr.Session.ContentView.WorldBackground
+namespace Vvr.Session.ContentView.Core
 {
-    /// <summary>
-    /// Represents a world background view provider interface.
-    /// </summary>
-    public interface IWorldBackgroundViewProvider : IContentViewProvider<WorldBackgroundViewEvent>
+    public enum MainmenuViewEvent : short
     {
-        /// <summary>
-        /// Gets the world background view.
-        /// </summary>
-        /// <param name="ctx">The context object.</param>
-        /// <returns>The world background view.</returns>
-        [CanBeNull]
-        IWorldBackgroundView GetView([NotNull] object ctx);
+        Show,
+        Hide,
+        SetupActorInputs,
+        ShowActorInputs,
+        HideActorInputs,
+
+        Skill1Button = 1000,
+        Skill2Button,
+        AutoBattleButton,
+
+        SetSkill1Image = 1100,
+        SetSkill2Image,
+        EnableSkillButton = 1110,
+        DisableSkillButton,
+
+        OpenResearch = 2000
     }
 }

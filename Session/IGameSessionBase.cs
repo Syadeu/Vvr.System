@@ -101,6 +101,16 @@ namespace Vvr.Session
         [PublicAPI, CanBeNull]
         TProvider GetProviderRecursive<TProvider>() where TProvider : class, IProvider;
 
+        /// <summary>
+        /// Retrieves a provider recursively from the game session hierarchy based on the specified provider type.
+        /// </summary>
+        /// <remarks>
+        /// This method searches for a provider of the specified type in the current session and its parent sessions recursively.
+        /// If a match is found, the provider is returned. Otherwise, null is returned.
+        /// </remarks>
+        /// <param name="providerType">The type of the provider to retrieve.</param>
+        /// <returns>The provider of the specified type, or null if not found.</returns>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="providerType"/> is null.</exception>
         [PublicAPI, CanBeNull]
         IProvider GetProviderRecursive([NotNull] Type providerType);
     }

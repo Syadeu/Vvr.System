@@ -15,24 +15,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// File created : 2024, 05, 29 17:05
+// File created : 2024, 05, 30 12:05
 
 #endregion
 
 using JetBrains.Annotations;
-using Vvr.Provider;
 
-namespace Vvr.Session.ContentView.Provider
+namespace Vvr.Session.ContentView.Core
 {
     /// <summary>
-    /// Represents a provider of view event handlers.
+    /// Represents the type of camera to be used for the canvas.
     /// </summary>
-    [PublicAPI, LocalProvider]
-    public interface IContentViewEventHandlerProvider : IProvider
+    [PublicAPI]
+    public enum CanvasCameraType : short
     {
-        IContentViewEventHandler<ResearchViewEvent>        Research        { get; }
-        IContentViewEventHandler<DialogueViewEvent>        Dialogue        { get; }
-        IContentViewEventHandler<MainmenuViewEvent>        Mainmenu        { get; }
-        IContentViewEventHandler<WorldBackgroundViewEvent> WorldBackground { get; }
+        Default = 0,
+        UICamera
     }
 }

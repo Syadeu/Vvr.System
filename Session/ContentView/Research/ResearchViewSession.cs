@@ -24,11 +24,13 @@ using Vvr.Controller.Research;
 using Vvr.Provider;
 using Vvr.Session.AssetManagement;
 using Vvr.Session.ContentView.Core;
-using Vvr.Session.ContentView.Provider;
 using Vvr.Session.Provider;
 
 namespace Vvr.Session.ContentView.Research
 {
+    /// <summary>
+    /// Represents a research view session.
+    /// </summary>
     [UsedImplicitly]
     public sealed class ResearchViewSession : ContentViewChildSession<ResearchViewSession.SessionData>,
         IConnector<IUserDataProvider>,

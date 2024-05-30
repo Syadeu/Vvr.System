@@ -19,10 +19,16 @@
 
 #endregion
 
-using Vvr.Session.ContentView.Provider;
+using JetBrains.Annotations;
+using Vvr.Provider;
+using Vvr.Session.ContentView.Core;
 
 namespace Vvr.Session.ContentView.Mainmenu
 {
+    /// <summary>
+    /// Represents the provider for the main menu view.
+    /// </summary>
+    [LocalProvider, PublicAPI]
     public interface IMainmenuViewProvider : IContentViewProvider<MainmenuViewEvent>
     {
 

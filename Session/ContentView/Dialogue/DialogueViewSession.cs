@@ -28,7 +28,6 @@ using Vvr.Provider;
 using Vvr.Session.AssetManagement;
 using Vvr.Session.ContentView.Core;
 using Vvr.Session.ContentView.Dialogue.Attributes;
-using Vvr.Session.ContentView.Provider;
 
 namespace Vvr.Session.ContentView.Dialogue
 {

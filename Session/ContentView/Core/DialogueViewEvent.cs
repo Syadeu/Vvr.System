@@ -19,7 +19,7 @@
 
 #endregion
 
-namespace Vvr.Session.ContentView.Provider
+namespace Vvr.Session.ContentView.Core
 {
     /// <summary>
     /// Represents the different events that can occur in a dialogue view.

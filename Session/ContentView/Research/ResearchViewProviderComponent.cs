@@ -22,7 +22,7 @@
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 using Vvr.Provider;
-using Vvr.Session.ContentView.Provider;
+using Vvr.Session.ContentView.Core;
 
 namespace Vvr.Session.ContentView.Research
 {

@@ -25,9 +25,9 @@ using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Assertions;
 using Vvr.Provider;
+using Vvr.Session.ContentView.Core;
 using Vvr.Session.ContentView.Dialogue;
 using Vvr.Session.ContentView.Dialogue.Attributes;
-using Vvr.Session.ContentView.Provider;
 
 namespace Vvr.Session.ContentView.WorldBackground
 {
@@ -37,7 +37,6 @@ namespace Vvr.Session.ContentView.WorldBackground
     {
         [SerializeField] private string                         m_BackgroundID = "0";
         [SerializeField] private DialogueAssetReference<Sprite> m_Image;
-        [SerializeField] private bool                           m_WaitForComplete = true;
 
         public async UniTask ExecuteAsync(DialogueAttributeContext ctx)
         {
@@ -51,14 +50,15 @@ namespace Vvr.Session.ContentView.WorldBackground
             if (view == null)
             {
                 var canvas = ctx.resolveProvider(VvrTypeHelper.TypeOf<ICanvasViewProvider>.Type) as ICanvasViewProvider;
-                v.OpenAsync(canvas, ctx.assetProvider, m_BackgroundID);
-                view = v.GetView(m_BackgroundID);
+                v.OpenAsync(canvas, ctx.assetProvider, m_BackgroundID)
+                    .Forget();
+                while ((view = v.GetView(m_BackgroundID)) == null)
+                {
+                    await UniTask.Yield();
+                }
             }
 
-            if (m_WaitForComplete)
-                await view.SetBackgroundAsync(img.Object);
-            else
-                view.SetBackgroundAsync(img.Object).Forget();
+            view.SetBackground(img.Object);
         }
 
         public override string ToString()

@@ -24,7 +24,7 @@ using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using Vvr.Provider;
 
-namespace Vvr.Session.ContentView.Provider
+namespace Vvr.Session.ContentView.Core
 {
     /// <summary>
     /// Delegate for ContentView events.

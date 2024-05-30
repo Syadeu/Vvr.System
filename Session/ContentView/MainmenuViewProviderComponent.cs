@@ -22,8 +22,8 @@
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 using Vvr.Provider;
+using Vvr.Session.ContentView.Core;
 using Vvr.Session.ContentView.Mainmenu;
-using Vvr.Session.ContentView.Provider;
 
 namespace Vvr.Session.ContentView
 {

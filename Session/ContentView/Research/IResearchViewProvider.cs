@@ -19,12 +19,19 @@
 
 #endregion
 
+using JetBrains.Annotations;
 using Vvr.Provider;
-using Vvr.Session.ContentView.Provider;
+using Vvr.Session.ContentView.Core;
 
 namespace Vvr.Session.ContentView.Research
 {
-    [LocalProvider]
+    /// <summary>
+    /// Represents an interface for a research view provider.
+    /// </summary>
+    /// <remarks>
+    /// This interface is used to define the functionality of a research view provider.
+    /// </remarks>
+    [PublicAPI, LocalProvider]
     public interface IResearchViewProvider : IContentViewProvider<ResearchViewEvent>
     {
     }

@@ -23,7 +23,7 @@ using System;
 using Cysharp.Threading.Tasks;
 using Vvr.Provider;
 
-namespace Vvr.Session.ContentView.Provider
+namespace Vvr.Session.ContentView.Core
 {
     /// <summary>
     /// Represents a content view provider interface.

@@ -27,9 +27,9 @@ using JetBrains.Annotations;
 using Vvr.Provider;
 using Vvr.Session.ContentView.BattleSign;
 using Vvr.Session.ContentView.Canvas;
+using Vvr.Session.ContentView.Core;
 using Vvr.Session.ContentView.Dialogue;
 using Vvr.Session.ContentView.Mainmenu;
-using Vvr.Session.ContentView.Provider;
 using Vvr.Session.ContentView.Research;
 using Vvr.Session.ContentView.WorldBackground;
 
