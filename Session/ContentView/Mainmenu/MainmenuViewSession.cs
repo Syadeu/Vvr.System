@@ -90,12 +90,31 @@ namespace Vvr.Session.ContentView.Mainmenu
 
             IActorData data = m_ActorDataProvider.Resolve(actor.Id);
 
+            float
+                skill0Cooltime = actor.Skill.GetSkillCooltime(data.Skills[0]),
+                skill1Cooltime = actor.Skill.GetSkillCooltime(data.Skills[1])
+                ;
+            UniTask skill0EnableTask, skill1EnableTask;
+            if (skill0Cooltime > 0)
+                skill0EnableTask = Data.eventHandler.ExecuteAsync(MainmenuViewEvent.DisableSkillButton, 0);
+            else
+                skill0EnableTask = Data.eventHandler.ExecuteAsync(MainmenuViewEvent.EnableSkillButton, 0);
+
+            if (skill1Cooltime > 0)
+                skill1EnableTask = Data.eventHandler.ExecuteAsync(MainmenuViewEvent.DisableSkillButton, 1);
+            else
+                skill1EnableTask = Data.eventHandler.ExecuteAsync(MainmenuViewEvent.EnableSkillButton, 1);
+
+
             var skillIcons = await UniTask.WhenAll(
                 m_AssetProvider.LoadAsync<Sprite>(data.Skills[0].Presentation.Icon),
                 m_AssetProvider.LoadAsync<Sprite>(data.Skills[1].Presentation.Icon)
                 );
 
             await UniTask.WhenAll(
+                skill0EnableTask,
+                skill1EnableTask,
+
                 Data.eventHandler
                     .ExecuteAsync(MainmenuViewEvent.SetSkill1Image, skillIcons.Item1?.Object),
                 Data.eventHandler

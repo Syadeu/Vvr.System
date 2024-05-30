@@ -35,6 +35,8 @@ namespace Vvr.Session.ContentView.Provider
 
         SetSkill1Image = 1100,
         SetSkill2Image,
+        EnableSkillButton = 1110,
+        DisableSkillButton,
 
         OpenResearch = 2000
     }
