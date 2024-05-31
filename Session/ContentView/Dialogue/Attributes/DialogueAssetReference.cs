@@ -35,7 +35,7 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
     /// <typeparam name="TObject">The type of the dialogue asset.</typeparam>
     [PublicAPI, Serializable]
     [HideReferenceObjectPicker, InlineProperty]
-    public sealed class DialogueAssetReference<TObject> : ISerializationCallbackReceiver
+    public sealed class DialogueAssetReference<TObject> : IValidate, ISerializationCallbackReceiver
         where TObject : UnityEngine.Object
     {
 #if UNITY_EDITOR
@@ -69,7 +69,7 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
             get
             {
 #if UNITY_EDITOR
-                if (m_EditorAsset == null &&
+                if (m_EditorAsset is null &&
                     !m_AssetGuid.IsNullOrEmpty())
                 {
                     m_EditorAsset = AssetDatabase.LoadAssetAtPath<TObject>(
@@ -85,7 +85,7 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
             private set
             {
                 m_EditorAsset = value;
-                if (m_EditorAsset != null)
+                if (m_EditorAsset is not null)
                 {
                     m_AssetGuid
                         = AssetDatabase.GUIDFromAssetPath(AssetDatabase.GetAssetPath(m_EditorAsset)).ToString();
@@ -101,6 +101,15 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
         /// The full path of the asset.
         /// </value>
         public string FullPath => m_AssetFullPath;
+
+        public bool IsValid()
+        {
+            if (m_AssetFullPath.IsNullOrEmpty()) return false;
+#if UNITY_EDITOR
+            if (m_AssetGuid.IsNullOrEmpty() || EditorAsset == null) return false;
+#endif
+            return true;
+        }
 
         void ISerializationCallbackReceiver.OnBeforeSerialize()
         {

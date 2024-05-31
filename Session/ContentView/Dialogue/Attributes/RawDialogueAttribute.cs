@@ -94,7 +94,6 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
             m_Json     = JsonUtility.ToJson(Value);
 #endif
         }
-
         void ISerializationCallbackReceiver.OnAfterDeserialize()
         {
         }
@@ -106,6 +105,24 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
             GUI.enabled = false;
             GUILayout.TextArea(m_TypeName);
             GUI.enabled = true;
+        }
+
+        [OnInspectorGUI, HideIf(nameof(m_TypeResolveFailed))]
+        private void PreviewInspectorGUI()
+        {
+            if (Value is not IDialoguePreviewAttribute previewAttribute)
+            {
+                return;
+            }
+
+            if (GUILayout.Button("Preview"))
+            {
+                var ins = DialogueViewProviderComponent.EditorPreview();
+                if (ins is not null)
+                {
+                    previewAttribute.Preview(ins);
+                }
+            }
         }
 #endif
 

@@ -21,6 +21,7 @@
 
 using Cysharp.Threading.Tasks;
 using Sirenix.OdinInspector;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.InputSystem.EnhancedTouch;
 using Vvr.Provider;
@@ -55,10 +56,30 @@ namespace Vvr.TestClass
 
         protected abstract UniTask OnStart(TWorld world);
 
-        [Button]
-        private async void DownloadExcelSheets()
+        private UniTask m_DownloadTask;
+
+        [OnInspectorGUI]
+        private void OnInspectorGUI()
         {
-            await TestUtils.DownloadSheet();
+            using (new EditorGUI.DisabledScope(
+                       m_DownloadTask.Status == UniTaskStatus.Pending))
+            {
+                string text;
+                if (m_DownloadTask.Status == UniTaskStatus.Pending)
+                    text = "Downloading...";
+                else
+                    text = "Download Excel sheets";
+                if (GUILayout.Button(text))
+                {
+                    m_DownloadTask = TestUtils.DownloadSheet();
+                }
+            }
         }
+
+        // [Button]
+        // private async void DownloadExcelSheets()
+        // {
+        //     await TestUtils.DownloadSheet();
+        // }
     }
 }

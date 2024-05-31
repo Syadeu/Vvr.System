@@ -31,6 +31,7 @@ namespace Vvr.Session.ContentView.Dialogue
     [PublicAPI]
     public interface IDialogueViewText : IDialogueViewComponent
     {
+        TextMeshProUGUI Title { get; }
         /// <summary>
         /// Represents a component of a dialogue view that displays text.
         /// </summary>

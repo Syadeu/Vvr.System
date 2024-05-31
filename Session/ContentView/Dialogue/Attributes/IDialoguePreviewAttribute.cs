@@ -15,33 +15,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// File created : 2024, 05, 29 16:05
+// File created : 2024, 05, 31 15:05
 
 #endregion
 
-namespace Vvr.Session.ContentView.Core
+using JetBrains.Annotations;
+
+namespace Vvr.Session.ContentView.Dialogue.Attributes
 {
-    public enum MainmenuViewEvent : short
+    [PublicAPI]
+    public interface IDialoguePreviewAttribute
     {
-        Show,
-        Hide,
-        SetupActorInputs,
-        ShowActorInputs,
-        HideActorInputs,
-        ShowStageInfo,
-        HideStageInfo,
-
-        Skill1Button = 1000,
-        Skill2Button,
-        AutoBattleButton,
-
-        SetSkill1Image = 1100,
-        SetSkill2Image,
-        EnableSkillButton = 1110,
-        DisableSkillButton,
-        SetStageText = 1120,
-        SetStageProgress,
-
-        OpenResearch = 2000
+        void Preview([NotNull] IDialogueView view);
     }
 }

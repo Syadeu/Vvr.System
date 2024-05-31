@@ -133,8 +133,9 @@ namespace Vvr.Session.World
             // LinkedListNode<StageSheet.Row> startStage  = Data.stages.First;
             List<IStageActor>              prevPlayers = new(Data.existingActors);
 
+            int        stageCount            = Data.stages.Count();
             IStageData cachedStartStage = Data.stages.First();
-            await BeforeStageStartAsync(cachedStartStage);
+            await BeforeStageStartAsync(cachedStartStage, 0, stageCount);
 
             await trigger.Execute(Model.Condition.OnFloorStarted, $"{cachedStartStage.Floor}");
 
@@ -148,7 +149,7 @@ namespace Vvr.Session.World
             foreach (IStageData stage in Data.stages)
             {
                 if (count++ > 0)
-                    await BeforeStageStartAsync(stage);
+                    await BeforeStageStartAsync(stage, count - 1, stageCount);
 
                 DefaultStage.SessionData sessionData;
                 if (prevPlayers.Count == 0)
@@ -213,7 +214,7 @@ namespace Vvr.Session.World
             return base.OnCreateSession(session);
         }
 
-        private async UniTask BeforeStageStartAsync(IStageData stageData)
+        private async UniTask BeforeStageStartAsync(IStageData stageData, int index, int count)
         {
             var backgroundImg = await m_AssetProvider.LoadAsync<Sprite>(stageData.Assets[AssetType.BackgroundImage]);
 
@@ -224,6 +225,19 @@ namespace Vvr.Session.World
                         new WorldBackgroundViewEventContext(DisplayName, backgroundImg.Object))
                     .Forget();
             }
+
+            m_ViewEventHandlerProvider.Mainmenu
+                .ExecuteAsync(MainmenuViewEvent.SetStageText,
+                    // $"{stageData.Name} {stageData.Floor}-{index}"
+                    $"{stageData.Name}"
+                )
+                .Forget();
+            m_ViewEventHandlerProvider.Mainmenu
+                .ExecuteAsync(MainmenuViewEvent.SetStageProgress,
+                    (float)index / count)
+                .Forget();
+            m_ViewEventHandlerProvider.Mainmenu.ExecuteAsync(MainmenuViewEvent.ShowStageInfo)
+                .Forget();
         }
 
         private async UniTask OnConditionTriggered(IEventTarget e, Condition condition, string value)
@@ -234,13 +248,13 @@ namespace Vvr.Session.World
             {
                 IActor actor = (IActor)e;
 
-                await m_ViewRegistryProvider.StageViewProvider.OpenCornerIntersectionViewAsync(
-                    // portraitImg.Object,
-                    null,
-                    "5252 그렇게 허약해보여서는 이 몸의 공격을 제대로 받아낼 수 있겠어?"
-                );
-                await UniTask.WaitForSeconds(2);
-                await m_ViewRegistryProvider.StageViewProvider.CloseCornerIntersectionViewAsync();
+                // await m_ViewRegistryProvider.StageViewProvider.OpenCornerIntersectionViewAsync(
+                //     // portraitImg.Object,
+                //     null,
+                //     "5252 그렇게 허약해보여서는 이 몸의 공격을 제대로 받아낼 수 있겠어?"
+                // );
+                // await UniTask.WaitForSeconds(2);
+                // await m_ViewRegistryProvider.StageViewProvider.CloseCornerIntersectionViewAsync();
             }
         }
 

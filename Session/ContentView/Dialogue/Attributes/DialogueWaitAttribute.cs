@@ -22,6 +22,7 @@
 using System;
 using System.ComponentModel;
 using Cysharp.Threading.Tasks;
+using Sirenix.OdinInspector;
 using UnityEngine;
 using Vvr.Provider;
 
@@ -34,6 +35,7 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
     [DisplayName("Wait")]
     internal sealed class DialogueWaitAttribute : IDialogueAttribute, IDialogueSkipAttribute
     {
+        [SuffixLabel("seconds")]
         [SerializeField] private float m_Time = 1;
 
         async UniTask IDialogueAttribute.ExecuteAsync(DialogueAttributeContext ctx)
@@ -43,7 +45,7 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
 
         public override string ToString()
         {
-            return $"Wait: {m_Time}";
+            return $"Wait: {m_Time} seconds";
         }
 
         public bool CanSkip            => true;

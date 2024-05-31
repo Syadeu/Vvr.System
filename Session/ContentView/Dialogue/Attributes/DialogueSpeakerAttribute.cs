@@ -36,7 +36,8 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
     /// </summary>
     [Serializable]
     [DisplayName("Speaker")]
-    public class DialogueSpeakerAttribute : IDialogueAttribute, IDialogueSkipAttribute
+    public class DialogueSpeakerAttribute : IDialogueAttribute, IDialogueSkipAttribute,
+        IDialoguePreviewAttribute
     {
         [SerializeField] private string m_DisplayName;
         [SerializeField] private float  m_Time;
@@ -64,6 +65,15 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
         public override string ToString()
         {
             return $"{m_DisplayName}: {m_Message}";
+        }
+
+        void IDialoguePreviewAttribute.Preview(IDialogueView view)
+        {
+#if UNITY_EDITOR
+            view.Text.Title.text     = m_DisplayName;
+            view.Text.Text.alignment = m_Alignment;
+            view.Text.Text.text      = m_Message;
+#endif
         }
 
         public bool CanSkip            => true;

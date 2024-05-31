@@ -19,16 +19,47 @@
 
 #endregion
 
+using System.Diagnostics;
 using Cysharp.Threading.Tasks;
+using JetBrains.Annotations;
 using UnityEngine;
 using Vvr.Provider;
 using Vvr.Session.ContentView.Core;
-using Vvr.Session.ContentView.Dialogue;
 
-namespace Vvr.Session.ContentView
+namespace Vvr.Session.ContentView.Dialogue
 {
     public abstract class DialogueViewProviderComponent : MonoBehaviour, IDialogueViewProvider
     {
+#if UNITY_EDITOR
+        private static DialogueViewProviderComponent s_EditorInstance;
+
+        internal static DialogueViewProviderComponent EditorInstance
+        {
+            get
+            {
+                if (s_EditorInstance is null)
+                {
+                    s_EditorInstance = FindAnyObjectByType<DialogueViewProviderComponent>();
+                }
+
+                return s_EditorInstance;
+            }
+        }
+
+        [CanBeNull]
+        internal static IDialogueView EditorPreview()
+        {
+            if (EditorInstance == null) return null;
+
+            EditorInstance.SetupEditorPreview();
+            return EditorInstance.View;
+        }
+#endif
+        [Conditional("UNITY_EDITOR")]
+        protected virtual void SetupEditorPreview()
+        {
+        }
+
         public abstract IDialogueView View { get; }
 
         public abstract bool IsFullyOpened { get; }
