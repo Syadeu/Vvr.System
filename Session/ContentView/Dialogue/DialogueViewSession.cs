@@ -98,12 +98,12 @@ namespace Vvr.Session.ContentView.Dialogue
         {
             if (ctx is IImmutableObject<DialogueData> da)
             {
-                PlayInternal(da.Object).Forget();
+                await PlayInternal(da.Object);
                 return;
             }
             if (ctx is IDialogueData d)
             {
-                PlayInternal(d).Forget();
+                await PlayInternal(d);
                 return;
             }
 
@@ -111,11 +111,12 @@ namespace Vvr.Session.ContentView.Dialogue
             {
                 if (str.EndsWith(".asset"))
                 {
-                    PlayInternal(str).Forget();
+                    await PlayInternal(str);
+                    return;
                 }
             }
 
-            throw new NotImplementedException();
+            throw new NotImplementedException($"{ctx?.GetType().FullName}");
         }
 
         async UniTask IDialoguePlayProvider.Play(IDialogueData dialogue)
