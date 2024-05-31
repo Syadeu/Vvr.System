@@ -49,7 +49,11 @@ namespace Vvr.Session.ContentView.WorldBackground
         [CanBeNull]
         internal static IWorldBackgroundView EditorPreview()
         {
-            if (EditorInstance == null) return null;
+            if (EditorInstance == null)
+            {
+                "instance not found".ToLogError();
+                return null;
+            }
 
             return EditorInstance.GetEditorView();
         }

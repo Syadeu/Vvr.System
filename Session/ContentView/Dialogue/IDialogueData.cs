@@ -30,7 +30,7 @@ namespace Vvr.Session.ContentView.Dialogue
     /// Represents the interface for dialogue data in a content view session.
     /// </summary>
     [PublicAPI]
-    public interface IDialogueData : IRawData
+    public interface IDialogueData : IRawDataId
     {
         /// <summary>
         /// Represents the data for a dialogue in a content view session.

@@ -22,6 +22,7 @@
 using System;
 using System.ComponentModel;
 using Cysharp.Threading.Tasks;
+using Sirenix.OdinInspector;
 using UnityEngine;
 using Vvr.Provider;
 
@@ -34,17 +35,35 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
     [Serializable]
     internal sealed class DialogueSetBackgroundAttribute : IDialogueAttribute
     {
-        [SerializeField] private DialogueAssetReference<Sprite>
-            m_Image;
+        [SerializeField] private DialogueAssetReference<Sprite> m_Image = new();
 
         [SerializeField] private float m_Duration = .5f;
+
+        [HideInInspector] [SerializeField] private bool m_WaitForCompletion = true;
 
         public async UniTask ExecuteAsync(DialogueAttributeContext ctx)
         {
             var sprite = await ctx.assetProvider.LoadAsync<Sprite>(m_Image.FullPath);
 
-            await ctx.viewProvider.View.Background.CrossFadeAndWait(sprite?.Object, m_Duration);
+            var task = ctx.viewProvider.View.Background.CrossFadeAndWait(sprite?.Object, m_Duration);
+
+            if (m_WaitForCompletion)
+                await task;
+            else
+                ctx.dialogue.RegisterTask(task);
         }
+
+#if UNITY_EDITOR
+        [ShowIf(nameof(m_WaitForCompletion))]
+        [VerticalGroup("0")]
+        [Button(ButtonSizes.Medium, DirtyOnClick = true), GUIColor(0, 1, 0)]
+        private void WaitForCompletion() => m_WaitForCompletion = false;
+
+        [HideIf(nameof(m_WaitForCompletion))]
+        [VerticalGroup("0")]
+        [Button(ButtonSizes.Medium, DirtyOnClick = true), GUIColor(1, .2f, 0)]
+        private void DontWaitForCompletion() => m_WaitForCompletion = true;
+#endif
 
         public override string ToString()
         {

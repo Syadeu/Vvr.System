@@ -21,6 +21,7 @@
 
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
+using TMPro;
 
 namespace Vvr.Session.ContentView.Dialogue
 {
@@ -30,6 +31,8 @@ namespace Vvr.Session.ContentView.Dialogue
     [PublicAPI]
     public interface IDialogueViewOverlayText : IDialogueViewComponent
     {
+        TextMeshProUGUI Text { get; }
+
         /// <summary>
         /// Sets the text of the dialogue overlay asynchronously, animating it if the text is not empty.
         /// </summary>

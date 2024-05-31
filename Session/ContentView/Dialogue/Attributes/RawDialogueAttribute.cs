@@ -33,7 +33,7 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
     /// It implements the <see cref="ISerializationCallbackReceiver"/> interface for serialization purposes.
     /// </remarks>
     [Serializable]
-    sealed class RawDialogueAttribute : ISerializationCallbackReceiver
+    sealed class RawDialogueAttribute : ISerializationCallbackReceiver, IValidate
     {
         [ToggleGroup("m_Enable", "$DisplayName", GroupID = "EnableAttribute")]
         [SerializeField] private bool m_Enable = true;
@@ -64,9 +64,8 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
         /// This class is used to store raw dialogue attribute data that can be resolved into an instance of <see cref="IDialogueAttribute"/>.
         /// It implements the <see cref="ISerializationCallbackReceiver"/> interface for serialization purposes.
         /// </remarks>
-        [HideIf("@"       + nameof(m_TypeResolveFailed))]
-        // [ToggleGroup("!m_Disable", GroupID = "EnableAttribute")]
-        [TitleGroup("@" + nameof(DisplayName), GroupID = "EnableAttribute/Attribute")]
+        [HideIf("@"       + nameof(m_TypeResolveFailed) + " || !IsValid()")]
+        [TitleGroup("@" + nameof(DisplayName), GroupID = "EnableAttribute/Attribute", HideWhenChildrenAreInvisible = true)]
         [ShowInInspector, InlineProperty, HideLabel]
         [HideReferenceObjectPicker]
         public IDialogueAttribute Value
@@ -93,8 +92,15 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
         private ValueDropdownList<string> GetTypeNameList() => DialogueAttributeHelper.GetDropdownList();
 #endif
 
-        private string DisplayName => m_Attribute == null ? string.Empty : m_Attribute.ToString();
+        private const string NONE = "NONE";
+        private       string DisplayName => m_Attribute == null ? NONE : m_Attribute.ToString();
 
+        public bool IsValid()
+        {
+            if (m_TypeResolveFailed || m_TypeName.IsNullOrEmpty()) return false;
+
+            return true;
+        }
         void ISerializationCallbackReceiver.OnBeforeSerialize()
         {
             if (Value == null || m_TypeResolveFailed)

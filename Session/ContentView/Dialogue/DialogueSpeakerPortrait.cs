@@ -19,6 +19,10 @@
 
 #endregion
 
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
+using System.Linq;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -36,7 +40,20 @@ namespace Vvr.Session.ContentView.Dialogue
 
 #if UNITY_EDITOR
         [ShowInInspector, PreviewField(200), HideLabel]
-        private Sprite Preview => (Sprite)Portrait.editorAsset;
+        public Sprite EditorPortrait
+        {
+            get
+            {
+                var obj = Portrait.editorAsset;
+                if (Portrait.SubObjectName.IsNullOrEmpty())
+                {
+                    return (Sprite)obj;
+                }
+
+                var assets = AssetDatabase.LoadAllAssetsAtPath(obj.GetAssetPath());
+                return assets.FirstOrDefault(x => x.name == Portrait.SubObjectName) as Sprite;
+            }
+        }
 #endif
 
         [Space]

@@ -37,14 +37,21 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
     [DisplayName("Portrait In")]
     internal sealed class DialoguePortraitInAttribute : IDialogueAttribute, IDialoguePreviewAttribute
     {
+#if UNITY_EDITOR
         [BoxGroup("Portrait", GroupID = "0"), PropertyOrder(-1)]
-        [SerializeField, LabelText("Image")] private DialogueAssetReference<DialogueSpeakerPortrait> m_Portrait;
+        [LabelText("Image")]
+        [InfoBox(
+            "Image cannot be null.", InfoMessageType.Error,
+            VisibleIf = nameof(EvaluatePortraitImageIsInvalid))]
+#endif
+        [SerializeField]
+        private DialogueAssetReference<DialogueSpeakerPortrait> m_Portrait = new();
 
-        [BoxGroup("Presentation")]
+        [FoldoutGroup("Presentation")]
         [SerializeField] private bool    m_Right;
-        [BoxGroup("Presentation")]
+        [FoldoutGroup("Presentation")]
         [SerializeField] private Vector2 m_Offset   = new Vector2(100, 0);
-        [BoxGroup("Presentation")]
+        [FoldoutGroup("Presentation")]
         [SuffixLabel("seconds")]
         [SerializeField] private float   m_Duration = .5f;
 
@@ -82,6 +89,16 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
 
 #if UNITY_EDITOR
 
+        private bool EvaluatePortraitImageIsInvalid()
+        {
+            if (m_Portrait is null || !m_Portrait.IsValid())
+            {
+                return true;
+            }
+
+            return false;
+        }
+
         [ShowIf(nameof(m_WaitForCompletion))]
         [VerticalGroup("Presentation/0")]
         [Button(ButtonSizes.Medium, DirtyOnClick = true), GUIColor(0, 1, 0)]
@@ -96,38 +113,53 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
         [InfoBox("This is shared asset. " +
                  "Anything made changes in here also applies any other references.")]
         [ShowInInspector, ShowIf("@m_Portrait != null")]
-        [FoldoutGroup(SHARED_ASSET, GroupID = "0/0")]
+        [ShowIfGroup("0/0", Condition = "@m_Portrait.IsValid()")]
+        [FoldoutGroup(SHARED_ASSET, GroupID = "0/0/0")]
         [LabelText(nameof(DialogueSpeakerPortrait.PositionOffset))]
-        private Vector3 EditorPortraitPositionOffset
+        private Vector2 EditorPortraitPositionOffset
         {
-            get => m_Portrait.EditorAsset.PositionOffset;
+            get
+            {
+                if (!m_Portrait.IsValid()) return default;
+                return m_Portrait.EditorAsset.PositionOffset;
+            }
             set
             {
                 m_Portrait.EditorAsset.PositionOffset = value;
                 EditorUtility.SetDirty(m_Portrait.EditorAsset);
             }
         }
+
         [ShowInInspector, ShowIf("@m_Portrait != null")]
-        [FoldoutGroup(SHARED_ASSET, GroupID = "0/0")]
+        [FoldoutGroup(SHARED_ASSET, GroupID = "0/0/0")]
         [LabelText(nameof(DialogueSpeakerPortrait.Rotation))]
-        private Vector3 EditorPortraitRotation
+        private Vector2 EditorPortraitRotation
         {
-            get => m_Portrait.EditorAsset.Rotation;
+            get
+            {
+                if (!m_Portrait.IsValid()) return default;
+                return m_Portrait.EditorAsset.Rotation;
+            }
             set
             {
                 m_Portrait.EditorAsset.Rotation = value;
                 EditorUtility.SetDirty(m_Portrait.EditorAsset);
             }
         }
+
         [ShowInInspector, ShowIf("@m_Portrait != null")]
-        [FoldoutGroup(SHARED_ASSET, GroupID = "0/0")]
+        [FoldoutGroup(SHARED_ASSET, GroupID = "0/0/0")]
         [LabelText(nameof(DialogueSpeakerPortrait.Scale))]
-        private Vector3 EditorPortraitScale
+        private float EditorPortraitScale
         {
-            get => m_Portrait.EditorAsset.Scale;
+            get
+            {
+                if (!m_Portrait.IsValid()) return default;
+                return m_Portrait.EditorAsset.Scale.x;
+            }
             set
             {
-                m_Portrait.EditorAsset.Scale = value;
+                m_Portrait.EditorAsset.Scale = Vector3.one * value;
                 EditorUtility.SetDirty(m_Portrait.EditorAsset);
             }
         }
@@ -164,8 +196,9 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
                 target = view.LeftPortrait;
 
             target.Setup(
-                m_Portrait.EditorAsset.Portrait.editorAsset as Sprite,
+                m_Portrait.EditorAsset.EditorPortrait,
                 m_Portrait.EditorAsset);
+            target.Image.SetAlpha(1);
 #endif
         }
     }

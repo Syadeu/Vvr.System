@@ -22,6 +22,7 @@
 using System;
 using System.ComponentModel;
 using Cysharp.Threading.Tasks;
+using Sirenix.OdinInspector;
 using UnityEngine;
 using Vvr.Provider;
 
@@ -31,15 +32,17 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
     /// Represents an attribute for overlaying text in a dialogue.
     /// </summary>
     [Serializable]
-    [DisplayName("Overlay Text")]
-    internal sealed class DialogueOverlayTextAttribute : IDialogueAttribute
+    [DisplayName("Show Overlay Text")]
+    internal sealed class DialogueShowOverlayTextAttribute : IDialogueAttribute,
+        IDialoguePreviewAttribute
     {
         [SerializeField, TextArea] private string m_Text;
 
-        [SerializeField] private bool  m_CloseOnEnd    = true;
-        [SerializeField] private float m_OpenDuration  = .25f;
         [SerializeField] private float m_Duration      = 2f;
-        [SerializeField] private float m_CloseDuration = .25f;
+        [SerializeField] private float m_OpenDuration  = .25f;
+
+        [HideInInspector]
+        [SerializeField] private bool m_WaitForCompletion = true;
 
         public async UniTask ExecuteAsync(DialogueAttributeContext ctx)
         {
@@ -48,15 +51,38 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
             await overlayText.OpenAsync(m_OpenDuration);
             await overlayText.SetTextAsync(m_Text);
 
-            await UniTask.WaitForSeconds(m_Duration);
+            var task = UniTask.WaitForSeconds(m_Duration);
 
-            if (m_CloseOnEnd)
-                await overlayText.CloseAsync(m_CloseDuration);
+            if (m_WaitForCompletion)
+                await task;
+            else
+                ctx.dialogue.RegisterTask(task);
         }
+
+#if UNITY_EDITOR
+        [ShowIf(nameof(m_WaitForCompletion))]
+        [VerticalGroup("0")]
+        [Button(ButtonSizes.Medium, DirtyOnClick = true), GUIColor(0, 1, 0)]
+        private void WaitForCompletion() => m_WaitForCompletion = false;
+
+        [HideIf(nameof(m_WaitForCompletion))]
+        [VerticalGroup("0")]
+        [Button(ButtonSizes.Medium, DirtyOnClick = true), GUIColor(1, .2f, 0)]
+        private void DontWaitForCompletion() => m_WaitForCompletion = true;
+#endif
 
         public override string ToString()
         {
-            return m_Text;
+            return $"Overlay Text: {m_Text}";
+        }
+
+        void IDialoguePreviewAttribute.Preview(IDialogueView view)
+        {
+#if UNITY_EDITOR
+            view.OverlayText.Clear();
+            view.OverlayText.OpenAsync(-1);
+            view.OverlayText.Text.text = m_Text;
+#endif
         }
     }
 }

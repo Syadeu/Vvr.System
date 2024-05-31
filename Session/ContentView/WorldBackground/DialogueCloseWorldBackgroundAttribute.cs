@@ -22,8 +22,10 @@
 using System;
 using System.ComponentModel;
 using Cysharp.Threading.Tasks;
+using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.Assertions;
+using UnityEngine.Serialization;
 using Vvr.Provider;
 using Vvr.Session.ContentView.Dialogue;
 using Vvr.Session.ContentView.Dialogue.Attributes;
@@ -36,7 +38,10 @@ namespace Vvr.Session.ContentView.WorldBackground
         IDialoguePreviewAttribute
     {
         [SerializeField] private string m_BackgroundID = "0";
-        [SerializeField] private bool   m_WaitForClose = true;
+
+        [HideInInspector]
+        [FormerlySerializedAs("m_WaitForClose")]
+        [SerializeField] private bool   m_WaitForCompletion = true;
 
         public async UniTask ExecuteAsync(DialogueAttributeContext ctx)
         {
@@ -47,7 +52,7 @@ namespace Vvr.Session.ContentView.WorldBackground
 
             if (v.GetView(m_BackgroundID) == null) return;
 
-            if (m_WaitForClose)
+            if (m_WaitForCompletion)
                 await v.CloseAsync(m_BackgroundID);
             else
             {
@@ -59,6 +64,18 @@ namespace Vvr.Session.ContentView.WorldBackground
         {
             return $"Close World Background: {m_BackgroundID}";
         }
+
+#if UNITY_EDITOR
+        [ShowIf(nameof(m_WaitForCompletion))]
+        [VerticalGroup("0")]
+        [Button(ButtonSizes.Medium, DirtyOnClick = true), GUIColor(0, 1, 0)]
+        private void WaitForCompletion() => m_WaitForCompletion = false;
+
+        [HideIf(nameof(m_WaitForCompletion))]
+        [VerticalGroup("0")]
+        [Button(ButtonSizes.Medium, DirtyOnClick = true), GUIColor(1, .2f, 0)]
+        private void DontWaitForCompletion() => m_WaitForCompletion = true;
+#endif
 
         void IDialoguePreviewAttribute.Preview(IDialogueView view)
         {

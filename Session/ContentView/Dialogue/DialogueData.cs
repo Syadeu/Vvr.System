@@ -39,12 +39,13 @@ namespace Vvr.Session.ContentView.Dialogue
     [CreateAssetMenu(menuName = "Vvr/Create DialogueData", fileName = "DialogueData", order = 0)]
     public class DialogueData : ScriptableObject, IDialogueData
     {
-        [SerializeField] private int    m_Index;
-
+#if UNITY_EDITOR
         [Space]
         [ListDrawerSettings(
             AlwaysAddDefaultValue = true,
+            ElementColor = nameof(GetAttributeElementColor),
             ShowPaging = false)]
+#endif
         [SerializeField] private RawDialogueAttribute[] m_Attributes;
 
         [Space] [SerializeField]
@@ -53,7 +54,6 @@ namespace Vvr.Session.ContentView.Dialogue
         private IDialogueAttribute[] m_ResolvedAttributes;
 
         public string Id => name;
-        public int Index => m_Index;
 
         public IReadOnlyList<IDialogueAttribute> Attributes
         {
@@ -69,41 +69,55 @@ namespace Vvr.Session.ContentView.Dialogue
 
 #if UNITY_EDITOR
         private Color NormalColor => new Color(0.15f, 0.47f, 0.74f);
-        private Color NoPreviewColor => new Color(1, 0.57f, 0.34f);
+        private Color ErrorColor => new Color(1, 0.57f, 0.34f);
+
+        private Color GetAttributeElementColor(int index, Color defaultColor)
+        {
+            var target = m_Attributes[index];
+            if (!target.IsValid())
+            {
+                Color color = new Color(1, 0,0, .5f);
+                return color;
+            }
+
+            if (0     < m_PreviewProgress &&
+                index + 1 <= m_PreviewProgress)
+            {
+                Color color = GetPreviewProgressColor(index + 1);
+                color.a = .5f;
+
+                return color;
+            }
+
+            return defaultColor;
+        }
 
         private Color GetPreviewProgressColor(int value)
         {
-            if (value - 1           < 0) return NoPreviewColor;
-            if (m_Attributes.Length <= value - 1) return GetPreviewProgressColor(m_Attributes.Length - 1);
+            if (value               <= 0) return ErrorColor;
+            if (m_Attributes.Length <= value - 1) return NormalColor;
 
             var target = m_Attributes[value - 1];
-            if (!target.Enabled) return NoPreviewColor;
+            if (!target.Enabled) return ErrorColor;
 
             bool hasPreview = target.Value is IDialoguePreviewAttribute;
-            return hasPreview ? NormalColor : NoPreviewColor;
+            return hasPreview ? NormalColor : ErrorColor;
         }
 
         private void OnPreviewProgressValueChanged(int value)
         {
-            IDialogueView ins;
-            if (value - 1 < 0)
+            if (m_Attributes.Length <= value - 1) return;
+
+            if (value <= 0)
             {
-                ins = DialogueViewProviderComponent.EditorPreview();
-                if (ins is null) return;
-
-                ins.LeftPortrait.Clear();
-                ins.RightPortrait.Clear();
-                ins.Text.Clear();
-
+                PreviewReset();
                 return;
             }
-
-            if (m_Attributes.Length <= value - 1) return;
 
             var target = m_Attributes[value - 1];
             if (target.Value is not IDialoguePreviewAttribute previewAttribute) return;
 
-            ins = DialogueViewProviderComponent.EditorPreview();
+            var ins = DialogueViewProviderComponent.EditorPreview();
             if (ins is null) return;
 
             previewAttribute.Preview(ins);
@@ -116,6 +130,21 @@ namespace Vvr.Session.ContentView.Dialogue
             Segmented = true)]
         [OnValueChanged(nameof(OnPreviewProgressValueChanged), InvokeOnInitialize = false, InvokeOnUndoRedo = false)]
         private int m_PreviewProgress = 0;
+
+        [TitleGroup("Preview")]
+        [Button(name: "Reset")]
+        private void PreviewReset()
+        {
+            var ins = DialogueViewProviderComponent.EditorPreview();
+            if (ins is null) return;
+
+            ins.Background.Image.sprite = null;
+            ins.LeftPortrait.Clear();
+            ins.RightPortrait.Clear();
+            ins.Text.Clear();
+
+            m_PreviewProgress = 0;
+        }
 
         [DisableIf("@m_PreviewProgress <= 0")]
         [HorizontalGroup("Preview/Buttons"), Button(name: "Previous")]

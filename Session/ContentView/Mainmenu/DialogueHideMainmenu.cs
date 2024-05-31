@@ -22,6 +22,8 @@
 using System.ComponentModel;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
+using Sirenix.OdinInspector;
+using UnityEngine;
 using Vvr.Session.ContentView.Core;
 using Vvr.Session.ContentView.Dialogue.Attributes;
 
@@ -31,11 +33,28 @@ namespace Vvr.Session.ContentView.Mainmenu
     [DisplayName("Hide Mainmenu")]
     class DialogueHideMainmenu : IDialogueAttribute
     {
+        [HideInInspector] [SerializeField] private bool m_WaitForCompletion = false;
+
         async UniTask IDialogueAttribute.ExecuteAsync(DialogueAttributeContext ctx)
         {
-            ctx.eventHandlerProvider.Mainmenu.ExecuteAsync(MainmenuViewEvent.Hide)
-                .Forget();
+            var task = ctx.eventHandlerProvider.Mainmenu.ExecuteAsync(MainmenuViewEvent.Hide);
+            if (m_WaitForCompletion)
+                await task;
+            else
+                ctx.dialogue.RegisterTask(task);
         }
+
+#if UNITY_EDITOR
+        [ShowIf(nameof(m_WaitForCompletion))]
+        [VerticalGroup("0")]
+        [Button(ButtonSizes.Medium, DirtyOnClick = true), GUIColor(0, 1, 0)]
+        private void WaitForCompletion() => m_WaitForCompletion = false;
+
+        [HideIf(nameof(m_WaitForCompletion))]
+        [VerticalGroup("0")]
+        [Button(ButtonSizes.Medium, DirtyOnClick = true), GUIColor(1, .2f, 0)]
+        private void DontWaitForCompletion() => m_WaitForCompletion = true;
+#endif
 
         public override string ToString() => "Hide Mainmenu";
     }

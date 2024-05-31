@@ -48,7 +48,6 @@ namespace Vvr.Session.ContentView.Dialogue
             public List<UniTask> Tasks { get; } = new List<UniTask>(32);
 
             public string        Id => Data.Id;
-            public int                               Index => Data.Index;
             public IReadOnlyList<IDialogueAttribute> Attributes => Data.Attributes;
             public IDialogueData                     NextDialogue => Data.NextDialogue;
             public bool IsEnabled(int index)

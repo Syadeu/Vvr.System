@@ -22,6 +22,7 @@
 using System;
 using System.ComponentModel;
 using Cysharp.Threading.Tasks;
+using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.Assertions;
 using Vvr.Session.ContentView.Core;
@@ -35,8 +36,17 @@ namespace Vvr.Session.ContentView.WorldBackground
     class DialogueSetWorldBackgroundAttribute : IDialogueAttribute,
         IDialoguePreviewAttribute
     {
-        [SerializeField] private string                         m_BackgroundID = "0";
-        [SerializeField] private DialogueAssetReference<Sprite> m_Image;
+        [SerializeField] private string m_BackgroundID = "0";
+
+#if UNITY_EDITOR
+        [InfoBox(
+            "Invalid image.", InfoMessageType.Error,
+            VisibleIf = nameof(EvaluateImageIsInvalid))]
+#endif
+        [SerializeField]
+        private DialogueAssetReference<Sprite> m_Image = new();
+
+        [HideInInspector] [SerializeField] private bool m_WaitForCompletion = true;
 
         public async UniTask ExecuteAsync(DialogueAttributeContext ctx)
         {
@@ -44,6 +54,14 @@ namespace Vvr.Session.ContentView.WorldBackground
                 ctx.resolveProvider(VvrTypeHelper.TypeOf<IWorldBackgroundViewProvider>.Type) as IWorldBackgroundViewProvider;
             Assert.IsNotNull(v, "v != null");
 
+            if (m_WaitForCompletion)
+                await ExecutionBody(ctx, v);
+            else
+                ctx.dialogue.RegisterTask(ExecutionBody(ctx, v));
+        }
+
+        private async UniTask ExecutionBody(DialogueAttributeContext ctx, IWorldBackgroundViewProvider v)
+        {
             var img = await ctx.assetProvider.LoadAsync<Sprite>(m_Image.FullPath);
 
             var view = v.GetView(m_BackgroundID);
@@ -68,10 +86,36 @@ namespace Vvr.Session.ContentView.WorldBackground
             return $"Open World Background: {m_BackgroundID}({assetName})";
         }
 
+#if UNITY_EDITOR
+        [ShowIf(nameof(m_WaitForCompletion))]
+        [VerticalGroup("0")]
+        [Button(ButtonSizes.Medium, DirtyOnClick = true), GUIColor(0, 1, 0)]
+        private void WaitForCompletion() => m_WaitForCompletion = false;
+
+        [HideIf(nameof(m_WaitForCompletion))]
+        [VerticalGroup("0")]
+        [Button(ButtonSizes.Medium, DirtyOnClick = true), GUIColor(1, .2f, 0)]
+        private void DontWaitForCompletion() => m_WaitForCompletion = true;
+
+        private bool EvaluateImageIsInvalid(DialogueAssetReference<Sprite> value)
+        {
+            if (value is null || !value.IsValid())
+            {
+                return true;
+            }
+
+            return false;
+        }
+#endif
+
         void IDialoguePreviewAttribute.Preview(IDialogueView view)
         {
 #if UNITY_EDITOR
-            if (m_Image is null || !m_Image.IsValid()) return;
+            if (m_Image is null || !m_Image.IsValid())
+            {
+                "Image is not valid".ToLogError();
+                return;
+            }
 
             var eView = WorldBackgroundViewProvider.EditorPreview();
             if (eView is null) return;

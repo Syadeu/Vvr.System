@@ -40,7 +40,7 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
         IDialoguePreviewAttribute
     {
         [SerializeField] private string m_DisplayName;
-        [SerializeField] private float  m_Time;
+        [SerializeField] private float  m_Time = 2;
 
         [Space] [SerializeField]   private TextAlignmentOptions m_Alignment = TextAlignmentOptions.TopLeft;
         [SerializeField, TextArea] private string               m_Message;
@@ -64,7 +64,23 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
 
         public override string ToString()
         {
-            return $"{m_DisplayName}: {m_Message}";
+            if (m_DisplayName.IsNullOrEmpty() && m_Message.IsNullOrEmpty())
+            {
+                return "Clear Speaker";
+            }
+
+            const int maxLength = 22;
+            int       length    = m_Message.Length;
+
+            int max = Mathf.Clamp(length, 0, maxLength - m_DisplayName.Length);
+
+            string str = $"{m_DisplayName}: {m_Message[..max]}";
+            if (max != length)
+            {
+                str += " [truncated]";
+            }
+
+            return str;
         }
 
         void IDialoguePreviewAttribute.Preview(IDialogueView view)
@@ -74,7 +90,7 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
             view.Text.Text.alignment = m_Alignment;
             view.Text.Text.text      = m_Message;
 
-            view.Text.EnableTitle(!m_Message.IsNullOrEmpty());
+            view.Text.EnableTitle(!m_DisplayName.IsNullOrEmpty());
 #endif
         }
 
