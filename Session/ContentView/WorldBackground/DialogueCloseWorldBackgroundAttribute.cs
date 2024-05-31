@@ -32,7 +32,8 @@ namespace Vvr.Session.ContentView.WorldBackground
 {
     [Serializable]
     [DisplayName("Close World Background")]
-    class DialogueCloseWorldBackgroundAttribute : IDialogueAttribute
+    class DialogueCloseWorldBackgroundAttribute : IDialogueAttribute,
+        IDialoguePreviewAttribute
     {
         [SerializeField] private string m_BackgroundID = "0";
         [SerializeField] private bool   m_WaitForClose = true;
@@ -57,6 +58,16 @@ namespace Vvr.Session.ContentView.WorldBackground
         public override string ToString()
         {
             return $"Close World Background: {m_BackgroundID}";
+        }
+
+        void IDialoguePreviewAttribute.Preview(IDialogueView view)
+        {
+#if UNITY_EDITOR
+            var eView = WorldBackgroundViewProvider.EditorPreview();
+            if (eView is null) return;
+
+            eView.SetBackground(null);
+#endif
         }
     }
 }

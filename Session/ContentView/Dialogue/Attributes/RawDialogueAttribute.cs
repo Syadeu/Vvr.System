@@ -35,7 +35,11 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
     [Serializable]
     sealed class RawDialogueAttribute : ISerializationCallbackReceiver
     {
+        [ToggleGroup("m_Enable", "$DisplayName", GroupID = "EnableAttribute")]
+        [SerializeField] private bool m_Enable = true;
+
 #if UNITY_EDITOR
+        [ToggleGroup("m_Enable", GroupID = "EnableAttribute")]
         [InfoBox(
             "Type resolve has been failed. You should specify target type manually.",
             InfoMessageType.Error,
@@ -61,7 +65,8 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
         /// It implements the <see cref="ISerializationCallbackReceiver"/> interface for serialization purposes.
         /// </remarks>
         [HideIf("@"       + nameof(m_TypeResolveFailed))]
-        [FoldoutGroup("@" + nameof(DisplayName), GroupID = "Attribute")]
+        // [ToggleGroup("!m_Disable", GroupID = "EnableAttribute")]
+        [TitleGroup("@" + nameof(DisplayName), GroupID = "EnableAttribute/Attribute")]
         [ShowInInspector, InlineProperty, HideLabel]
         [HideReferenceObjectPicker]
         public IDialogueAttribute Value
@@ -74,6 +79,16 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
             }
             private set => m_Attribute = value;
         }
+
+        public bool Enabled
+        {
+            get
+            {
+                if (!m_Enable || m_TypeResolveFailed) return false;
+                return true;
+            }
+        }
+
 #if UNITY_EDITOR
         private ValueDropdownList<string> GetTypeNameList() => DialogueAttributeHelper.GetDropdownList();
 #endif
@@ -107,6 +122,7 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
             GUI.enabled = true;
         }
 
+        [ToggleGroup("m_Enable", GroupID = "EnableAttribute")]
         [OnInspectorGUI, HideIf(nameof(m_TypeResolveFailed))]
         private void PreviewInspectorGUI()
         {

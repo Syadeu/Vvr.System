@@ -70,4 +70,5 @@ namespace Vvr.Session.ContentView.Dialogue
         public abstract UniTask OpenAsync(ICanvasViewProvider canvasProvider, IAssetProvider assetProvider, object ctx);
         public abstract UniTask CloseAsync(object             ctx);
     }
+
 }

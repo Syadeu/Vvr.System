@@ -51,6 +51,11 @@ namespace Vvr.Session.ContentView.Dialogue
             public int                               Index => Data.Index;
             public IReadOnlyList<IDialogueAttribute> Attributes => Data.Attributes;
             public IDialogueData                     NextDialogue => Data.NextDialogue;
+            public bool IsEnabled(int index)
+            {
+                return Data.IsEnabled(index);
+            }
+
             public void RegisterTask(UniTask task)
             {
                 Tasks.Add(task);
@@ -152,8 +157,11 @@ namespace Vvr.Session.ContentView.Dialogue
                     .OpenAsync(CanvasViewProvider, m_AssetProvider, wrapper.Data)
                     .Forget();
 
+                int count = 0;
                 foreach (var attribute in wrapper.Attributes)
                 {
+                    if (!wrapper.IsEnabled(count++)) continue;
+
                     var task = attribute.ExecuteAsync(
                         new DialogueAttributeContext(
                             wrapper, m_AssetProvider, m_DialogueViewProvider, resolveProvider,

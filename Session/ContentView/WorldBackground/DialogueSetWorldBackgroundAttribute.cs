@@ -24,7 +24,6 @@ using System.ComponentModel;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Assertions;
-using Vvr.Provider;
 using Vvr.Session.ContentView.Core;
 using Vvr.Session.ContentView.Dialogue;
 using Vvr.Session.ContentView.Dialogue.Attributes;
@@ -33,7 +32,8 @@ namespace Vvr.Session.ContentView.WorldBackground
 {
     [Serializable]
     [DisplayName("Set World Background")]
-    class DialogueSetWorldBackgroundAttribute : IDialogueAttribute
+    class DialogueSetWorldBackgroundAttribute : IDialogueAttribute,
+        IDialoguePreviewAttribute
     {
         [SerializeField] private string                         m_BackgroundID = "0";
         [SerializeField] private DialogueAssetReference<Sprite> m_Image;
@@ -66,6 +66,18 @@ namespace Vvr.Session.ContentView.WorldBackground
             string assetName = m_Image?.EditorAsset is null ? "None" : m_Image.EditorAsset.name;
 
             return $"Open World Background: {m_BackgroundID}({assetName})";
+        }
+
+        void IDialoguePreviewAttribute.Preview(IDialogueView view)
+        {
+#if UNITY_EDITOR
+            if (m_Image is null || !m_Image.IsValid()) return;
+
+            var eView = WorldBackgroundViewProvider.EditorPreview();
+            if (eView is null) return;
+
+            eView.SetBackground(m_Image.EditorAsset);
+#endif
         }
     }
 }

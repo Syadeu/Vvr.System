@@ -58,6 +58,18 @@ namespace Vvr.Provider
             return UnityEngine.Object.Instantiate(t.Object);
         }
 
+        public static IImmutableObject<UnityEngine.Canvas> SetChild(
+            this IImmutableObject<UnityEngine.Canvas> t, UnityEngine.Component com)
+        {
+            com.transform.SetParent(t.Object.transform, false);
+            return t;
+        }
+        public static IImmutableObject<UnityEngine.Canvas> SetChild(
+            this IImmutableObject<UnityEngine.Canvas> t, GameObject obj)
+        {
+            obj.transform.SetParent(t.Object.transform, false);
+            return t;
+        }
         public static TObject CreateChild<TObject>(
             this IImmutableObject<UnityEngine.Canvas> t,
             TObject                                template)

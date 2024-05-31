@@ -20,6 +20,7 @@
 #endregion
 
 using Cysharp.Threading.Tasks;
+using JetBrains.Annotations;
 using UnityEngine;
 
 namespace Vvr.Session.ContentView.WorldBackground
@@ -29,6 +30,6 @@ namespace Vvr.Session.ContentView.WorldBackground
     /// </summary>
     public interface IWorldBackgroundView
     {
-        void SetBackground(Sprite sprite);
+        void SetBackground([CanBeNull] Sprite sprite);
     }
 }

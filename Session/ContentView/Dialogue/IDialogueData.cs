@@ -42,5 +42,7 @@ namespace Vvr.Session.ContentView.Dialogue
         /// </summary>
         [CanBeNull]
         IDialogueData NextDialogue { get; }
+
+        bool IsEnabled(int index);
     }
 }

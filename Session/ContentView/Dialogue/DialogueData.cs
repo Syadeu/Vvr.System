@@ -55,7 +55,7 @@ namespace Vvr.Session.ContentView.Dialogue
         public string Id => name;
         public int Index => m_Index;
 
-        public IReadOnlyList<IDialogueAttribute>              Attributes
+        public IReadOnlyList<IDialogueAttribute> Attributes
         {
             get
             {
@@ -63,7 +63,8 @@ namespace Vvr.Session.ContentView.Dialogue
                 return m_ResolvedAttributes;
             }
         }
-
         public IDialogueData NextDialogue => m_NextDialogue;
+
+        public bool IsEnabled(int index) => m_Attributes[index].Enabled;
     }
 }

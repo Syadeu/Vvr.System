@@ -19,16 +19,47 @@
 
 #endregion
 
+using System;
 using Cysharp.Threading.Tasks;
+using JetBrains.Annotations;
 using UnityEngine;
 using Vvr.Provider;
 using Vvr.Session.ContentView.Core;
-using Vvr.Session.ContentView.WorldBackground;
 
-namespace Vvr.Session.ContentView
+namespace Vvr.Session.ContentView.WorldBackground
 {
     public abstract class WorldBackgroundViewProvider : MonoBehaviour, IWorldBackgroundViewProvider
     {
+#if UNITY_EDITOR
+        private static WorldBackgroundViewProvider s_EditorInstance;
+
+        internal static WorldBackgroundViewProvider EditorInstance
+        {
+            get
+            {
+                if (s_EditorInstance is null)
+                {
+                    s_EditorInstance = FindAnyObjectByType<WorldBackgroundViewProvider>();
+                }
+
+                return s_EditorInstance;
+            }
+        }
+
+        [CanBeNull]
+        internal static IWorldBackgroundView EditorPreview()
+        {
+            if (EditorInstance == null) return null;
+
+            return EditorInstance.GetEditorView();
+        }
+        [CanBeNull]
+        protected virtual IWorldBackgroundView GetEditorView()
+        {
+            throw new NotImplementedException();
+        }
+#endif
+
         public abstract void Initialize(IContentViewEventHandler<WorldBackgroundViewEvent> eventHandler);
         public abstract void Reserve();
 
