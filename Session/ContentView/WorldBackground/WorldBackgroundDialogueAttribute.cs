@@ -1,0 +1,44 @@
+#region Copyrights
+
+// Copyright 2024 Syadeu
+// Author : Seung Ha Kim
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+// File created : 2024, 06, 01 01:06
+
+#endregion
+
+using System;
+using Cysharp.Threading.Tasks;
+using UnityEngine.Assertions;
+using Vvr.Session.ContentView.Dialogue.Attributes;
+
+namespace Vvr.Session.ContentView.WorldBackground
+{
+    [Serializable, UnityEngine.Scripting.RequireDerived]
+    abstract class WorldBackgroundDialogueAttribute : IDialogueAttribute
+    {
+        async UniTask IDialogueAttribute.ExecuteAsync(DialogueAttributeContext ctx)
+        {
+            IWorldBackgroundViewProvider v =
+                ctx.resolveProvider(VvrTypeHelper.TypeOf<IWorldBackgroundViewProvider>.Type) as
+                    IWorldBackgroundViewProvider;
+            Assert.IsNotNull(v, "v != null");
+
+            await ExecuteAsync(ctx, v);
+        }
+
+        protected abstract UniTask ExecuteAsync(DialogueAttributeContext ctx, IWorldBackgroundViewProvider view);
+    }
+}

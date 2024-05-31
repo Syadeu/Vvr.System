@@ -31,5 +31,9 @@ namespace Vvr.Session.ContentView.WorldBackground
     public interface IWorldBackgroundView
     {
         void SetBackground([CanBeNull] Sprite sprite);
+
+        UniTask ZoomAsync(float   zoom, float duration);
+        UniTask CenterAsync(float duration);
+        UniTask PanAsync(bool     relative, Vector2 offset, float duration);
     }
 }

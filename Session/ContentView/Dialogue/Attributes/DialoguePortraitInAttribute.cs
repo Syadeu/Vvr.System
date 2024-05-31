@@ -60,6 +60,16 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
 
         async UniTask IDialogueAttribute.ExecuteAsync(DialogueAttributeContext ctx)
         {
+            UniTask task = ExecutionBody(ctx);
+
+            if (m_WaitForCompletion)
+                await task;
+            else
+                ctx.dialogue.RegisterTask(task);
+        }
+
+        private async UniTask ExecutionBody(DialogueAttributeContext ctx)
+        {
             var portraitAsset = await ctx.assetProvider.LoadAsync<DialogueSpeakerPortrait>(m_Portrait.FullPath);
             var portrait      = await ctx.assetProvider.LoadAsync<Sprite>(portraitAsset.Object.Portrait);
 
@@ -69,22 +79,16 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
             else
                 target = ctx.viewProvider.View.LeftPortrait;
 
-            UniTask task;
             if (target.WasIn)
-                task = target.CrossFadeAndWait(portrait.Object, portraitAsset.Object, m_Duration);
+                await target.CrossFadeAndWait(portrait.Object, portraitAsset.Object, m_Duration);
             else
             {
                 target.Setup(portrait.Object, portraitAsset.Object);
 
                 Vector2 offset         = m_Offset;
                 if (!m_Right) offset.x *= -1f;
-                task = target.FadeInAndWait(offset, m_Duration);
+                await target.FadeInAndWait(offset, m_Duration);
             }
-
-            if (m_WaitForCompletion)
-                await task;
-            else
-                ctx.dialogue.RegisterTask(task);
         }
 
 #if UNITY_EDITOR

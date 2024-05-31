@@ -59,7 +59,19 @@ namespace Vvr.Session.ContentView.Dialogue
         {
             get
             {
-                m_ResolvedAttributes ??= m_Attributes.Select(x => x.Value).ToArray();
+                if (m_ResolvedAttributes is null)
+                {
+                    List<IDialogueAttribute> list = new();
+                    for (int i = 0; i < m_Attributes.Length; i++)
+                    {
+                        var e = m_Attributes[i];
+                        if (!e.Enabled) continue;
+
+                        list.Add(e.Value);
+                    }
+
+                    m_ResolvedAttributes = list.ToArray();
+                }
                 return m_ResolvedAttributes;
             }
         }
@@ -106,6 +118,8 @@ namespace Vvr.Session.ContentView.Dialogue
 
         private void OnPreviewProgressValueChanged(int value)
         {
+            if (Application.isPlaying) return;
+
             if (m_Attributes.Length <= value - 1) return;
 
             if (value <= 0)
@@ -123,6 +137,7 @@ namespace Vvr.Session.ContentView.Dialogue
             previewAttribute.Preview(ins);
         }
 
+        [DisableInPlayMode]
         [ShowInInspector, HideLabel]
         [TitleGroup("Preview")]
         [ProgressBar(0, maxGetter: "@m_Attributes.Length",
@@ -131,10 +146,13 @@ namespace Vvr.Session.ContentView.Dialogue
         [OnValueChanged(nameof(OnPreviewProgressValueChanged), InvokeOnInitialize = false, InvokeOnUndoRedo = false)]
         private int m_PreviewProgress = 0;
 
+        [DisableInPlayMode]
         [TitleGroup("Preview")]
         [Button(name: "Reset")]
         private void PreviewReset()
         {
+            if (Application.isPlaying) return;
+
             var ins = DialogueViewProviderComponent.EditorPreview();
             if (ins is null) return;
 
@@ -146,17 +164,24 @@ namespace Vvr.Session.ContentView.Dialogue
             m_PreviewProgress = 0;
         }
 
+        [DisableInPlayMode]
         [DisableIf("@m_PreviewProgress <= 0")]
         [HorizontalGroup("Preview/Buttons"), Button(name: "Previous")]
         private void PreviewPrevious()
         {
+            if (Application.isPlaying) return;
+
             m_PreviewProgress = Mathf.Clamp(m_PreviewProgress - 1, 0, m_Attributes.Length + 1);
             OnPreviewProgressValueChanged(m_PreviewProgress);
         }
+
+        [DisableInPlayMode]
         [DisableIf("@m_Attributes.Length <= m_PreviewProgress")]
         [HorizontalGroup("Preview/Buttons"), Button(name: "Next")]
         private void PreviewNext()
         {
+            if (Application.isPlaying) return;
+
             m_PreviewProgress = Mathf.Clamp(m_PreviewProgress + 1, 0, m_Attributes.Length + 1);
             OnPreviewProgressValueChanged(m_PreviewProgress);
         }

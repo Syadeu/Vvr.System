@@ -39,27 +39,33 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
     public class DialogueSpeakerAttribute : IDialogueAttribute, IDialogueSkipAttribute,
         IDialoguePreviewAttribute
     {
+        [InfoBox(
+            "Empty message will clear dialogue text box and fade out.",
+            VisibleIf = nameof(IsMessageEmpty))]
+        [DisableIf(nameof(IsMessageEmpty))]
         [SerializeField] private string m_DisplayName;
+        [DisableIf(nameof(IsMessageEmpty))]
         [SerializeField] private float  m_Time = 2;
 
-        [Space] [SerializeField]   private TextAlignmentOptions m_Alignment = TextAlignmentOptions.TopLeft;
-        [SerializeField, TextArea] private string               m_Message;
+        [Space] [DisableIf(nameof(IsMessageEmpty))] [SerializeField]
+        private TextAlignmentOptions m_Alignment = TextAlignmentOptions.TopLeft;
+        [SerializeField, TextArea] private string m_Message;
+
+        private bool IsMessageEmpty => m_Message.IsNullOrEmpty();
 
         async UniTask IDialogueAttribute.ExecuteAsync(DialogueAttributeContext ctx)
         {
-            // $"[Dialogue] Speak".ToLog();
-
             var view = ctx.viewProvider.View;
 
-            if (m_Message.IsNullOrEmpty())
+            if (IsMessageEmpty)
                 view.Text.Clear();
             else
             {
                 view.Text.Text.alignment = m_Alignment;
                 await view.Text.SetTextAsync(m_DisplayName, m_Message);
-            }
 
-            await UniTask.WaitForSeconds(m_Time);
+                await UniTask.WaitForSeconds(m_Time);
+            }
         }
 
         public override string ToString()
@@ -92,11 +98,8 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
         void IDialoguePreviewAttribute.Preview(IDialogueView view)
         {
 #if UNITY_EDITOR
-            view.Text.Title.text     = m_DisplayName;
             view.Text.Text.alignment = m_Alignment;
-            view.Text.Text.text      = m_Message;
-
-            view.Text.EnableTitle(!m_DisplayName.IsNullOrEmpty());
+            view.Text.SetTextAsync(m_DisplayName, m_Message).Forget();
 #endif
         }
 

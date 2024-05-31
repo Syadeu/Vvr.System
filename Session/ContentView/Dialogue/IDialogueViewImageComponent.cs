@@ -48,7 +48,7 @@ namespace Vvr.Session.ContentView.Dialogue
         /// <param name="color">The color to set the image component.</param>
         /// <param name="duration">The duration in which the color transition should happen.</param>
         /// <returns>A UniTask representing the asynchronous operation.</returns>
-        UniTask SetColor(Color   color,  float duration);
+        UniTask SetColorAsync(Color   color,  float duration);
 
         /// <summary>
         /// Cross-fades the image of a dialogue view component with a given duration and waits for the transition to complete.

@@ -24,7 +24,6 @@ using System.ComponentModel;
 using Cysharp.Threading.Tasks;
 using Sirenix.OdinInspector;
 using UnityEngine;
-using UnityEngine.Assertions;
 using Vvr.Session.ContentView.Core;
 using Vvr.Session.ContentView.Dialogue;
 using Vvr.Session.ContentView.Dialogue.Attributes;
@@ -33,7 +32,7 @@ namespace Vvr.Session.ContentView.WorldBackground
 {
     [Serializable]
     [DisplayName("Set World Background")]
-    class DialogueSetWorldBackgroundAttribute : IDialogueAttribute,
+    class DialogueSetWorldBackgroundAttribute : WorldBackgroundDialogueAttribute,
         IDialoguePreviewAttribute
     {
         [SerializeField] private string m_BackgroundID = "0";
@@ -48,12 +47,8 @@ namespace Vvr.Session.ContentView.WorldBackground
 
         [HideInInspector] [SerializeField] private bool m_WaitForCompletion = true;
 
-        public async UniTask ExecuteAsync(DialogueAttributeContext ctx)
+        protected override async UniTask ExecuteAsync(DialogueAttributeContext ctx, IWorldBackgroundViewProvider v)
         {
-            IWorldBackgroundViewProvider v =
-                ctx.resolveProvider(VvrTypeHelper.TypeOf<IWorldBackgroundViewProvider>.Type) as IWorldBackgroundViewProvider;
-            Assert.IsNotNull(v, "v != null");
-
             if (m_WaitForCompletion)
                 await ExecutionBody(ctx, v);
             else
