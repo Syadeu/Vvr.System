@@ -70,11 +70,17 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
             }
 
             const int maxLength = 22;
-            int       length    = m_Message.Length;
+            int       length    = m_Message.IsNullOrEmpty() ? 0 : m_Message.Length;
 
-            int max = Mathf.Clamp(length, 0, maxLength - m_DisplayName.Length);
+            int max = Mathf.Clamp(length, 0, maxLength - (m_DisplayName.IsNullOrEmpty() ? 0 : m_DisplayName.Length));
 
-            string str = $"{m_DisplayName}: {m_Message[..max]}";
+            string str;
+            if (m_Message.IsNullOrEmpty())
+            {
+                str = m_DisplayName;
+            }
+            else str = $"{m_DisplayName}: {m_Message[..max]}";
+
             if (max != length)
             {
                 str += " [truncated]";
