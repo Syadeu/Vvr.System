@@ -73,6 +73,8 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
             view.Text.Title.text     = m_DisplayName;
             view.Text.Text.alignment = m_Alignment;
             view.Text.Text.text      = m_Message;
+
+            view.Text.EnableTitle(!m_Message.IsNullOrEmpty());
 #endif
         }
 

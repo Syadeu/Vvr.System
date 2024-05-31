@@ -47,6 +47,8 @@ namespace Vvr.Session.ContentView.Dialogue
         /// </summary>
         void    SkipText();
 
+        void EnableTitle(bool enable);
+
         /// <summary>
         /// Sets the text of the dialogue view asynchronously.
         /// </summary>
