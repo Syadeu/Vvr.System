@@ -15,7 +15,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// File created : 2024, 05, 27 15:05
+// File created : 2024, 06, 01 10:06
 
 #endregion
 
@@ -24,45 +24,35 @@ using System.ComponentModel;
 using Cysharp.Threading.Tasks;
 using Sirenix.OdinInspector;
 using UnityEngine;
-using UnityEngine.Assertions;
-using UnityEngine.Serialization;
-using Vvr.Provider;
-using Vvr.Session.ContentView.Dialogue;
-using Vvr.Session.ContentView.Dialogue.Attributes;
 
-namespace Vvr.Session.ContentView.WorldBackground
+namespace Vvr.Session.ContentView.Dialogue.Attributes
 {
+    [DisplayName("Set Background Color")]
     [Serializable]
-    [DisplayName("Close World Background")]
-    class DialogueCloseWorldBackgroundAttribute : IDialogueAttribute,
+    class DialogueSetColorBackgroundAttribute : IDialogueAttribute,
         IDialoguePreviewAttribute, IDialogueRevertPreviewAttribute
     {
-        [SerializeField] private string m_BackgroundID = "0";
+        [SerializeField] private Color m_Color    = Color.white;
+        [SerializeField] private float m_Duration = .5f;
 
-        [HideInInspector]
-        [FormerlySerializedAs("m_WaitForClose")]
-        [SerializeField] private bool   m_WaitForCompletion = true;
+        [HideInInspector] [SerializeField] private bool m_WaitForCompletion = true;
 
-        public async UniTask ExecuteAsync(DialogueAttributeContext ctx)
+        async UniTask IDialogueAttribute.ExecuteAsync(DialogueAttributeContext ctx)
         {
-            IWorldBackgroundViewProvider v =
-                ctx.resolveProvider(VvrTypeHelper.TypeOf<IWorldBackgroundViewProvider>
-                    .Type) as IWorldBackgroundViewProvider;
-            Assert.IsNotNull(v, "v != null");
-
-            if (v.GetView(m_BackgroundID) == null) return;
-
             if (m_WaitForCompletion)
-                await v.CloseAsync(m_BackgroundID);
+                await ExecutionBody(ctx);
             else
-            {
-                ctx.dialogue.RegisterTask(v.CloseAsync(m_BackgroundID));
-            }
+                ctx.dialogue.RegisterTask(ExecutionBody(ctx));
+        }
+
+        private async UniTask ExecutionBody(DialogueAttributeContext ctx)
+        {
+            await ctx.viewProvider.View.Background.SetColorAsync(m_Color, m_Duration);
         }
 
         public override string ToString()
         {
-            return $"Close World Background: {m_BackgroundID}";
+            return $"Set Background Color: {m_Color}";
         }
 
 #if UNITY_EDITOR
@@ -76,27 +66,19 @@ namespace Vvr.Session.ContentView.WorldBackground
         [Button(ButtonSizes.Medium, DirtyOnClick = true), GUIColor(1, .2f, 0)]
         private void DontWaitForCompletion() => m_WaitForCompletion = true;
 
-        private Sprite PreviewPreviousImage { get; set; }
+        private Color PreviewPreviousColor { get; set; }
 #endif
-
         void IDialoguePreviewAttribute.Preview(IDialogueView view)
         {
 #if UNITY_EDITOR
-            var eView = WorldBackgroundViewProvider.EditorPreview();
-            if (eView is null) return;
-
-            PreviewPreviousImage = eView.Image.sprite;
-            eView.SetBackground(null);
+            PreviewPreviousColor = view.Background.Image.color;
+            view.Background.SetColorAsync(m_Color, -1).Forget();
 #endif
         }
-
         void IDialogueRevertPreviewAttribute.Revert(IDialogueView view)
         {
 #if UNITY_EDITOR
-            var eView = WorldBackgroundViewProvider.EditorPreview();
-            if (eView is null) return;
-
-            eView.SetBackground(PreviewPreviousImage);
+            view.Background.SetColorAsync(PreviewPreviousColor, -1).Forget();
 #endif
         }
     }

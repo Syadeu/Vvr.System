@@ -53,36 +53,4 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
         /// <returns>A <see cref="UniTask"/> representing the asynchronous operation.</returns>
         UniTask ExecuteAsync(DialogueAttributeContext ctx);
     }
-
-    /// <summary>
-    /// Represents an attribute that indicates whether the dialogue can be skipped and if it should wait for input.
-    /// </summary>
-    [PublicAPI]
-    public interface IDialogueSkipAttribute
-    {
-        /// <summary>
-        /// Represents an attribute that indicates whether the dialogue can be skipped and if it should wait for input.
-        /// </summary>
-        /// <remarks>
-        /// This attribute is used in dialogue views to determine if the dialogue can be skipped. If the <see cref="CanSkip"/> property
-        /// is set to true, the dialogue can be skipped. If the <see cref="ShouldWaitForInput"/> property is set to true,
-        /// the dialogue should wait for user input before continuing.
-        /// </remarks>
-        bool CanSkip            { get; }
-
-        /// <summary>
-        /// Gets a value indicating whether the dialogue should wait for user input before continuing.
-        /// </summary>
-        /// <remarks>
-        /// This property is used in dialogue views to determine if the dialogue should wait for user input before continuing.
-        /// If the value is true, the dialogue should wait for input. If the value is false, the dialogue can proceed without waiting.
-        /// </remarks>
-        bool ShouldWaitForInput { get; }
-
-        /// <summary>
-        /// Represents a method that is called when the dialogue is being skipped.
-        /// </summary>
-        /// <returns>A task representing the asynchronous operation.</returns>
-        UniTask OnSkip(DialogueAttributeContext ctx);
-    }
 }

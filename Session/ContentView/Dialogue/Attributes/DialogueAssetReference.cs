@@ -90,6 +90,7 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
                     m_AssetGuid
                         = AssetDatabase.GUIDFromAssetPath(AssetDatabase.GetAssetPath(m_EditorAsset)).ToString();
                 }
+                else m_AssetGuid = string.Empty;
             }
 #endif
         }

@@ -22,6 +22,7 @@
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace Vvr.Session.ContentView.WorldBackground
 {
@@ -30,6 +31,10 @@ namespace Vvr.Session.ContentView.WorldBackground
     /// </summary>
     public interface IWorldBackgroundView
     {
+        float   Zoom  { get; }
+        Vector2 Pan   { get; }
+        Image   Image { get; }
+
         void SetBackground([CanBeNull] Sprite sprite);
 
         UniTask ZoomAsync(float   zoom, float duration);

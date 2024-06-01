@@ -35,7 +35,8 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
     /// </summary>
     [Serializable]
     [DisplayName("Portrait In")]
-    internal sealed class DialoguePortraitInAttribute : IDialogueAttribute, IDialoguePreviewAttribute
+    internal sealed class DialoguePortraitInAttribute : IDialogueAttribute,
+        IDialoguePreviewAttribute, IDialogueRevertPreviewAttribute
     {
 #if UNITY_EDITOR
         [BoxGroup("Portrait", GroupID = "0"), PropertyOrder(-1)]
@@ -73,11 +74,8 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
             var portraitAsset = await ctx.assetProvider.LoadAsync<DialogueSpeakerPortrait>(m_Portrait.FullPath);
             var portrait      = await ctx.assetProvider.LoadAsync<Sprite>(portraitAsset.Object.Portrait);
 
-            IDialogueViewPortrait target;
-            if (m_Right)
-                target = ctx.viewProvider.View.RightPortrait;
-            else
-                target = ctx.viewProvider.View.LeftPortrait;
+            var target
+                = m_Right ? ctx.viewProvider.View.RightPortrait : ctx.viewProvider.View.LeftPortrait;
 
             if (target.WasIn)
                 await target.CrossFadeAndWait(portrait.Object, portraitAsset.Object, m_Duration);
@@ -89,6 +87,20 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
                 if (!m_Right) offset.x *= -1f;
                 await target.FadeInAndWait(offset, m_Duration);
             }
+        }
+
+        public override string ToString()
+        {
+            string s = m_Right ? "Right" : "Left";
+            string n = string.Empty;
+#if UNITY_EDITOR
+            if (m_Portrait is null || m_Portrait.EditorAsset == null)
+                n = string.Empty;
+            else
+                n = m_Portrait.EditorAsset.name;
+#endif
+
+            return $"In {n} {s}: {m_Duration}s";
         }
 
 #if UNITY_EDITOR
@@ -169,21 +181,6 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
         }
 
 #endif
-
-        public override string ToString()
-        {
-            string s = m_Right ? "Right" : "Left";
-            string n = string.Empty;
-#if UNITY_EDITOR
-            if (m_Portrait is null || m_Portrait.EditorAsset == null)
-                n = string.Empty;
-            else
-                n = m_Portrait.EditorAsset.name;
-#endif
-
-            return $"In {n} {s}: {m_Duration}s";
-        }
-
         void IDialoguePreviewAttribute.Preview(IDialogueView view)
         {
 #if UNITY_EDITOR
@@ -193,16 +190,20 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
                 return;
             }
 
-            IDialogueViewPortrait target;
-            if (m_Right)
-                target = view.RightPortrait;
-            else
-                target = view.LeftPortrait;
+            var target = m_Right ? view.RightPortrait : view.LeftPortrait;
 
             target.Setup(
                 m_Portrait.EditorAsset.EditorPortrait,
                 m_Portrait.EditorAsset);
             target.Image.SetAlpha(1);
+#endif
+        }
+
+        void IDialogueRevertPreviewAttribute.Revert(IDialogueView view)
+        {
+#if UNITY_EDITOR
+            var target = m_Right ? view.RightPortrait : view.LeftPortrait;
+            target.Clear();
 #endif
         }
     }

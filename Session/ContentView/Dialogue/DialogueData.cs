@@ -24,6 +24,7 @@ using System.Linq;
 using Cysharp.Threading.Tasks;
 using Sirenix.OdinInspector;
 using UnityEngine;
+using UnityEngine.Assertions;
 using Vvr.Session.ContentView.Dialogue.Attributes;
 
 namespace Vvr.Session.ContentView.Dialogue
@@ -153,14 +154,29 @@ namespace Vvr.Session.ContentView.Dialogue
         {
             if (Application.isPlaying) return;
 
-            var ins = DialogueViewProviderComponent.EditorPreview();
-            if (ins is null) return;
+            if (DialogueViewProviderComponent.HasEditorInstance)
+            {
+                var ins = DialogueViewProviderComponent.EditorPreview();
+                Assert.IsNotNull(ins);
 
-            ins.Background.Image.sprite = null;
-            ins.LeftPortrait.Clear();
-            ins.RightPortrait.Clear();
-            ins.Text.Clear();
-
+                for (int i = m_Attributes.Length - 1; i >= 0; i--)
+                {
+                    var e = m_Attributes[i];
+                    if (e.IsValid() && e.Value is IDialogueRevertPreviewAttribute revert)
+                    {
+                        revert.Revert(ins);
+                    }
+                }
+            }
+            DialogueViewProviderComponent.DestroyEditorPreview();
+            // var ins = DialogueViewProviderComponent.EditorPreview();
+            // if (ins is null) return;
+            //
+            // ins.Background.Image.sprite = null;
+            // ins.LeftPortrait.Clear();
+            // ins.RightPortrait.Clear();
+            // ins.Text.Clear();
+            //
             m_PreviewProgress = 0;
         }
 
@@ -170,6 +186,16 @@ namespace Vvr.Session.ContentView.Dialogue
         private void PreviewPrevious()
         {
             if (Application.isPlaying) return;
+
+            var current = m_Attributes[m_PreviewProgress - 1];
+            if (current.IsValid())
+            {
+                var ins = DialogueViewProviderComponent.EditorPreview();
+                if (ins is not null && current.Value is IDialogueRevertPreviewAttribute revert)
+                {
+                    revert.Revert(ins);
+                }
+            }
 
             m_PreviewProgress = Mathf.Clamp(m_PreviewProgress - 1, 0, m_Attributes.Length + 1);
             OnPreviewProgressValueChanged(m_PreviewProgress);

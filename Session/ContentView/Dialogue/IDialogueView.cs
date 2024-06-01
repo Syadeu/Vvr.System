@@ -19,9 +19,6 @@
 
 #endregion
 
-using Cysharp.Threading.Tasks;
-using UnityEngine;
-
 namespace Vvr.Session.ContentView.Dialogue
 {
     /// <summary>
@@ -71,20 +68,5 @@ namespace Vvr.Session.ContentView.Dialogue
     /// </summary>
     public interface IDialogueViewBackground : IDialogueViewImageComponent
     {
-    }
-
-    /// <summary>
-    /// Represents a dialogue view for a portrait.
-    /// </summary>
-    public interface IDialogueViewPortrait : IDialogueViewImageComponent
-    {
-        bool WasIn { get; }
-
-        void Clear();
-
-        void    Setup(Sprite            portrait, DialogueSpeakerPortrait speaker);
-        UniTask CrossFadeAndWait(Sprite sprite,   DialogueSpeakerPortrait speaker, float duration);
-        UniTask FadeInAndWait(Vector2   offset,   float                   duration);
-        UniTask FadeOutAndWait(Vector2  offset,   float                   duration);
     }
 }

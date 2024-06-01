@@ -33,7 +33,7 @@ namespace Vvr.Session.ContentView.WorldBackground
     [DisplayName("Offset World Background")]
     [UsedImplicitly, Serializable]
     class DialogueOffsetWorldBackgroundAttribute : WorldBackgroundDialogueAttribute,
-        IDialoguePreviewAttribute
+        IDialoguePreviewAttribute, IDialogueRevertPreviewAttribute
     {
         [SerializeField] private string  m_BackgroundID = "0";
 
@@ -67,6 +67,12 @@ namespace Vvr.Session.ContentView.WorldBackground
             );
         }
 
+        public override string ToString()
+        {
+            string rel = m_Relative ? "Relative" : string.Empty;
+            return $"World Background Offset: {m_Relative}({m_Offset})";
+        }
+
 #if UNITY_EDITOR
         [ShowIf(nameof(m_WaitForCompletion))]
         [VerticalGroup("0")]
@@ -77,13 +83,10 @@ namespace Vvr.Session.ContentView.WorldBackground
         [VerticalGroup("0")]
         [Button(ButtonSizes.Medium, DirtyOnClick = true), GUIColor(1, .2f, 0)]
         private void DontWaitForCompletion() => m_WaitForCompletion = true;
-#endif
 
-        public override string ToString()
-        {
-            string rel = m_Relative ? "Relative" : string.Empty;
-            return $"World Background Offset: {m_Relative}({m_Offset})";
-        }
+        private float   PreviewPreviousZoom { get; set; } = 1;
+        private Vector2 PreviewPreviousPan  { get; set; } = Vector2.zero;
+#endif
 
         void IDialoguePreviewAttribute.Preview(IDialogueView view)
         {
@@ -91,8 +94,21 @@ namespace Vvr.Session.ContentView.WorldBackground
             var eView = WorldBackgroundViewProvider.EditorPreview();
             if (eView is null) return;
 
+            PreviewPreviousZoom = eView.Zoom;
+            PreviewPreviousPan  = eView.Pan;
+
             eView.ZoomAsync(m_Zoom, -1).Forget();
             eView.PanAsync(m_Relative, m_Offset, -1).Forget();
+#endif
+        }
+        void IDialogueRevertPreviewAttribute.Revert(IDialogueView view)
+        {
+#if UNITY_EDITOR
+            var eView = WorldBackgroundViewProvider.EditorPreview();
+            if (eView is null) return;
+
+            eView.ZoomAsync(PreviewPreviousZoom, -1).Forget();
+            eView.PanAsync(false, PreviewPreviousPan, -1).Forget();
 #endif
         }
     }

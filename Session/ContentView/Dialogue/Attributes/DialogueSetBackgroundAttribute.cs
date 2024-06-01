@@ -33,24 +33,45 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
     /// </summary>
     [DisplayName("Set Background")]
     [Serializable]
-    internal sealed class DialogueSetBackgroundAttribute : IDialogueAttribute
+    internal sealed class DialogueSetBackgroundAttribute : IDialogueAttribute,
+        IDialoguePreviewAttribute, IDialogueRevertPreviewAttribute
     {
         [SerializeField] private DialogueAssetReference<Sprite> m_Image = new();
+        [SerializeField] private Color                          m_Color = Color.white;
 
         [SerializeField] private float m_Duration = .5f;
 
         [HideInInspector] [SerializeField] private bool m_WaitForCompletion = true;
 
-        public async UniTask ExecuteAsync(DialogueAttributeContext ctx)
+        async UniTask IDialogueAttribute.ExecuteAsync(DialogueAttributeContext ctx)
         {
-            var sprite = await ctx.assetProvider.LoadAsync<Sprite>(m_Image.FullPath);
-
-            var task = ctx.viewProvider.View.Background.CrossFadeAndWait(sprite?.Object, m_Duration);
-
             if (m_WaitForCompletion)
-                await task;
+                await ExecutionBody(ctx);
             else
-                ctx.dialogue.RegisterTask(task);
+                ctx.dialogue.RegisterTask(ExecutionBody(ctx));
+        }
+
+        private async UniTask ExecutionBody(DialogueAttributeContext ctx)
+        {
+            Sprite sprite;
+            if (m_Image is not null && m_Image.IsValid())
+            {
+                var obj = await ctx.assetProvider.LoadAsync<Sprite>(m_Image.FullPath);
+                sprite = obj.Object;
+            }
+            else sprite = null;
+
+            await ctx.viewProvider.View.Background.CrossFadeAndWaitAsync(sprite, m_Color, m_Duration);
+        }
+
+        public override string ToString()
+        {
+            if (m_Image.EditorAsset == null)
+            {
+                return "None";
+            }
+
+            return m_Image.EditorAsset.name;
         }
 
 #if UNITY_EDITOR
@@ -63,16 +84,27 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
         [VerticalGroup("0")]
         [Button(ButtonSizes.Medium, DirtyOnClick = true), GUIColor(1, .2f, 0)]
         private void DontWaitForCompletion() => m_WaitForCompletion = true;
+
+        private Sprite PreviewPreviousImage { get; set; }
+        private Color PreviewPreviousColor { get; set; }
 #endif
 
-        public override string ToString()
+        void IDialoguePreviewAttribute.Preview(IDialogueView view)
         {
-            if (m_Image.EditorAsset == null)
-            {
-                return "None";
-            }
+#if UNITY_EDITOR
+            var target = view.Background;
+            PreviewPreviousImage = target.Image.sprite;
+            PreviewPreviousColor = target.Image.color;
 
-            return m_Image.EditorAsset.name;
+            target.CrossFadeAndWaitAsync(m_Image.EditorAsset, m_Color, -1).Forget();
+#endif
+        }
+        void IDialogueRevertPreviewAttribute.Revert(IDialogueView view)
+        {
+#if UNITY_EDITOR
+            var target = view.Background;
+            target.CrossFadeAndWaitAsync(PreviewPreviousImage, PreviewPreviousColor, -1).Forget();
+#endif
         }
     }
 }

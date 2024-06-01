@@ -54,8 +54,9 @@ namespace Vvr.Session.ContentView.Dialogue
         /// Cross-fades the image of a dialogue view component with a given duration and waits for the transition to complete.
         /// </summary>
         /// <param name="sprite">The sprite to fade to.</param>
+        /// <param name="color">The color to fade to.</param>
         /// <param name="duration">The duration in which the fade transition should happen.</param>
         /// <returns>A UniTask representing the asynchronous operation.</returns>
-        UniTask CrossFadeAndWait(Sprite sprite, float duration);
+        UniTask CrossFadeAndWaitAsync(Sprite sprite, Color color, float duration);
     }
 }

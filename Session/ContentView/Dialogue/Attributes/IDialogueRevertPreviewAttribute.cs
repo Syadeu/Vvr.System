@@ -15,7 +15,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// File created : 2024, 05, 31 15:05
+// File created : 2024, 06, 01 11:06
 
 #endregion
 
@@ -24,18 +24,17 @@ using JetBrains.Annotations;
 namespace Vvr.Session.ContentView.Dialogue.Attributes
 {
     /// <summary>
-    /// This is an editor-only attribute for previewing dialogue attributes.
+    /// This is editor only attribute that can be reverted after preview.
+    /// If target attribute has no <see cref="IDialoguePreviewAttribute"/>,
+    /// behavior most likely unexpected results
     /// </summary>
-    /// <remarks>
-    /// You can use this attribute by combining <seealso cref="IDialogueRevertPreviewAttribute"/>
-    /// </remarks>
     [PublicAPI]
-    public interface IDialoguePreviewAttribute
+    public interface IDialogueRevertPreviewAttribute
     {
         /// <summary>
-        /// Represents a method for previewing a dialogue attribute on a dialogue view.
+        /// Reverts the changes made by a dialogue attribute on a dialogue view.
         /// </summary>
-        /// <param name="view">The dialogue view on which the attribute will be previewed.</param>
-        void Preview([NotNull] IDialogueView view);
+        /// <param name="view">The dialogue view to revert the changes on.</param>
+        void Revert([NotNull] IDialogueView view);
     }
 }

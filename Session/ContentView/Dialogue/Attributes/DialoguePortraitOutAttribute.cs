@@ -35,7 +35,7 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
     [Serializable]
     [DisplayName("Portrait Out")]
     internal sealed class DialoguePortraitOutAttribute : IDialogueAttribute,
-        IDialoguePreviewAttribute
+        IDialoguePreviewAttribute, IDialogueRevertPreviewAttribute
     {
         [SerializeField] private bool    m_Right;
         [SerializeField] private Vector2 m_Offset          = new Vector2(100, 0);
@@ -47,11 +47,8 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
 
         public async UniTask ExecuteAsync(DialogueAttributeContext ctx)
         {
-            IDialogueViewPortrait target;
-            if (m_Right)
-                target = ctx.viewProvider.View.RightPortrait;
-            else
-                target = ctx.viewProvider.View.LeftPortrait;
+            var target
+                = m_Right ? ctx.viewProvider.View.RightPortrait : ctx.viewProvider.View.LeftPortrait;
 
             Vector2 offset         = m_Offset;
             if (!m_Right) offset.x *= -1f;
@@ -64,6 +61,13 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
             }
         }
 
+        public override string ToString()
+        {
+            string s = m_Right ? "Right" : "Left";
+
+            return $"Out {s}: {m_Duration}s";
+        }
+
 #if UNITY_EDITOR
         [ShowIf(nameof(m_WaitForCompletion))]
         [VerticalGroup("0")]
@@ -74,25 +78,25 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
         [VerticalGroup("0")]
         [Button(ButtonSizes.Medium, DirtyOnClick = true), GUIColor(1, .2f, 0)]
         private void DontWaitForCompletion() => m_WaitForCompletion = true;
+
+        private Sprite PreviewPreviousImage { get; set; }
 #endif
-
-        public override string ToString()
-        {
-            string s = m_Right ? "Right" : "Left";
-
-            return $"Out {s}: {m_Duration}s";
-        }
-
         void IDialoguePreviewAttribute.Preview(IDialogueView view)
         {
 #if UNITY_EDITOR
-            IDialogueViewPortrait target;
-            if (m_Right)
-                target = view.RightPortrait;
-            else
-                target = view.LeftPortrait;
+            var target = m_Right ? view.RightPortrait : view.LeftPortrait;
+
+            PreviewPreviousImage = target.Image.sprite;
 
             target.Clear();
+#endif
+        }
+        void IDialogueRevertPreviewAttribute.Revert(IDialogueView view)
+        {
+#if UNITY_EDITOR
+            var target = m_Right ? view.RightPortrait : view.LeftPortrait;
+
+            target.Image.sprite = PreviewPreviousImage;
 #endif
         }
     }

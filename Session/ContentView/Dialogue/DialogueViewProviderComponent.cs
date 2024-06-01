@@ -37,7 +37,8 @@ namespace Vvr.Session.ContentView.Dialogue
         {
             get
             {
-                if (s_EditorInstance is null)
+                if (Application.isPlaying) return null;
+                if (!HasEditorInstance)
                 {
                     s_EditorInstance = FindAnyObjectByType<DialogueViewProviderComponent>();
                 }
@@ -45,6 +46,7 @@ namespace Vvr.Session.ContentView.Dialogue
                 return s_EditorInstance;
             }
         }
+        internal static bool HasEditorInstance => s_EditorInstance != null;
 
         [CanBeNull]
         internal static IDialogueView EditorPreview()
@@ -54,7 +56,19 @@ namespace Vvr.Session.ContentView.Dialogue
             EditorInstance.SetupEditorPreview();
             return EditorInstance.View;
         }
+
+        internal static void DestroyEditorPreview()
+        {
+            if (s_EditorInstance == null) return;
+
+            s_EditorInstance.SetupDestroyEditorPreview();
+        }
 #endif
+        [Conditional("UNITY_EDITOR")]
+        protected virtual void SetupDestroyEditorPreview()
+        {
+
+        }
         [Conditional("UNITY_EDITOR")]
         protected virtual void SetupEditorPreview()
         {

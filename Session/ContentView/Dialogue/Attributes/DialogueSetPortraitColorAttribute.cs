@@ -29,7 +29,8 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
 {
     [Serializable]
     [DisplayName("Set Portrait Color")]
-    internal sealed class DialogueSetPortraitColorAttribute : IDialogueAttribute, IDialoguePreviewAttribute
+    internal sealed class DialogueSetPortraitColorAttribute : IDialogueAttribute,
+        IDialoguePreviewAttribute, IDialogueRevertPreviewAttribute
     {
         [SerializeField] private bool  m_Right;
         [SerializeField] private Color m_Color    = Color.white;
@@ -61,6 +62,12 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
             await target.SetColorAsync(m_Color, m_Duration);
         }
 
+        public override string ToString()
+        {
+            string postfix = m_Right ? " Right" : " Left";
+            return "Set Portrait Color" + postfix;
+        }
+
 #if UNITY_EDITOR
 
         [Button(name: "Normal", DirtyOnClick = true), ButtonGroup]
@@ -77,20 +84,24 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
         [VerticalGroup("0")]
         [Button(ButtonSizes.Medium, DirtyOnClick = true), GUIColor(1, .2f, 0)]
         private void DontWaitForCompletion() => m_WaitForCompletion = true;
-#endif
 
-        public override string ToString()
-        {
-            string postfix = m_Right ? " Right" : " Left";
-            return "Set Portrait Color" + postfix;
-        }
+        private Color PreviewPreviousColor { get; set; }
+#endif
 
         void IDialoguePreviewAttribute.Preview(IDialogueView view)
         {
 #if UNITY_EDITOR
             IDialogueViewPortrait target = GetTarget(view);
+            PreviewPreviousColor = target.Image.color;
 
             target.SetColorAsync(m_Color, -1).Forget();
+#endif
+        }
+        void IDialogueRevertPreviewAttribute.Revert(IDialogueView view)
+        {
+#if UNITY_EDITOR
+            IDialogueViewPortrait target = GetTarget(view);
+            target.SetColorAsync(PreviewPreviousColor, -1).Forget();
 #endif
         }
     }

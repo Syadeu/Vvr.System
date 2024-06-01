@@ -64,6 +64,11 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
             await UniTask.WaitForSeconds(m_Duration);
         }
 
+        public override string ToString()
+        {
+            return $"Overlay Text: {m_Text}";
+        }
+
 #if UNITY_EDITOR
         [ShowIf(nameof(m_WaitForCompletion))]
         [VerticalGroup("0")]
@@ -75,11 +80,6 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
         [Button(ButtonSizes.Medium, DirtyOnClick = true), GUIColor(1, .2f, 0)]
         private void DontWaitForCompletion() => m_WaitForCompletion = true;
 #endif
-
-        public override string ToString()
-        {
-            return $"Overlay Text: {m_Text}";
-        }
 
         void IDialoguePreviewAttribute.Preview(IDialogueView view)
         {

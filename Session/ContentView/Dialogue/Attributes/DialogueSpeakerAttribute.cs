@@ -37,7 +37,7 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
     [Serializable]
     [DisplayName("Speaker")]
     public class DialogueSpeakerAttribute : IDialogueAttribute, IDialogueSkipAttribute,
-        IDialoguePreviewAttribute
+        IDialoguePreviewAttribute, IDialogueRevertPreviewAttribute
     {
         [InfoBox(
             "Empty message will clear dialogue text box and fade out.",
@@ -95,6 +95,15 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
             return str;
         }
 
+        bool IDialogueSkipAttribute.CanSkip            => true;
+        bool IDialogueSkipAttribute.ShouldWaitForInput => true;
+
+        UniTask IDialogueSkipAttribute.OnSkip(DialogueAttributeContext ctx)
+        {
+            ctx.viewProvider.View.Text.SkipText();
+            return UniTask.CompletedTask;
+        }
+
         void IDialoguePreviewAttribute.Preview(IDialogueView view)
         {
 #if UNITY_EDITOR
@@ -102,13 +111,11 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
             view.Text.SetTextAsync(m_DisplayName, m_Message).Forget();
 #endif
         }
-
-        public bool CanSkip            => true;
-        public bool ShouldWaitForInput => true;
-
-        public async UniTask OnSkip(DialogueAttributeContext ctx)
+        void IDialogueRevertPreviewAttribute.Revert(IDialogueView view)
         {
-            ctx.viewProvider.View.Text.SkipText();
+#if UNITY_EDITOR
+            view.Text.Clear();
+#endif
         }
     }
 }

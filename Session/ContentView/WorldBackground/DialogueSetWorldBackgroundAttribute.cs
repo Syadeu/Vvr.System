@@ -33,7 +33,7 @@ namespace Vvr.Session.ContentView.WorldBackground
     [Serializable]
     [DisplayName("Set World Background")]
     class DialogueSetWorldBackgroundAttribute : WorldBackgroundDialogueAttribute,
-        IDialoguePreviewAttribute
+        IDialoguePreviewAttribute, IDialogueRevertPreviewAttribute
     {
         [SerializeField] private string m_BackgroundID = "0";
 
@@ -72,6 +72,7 @@ namespace Vvr.Session.ContentView.WorldBackground
             }
 
             view.SetBackground(img.Object);
+            view.ZoomAsync(1, -1).Forget();
         }
 
         public override string ToString()
@@ -116,6 +117,16 @@ namespace Vvr.Session.ContentView.WorldBackground
             if (eView is null) return;
 
             eView.SetBackground(m_Image.EditorAsset);
+            eView.ZoomAsync(1, -1).Forget();
+#endif
+        }
+        void IDialogueRevertPreviewAttribute.Revert(IDialogueView view)
+        {
+#if UNITY_EDITOR
+            var eView = WorldBackgroundViewProvider.EditorPreview();
+            if (eView is null) return;
+
+            eView.SetBackground(null);
 #endif
         }
     }
