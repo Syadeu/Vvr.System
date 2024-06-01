@@ -39,6 +39,7 @@ namespace Vvr.Session.ContentView.Dialogue
         /// </remarks>
         /// <seealso cref="IDialogueViewPortrait"/>
         IDialogueViewPortrait LeftPortrait { get; }
+        IDialogueViewPortrait CenterPortrait { get; }
 
         /// <summary>
         /// Represents a dialogue view for the right portrait.

@@ -20,6 +20,7 @@
 #endregion
 
 using System;
+using JetBrains.Annotations;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
@@ -94,6 +95,16 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
 
         private const string NONE = "NONE";
         private       string DisplayName => m_Attribute == null ? NONE : m_Attribute.ToString();
+
+        [UsedImplicitly]
+        public RawDialogueAttribute()
+        {
+        }
+        public RawDialogueAttribute(Type type)
+        {
+            m_TypeName = type.AssemblyQualifiedName;
+            Resolve();
+        }
 
         public bool IsValid()
         {

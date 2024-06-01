@@ -22,6 +22,7 @@
 using System;
 using System.ComponentModel;
 using Cysharp.Threading.Tasks;
+using Sirenix.OdinInspector;
 using Vvr.Provider;
 
 namespace Vvr.Session.ContentView.Dialogue.Attributes
@@ -31,6 +32,9 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
     /// </summary>
     [DisplayName("Wait for opened")]
     [Serializable]
+    [InfoBox(
+        "Because dialogue opens with concurrency, " +
+        "with transition. You can ensure attributes fully opened with this.")]
     class DialogueWaitForOpened : IDialogueAttribute
     {
         public async UniTask ExecuteAsync(DialogueAttributeContext ctx)

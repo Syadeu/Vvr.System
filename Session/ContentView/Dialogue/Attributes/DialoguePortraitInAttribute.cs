@@ -38,6 +38,11 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
     internal sealed class DialoguePortraitInAttribute : IDialogueAttribute,
         IDialoguePreviewAttribute, IDialogueRevertPreviewAttribute
     {
+        enum Position : short
+        {
+            Left, Center, Right,
+        }
+
 #if UNITY_EDITOR
         [BoxGroup("Portrait", GroupID = "0"), PropertyOrder(-1)]
         [LabelText("Image")]
@@ -48,11 +53,9 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
         [SerializeField]
         private DialogueAssetReference<DialogueSpeakerPortrait> m_Portrait = new();
 
-        [FoldoutGroup("Presentation")]
-        [SerializeField] private bool    m_Right;
-        [FoldoutGroup("Presentation")]
+        [SerializeField, EnumToggleButtons, HideLabel]
+        private Position m_Position;
         [SerializeField] private Vector2 m_Offset   = new Vector2(100, 0);
-        [FoldoutGroup("Presentation")]
         [SuffixLabel("seconds")]
         [SerializeField] private float   m_Duration = .5f;
 
@@ -69,13 +72,32 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
                 ctx.dialogue.RegisterTask(task);
         }
 
+        private IDialogueViewPortrait GetTarget(in IDialogueView view)
+        {
+            IDialogueViewPortrait target;
+            switch (m_Position)
+            {
+                case Position.Left:
+                    target = view.LeftPortrait;
+                    break;
+                case Position.Center:
+                    target = view.CenterPortrait;
+                    break;
+                case Position.Right:
+                    target = view.RightPortrait;
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+
+            return target;
+        }
         private async UniTask ExecutionBody(DialogueAttributeContext ctx)
         {
             var portraitAsset = await ctx.assetProvider.LoadAsync<DialogueSpeakerPortrait>(m_Portrait.FullPath);
             var portrait      = await ctx.assetProvider.LoadAsync<Sprite>(portraitAsset.Object.Portrait);
 
-            var target
-                = m_Right ? ctx.viewProvider.View.RightPortrait : ctx.viewProvider.View.LeftPortrait;
+            IDialogueViewPortrait target = GetTarget(ctx.viewProvider.View);
 
             if (target.WasIn)
                 await target.CrossFadeAndWait(portrait.Object, portraitAsset.Object, m_Duration);
@@ -83,15 +105,14 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
             {
                 target.Setup(portrait.Object, portraitAsset.Object);
 
-                Vector2 offset         = m_Offset;
-                if (!m_Right) offset.x *= -1f;
+                Vector2 offset                                = m_Offset;
+                if (m_Position == Position.Left) offset.x *= -1f;
                 await target.FadeInAndWait(offset, m_Duration);
             }
         }
 
         public override string ToString()
         {
-            string s = m_Right ? "Right" : "Left";
             string n = string.Empty;
 #if UNITY_EDITOR
             if (m_Portrait is null || m_Portrait.EditorAsset == null)
@@ -100,7 +121,7 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
                 n = m_Portrait.EditorAsset.name;
 #endif
 
-            return $"In {n} {s}: {m_Duration}s";
+            return $"In {n} {m_Position}: {m_Duration}s";
         }
 
 #if UNITY_EDITOR
@@ -116,12 +137,12 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
         }
 
         [ShowIf(nameof(m_WaitForCompletion))]
-        [VerticalGroup("Presentation/0")]
+        [VerticalGroup("1")]
         [Button(ButtonSizes.Medium, DirtyOnClick = true), GUIColor(0, 1, 0)]
         private void WaitForCompletion() => m_WaitForCompletion = false;
 
         [HideIf(nameof(m_WaitForCompletion))]
-        [VerticalGroup("Presentation/0")]
+        [VerticalGroup("1")]
         [Button(ButtonSizes.Medium, DirtyOnClick = true), GUIColor(1, .2f, 0)]
         private void DontWaitForCompletion() => m_WaitForCompletion = true;
 
@@ -190,7 +211,7 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
                 return;
             }
 
-            var target = m_Right ? view.RightPortrait : view.LeftPortrait;
+            IDialogueViewPortrait target = GetTarget(view);
 
             target.Setup(
                 m_Portrait.EditorAsset.EditorPortrait,
@@ -202,7 +223,7 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
         void IDialogueRevertPreviewAttribute.Revert(IDialogueView view)
         {
 #if UNITY_EDITOR
-            var target = m_Right ? view.RightPortrait : view.LeftPortrait;
+            IDialogueViewPortrait target = GetTarget(view);
             target.Clear();
 #endif
         }

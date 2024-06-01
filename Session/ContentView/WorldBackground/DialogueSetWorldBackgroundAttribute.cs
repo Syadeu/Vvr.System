@@ -31,7 +31,7 @@ using Vvr.Session.ContentView.Dialogue.Attributes;
 namespace Vvr.Session.ContentView.WorldBackground
 {
     [Serializable]
-    [DisplayName("Set World Background")]
+    [DisplayName("Open World Background")]
     class DialogueSetWorldBackgroundAttribute : WorldBackgroundDialogueAttribute,
         IDialoguePreviewAttribute, IDialogueRevertPreviewAttribute
     {

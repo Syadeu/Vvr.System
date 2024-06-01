@@ -61,7 +61,7 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
                 view.Text.Clear();
             else
             {
-                view.Text.Text.alignment = m_Alignment;
+                view.Text.Text.alignment = m_Alignment;//TODO: alignment is slightly slow
                 await view.Text.SetTextAsync(m_DisplayName, m_Message);
 
                 await UniTask.WaitForSeconds(m_Time);
@@ -94,6 +94,17 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
 
             return str;
         }
+
+#if UNITY_EDITOR
+        [ShowIf("@!" + nameof(IsMessageEmpty))]
+        [Button(DirtyOnClick = true)]
+        private void Clear()
+        {
+            m_Alignment   = TextAlignmentOptions.TopLeft;
+            m_DisplayName = string.Empty;
+            m_Message     = string.Empty;
+        }
+#endif
 
         bool IDialogueSkipAttribute.CanSkip            => true;
         bool IDialogueSkipAttribute.ShouldWaitForInput => true;

@@ -35,6 +35,8 @@ namespace Vvr.Session.ContentView.Dialogue
         /// <value><c>true</c> if the dialogue view was in; otherwise, <c>false</c>.</value>
         bool WasIn { get; }
 
+        Vector2 Pan { get; }
+
         /// <summary>
         /// Clears the dialogue view portrait.
         /// </summary>
@@ -71,5 +73,7 @@ namespace Vvr.Session.ContentView.Dialogue
         /// <param name="duration">The duration of the fade out animation.</param>
         /// <returns>A Unity Task that represents the asynchronous operation.</returns>
         UniTask FadeOutAndWait(Vector2  offset,   float                   duration);
+
+        UniTask PanAsync(bool relative, Vector2 offset, float duration);
     }
 }

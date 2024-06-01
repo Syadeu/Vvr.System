@@ -47,7 +47,11 @@ namespace Vvr.Session.ContentView.Dialogue
             ElementColor = nameof(GetAttributeElementColor),
             ShowPaging = false)]
 #endif
-        [SerializeField] private RawDialogueAttribute[] m_Attributes;
+        [SerializeField]
+        private RawDialogueAttribute[] m_Attributes = new RawDialogueAttribute[]
+        {
+            new (VvrTypeHelper.TypeOf<DialogueWaitForOpened>.Type)
+        };
 
         [Space] [SerializeField]
         private DialogueData m_NextDialogue;
@@ -66,7 +70,11 @@ namespace Vvr.Session.ContentView.Dialogue
                     for (int i = 0; i < m_Attributes.Length; i++)
                     {
                         var e = m_Attributes[i];
-                        if (!e.Enabled) continue;
+                        if (!e.Enabled)
+                        {
+                            list.Add(null);
+                            continue;
+                        }
 
                         list.Add(e.Value);
                     }
@@ -77,8 +85,6 @@ namespace Vvr.Session.ContentView.Dialogue
             }
         }
         public IDialogueData NextDialogue => m_NextDialogue;
-
-        public bool IsEnabled(int index) => m_Attributes[index].Enabled;
 
 #if UNITY_EDITOR
         private Color NormalColor => new Color(0.15f, 0.47f, 0.74f);
@@ -130,7 +136,9 @@ namespace Vvr.Session.ContentView.Dialogue
             }
 
             var target = m_Attributes[value - 1];
-            if (target.Value is not IDialoguePreviewAttribute previewAttribute) return;
+            if (!target.IsValid() ||
+                !target.Enabled ||
+                target.Value is not IDialoguePreviewAttribute previewAttribute) return;
 
             var ins = DialogueViewProviderComponent.EditorPreview();
             if (ins is null) return;
@@ -162,7 +170,9 @@ namespace Vvr.Session.ContentView.Dialogue
                 for (int i = m_Attributes.Length - 1; i >= 0; i--)
                 {
                     var e = m_Attributes[i];
-                    if (e.IsValid() && e.Value is IDialogueRevertPreviewAttribute revert)
+                    if (e.IsValid() &&
+                        e.Enabled &&
+                        e.Value is IDialogueRevertPreviewAttribute revert)
                     {
                         revert.Revert(ins);
                     }
@@ -191,7 +201,9 @@ namespace Vvr.Session.ContentView.Dialogue
             if (current.IsValid())
             {
                 var ins = DialogueViewProviderComponent.EditorPreview();
-                if (ins is not null && current.Value is IDialogueRevertPreviewAttribute revert)
+                if (ins is not null &&
+                    current.IsValid() && current.Enabled &&
+                    current.Value is IDialogueRevertPreviewAttribute revert)
                 {
                     revert.Revert(ins);
                 }

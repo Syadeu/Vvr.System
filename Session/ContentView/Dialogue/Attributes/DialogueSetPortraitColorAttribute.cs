@@ -32,7 +32,15 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
     internal sealed class DialogueSetPortraitColorAttribute : IDialogueAttribute,
         IDialoguePreviewAttribute, IDialogueRevertPreviewAttribute
     {
-        [SerializeField] private bool  m_Right;
+        enum Position : short
+        {
+            Left,
+            Center,
+            Right,
+        }
+
+        [SerializeField, EnumToggleButtons, HideLabel]
+        private Position m_Position;
         [SerializeField] private Color m_Color    = Color.white;
         [SerializeField] private float m_Duration = .25f;
 
@@ -49,9 +57,20 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
         private IDialogueViewPortrait GetTarget(in IDialogueView view)
         {
             IDialogueViewPortrait target;
-            if (m_Right)
-                target  = view.RightPortrait;
-            else target = view.LeftPortrait;
+            switch (m_Position)
+            {
+                case Position.Left:
+                    target = view.LeftPortrait;
+                    break;
+                case Position.Center:
+                    target = view.CenterPortrait;
+                    break;
+                case Position.Right:
+                    target = view.RightPortrait;
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
 
             return target;
         }
@@ -64,8 +83,7 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
 
         public override string ToString()
         {
-            string postfix = m_Right ? " Right" : " Left";
-            return "Set Portrait Color" + postfix;
+            return $"Set Portrait Color {m_Position}";
         }
 
 #if UNITY_EDITOR

@@ -75,15 +75,17 @@ namespace Vvr.Session.World
 
             await addressableSession.DownloadAsync(m_DownloadPopup);
 
-            while (m_DownloadPopup.DownloadSlider.value < m_DownloadPopup.DownloadSlider.maxValue - .01f)
+            if (m_DownloadPopup != null)
             {
-                await UniTask.Yield();
+                while (m_DownloadPopup.DownloadSlider.value < m_DownloadPopup.DownloadSlider.maxValue - .01f)
+                {
+                    await UniTask.Yield();
+                }
+
+                await m_DownloadPopup.CloseAsync();
             }
 
-            await UniTask.WhenAll(
-                m_DownloadPopup.CloseAsync(),
-                addressableSession.Reserve()
-                );
+            await addressableSession.Reserve();
             return world;
         }
     }

@@ -61,6 +61,10 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
             }
             else sprite = null;
 
+            while (ctx.viewProvider.View is null)
+            {
+                await UniTask.Yield();
+            }
             await ctx.viewProvider.View.Background.CrossFadeAndWaitAsync(sprite, m_Color, m_Duration);
         }
 

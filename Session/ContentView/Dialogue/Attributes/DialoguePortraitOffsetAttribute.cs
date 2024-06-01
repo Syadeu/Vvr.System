@@ -15,7 +15,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// File created : 2024, 05, 26 18:05
+// File created : 2024, 06, 01 12:06
 
 #endregion
 
@@ -24,17 +24,12 @@ using System.ComponentModel;
 using Cysharp.Threading.Tasks;
 using Sirenix.OdinInspector;
 using UnityEngine;
-using UnityEngine.Serialization;
-using Vvr.Provider;
 
 namespace Vvr.Session.ContentView.Dialogue.Attributes
 {
-    /// <summary>
-    /// Represents a dialogue attribute for fading out a portrait in a dialogue view.
-    /// </summary>
     [Serializable]
-    [DisplayName("Portrait Out")]
-    internal sealed class DialoguePortraitOutAttribute : IDialogueAttribute,
+    [DisplayName("Offset Portrait")]
+    class DialoguePortraitOffsetAttribute : IDialogueAttribute,
         IDialoguePreviewAttribute, IDialogueRevertPreviewAttribute
     {
         enum Position : short
@@ -46,27 +41,22 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
 
         [SerializeField, EnumToggleButtons, HideLabel]
         private Position m_Position;
-        [SerializeField] private Vector2 m_Offset          = new Vector2(100, 0);
-        [SerializeField] private float   m_Duration        = .5f;
 
-        [FormerlySerializedAs("m_WaitForComplete")]
-        [HideInInspector] [SerializeField]
-        private bool m_WaitForCompletion = true;
+        [SerializeField] private bool    m_Relative = true;
+        [SerializeField] private Vector2 m_Offset;
+        [SuffixLabel("seconds")]
+        [SerializeField] private float   m_Duration = .25f;
 
-        public async UniTask ExecuteAsync(DialogueAttributeContext ctx)
+        [HideInInspector] [SerializeField] private bool m_WaitForCompletion = true;
+
+        async UniTask IDialogueAttribute.ExecuteAsync(DialogueAttributeContext ctx)
         {
-            var target = GetTarget(ctx.viewProvider.View);
-
-            Vector2 offset                                = m_Offset;
-            if (m_Position == Position.Left) offset.x *= -1f;
-
             if (m_WaitForCompletion)
-                await target.FadeOutAndWait(offset, m_Duration);
+                await ExecutionBody(ctx);
             else
-            {
-                ctx.dialogue.RegisterTask(target.FadeOutAndWait(offset, m_Duration));
-            }
+                ctx.dialogue.RegisterTask(ExecutionBody(ctx));
         }
+
         private IDialogueViewPortrait GetTarget(in IDialogueView view)
         {
             IDialogueViewPortrait target;
@@ -87,10 +77,15 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
 
             return target;
         }
+        private async UniTask ExecutionBody(DialogueAttributeContext ctx)
+        {
+            var target = GetTarget(ctx.viewProvider.View);
+            await target.PanAsync(m_Relative, m_Offset, m_Duration);
+        }
 
         public override string ToString()
         {
-            return $"Out {m_Position}: {m_Duration}s";
+            return $"Portrait Offset {m_Position} {m_Offset} {m_Duration}s";
         }
 
 #if UNITY_EDITOR
@@ -104,25 +99,22 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
         [Button(ButtonSizes.Medium, DirtyOnClick = true), GUIColor(1, .2f, 0)]
         private void DontWaitForCompletion() => m_WaitForCompletion = true;
 
-        private Sprite PreviewPreviousImage { get; set; }
+        private Vector2 PreviewPreviousPan { get; set; }
 #endif
+
         void IDialoguePreviewAttribute.Preview(IDialogueView view)
         {
-#if UNITY_EDITOR
             var target = GetTarget(view);
 
-            PreviewPreviousImage = target.Image.sprite;
-
-            target.Clear();
-#endif
+            PreviewPreviousPan = target.Pan;
+            target.PanAsync(m_Relative, m_Offset, -1).Forget();
         }
+
         void IDialogueRevertPreviewAttribute.Revert(IDialogueView view)
         {
-#if UNITY_EDITOR
             var target = GetTarget(view);
 
-            target.Image.sprite = PreviewPreviousImage;
-#endif
+            target.PanAsync(false, PreviewPreviousPan, -1).Forget();
         }
     }
 }

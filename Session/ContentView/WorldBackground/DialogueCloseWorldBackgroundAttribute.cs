@@ -39,11 +39,24 @@ namespace Vvr.Session.ContentView.WorldBackground
     {
         [SerializeField] private string m_BackgroundID = "0";
 
+        [SuffixLabel("seconds")]
+        [SerializeField] private float m_Delay = 0;
+
         [HideInInspector]
         [FormerlySerializedAs("m_WaitForClose")]
         [SerializeField] private bool   m_WaitForCompletion = true;
 
         public async UniTask ExecuteAsync(DialogueAttributeContext ctx)
+        {
+            if (m_WaitForCompletion)
+                await ExecutionBody(ctx);
+            else
+            {
+                ctx.dialogue.RegisterTask(ExecutionBody(ctx));
+            }
+        }
+
+        private async UniTask ExecutionBody(DialogueAttributeContext ctx)
         {
             IWorldBackgroundViewProvider v =
                 ctx.resolveProvider(VvrTypeHelper.TypeOf<IWorldBackgroundViewProvider>
@@ -52,12 +65,9 @@ namespace Vvr.Session.ContentView.WorldBackground
 
             if (v.GetView(m_BackgroundID) == null) return;
 
-            if (m_WaitForCompletion)
-                await v.CloseAsync(m_BackgroundID);
-            else
-            {
-                ctx.dialogue.RegisterTask(v.CloseAsync(m_BackgroundID));
-            }
+            if (m_Delay > 0) await UniTask.WaitForSeconds(m_Delay);
+
+            await v.CloseAsync(m_BackgroundID);
         }
 
         public override string ToString()
