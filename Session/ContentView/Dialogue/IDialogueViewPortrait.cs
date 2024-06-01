@@ -56,7 +56,7 @@ namespace Vvr.Session.ContentView.Dialogue
         /// <param name="speaker">The corresponding speaker for the new sprite.</param>
         /// <param name="duration">The duration of the cross fade animation in seconds.</param>
         /// <returns>A <see cref="UniTask"/> that represents the asynchronous operation.</returns>
-        UniTask CrossFadeAndWait(Sprite sprite,   DialogueSpeakerPortrait speaker, float duration);
+        UniTask CrossFadeAndWait(Sprite sprite, DialogueSpeakerPortrait speaker, Color color, float duration);
 
         /// <summary>
         /// Fades in the dialogue view portrait with the specified offset and duration, and waits for the fade-in to complete.
@@ -64,7 +64,7 @@ namespace Vvr.Session.ContentView.Dialogue
         /// <param name="offset">The offset to apply to the dialogue view portrait.</param>
         /// <param name="duration">The duration of the fade-in animation.</param>
         /// <returns>A <see cref="UniTask"/> representing the asynchronous fade-in operation.</returns>
-        UniTask FadeInAndWait(Vector2   offset,   float                   duration);
+        UniTask FadeInAndWait(Vector2 offset, Color color, float duration);
 
         /// <summary>
         /// Fades out the dialogue view portrait with the specified offset and duration and waits for the fade out to complete.

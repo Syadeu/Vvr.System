@@ -53,6 +53,9 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
         [SerializeField]
         private DialogueAssetReference<DialogueSpeakerPortrait> m_Portrait = new();
 
+        [BoxGroup(GroupID = "0")] [SerializeField]
+        private Color m_Color = Color.white;
+
         [SerializeField, EnumToggleButtons, HideLabel]
         private Position m_Position;
         [SerializeField] private Vector2 m_Offset   = new Vector2(100, 0);
@@ -100,14 +103,14 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
             IDialogueViewPortrait target = GetTarget(ctx.viewProvider.View);
 
             if (target.WasIn)
-                await target.CrossFadeAndWait(portrait.Object, portraitAsset.Object, m_Duration);
+                await target.CrossFadeAndWait(portrait.Object, portraitAsset.Object, m_Color, m_Duration);
             else
             {
                 target.Setup(portrait.Object, portraitAsset.Object);
 
                 Vector2 offset                                = m_Offset;
                 if (m_Position == Position.Left) offset.x *= -1f;
-                await target.FadeInAndWait(offset, m_Duration);
+                await target.FadeInAndWait(offset, m_Color, m_Duration);
             }
         }
 
@@ -216,6 +219,7 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
             target.Setup(
                 m_Portrait.EditorAsset.EditorPortrait,
                 m_Portrait.EditorAsset);
+            target.Image.color = m_Color;
             target.Image.SetAlpha(1);
 #endif
         }

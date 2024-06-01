@@ -22,18 +22,17 @@
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using UnityEngine;
-using UnityEngine.UI;
+using Vvr.Session.ContentView.Dialogue;
 
 namespace Vvr.Session.ContentView.WorldBackground
 {
     /// <summary>
     /// Represents the interface for a world background view.
     /// </summary>
-    public interface IWorldBackgroundView
+    public interface IWorldBackgroundView : IDialogueViewImageComponent
     {
         float   Zoom  { get; }
         Vector2 Pan   { get; }
-        Image   Image { get; }
 
         void SetBackground([CanBeNull] Sprite sprite);
 
