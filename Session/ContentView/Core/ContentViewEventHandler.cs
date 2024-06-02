@@ -28,8 +28,7 @@ using JetBrains.Annotations;
 
 namespace Vvr.Session.ContentView.Core
 {
-    [PublicAPI]
-    public class ContentViewEventHandler<TEvent> : IContentViewEventHandler<TEvent>
+    class ContentViewEventHandler<TEvent> : IContentViewEventHandler<TEvent>
         where TEvent : struct, IConvertible
     {
         private readonly Dictionary<TEvent, List<uint>>                     m_Actions   = new();

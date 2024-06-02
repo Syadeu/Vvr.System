@@ -27,6 +27,7 @@ namespace Vvr.Session.ContentView.Core
     /// <summary>
     /// Represents a child session for content view.
     /// </summary>
+    [PublicAPI]
     public interface IContentViewChildSession : IChildSession
     {
         /// <summary>
