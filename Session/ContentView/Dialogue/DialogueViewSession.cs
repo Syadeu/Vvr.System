@@ -32,16 +32,10 @@ using Vvr.Session.ContentView.Dialogue.Attributes;
 namespace Vvr.Session.ContentView.Dialogue
 {
     [UsedImplicitly]
-    public sealed class DialogueViewSession : ContentViewChildSession<DialogueViewSession.SessionData>,
+    public sealed class DialogueViewSession : ContentViewChildSession<DialogueViewEvent>,
         IDialoguePlayProvider,
         IConnector<IDialogueViewProvider>
     {
-        public struct SessionData : ISessionData
-        {
-            public IContentViewEventHandler<DialogueViewEvent> eventHandler;
-            public IContentViewEventHandlerProvider                   viewEventHandlerProvider;
-        }
-
         class DialogueWrapper : IDialogue
         {
             public IDialogueData Data  { get; set; }
@@ -64,15 +58,16 @@ namespace Vvr.Session.ContentView.Dialogue
 
         public override string DisplayName => nameof(DialogueViewSession);
 
-        protected override async UniTask OnInitialize(IParentSession session, SessionData data)
+        protected override async UniTask OnInitialize(IParentSession session, ContentViewSessionData data)
         {
             await base.OnInitialize(session, data);
 
             m_AssetProvider = await CreateSession<AssetSession>(default);
 
-            data.eventHandler.Register(DialogueViewEvent.Open, OnOpen);
-            data.eventHandler.Register(DialogueViewEvent.Close, OnClose);
-            data.eventHandler.Register(DialogueViewEvent.Skip, OnSkip);
+            EventHandler
+                .Register(DialogueViewEvent.Open, OnOpen)
+                .Register(DialogueViewEvent.Close, OnClose)
+                .Register(DialogueViewEvent.Skip, OnSkip);
         }
 
         private async UniTask OnClose(DialogueViewEvent e, object ctx)
@@ -117,11 +112,11 @@ namespace Vvr.Session.ContentView.Dialogue
 
         async UniTask IDialoguePlayProvider.Play(IDialogueData dialogue)
         {
-            await Data.eventHandler.ExecuteAsync(DialogueViewEvent.Open, dialogue);
+            await EventHandler.ExecuteAsync(DialogueViewEvent.Open, dialogue);
         }
         async UniTask IDialoguePlayProvider.Play(string dialogueAssetPath)
         {
-            await Data.eventHandler.ExecuteAsync(DialogueViewEvent.Open, dialogueAssetPath);
+            await EventHandler.ExecuteAsync(DialogueViewEvent.Open, dialogueAssetPath);
         }
 
         private async UniTask PlayInternal(string dialogueAssetPath)
@@ -132,7 +127,7 @@ namespace Vvr.Session.ContentView.Dialogue
             var asset = await m_AssetProvider.LoadAsync<DialogueData>(dialogueAssetPath);
             // await Play(asset.Object);
 
-            await Data.eventHandler.ExecuteAsync(DialogueViewEvent.Open, asset.Object);
+            await EventHandler.ExecuteAsync(DialogueViewEvent.Open, asset.Object);
         }
         private async UniTask PlayInternal(IDialogueData dialogue)
         {
@@ -160,7 +155,7 @@ namespace Vvr.Session.ContentView.Dialogue
                     var task = attribute.ExecuteAsync(
                         new DialogueAttributeContext(
                             wrapper, m_AssetProvider, m_DialogueViewProvider, resolveProvider,
-                            Data.viewEventHandlerProvider));
+                            EventHandlerProvider));
 
                     // Attributes can be skipped if attribute has SkipAttribute
                     if (attribute is IDialogueSkipAttribute skipAttribute &&
@@ -173,7 +168,7 @@ namespace Vvr.Session.ContentView.Dialogue
                         {
                             await skipAttribute.OnSkip(new DialogueAttributeContext(
                                 wrapper, m_AssetProvider, m_DialogueViewProvider, resolveProvider,
-                                Data.viewEventHandlerProvider));
+                                EventHandlerProvider));
 
                             m_AttributeSkipToken = new CancellationTokenSource();
                             if (skipAttribute.ShouldWaitForInput)
@@ -200,7 +195,7 @@ namespace Vvr.Session.ContentView.Dialogue
                 IDialogueData prevData = wrapper.Data;
                 var newTask = UniTask.WhenAll(wrapper.Tasks.ToArray())
                     // .ContinueWith(async () => await m_DialogueViewProvider.CloseAsync(prevData));
-                    .ContinueWith(async () => await Data.eventHandler.ExecuteAsync(DialogueViewEvent.Close, prevData));
+                    .ContinueWith(async () => await EventHandler.ExecuteAsync(DialogueViewEvent.Close, prevData));
                 lastCloseTask = UniTask.WhenAll(lastCloseTask, newTask);
 
                 wrapper.Tasks.Clear();
@@ -215,7 +210,7 @@ namespace Vvr.Session.ContentView.Dialogue
         {
             m_DialogueViewProvider = t;
 
-            m_DialogueViewProvider.Initialize(Data.eventHandler);
+            m_DialogueViewProvider.Initialize(EventHandler);
         }
 
         void IConnector<IDialogueViewProvider>.Disconnect(IDialogueViewProvider t)

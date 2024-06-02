@@ -19,6 +19,7 @@
 
 #endregion
 
+using System;
 using JetBrains.Annotations;
 using Vvr.Provider;
 
@@ -30,9 +31,18 @@ namespace Vvr.Session.ContentView.Core
     [PublicAPI, LocalProvider]
     public interface IContentViewEventHandlerProvider : IProvider
     {
+        [Obsolete]
         IContentViewEventHandler<ResearchViewEvent>        Research        { get; }
+        [Obsolete]
         IContentViewEventHandler<DialogueViewEvent>        Dialogue        { get; }
+        [Obsolete]
         IContentViewEventHandler<MainmenuViewEvent>        Mainmenu        { get; }
+        [Obsolete]
         IContentViewEventHandler<WorldBackgroundViewEvent> WorldBackground { get; }
+
+        IContentViewEventHandler this[Type t] { get; }
+
+        IContentViewEventHandler         Resolve(Type eventType);
+        IContentViewEventHandler<TEvent> Resolve<TEvent>() where TEvent : struct, IConvertible;
     }
 }

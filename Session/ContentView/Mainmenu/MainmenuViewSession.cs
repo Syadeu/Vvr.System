@@ -32,56 +32,40 @@ namespace Vvr.Session.ContentView.Mainmenu
     /// Represents a session for the main menu view.
     /// </summary>
     [UsedImplicitly]
-    public sealed class MainmenuViewSession : ContentViewChildSession<MainmenuViewSession.SessionData>,
+    public sealed class MainmenuViewSession : ContentViewChildSession<MainmenuViewEvent>,
         IConnector<IMainmenuViewProvider>,
         IConnector<IActorDataProvider>
     {
-        public struct SessionData : ISessionData
-        {
-            public IContentViewEventHandler<MainmenuViewEvent> eventHandler;
-
-            public IContentViewEventHandler<ResearchViewEvent> researchEventHandler;
-            public IContentViewEventHandler<DialogueViewEvent> dialogueEventHandler;
-        }
-
         private IAssetProvider        m_AssetProvider;
         private IMainmenuViewProvider m_MainmenuViewProvider;
         private IActorDataProvider    m_ActorDataProvider;
 
         public override string DisplayName => nameof(MainmenuViewSession);
 
-        protected override async UniTask OnInitialize(IParentSession session, SessionData data)
+        protected override async UniTask OnInitialize(IParentSession session, ContentViewSessionData data)
         {
             await base.OnInitialize(session, data);
 
             m_AssetProvider = await CreateSession<AssetSession>(default);
 
-            data.eventHandler
+            EventHandler
                 .Register(MainmenuViewEvent.OpenResearch, OnOpenResearch)
                 .Register(MainmenuViewEvent.SetupActorInputs, OnSetupActorInputs)
                 .Register(MainmenuViewEvent.Skill1Button, OnSkill1Button)
                 .Register(MainmenuViewEvent.Skill2Button, OnSkill2Button)
                 ;
 
-            // data.dialogueEventHandler
-            //     .Register(DialogueViewEvent.Open, OnDialogueOpen)
-            //     .Register(DialogueViewEvent.Close, OnDialogueClose);
-
             Setup().Forget();
         }
 
         protected override UniTask OnReserve()
         {
-            Data.eventHandler
+            EventHandler
                 .Unregister(MainmenuViewEvent.OpenResearch, OnOpenResearch)
                 .Unregister(MainmenuViewEvent.SetupActorInputs, OnSetupActorInputs)
                 .Unregister(MainmenuViewEvent.Skill1Button, OnSkill1Button)
                 .Unregister(MainmenuViewEvent.Skill2Button, OnSkill2Button)
                 ;
-
-            // Data.dialogueEventHandler
-            //     .Unregister(DialogueViewEvent.Open, OnDialogueOpen)
-            //     .Unregister(DialogueViewEvent.Close, OnDialogueClose);
 
             return base.OnReserve();
         }
@@ -98,14 +82,14 @@ namespace Vvr.Session.ContentView.Mainmenu
                 ;
             UniTask skill0EnableTask, skill1EnableTask;
             if (skill0Cooltime > 0)
-                skill0EnableTask = Data.eventHandler.ExecuteAsync(MainmenuViewEvent.DisableSkillButton, 0);
+                skill0EnableTask = EventHandler.ExecuteAsync(MainmenuViewEvent.DisableSkillButton, 0);
             else
-                skill0EnableTask = Data.eventHandler.ExecuteAsync(MainmenuViewEvent.EnableSkillButton, 0);
+                skill0EnableTask = EventHandler.ExecuteAsync(MainmenuViewEvent.EnableSkillButton, 0);
 
             if (skill1Cooltime > 0)
-                skill1EnableTask = Data.eventHandler.ExecuteAsync(MainmenuViewEvent.DisableSkillButton, 1);
+                skill1EnableTask = EventHandler.ExecuteAsync(MainmenuViewEvent.DisableSkillButton, 1);
             else
-                skill1EnableTask = Data.eventHandler.ExecuteAsync(MainmenuViewEvent.EnableSkillButton, 1);
+                skill1EnableTask = EventHandler.ExecuteAsync(MainmenuViewEvent.EnableSkillButton, 1);
 
 
             var skillIcons = await UniTask.WhenAll(
@@ -117,9 +101,9 @@ namespace Vvr.Session.ContentView.Mainmenu
                 skill0EnableTask,
                 skill1EnableTask,
 
-                Data.eventHandler
+                EventHandler
                     .ExecuteAsync(MainmenuViewEvent.SetSkill1Image, skillIcons.Item1?.Object),
-                Data.eventHandler
+                EventHandler
                     .ExecuteAsync(MainmenuViewEvent.SetSkill2Image, skillIcons.Item2?.Object)
                 );
         }
@@ -132,22 +116,14 @@ namespace Vvr.Session.ContentView.Mainmenu
         {
         }
 
-        // private async UniTask OnDialogueClose(DialogueViewEvent e, object ctx)
-        // {
-        //     await Data.eventHandler.ExecuteAsync(MainmenuViewEvent.Show);
-        // }
-        //
-        // private async UniTask OnDialogueOpen(DialogueViewEvent e, object ctx)
-        // {
-        //     await Data.eventHandler.ExecuteAsync(MainmenuViewEvent.Hide);
-        // }
-
         private async UniTask OnOpenResearch(MainmenuViewEvent e, object ctx)
         {
             // TODO: remove parent dependency
             // var researchEventHandler = Parent.GetSession<ResearchViewSession>().Data.eventHandler;
 
-            await Data.researchEventHandler.ExecuteAsync(ResearchViewEvent.Open, 0);
+            await EventHandlerProvider
+                .Resolve<ResearchViewEvent>()
+                .ExecuteAsync(ResearchViewEvent.Open, 0);
         }
 
         private async UniTaskVoid Setup()
@@ -162,7 +138,7 @@ namespace Vvr.Session.ContentView.Mainmenu
         void IConnector<IMainmenuViewProvider>.Connect(IMainmenuViewProvider t)
         {
             m_MainmenuViewProvider = t;
-            m_MainmenuViewProvider.Initialize(Data.eventHandler);
+            m_MainmenuViewProvider.Initialize(EventHandler);
         }
 
         void IConnector<IMainmenuViewProvider>.Disconnect(IMainmenuViewProvider t)

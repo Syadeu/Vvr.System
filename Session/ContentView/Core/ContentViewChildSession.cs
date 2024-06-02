@@ -19,8 +19,7 @@
 
 #endregion
 
-using Cysharp.Threading.Tasks;
-using JetBrains.Annotations;
+using System;
 using UnityEngine;
 using UnityEngine.UI;
 using Vvr.Provider;
@@ -30,18 +29,65 @@ namespace Vvr.Session.ContentView.Core
     /// <summary>
     /// Represents an abstract child session that is used in a content view and can be managed by a parent session.
     /// </summary>
-    /// <typeparam name="TSessionData">The type of session data stored in the child session.</typeparam>
-    public abstract class ContentViewChildSession<TSessionData> : ParentSession<TSessionData>,
+    /// <typeparam name="TEvent"></typeparam>
+    public abstract class ContentViewChildSession<TEvent> :
+        ParentSession<ContentViewSessionData>, IContentViewChildSession,
         IConnector<ICanvasViewProvider>
 
-        where TSessionData : ISessionData
+        where TEvent : struct, IConvertible
     {
+        private IContentViewEventHandler m_EventHandler;
+        Type IContentViewChildSession.   EventType    => typeof(TEvent);
+        IContentViewEventHandler IContentViewChildSession.EventHandler => m_EventHandler;
+
         /// <summary>
         /// Represents a provider for accessing a canvas view.
         /// </summary>
         protected ICanvasViewProvider CanvasViewProvider { get; private set; }
+        protected IContentViewEventHandler<TEvent> EventHandler => (IContentViewEventHandler<TEvent>)m_EventHandler;
+        protected IContentViewEventHandlerProvider EventHandlerProvider { get; private set; }
 
         void IConnector<ICanvasViewProvider>.Connect(ICanvasViewProvider t) => CanvasViewProvider = t;
         void IConnector<ICanvasViewProvider>.Disconnect(ICanvasViewProvider t) => CanvasViewProvider = null;
+
+        IContentViewEventHandler IContentViewChildSession.CreateEventHandler()
+        {
+            if (m_EventHandler is not null)
+                throw new InvalidOperationException();
+
+            m_EventHandler = CreateEventHandler();
+            return m_EventHandler;
+        }
+        void IContentViewChildSession.ReserveEventHandler()
+        {
+            m_EventHandler.Dispose();
+            m_EventHandler       = null;
+            EventHandlerProvider = null;
+        }
+        void IContentViewChildSession.Setup(IContentViewEventHandlerProvider eventHandlerProvider)
+        {
+            EventHandlerProvider = eventHandlerProvider;
+        }
+
+        protected virtual IContentViewEventHandler<TEvent> CreateEventHandler()
+        {
+            return new ContentViewEventHandler<TEvent>();
+        }
+    }
+
+    public sealed class ContentViewSessionData : ISessionData
+    {
+
+    }
+
+    public interface IContentViewChildSession : IChildSession
+    {
+        Type                     EventType    { get; }
+        IContentViewEventHandler EventHandler { get; }
+
+        IContentViewEventHandler CreateEventHandler();
+        void                     ReserveEventHandler();
+
+        void Setup(IContentViewEventHandlerProvider eventHandlerProvider);
     }
 }

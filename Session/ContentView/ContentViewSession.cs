@@ -47,120 +47,44 @@ namespace Vvr.Session.ContentView
         {
         }
 
-        class ContentViewEventHandler<TEvent> : IContentViewEventHandler<TEvent>
-            where TEvent : struct, IConvertible
-        {
-            private readonly Dictionary<TEvent, List<uint>>                     m_Actions   = new();
-            private readonly Dictionary<uint, ContentViewEventDelegate<TEvent>> m_ActionMap = new();
-
-            private readonly CancellationTokenSource m_CancellationTokenSource = new();
-
-            private static uint CalculateHash(ContentViewEventDelegate<TEvent> x)
-            {
-                uint hash =
-                    FNV1a32.Calculate(x.Method.Name)
-                    ^ 267;
-                if (x.Method.DeclaringType is not null)
-                    hash ^= FNV1a32.Calculate(x.Method.DeclaringType.FullName);
-                if (x.Target is not null)
-                    hash ^= unchecked((uint)x.Target.GetHashCode());
-
-                return hash;
-            }
-            public IContentViewEventHandler<TEvent> Register(TEvent e, ContentViewEventDelegate<TEvent> x)
-            {
-                if (!m_Actions.TryGetValue(e, out var list))
-                {
-                    list         = new(8);
-                    m_Actions[e] = list;
-                }
-
-                uint hash = CalculateHash(x);
-                if (!m_ActionMap.TryAdd(hash, x))
-                {
-                    throw new InvalidOperationException("hash collusion");
-                }
-                m_ActionMap[hash] = x;
-
-                list.Add(hash);
-                return this;
-            }
-
-            public IContentViewEventHandler<TEvent> Unregister(TEvent e, ContentViewEventDelegate<TEvent> x)
-            {
-                if (!m_Actions.TryGetValue(e, out var list)) return this;
-
-                uint hash = CalculateHash(x);
-                if (!m_ActionMap.Remove(hash)) return this;
-
-                list.Remove(hash);
-                return this;
-            }
-
-            public async UniTask ExecuteAsync(TEvent e)
-            {
-                if (!m_Actions.TryGetValue(e, out var list)) return;
-
-                int count = list.Count;
-                var array = ArrayPool<UniTask>.Shared.Rent(count);
-
-                for (int i = 0; i < count; i++)
-                {
-                    array[i] = m_ActionMap[list[i]](e, null);
-                }
-
-                await UniTask.WhenAll(array);
-                ArrayPool<UniTask>.Shared.Return(array, true);
-            }
-
-            public async UniTask ExecuteAsync(TEvent e, object ctx)
-            {
-                if (!m_Actions.TryGetValue(e, out var list)) return;
-
-                int count = list.Count;
-                var array = ArrayPool<UniTask>.Shared.Rent(count);
-
-                for (int i = 0; i < count; i++)
-                {
-                    array[i] = m_ActionMap[list[i]](e, ctx);
-                }
-
-                await UniTask.WhenAll(array);
-                ArrayPool<UniTask>.Shared.Return(array, true);
-            }
-
-            public void Dispose()
-            {
-                m_CancellationTokenSource.Cancel();
-
-                foreach (var list in m_Actions.Values)
-                {
-                    list.Clear();
-                }
-
-                m_Actions.Clear();
-                m_ActionMap.Clear();
-            }
-        }
-
         class ViewEventHandlerProvider : IContentViewEventHandlerProvider, IDisposable
         {
-            public IContentViewEventHandler<ResearchViewEvent>        Research        { get; set; }
-            public IContentViewEventHandler<DialogueViewEvent>        Dialogue        { get; set; }
-            public IContentViewEventHandler<MainmenuViewEvent>        Mainmenu        { get; set; }
-            public IContentViewEventHandler<WorldBackgroundViewEvent> WorldBackground { get; set; }
+            public Dictionary<Type, IContentViewEventHandler> ViewEventHandlers { get; } = new();
+
+            IContentViewEventHandler<ResearchViewEvent> IContentViewEventHandlerProvider.Research =>
+                (IContentViewEventHandler<ResearchViewEvent>)ViewEventHandlers[VvrTypeHelper.TypeOf<ResearchViewEvent>.Type];
+            IContentViewEventHandler<DialogueViewEvent> IContentViewEventHandlerProvider.Dialogue
+            => (IContentViewEventHandler<DialogueViewEvent>)ViewEventHandlers[
+                VvrTypeHelper.TypeOf<DialogueViewEvent>.Type];
+            IContentViewEventHandler<MainmenuViewEvent> IContentViewEventHandlerProvider.Mainmenu
+            => (IContentViewEventHandler<MainmenuViewEvent>)ViewEventHandlers[
+                VvrTypeHelper.TypeOf<MainmenuViewEvent>.Type];
+            IContentViewEventHandler<WorldBackgroundViewEvent> IContentViewEventHandlerProvider.WorldBackground
+            => (IContentViewEventHandler<WorldBackgroundViewEvent>)ViewEventHandlers[
+                VvrTypeHelper.TypeOf<WorldBackgroundViewEvent>.Type];
+
+            public IContentViewEventHandler this[Type t]
+            {
+                get => Resolve(t);
+                set => ViewEventHandlers[t] = value;
+            }
+
+            public IContentViewEventHandler Resolve(Type eventType)
+            {
+                return ViewEventHandlers[eventType];
+            }
+            public IContentViewEventHandler<TEvent> Resolve<TEvent>() where TEvent : struct, IConvertible
+            {
+                return (IContentViewEventHandler<TEvent>)Resolve(VvrTypeHelper.TypeOf<TEvent>.Type);
+            }
 
             public void Dispose()
             {
-                Research?.Dispose();
-                Dialogue?.Dispose();
-                Mainmenu?.Dispose();
-                WorldBackground?.Dispose();
-
-                Research        = null;
-                Dialogue        = null;
-                Mainmenu        = null;
-                WorldBackground = null;
+                foreach (var v in ViewEventHandlers.Values)
+                {
+                    v.Dispose();
+                }
+                ViewEventHandlers.Clear();
             }
         }
 
@@ -173,37 +97,15 @@ namespace Vvr.Session.ContentView
         {
             await base.OnInitialize(session, data);
 
-            m_ViewEventHandlerProvider.Research        = new ContentViewEventHandler<ResearchViewEvent>();
-            m_ViewEventHandlerProvider.Dialogue        = new ContentViewEventHandler<DialogueViewEvent>();
-            m_ViewEventHandlerProvider.Mainmenu        = new ContentViewEventHandler<MainmenuViewEvent>();
-            m_ViewEventHandlerProvider.WorldBackground = new ContentViewEventHandler<WorldBackgroundViewEvent>();
-
             var canvasSession = await CreateSession<CanvasViewSession>(default);
             Register<ICanvasViewProvider>(canvasSession);
 
-            var researchViewSession = await CreateSession<ResearchViewSession>(
-                new ResearchViewSession.SessionData()
-                {
-                    eventHandler = m_ViewEventHandlerProvider.Research
-                });
-            var dialogueViewSession = await CreateSession<DialogueViewSession>(
-                new DialogueViewSession.SessionData()
-                {
-                    eventHandler = m_ViewEventHandlerProvider.Dialogue,
-                    viewEventHandlerProvider = m_ViewEventHandlerProvider
-                });
-            var mainmenuViewSession = await CreateSession<MainmenuViewSession>(
-                new MainmenuViewSession.SessionData()
-                {
-                    eventHandler = m_ViewEventHandlerProvider.Mainmenu,
-                    researchEventHandler = researchViewSession.Data.eventHandler,
-                    dialogueEventHandler = dialogueViewSession.Data.eventHandler
-                });
-            var worldBackgroundViewSession = await CreateSession<WorldBackgroundViewSession>(
-                new WorldBackgroundViewSession.SessionData()
-                {
-                    eventHandler = m_ViewEventHandlerProvider.WorldBackground
-                });
+            await UniTask.WhenAll(
+                CreateSession<ResearchViewSession>(null),
+                CreateSession<MainmenuViewSession>(null),
+                CreateSession<WorldBackgroundViewSession>(null)
+            );
+            var dialogueViewSession = await CreateSession<DialogueViewSession>(null);
 
             Parent
                 .Register<IDialoguePlayProvider>(dialogueViewSession)
@@ -225,6 +127,27 @@ namespace Vvr.Session.ContentView
             Vvr.Provider.Provider.Static.Disconnect<IContentViewRegistryProvider>(this);
 
             await base.OnReserve();
+        }
+
+        protected override UniTask OnCreateSession(IChildSession session)
+        {
+            if (session is IContentViewChildSession childSession)
+            {
+                m_ViewEventHandlerProvider[childSession.EventType]
+                    = childSession.CreateEventHandler();
+
+                childSession.Setup(m_ViewEventHandlerProvider);
+            }
+            return base.OnCreateSession(session);
+        }
+        protected override UniTask OnSessionClose(IChildSession session)
+        {
+            if (session is IContentViewChildSession childSession)
+            {
+                childSession.ReserveEventHandler();
+                m_ViewEventHandlerProvider.ViewEventHandlers.Remove(childSession.EventType);
+            }
+            return base.OnSessionClose(session);
         }
 
         public void Connect(IContentViewRegistryProvider t)

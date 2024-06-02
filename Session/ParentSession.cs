@@ -54,6 +54,8 @@ namespace Vvr.Session
             Type          childType = typeof(TChildSession);
             TChildSession session   = (TChildSession)Activator.CreateInstance(childType);
 
+            await OnCreateSession(session);
+
             if (session is IChildSessionConnector sessionConnector)
             {
                 // $"[Session: {Type.FullName}] Chain connector to {childType.FullName}".ToLog();
@@ -67,8 +69,6 @@ namespace Vvr.Session
             // else $"[Session: {Type.FullName}] No connector for {childType.FullName}".ToLog();
 
             m_ChildSessions.Add(session);
-
-            await OnCreateSession(session);
 
             await session.Initialize(Owner, this, data);
             $"[Session: {Type.FullName}] created {childType.FullName}".ToLog();
@@ -159,6 +159,9 @@ namespace Vvr.Session
         /// <summary>
         /// Event method when child session has been created
         /// </summary>
+        /// <remarks>
+        /// This method executes very first before child session's Initialize method, and injection.
+        /// </remarks>
         /// <param name="session">The child session that has been created</param>
         /// <returns>A UniTask representing the asynchronous operation</returns>
         [PublicAPI]

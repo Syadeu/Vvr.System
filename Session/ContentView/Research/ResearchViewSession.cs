@@ -32,16 +32,11 @@ namespace Vvr.Session.ContentView.Research
     /// Represents a research view session.
     /// </summary>
     [UsedImplicitly]
-    public sealed class ResearchViewSession : ContentViewChildSession<ResearchViewSession.SessionData>,
+    public sealed class ResearchViewSession : ContentViewChildSession<ResearchViewEvent>,
         IConnector<IUserDataProvider>,
         IConnector<IResearchDataProvider>,
         IConnector<IResearchViewProvider>
     {
-        public struct SessionData : ISessionData
-        {
-            public IContentViewEventHandler<ResearchViewEvent> eventHandler;
-        }
-
         public override string DisplayName => nameof(ResearchViewSession);
 
         private AssetSession m_AssetSession;
@@ -52,14 +47,15 @@ namespace Vvr.Session.ContentView.Research
 
         private bool m_Opened;
 
-        protected override async UniTask OnInitialize(IParentSession session, SessionData data)
+        protected override async UniTask OnInitialize(IParentSession session, ContentViewSessionData data)
         {
             await base.OnInitialize(session, data);
 
-            data.eventHandler.Register(ResearchViewEvent.Open, OnOpen);
-            data.eventHandler.Register(ResearchViewEvent.Close, OnClose);
-            data.eventHandler.Register(ResearchViewEvent.SelectGroupWithIndex, OnSelectGroupWithIndex);
-            data.eventHandler.Register(ResearchViewEvent.Upgrade, OnUpgrade);
+            EventHandler
+                .Register(ResearchViewEvent.Open, OnOpen)
+                .Register(ResearchViewEvent.Close, OnClose)
+                .Register(ResearchViewEvent.SelectGroupWithIndex, OnSelectGroupWithIndex)
+                .Register(ResearchViewEvent.Upgrade, OnUpgrade);
         }
 
         private async UniTask OnOpen(ResearchViewEvent e, object ctx)
@@ -84,13 +80,13 @@ namespace Vvr.Session.ContentView.Research
 
             if (ctx is int groupIndex)
             {
-                Data.eventHandler
+                EventHandler
                     .ExecuteAsync(ResearchViewEvent.SelectGroupWithIndex, groupIndex)
                     .Forget();
             }
             else
             {
-                Data.eventHandler
+                EventHandler
                     .ExecuteAsync(ResearchViewEvent.SelectGroupWithIndex, 0)
                     .Forget();
             }
@@ -114,11 +110,7 @@ namespace Vvr.Session.ContentView.Research
 
         protected override async UniTask OnReserve()
         {
-            Data.eventHandler.Dispose();
-
-            Data.eventHandler.Unregister(ResearchViewEvent.SelectGroupWithIndex, OnSelectGroupWithIndex);
-
-            m_AssetSession             = null;
+            m_AssetSession = null;
 
             await base.OnReserve();
         }
@@ -143,7 +135,7 @@ namespace Vvr.Session.ContentView.Research
             m_UserDataProvider.SetInt(UserDataKeyCollection.Research.NodeLevel(node.Id), lvl);
             node.SetLevel(lvl);
 
-            Data.eventHandler
+            EventHandler
                 .ExecuteAsync(ResearchViewEvent.Update, node)
                 .Forget();
         }
@@ -153,10 +145,10 @@ namespace Vvr.Session.ContentView.Research
             int index = (int)ctx;
 
             IResearchNodeGroup group = m_ResearchDataProvider[index];
-            await Data.eventHandler.ExecuteAsync(ResearchViewEvent.SelectGroup, group);
+            await EventHandler.ExecuteAsync(ResearchViewEvent.SelectGroup, group);
 
             // TODO: select last upgraded node
-            await Data.eventHandler.ExecuteAsync(ResearchViewEvent.Select, group.Root);
+            await EventHandler.ExecuteAsync(ResearchViewEvent.Select, group.Root);
         }
 
         void IConnector<IResearchDataProvider>.Connect(IResearchDataProvider    t) => m_ResearchDataProvider = t;
@@ -166,7 +158,7 @@ namespace Vvr.Session.ContentView.Research
         {
             m_ResearchViewProvider = t;
 
-            m_ResearchViewProvider.Initialize(Data.eventHandler);
+            m_ResearchViewProvider.Initialize(EventHandler);
         }
         void IConnector<IResearchViewProvider>.Disconnect(IResearchViewProvider t)
         {

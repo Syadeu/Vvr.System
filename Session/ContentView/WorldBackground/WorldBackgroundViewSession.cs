@@ -29,27 +29,23 @@ namespace Vvr.Session.ContentView.WorldBackground
     /// Represents a session for the world background view.
     /// </summary>
     [UsedImplicitly]
-    public class WorldBackgroundViewSession : ContentViewChildSession<WorldBackgroundViewSession.SessionData>,
+    public class WorldBackgroundViewSession : ContentViewChildSession<WorldBackgroundViewEvent>,
         IConnector<IWorldBackgroundViewProvider>
     {
-        public struct SessionData : ISessionData
-        {
-            public IContentViewEventHandler<WorldBackgroundViewEvent> eventHandler;
-        }
-
         private IAssetProvider               m_AssetProvider;
         private IWorldBackgroundViewProvider m_ViewProvider;
 
         public override string DisplayName => nameof(WorldBackgroundViewSession);
 
-        protected override async UniTask OnInitialize(IParentSession session, SessionData data)
+        protected override async UniTask OnInitialize(IParentSession session, ContentViewSessionData data)
         {
             await base.OnInitialize(session, data);
 
             m_AssetProvider = await CreateSession<AssetSession>(default);
 
-            data.eventHandler.Register(WorldBackgroundViewEvent.Open, OnOpen);
-            data.eventHandler.Register(WorldBackgroundViewEvent.Close, OnClose);
+            EventHandler
+                .Register(WorldBackgroundViewEvent.Open, OnOpen)
+                .Register(WorldBackgroundViewEvent.Close, OnClose);
         }
 
         private async UniTask OnOpen(WorldBackgroundViewEvent e, object ctx)
@@ -72,7 +68,7 @@ namespace Vvr.Session.ContentView.WorldBackground
         {
             m_ViewProvider = t;
 
-            m_ViewProvider.Initialize(Data.eventHandler);
+            m_ViewProvider.Initialize(EventHandler);
         }
         void IConnector<IWorldBackgroundViewProvider>.Disconnect(IWorldBackgroundViewProvider t)
         {
