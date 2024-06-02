@@ -118,9 +118,6 @@ namespace Vvr.Session.ContentView.Mainmenu
 
         private async UniTask OnOpenResearch(MainmenuViewEvent e, object ctx)
         {
-            // TODO: remove parent dependency
-            // var researchEventHandler = Parent.GetSession<ResearchViewSession>().Data.eventHandler;
-
             await EventHandlerProvider
                 .Resolve<ResearchViewEvent>()
                 .ExecuteAsync(ResearchViewEvent.Open, 0);
