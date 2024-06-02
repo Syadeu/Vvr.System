@@ -51,8 +51,6 @@ namespace Vvr.Session.ContentView.Mainmenu
             EventHandler
                 .Register(MainmenuViewEvent.OpenResearch, OnOpenResearch)
                 .Register(MainmenuViewEvent.SetupActorInputs, OnSetupActorInputs)
-                .Register(MainmenuViewEvent.Skill1Button, OnSkill1Button)
-                .Register(MainmenuViewEvent.Skill2Button, OnSkill2Button)
                 ;
 
             Setup().Forget();
@@ -63,8 +61,6 @@ namespace Vvr.Session.ContentView.Mainmenu
             EventHandler
                 .Unregister(MainmenuViewEvent.OpenResearch, OnOpenResearch)
                 .Unregister(MainmenuViewEvent.SetupActorInputs, OnSetupActorInputs)
-                .Unregister(MainmenuViewEvent.Skill1Button, OnSkill1Button)
-                .Unregister(MainmenuViewEvent.Skill2Button, OnSkill2Button)
                 ;
 
             return base.OnReserve();
@@ -106,14 +102,6 @@ namespace Vvr.Session.ContentView.Mainmenu
                 EventHandler
                     .ExecuteAsync(MainmenuViewEvent.SetSkill2Image, skillIcons.Item2?.Object)
                 );
-        }
-
-        private async UniTask OnSkill1Button(MainmenuViewEvent e, object ctx)
-        {
-        }
-
-        private async UniTask OnSkill2Button(MainmenuViewEvent e, object ctx)
-        {
         }
 
         private async UniTask OnOpenResearch(MainmenuViewEvent e, object ctx)

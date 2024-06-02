@@ -62,7 +62,7 @@ namespace Vvr.Session.Input
             m_CurrentControl = actor;
 
             m_ActionCompletionSource = new();
-            RegisterInput(actor);
+            await RegisterInput(actor);
 
             await m_ActionCompletionSource.Task;
 
