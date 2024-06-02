@@ -79,9 +79,14 @@ namespace Vvr.Session.World
                 }
             }
 
-            while (m_TimelineQueueProvider.Count > 0 && m_Timeline.Count < maxTimelineCount)
+            if (!m_TimelineQueueProvider.HasAnyEnabled) return;
+
+            while (m_Timeline.Count < maxTimelineCount)
             {
-                m_Timeline.Add(m_TimelineQueueProvider.Dequeue(out float time));
+                var next = m_TimelineQueueProvider.Dequeue(out float time);
+                if (next is null) break;
+
+                m_Timeline.Add(next);
                 m_Times.Add(time);
             }
         }

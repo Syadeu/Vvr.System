@@ -94,7 +94,8 @@ namespace Vvr.Session
 
         private ICustomMethodProvider m_CustomMethodProvider;
 
-        public int Count => m_Queue.Count;
+        public int  Count         => m_Queue.Count;
+        public bool HasAnyEnabled => m_Queue.Count > 0 && m_Queue.Any(x => !x.disabled);
 
         public int IndexOf(IStageActor actor)
         {
@@ -180,12 +181,10 @@ namespace Vvr.Session
                 m_Queue.Add(min);
 
                 if (min.disabled) continue;
+
                 result = min.actor;
                 break;
             }
-
-            if (result == null)
-                throw new InvalidOperationException("Possible all entries disabled.");
 
             return result;
         }

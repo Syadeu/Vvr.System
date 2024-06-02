@@ -40,6 +40,7 @@ namespace Vvr.Session.Provider
         /// </remarks>
         [PublicAPI]
         int Count { get; }
+        bool HasAnyEnabled { get; }
 
         /// <summary>
         /// Sets the enabled state of the specified actor in the timeline queue.
@@ -85,7 +86,7 @@ namespace Vvr.Session.Provider
         /// <returns>
         /// The first actor in the timeline queue.
         /// </returns>
-        [PublicAPI]
+        [PublicAPI, CanBeNull]
         IStageActor Dequeue(out float time);
 
         /// <summary>

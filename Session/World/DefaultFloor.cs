@@ -170,8 +170,8 @@ namespace Vvr.Session.World
                     {
                         await trigger.Execute(Model.Condition.OnStageStarted, sessionData.stage.Id);
                         stageResult = await m_CurrentStage.Start();
-                        m_CurrentStageIndex++;
                         await trigger.Execute(Model.Condition.OnStageEnded, sessionData.stage.Id);
+                        m_CurrentStageIndex++;
 
                         foreach (var enemy in stageResult.enemyActors)
                         {

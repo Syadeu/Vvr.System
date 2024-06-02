@@ -38,15 +38,34 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
         [SuffixLabel("seconds")]
         [SerializeField] private float m_Time = 1;
 
+        [HideInInspector] [SerializeField] private bool m_WaitForCompletion = true;
+
         async UniTask IDialogueAttribute.ExecuteAsync(DialogueAttributeContext ctx)
         {
-            await UniTask.WaitForSeconds(m_Time);
+            if (m_WaitForCompletion)
+                await UniTask.WaitForSeconds(m_Time);
+            else
+                ctx.dialogue.RegisterTask(UniTask.WaitForSeconds(m_Time));
         }
 
         public override string ToString()
         {
             return $"Wait: {m_Time} seconds";
         }
+
+#if UNITY_EDITOR
+
+        [ShowIf(nameof(m_WaitForCompletion))]
+        [VerticalGroup("0")]
+        [Button(ButtonSizes.Medium, DirtyOnClick = true), GUIColor(0, 1, 0)]
+        private void WaitForCompletion() => m_WaitForCompletion = false;
+
+        [HideIf(nameof(m_WaitForCompletion))]
+        [VerticalGroup("0")]
+        [Button(ButtonSizes.Medium, DirtyOnClick = true), GUIColor(1, .2f, 0)]
+        private void DontWaitForCompletion() => m_WaitForCompletion = true;
+
+#endif
 
         public bool CanSkip            => true;
         public bool ShouldWaitForInput => false;

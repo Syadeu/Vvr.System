@@ -78,6 +78,7 @@ namespace Vvr.Session.AssetManagement
                 }
 
                 list.AddLast(item);
+                $"[GameConfig] Added {item.Lifecycle.Map}: {item.Id}".ToLog();
             }
 
             return base.OnInitialize(session, data);

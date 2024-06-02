@@ -25,9 +25,6 @@ using Cysharp.Threading.Tasks;
 using Sirenix.OdinInspector;
 using TMPro;
 using UnityEngine;
-using UnityEngine.AddressableAssets;
-using Vvr.Model;
-using Vvr.Provider;
 
 namespace Vvr.Session.ContentView.Dialogue.Attributes
 {
