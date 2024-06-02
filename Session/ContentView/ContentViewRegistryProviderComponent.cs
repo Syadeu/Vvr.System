@@ -19,32 +19,39 @@
 
 #endregion
 
+using System;
+using System.Collections.Generic;
 using Sirenix.OdinInspector;
 using UnityEngine;
-using Vvr.Session.ContentView.BattleSign;
-using Vvr.Session.ContentView.Dialogue;
-using Vvr.Session.ContentView.Mainmenu;
-using Vvr.Session.ContentView.Research;
-using Vvr.Session.ContentView.WorldBackground;
+using Vvr.Session.ContentView.Core;
 
 namespace Vvr.Session.ContentView
 {
+    [HideMonoScript]
     public sealed class ContentViewRegistryProviderComponent : MonoBehaviour, IContentViewRegistryProvider
     {
-        [SerializeField, Required] private MainmenuViewProviderComponent   m_MainmenuViewProvider;
-        [SerializeField, Required] private DialogueViewProviderComponent   m_DialogueViewProvider;
-        [SerializeField, Required] private ResearchViewProviderComponent   m_ResearchViewProvider;
-        [SerializeField, Required] private WorldBackgroundViewProvider     m_WorldBackgroundViewProvider;
-        [SerializeField, Required] private BattleSignViewProviderComponent m_BattleSignViewProvider;
+        [ChildGameObjectsOnly]
+        [SerializeField, Required] private ContentViewProviderComponent[] m_ProviderComponents;
 
-        IMainmenuViewProvider IContentViewRegistryProvider.      MainmenuViewProvider        => m_MainmenuViewProvider;
-        IDialogueViewProvider IContentViewRegistryProvider.       DialogueViewProvider        => m_DialogueViewProvider;
-        IResearchViewProvider IContentViewRegistryProvider.       ResearchViewProvider        => m_ResearchViewProvider;
-        IWorldBackgroundViewProvider IContentViewRegistryProvider.WorldBackgroundViewProvider => m_WorldBackgroundViewProvider;
-        IBattleSignViewProvider IContentViewRegistryProvider.     BattleSignViewProvider      => m_BattleSignViewProvider;
+        private readonly Dictionary<Type, IContentViewProvider> m_Providers = new();
+
+        IReadOnlyDictionary<Type, IContentViewProvider> IContentViewRegistryProvider.Providers => m_Providers;
+
+        IContentViewProvider IContentViewRegistryProvider.Resolve<TEvent>()
+        {
+            Type t = VvrTypeHelper.TypeOf<TEvent>.Type;
+
+            return m_Providers[t];
+        }
 
         private void Awake()
         {
+            for (int i = 0; i < m_ProviderComponents.Length; i++)
+            {
+                var e = m_ProviderComponents[i];
+                m_Providers[e.EventType] = e;
+            }
+
             Vvr.Provider.Provider.Static.Register<IContentViewRegistryProvider>(this);
         }
         private void OnDestroy()

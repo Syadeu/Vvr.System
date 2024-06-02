@@ -19,20 +19,17 @@
 
 #endregion
 
-using Cysharp.Threading.Tasks;
-using UnityEngine;
-using Vvr.Provider;
+using System;
 using Vvr.Session.ContentView.BattleSign;
 using Vvr.Session.ContentView.Core;
 
 namespace Vvr.Session.ContentView
 {
-    public abstract class BattleSignViewProviderComponent : MonoBehaviour, IBattleSignViewProvider
+    public abstract class BattleSignViewProviderComponent : ContentViewProviderComponent, IBattleSignViewProvider
     {
-        public abstract void Initialize(IContentViewEventHandler<BattleSignViewEvent> eventHandler);
-        public abstract void Reserve();
+        public sealed override Type EventType    => VvrTypeHelper.TypeOf<BattleSignViewEvent>.Type;
+        public sealed override Type ProviderType => VvrTypeHelper.TypeOf<IBattleSignViewProvider>.Type;
 
-        public abstract UniTask OpenAsync(ICanvasViewProvider canvasProvider, IAssetProvider assetProvider, object ctx);
-        public abstract UniTask CloseAsync(object             ctx);
+        public abstract void Initialize(IContentViewEventHandler<BattleSignViewEvent> eventHandler);
     }
 }

@@ -20,8 +20,10 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
 using Vvr.Provider;
 using Vvr.Session.ContentView.BattleSign;
+using Vvr.Session.ContentView.Core;
 using Vvr.Session.ContentView.Dialogue;
 using Vvr.Session.ContentView.Mainmenu;
 using Vvr.Session.ContentView.Research;
@@ -31,14 +33,7 @@ namespace Vvr.Session.ContentView
 {
     public interface IContentViewRegistryProvider : IProvider
     {
-        IMainmenuViewProvider MainmenuViewProvider { get; }
-
-        IDialogueViewProvider DialogueViewProvider { get; }
-
-        IResearchViewProvider ResearchViewProvider { get; }
-
-        IWorldBackgroundViewProvider WorldBackgroundViewProvider { get; }
-
-        IBattleSignViewProvider BattleSignViewProvider { get; }
+        IReadOnlyDictionary<Type, IContentViewProvider> Providers { get; }
+        IContentViewProvider                 Resolve<TEvent>() where TEvent : struct, IConvertible;
     }
 }

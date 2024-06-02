@@ -75,8 +75,11 @@ namespace Vvr.Provider
             const string debugName  = "Provider.ExtractType";
             using var    debugTimer = DebugTimer.StartWithCustomName(debugName);
 
+            if (t == VvrTypeHelper.TypeOf<IProvider>.Type)
+                throw new InvalidOperationException("Raw provider cannot be extract");
+
             if (!VvrTypeHelper.InheritsFrom<IProvider>(t))
-                throw new InvalidOperationException();
+                throw new InvalidOperationException(t.FullName);
 
             if (t.IsInterface) return t;
 

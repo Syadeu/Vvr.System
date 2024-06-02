@@ -244,25 +244,33 @@ namespace Vvr.Session
 
         protected virtual void Register(ConditionResolver conditionResolver) {}
 
+        public IGameSessionBase Register(Type type, IProvider provider)
+        {
+            type = Vvr.Provider.Provider.ExtractType(type);
+            IChildSessionConnector t = this;
+            t.Register(type, provider);
+
+            return this;
+        }
+
+        public IGameSessionBase Unregister(Type providerType)
+        {
+            providerType = Vvr.Provider.Provider.ExtractType(providerType);
+
+            IChildSessionConnector t = this;
+            t.Unregister(providerType);
+
+            return this;
+        }
         public IGameSessionBase Register<TProvider>(TProvider provider) where TProvider : IProvider
         {
             Type pType = typeof(TProvider);
-            pType = Vvr.Provider.Provider.ExtractType(pType);
-
-            IChildSessionConnector t = this;
-            t.Register(pType, provider);
-
-            return this;
+            return Register(pType, provider);
         }
         public IGameSessionBase Unregister<TProvider>() where TProvider : IProvider
         {
             Type pType = typeof(TProvider);
-            pType = Vvr.Provider.Provider.ExtractType(pType);
-
-            IChildSessionConnector t = this;
-            t.Unregister(pType);
-
-            return this;
+            return Unregister(pType);
         }
 
         public IProvider GetProviderRecursive(Type providerType)

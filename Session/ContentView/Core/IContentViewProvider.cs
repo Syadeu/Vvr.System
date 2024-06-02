@@ -21,6 +21,7 @@
 
 using System;
 using Cysharp.Threading.Tasks;
+using JetBrains.Annotations;
 using Vvr.Provider;
 
 namespace Vvr.Session.ContentView.Core
@@ -47,6 +48,9 @@ namespace Vvr.Session.ContentView.Core
     /// </summary>
     public interface IContentViewProvider : IProvider
     {
+        Type EventType { get; }
+        Type ProviderType { get; }
+
         /// <summary>
         /// Reserves the content view provider.
         /// </summary>
@@ -62,13 +66,19 @@ namespace Vvr.Session.ContentView.Core
         /// <param name="assetProvider">The IAssetProvider instance used for opening the ContentViewProvider.</param>
         /// <param name="ctx">The context object passed to OpenAsync method.</param>
         /// <returns>A UniTask representing the asynchronous operation. It completes when the ContentViewProvider is opened.</returns>
-        UniTask OpenAsync(ICanvasViewProvider canvasProvider, IAssetProvider assetProvider, object ctx);
+        UniTask OpenAsync(
+            [NotNull]
+            ICanvasViewProvider canvasProvider,
+            [NotNull]
+            IAssetProvider assetProvider,
+            [CanBeNull]
+            object ctx);
 
         /// <summary>
         /// Closes the ContentViewProvider asynchronously with the given context.
         /// </summary>
         /// <param name="ctx">The context to close with.</param>
         /// <returns>A task representing the asynchronous operation.</returns>
-        UniTask CloseAsync(object        ctx);
+        UniTask CloseAsync([CanBeNull] object ctx);
     }
 }

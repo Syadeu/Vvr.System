@@ -20,8 +20,6 @@
 #endregion
 
 using System;
-using UnityEngine;
-using UnityEngine.UI;
 using Vvr.Provider;
 
 namespace Vvr.Session.ContentView.Core
@@ -73,21 +71,5 @@ namespace Vvr.Session.ContentView.Core
         {
             return new ContentViewEventHandler<TEvent>();
         }
-    }
-
-    public sealed class ContentViewSessionData : ISessionData
-    {
-
-    }
-
-    public interface IContentViewChildSession : IChildSession
-    {
-        Type                     EventType    { get; }
-        IContentViewEventHandler EventHandler { get; }
-
-        IContentViewEventHandler CreateEventHandler();
-        void                     ReserveEventHandler();
-
-        void Setup(IContentViewEventHandlerProvider eventHandlerProvider);
     }
 }

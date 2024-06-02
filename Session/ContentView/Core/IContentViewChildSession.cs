@@ -15,24 +15,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// File created : 2024, 05, 23 19:05
+// File created : 2024, 06, 02 21:06
 
 #endregion
 
 using System;
-using Cysharp.Threading.Tasks;
-using UnityEngine;
-using Vvr.Provider;
-using Vvr.Session.ContentView.Core;
+using JetBrains.Annotations;
 
-namespace Vvr.Session.ContentView.Research
+namespace Vvr.Session.ContentView.Core
 {
-    [DisallowMultipleComponent]
-    public abstract class ResearchViewProviderComponent : ContentViewProviderComponent, IResearchViewProvider
+    public interface IContentViewChildSession : IChildSession
     {
-        public sealed override Type EventType    => VvrTypeHelper.TypeOf<ResearchViewEvent>.Type;
-        public sealed override Type ProviderType => VvrTypeHelper.TypeOf<IResearchViewProvider>.Type;
+        [NotNull]
+        Type                     EventType    { get; }
+        IContentViewEventHandler EventHandler { get; }
 
-        public abstract void Initialize(IContentViewEventHandler<ResearchViewEvent> eventHandler);
+        [NotNull]
+        IContentViewEventHandler CreateEventHandler();
+        void                     ReserveEventHandler();
+
+        void Setup(IContentViewEventHandlerProvider eventHandlerProvider);
     }
 }

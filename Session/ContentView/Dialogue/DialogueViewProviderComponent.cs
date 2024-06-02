@@ -19,6 +19,7 @@
 
 #endregion
 
+using System;
 using System.Diagnostics;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
@@ -28,7 +29,7 @@ using Vvr.Session.ContentView.Core;
 
 namespace Vvr.Session.ContentView.Dialogue
 {
-    public abstract class DialogueViewProviderComponent : MonoBehaviour, IDialogueViewProvider
+    public abstract class DialogueViewProviderComponent : ContentViewProviderComponent, IDialogueViewProvider
     {
 #if UNITY_EDITOR
         private static DialogueViewProviderComponent s_EditorInstance;
@@ -64,6 +65,12 @@ namespace Vvr.Session.ContentView.Dialogue
             s_EditorInstance.SetupDestroyEditorPreview();
         }
 #endif
+        public sealed override Type EventType    => VvrTypeHelper.TypeOf<DialogueViewEvent>.Type;
+        public sealed override Type ProviderType => VvrTypeHelper.TypeOf<IDialogueViewProvider>.Type;
+
+        public abstract IDialogueView View { get; }
+        public abstract bool IsFullyOpened { get; }
+
         [Conditional("UNITY_EDITOR")]
         protected virtual void SetupDestroyEditorPreview()
         {
@@ -74,15 +81,7 @@ namespace Vvr.Session.ContentView.Dialogue
         {
         }
 
-        public abstract IDialogueView View { get; }
-
-        public abstract bool IsFullyOpened { get; }
-
         public abstract void Initialize(IContentViewEventHandler<DialogueViewEvent> eventHandler);
-        public abstract void Reserve();
-
-        public abstract UniTask OpenAsync(ICanvasViewProvider canvasProvider, IAssetProvider assetProvider, object ctx);
-        public abstract UniTask CloseAsync(object             ctx);
     }
 
 }

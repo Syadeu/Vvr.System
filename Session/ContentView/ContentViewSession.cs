@@ -20,9 +20,7 @@
 #endregion
 
 using System;
-using System.Buffers;
 using System.Collections.Generic;
-using System.Threading;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using Vvr.Provider;
@@ -156,23 +154,32 @@ namespace Vvr.Session.ContentView
 
             // ReSharper disable RedundantTypeArgumentsOfMethod
 
-            Register<IResearchViewProvider>(t.ResearchViewProvider)
-                .Register<IDialogueViewProvider>(t.DialogueViewProvider)
-                .Register<IWorldBackgroundViewProvider>(t.WorldBackgroundViewProvider)
-                .Register<IBattleSignViewProvider>(t.BattleSignViewProvider)
-                .Register<IMainmenuViewProvider>(t.MainmenuViewProvider)
-                ;
+            foreach (var item in t.Providers.Values)
+            {
+                Register(item.ProviderType, item);
+            }
+            
+            // Register<IResearchViewProvider>(t.ResearchViewProvider)
+            //     .Register<IDialogueViewProvider>(t.DialogueViewProvider)
+            //     .Register<IWorldBackgroundViewProvider>(t.WorldBackgroundViewProvider)
+            //     .Register<IBattleSignViewProvider>(t.BattleSignViewProvider)
+            //     .Register<IMainmenuViewProvider>(t.MainmenuViewProvider)
+            //     ;
             // ReSharper restore RedundantTypeArgumentsOfMethod
         }
 
         public void Disconnect(IContentViewRegistryProvider t)
         {
-            Unregister<IResearchViewProvider>()
-                .Unregister<IDialogueViewProvider>()
-                .Unregister<IWorldBackgroundViewProvider>()
-                .Unregister<IBattleSignViewProvider>()
-                .Unregister<IMainmenuViewProvider>()
-                ;
+            foreach (var item in t.Providers.Values)
+            {
+                Unregister(item.ProviderType);
+            }
+            // Unregister<IResearchViewProvider>()
+            //     .Unregister<IDialogueViewProvider>()
+            //     .Unregister<IWorldBackgroundViewProvider>()
+            //     .Unregister<IBattleSignViewProvider>()
+            //     .Unregister<IMainmenuViewProvider>()
+            //     ;
 
             m_ContentViewRegistryProvider = null;
         }

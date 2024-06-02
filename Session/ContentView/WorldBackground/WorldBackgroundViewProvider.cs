@@ -28,7 +28,7 @@ using Vvr.Session.ContentView.Core;
 
 namespace Vvr.Session.ContentView.WorldBackground
 {
-    public abstract class WorldBackgroundViewProvider : MonoBehaviour, IWorldBackgroundViewProvider
+    public abstract class WorldBackgroundViewProvider : ContentViewProviderComponent, IWorldBackgroundViewProvider
     {
 #if UNITY_EDITOR
         private static WorldBackgroundViewProvider s_EditorInstance;
@@ -63,12 +63,10 @@ namespace Vvr.Session.ContentView.WorldBackground
             throw new NotImplementedException();
         }
 #endif
+        public sealed override Type EventType    => VvrTypeHelper.TypeOf<WorldBackgroundViewEvent>.Type;
+        public sealed override Type ProviderType => VvrTypeHelper.TypeOf<IWorldBackgroundViewProvider>.Type;
 
         public abstract void Initialize(IContentViewEventHandler<WorldBackgroundViewEvent> eventHandler);
-        public abstract void Reserve();
-
-        public abstract UniTask OpenAsync(ICanvasViewProvider canvasProvider, IAssetProvider assetProvider, object ctx);
-        public abstract UniTask CloseAsync(object             ctx);
 
         public abstract IWorldBackgroundView GetView(object ctx);
     }
