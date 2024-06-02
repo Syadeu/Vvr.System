@@ -19,6 +19,7 @@
 
 #endregion
 
+using System;
 using System.ComponentModel;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
@@ -30,6 +31,7 @@ using Vvr.Session.ContentView.Dialogue.Attributes;
 namespace Vvr.Session.ContentView.Mainmenu
 {
     [UsedImplicitly]
+    [Serializable]
     [DisplayName("Hide Mainmenu")]
     class DialogueHideMainmenu : IDialogueAttribute
     {
@@ -37,7 +39,9 @@ namespace Vvr.Session.ContentView.Mainmenu
 
         async UniTask IDialogueAttribute.ExecuteAsync(DialogueAttributeContext ctx)
         {
-            var task = ctx.eventHandlerProvider.Mainmenu.ExecuteAsync(MainmenuViewEvent.Hide);
+            var task = ctx.eventHandlerProvider
+                .Resolve<MainmenuViewEvent>()
+                .ExecuteAsync(MainmenuViewEvent.Hide);
             if (m_WaitForCompletion)
                 await task;
             else

@@ -27,22 +27,49 @@ using Vvr.Session.ContentView.Core;
 
 namespace Vvr.Session.ContentView
 {
+    /// <summary>
+    /// Represents a component that provides a registry of content view providers.
+    /// </summary>
     [HideMonoScript]
-    public sealed class ContentViewRegistryProviderComponent : MonoBehaviour, IContentViewRegistryProvider
+    [DisallowMultipleComponent]
+    internal sealed class ContentViewRegistryProviderComponent : MonoBehaviour, IContentViewRegistryProvider
     {
+#if UNITY_EDITOR
+        [OnValueChanged(nameof(OnProviderComponentArrayChanged))]
+        [InfoBox(
+            "Duplicated provider. This is not allowed.", InfoMessageType.Error,
+            VisibleIf = nameof(HasDuplicatedProvider))]
         [ChildGameObjectsOnly]
+#endif
         [SerializeField, Required] private ContentViewProviderComponent[] m_ProviderComponents;
 
         private readonly Dictionary<Type, IContentViewProvider> m_Providers = new();
 
         IReadOnlyDictionary<Type, IContentViewProvider> IContentViewRegistryProvider.Providers => m_Providers;
 
-        IContentViewProvider IContentViewRegistryProvider.Resolve<TEvent>()
-        {
-            Type t = VvrTypeHelper.TypeOf<TEvent>.Type;
+#if UNITY_EDITOR
 
-            return m_Providers[t];
+        private readonly Dictionary<Type, ContentViewProviderComponent>
+            m_CachedProviderComponents = new();
+
+        private bool HasDuplicatedProvider { get; set; }
+
+        private void OnProviderComponentArrayChanged()
+        {
+            m_CachedProviderComponents.Clear();
+            for (int i = 0; i < m_ProviderComponents.Length; i++)
+            {
+                var e = m_ProviderComponents[i];
+                if (!m_CachedProviderComponents.TryAdd(e.ProviderType, e))
+                {
+                    HasDuplicatedProvider = true;
+                    break;
+                }
+            }
+
+            HasDuplicatedProvider = false;
         }
+#endif
 
         private void Awake()
         {
@@ -57,6 +84,13 @@ namespace Vvr.Session.ContentView
         private void OnDestroy()
         {
             Vvr.Provider.Provider.Static.Unregister<IContentViewRegistryProvider>(this);
+        }
+
+        IContentViewProvider IContentViewRegistryProvider.Resolve<TEvent>()
+        {
+            Type t = VvrTypeHelper.TypeOf<TEvent>.Type;
+
+            return m_Providers[t];
         }
     }
 }

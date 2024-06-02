@@ -21,9 +21,8 @@
 
 using System;
 using Vvr.Session.ContentView.Core;
-using Vvr.Session.ContentView.Mainmenu;
 
-namespace Vvr.Session.ContentView
+namespace Vvr.Session.ContentView.Mainmenu
 {
     public abstract class MainmenuViewProviderComponent : ContentViewProviderComponent, IMainmenuViewProvider
     {

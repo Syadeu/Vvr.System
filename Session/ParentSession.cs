@@ -37,6 +37,18 @@ namespace Vvr.Session
             IGameSessionCallback
         where TSessionData : ISessionData
     {
+        private class SessionCreateContext
+        {
+            public readonly Type         sessionType;
+            public readonly ISessionData data;
+
+            public SessionCreateContext(Type t, ISessionData ta)
+            {
+                sessionType = t;
+                data        = ta;
+            }
+        }
+
         private readonly List<IChildSession> m_ChildSessions  = new();
 
         public  IReadOnlyList<IChildSession> ChildSessions => m_ChildSessions;
@@ -46,13 +58,33 @@ namespace Vvr.Session
             await CloseAllSessions();
         }
 
+        public async UniTask<TChildSession> CreateSessionOnBackground<TChildSession>(ISessionData data)
+            where TChildSession : IChildSession
+        {
+            Assert.IsFalse(VvrTypeHelper.TypeOf<TChildSession>.IsAbstract);
+
+            Type childType = typeof(TChildSession);
+            var  ctx       = new SessionCreateContext(childType, data);
+
+            var result = await UniTask.RunOnThreadPool(CreateSession, ctx, cancellationToken: ReserveToken);
+
+            return (TChildSession)result;
+        }
         public async UniTask<TChildSession> CreateSession<TChildSession>(ISessionData data)
             where TChildSession : IChildSession
         {
             Assert.IsFalse(VvrTypeHelper.TypeOf<TChildSession>.IsAbstract);
 
-            Type          childType = typeof(TChildSession);
-            TChildSession session   = (TChildSession)Activator.CreateInstance(childType);
+            Type childType = typeof(TChildSession);
+            var  result    = await CreateSession(new SessionCreateContext(childType, data));
+
+            return (TChildSession)result;
+        }
+
+        private async UniTask<IChildSession> CreateSession([NotNull] object state)
+        {
+            SessionCreateContext ctx     = (SessionCreateContext)state;
+            IChildSession        session = (IChildSession)Activator.CreateInstance(ctx.sessionType);
 
             await OnCreateSession(session);
 
@@ -70,10 +102,11 @@ namespace Vvr.Session
 
             m_ChildSessions.Add(session);
 
-            await session.Initialize(Owner, this, data);
-            $"[Session: {Type.FullName}] created {childType.FullName}".ToLog();
+            await session.Initialize(Owner, this, ctx.data);
+            $"[Session: {Type.FullName}] created {ctx.sessionType.FullName}".ToLog();
             return session;
         }
+
         async UniTask IGameSessionCallback.OnSessionClose(IGameSessionBase child)
         {
             IChildSession session = (IChildSession)child;
@@ -96,20 +129,25 @@ namespace Vvr.Session
 
             m_ChildSessions.Clear();
         }
-        public async UniTask<IChildSession> WaitUntilSessionAvailableAsync(Type sessionType)
+        public async UniTask<IChildSession> WaitUntilSessionAvailableAsync(Type sessionType, float timeout)
         {
+            Timer timer = Timer.Start();
+
             IChildSession found;
             while ((found = GetSession(sessionType)) == null)
             {
                 await UniTask.Yield();
+
+                if (timeout > 0 && timer.IsExceeded(timeout))
+                    throw new TimeoutException();
             }
 
             return found;
         }
-        public async UniTask<TChildSession> WaitUntilSessionAvailableAsync<TChildSession>()
+        public async UniTask<TChildSession> WaitUntilSessionAvailableAsync<TChildSession>(float timeout)
             where TChildSession : class, IChildSession
         {
-            IChildSession found = await WaitUntilSessionAvailableAsync(typeof(TChildSession));
+            IChildSession found = await WaitUntilSessionAvailableAsync(typeof(TChildSession), timeout);
             return found as TChildSession;
         }
         public IChildSession GetSession(Type sessionType)

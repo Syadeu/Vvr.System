@@ -76,15 +76,15 @@ namespace Vvr.Session.Input
         {
             if (m_InputRegistered) return;
 
-            m_ContentViewEventHandlerProvider.Mainmenu
+            m_ContentViewEventHandlerProvider.Resolve<MainmenuViewEvent>()
                 .Register(MainmenuViewEvent.Skill1Button, OnSkill1Button)
                 .Register(MainmenuViewEvent.Skill2Button, OnSkill2Button)
                 ;
 
-            await m_ContentViewEventHandlerProvider.Mainmenu
+            await m_ContentViewEventHandlerProvider.Resolve<MainmenuViewEvent>()
                 .ExecuteAsync(MainmenuViewEvent.SetupActorInputs, actor);
 
-            m_ContentViewEventHandlerProvider.Mainmenu
+            m_ContentViewEventHandlerProvider.Resolve<MainmenuViewEvent>()
                 .ExecuteAsync(MainmenuViewEvent.ShowActorInputs, actor)
                 .Forget();
 
@@ -94,11 +94,11 @@ namespace Vvr.Session.Input
         {
             if (!m_InputRegistered) return;
 
-            m_ContentViewEventHandlerProvider.Mainmenu
+            m_ContentViewEventHandlerProvider.Resolve<MainmenuViewEvent>()
                 .Unregister(MainmenuViewEvent.Skill1Button, OnSkill1Button)
                 .Unregister(MainmenuViewEvent.Skill2Button, OnSkill2Button)
                 ;
-            m_ContentViewEventHandlerProvider.Mainmenu
+            m_ContentViewEventHandlerProvider.Resolve<MainmenuViewEvent>()
                 .ExecuteAsync(MainmenuViewEvent.HideActorInputs)
                 .Forget();
 

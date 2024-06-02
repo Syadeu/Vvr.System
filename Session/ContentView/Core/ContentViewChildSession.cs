@@ -35,6 +35,7 @@ namespace Vvr.Session.ContentView.Core
         where TEvent : struct, IConvertible
     {
         private IContentViewEventHandler m_EventHandler;
+
         Type IContentViewChildSession.   EventType    => typeof(TEvent);
         IContentViewEventHandler IContentViewChildSession.EventHandler => m_EventHandler;
 

@@ -21,9 +21,8 @@
 
 using Sirenix.OdinInspector;
 using UnityEngine;
-using Vvr.Session.ContentView.Canvas;
 
-namespace Vvr.Session.ContentView
+namespace Vvr.Session.ContentView.Canvas
 {
     [DisallowMultipleComponent]
     public sealed class CanvasCameraProviderComponent : MonoBehaviour, ICanvasCameraProvider

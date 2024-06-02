@@ -15,25 +15,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// File created : 2024, 05, 24 00:05
+// File created : 2024, 05, 27 16:05
 
 #endregion
 
 using System;
-using System.Collections.Generic;
-using Vvr.Provider;
-using Vvr.Session.ContentView.BattleSign;
 using Vvr.Session.ContentView.Core;
-using Vvr.Session.ContentView.Dialogue;
-using Vvr.Session.ContentView.Mainmenu;
-using Vvr.Session.ContentView.Research;
-using Vvr.Session.ContentView.WorldBackground;
 
-namespace Vvr.Session.ContentView
+namespace Vvr.Session.ContentView.BattleSign
 {
-    public interface IContentViewRegistryProvider : IProvider
+    public abstract class BattleSignViewProviderComponent : ContentViewProviderComponent, IBattleSignViewProvider
     {
-        IReadOnlyDictionary<Type, IContentViewProvider> Providers { get; }
-        IContentViewProvider                 Resolve<TEvent>() where TEvent : struct, IConvertible;
+        public sealed override Type EventType    => VvrTypeHelper.TypeOf<BattleSignViewEvent>.Type;
+        public sealed override Type ProviderType => VvrTypeHelper.TypeOf<IBattleSignViewProvider>.Type;
+
+        public abstract void Initialize(IContentViewEventHandler<BattleSignViewEvent> eventHandler);
     }
 }

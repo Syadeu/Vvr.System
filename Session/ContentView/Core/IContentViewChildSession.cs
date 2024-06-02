@@ -24,16 +24,41 @@ using JetBrains.Annotations;
 
 namespace Vvr.Session.ContentView.Core
 {
+    /// <summary>
+    /// Represents a child session for content view.
+    /// </summary>
     public interface IContentViewChildSession : IChildSession
     {
+        /// <summary>
+        /// Represents the type of event for a child session in a content view.
+        /// </summary>
+        /// <remarks>
+        /// The EventType property is used to define the specific type of event that a child session in a content view can handle. It is implemented by classes derived from the <see cref="IContentViewChildSession"/> interface.
+        /// </remarks>
         [NotNull]
-        Type                     EventType    { get; }
+        Type EventType { get; }
+
+        /// <summary>
+        /// Represents a method that handles an event.
+        /// </summary>
         IContentViewEventHandler EventHandler { get; }
 
+        /// <summary>
+        /// Creates and returns an instance of an event handler for the content view child session.
+        /// </summary>
+        /// <returns>An instance of <see cref="IContentViewEventHandler"/>.</returns>
         [NotNull]
         IContentViewEventHandler CreateEventHandler();
-        void                     ReserveEventHandler();
 
+        /// <summary>
+        /// Reserves the event handler for the content view child session.
+        /// </summary>
+        void ReserveEventHandler();
+
+        /// <summary>
+        /// Sets up the event handler provider for the content view child session.
+        /// </summary>
+        /// <param name="eventHandlerProvider">The event handler provider to set up.</param>
         void Setup(IContentViewEventHandlerProvider eventHandlerProvider);
     }
 }

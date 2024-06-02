@@ -24,7 +24,6 @@ using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using Vvr.Provider;
-using Vvr.Session.ContentView.BattleSign;
 using Vvr.Session.ContentView.Canvas;
 using Vvr.Session.ContentView.Core;
 using Vvr.Session.ContentView.Dialogue;
@@ -48,18 +47,6 @@ namespace Vvr.Session.ContentView
         class ViewEventHandlerProvider : IContentViewEventHandlerProvider, IDisposable
         {
             public Dictionary<Type, IContentViewEventHandler> ViewEventHandlers { get; } = new();
-
-            IContentViewEventHandler<ResearchViewEvent> IContentViewEventHandlerProvider.Research =>
-                (IContentViewEventHandler<ResearchViewEvent>)ViewEventHandlers[VvrTypeHelper.TypeOf<ResearchViewEvent>.Type];
-            IContentViewEventHandler<DialogueViewEvent> IContentViewEventHandlerProvider.Dialogue
-            => (IContentViewEventHandler<DialogueViewEvent>)ViewEventHandlers[
-                VvrTypeHelper.TypeOf<DialogueViewEvent>.Type];
-            IContentViewEventHandler<MainmenuViewEvent> IContentViewEventHandlerProvider.Mainmenu
-            => (IContentViewEventHandler<MainmenuViewEvent>)ViewEventHandlers[
-                VvrTypeHelper.TypeOf<MainmenuViewEvent>.Type];
-            IContentViewEventHandler<WorldBackgroundViewEvent> IContentViewEventHandlerProvider.WorldBackground
-            => (IContentViewEventHandler<WorldBackgroundViewEvent>)ViewEventHandlers[
-                VvrTypeHelper.TypeOf<WorldBackgroundViewEvent>.Type];
 
             public IContentViewEventHandler this[Type t]
             {
@@ -148,38 +135,21 @@ namespace Vvr.Session.ContentView
             return base.OnSessionClose(session);
         }
 
-        public void Connect(IContentViewRegistryProvider t)
+        void IConnector<IContentViewRegistryProvider>.Connect(IContentViewRegistryProvider t)
         {
             m_ContentViewRegistryProvider = t;
-
-            // ReSharper disable RedundantTypeArgumentsOfMethod
 
             foreach (var item in t.Providers.Values)
             {
                 Register(item.ProviderType, item);
             }
-            
-            // Register<IResearchViewProvider>(t.ResearchViewProvider)
-            //     .Register<IDialogueViewProvider>(t.DialogueViewProvider)
-            //     .Register<IWorldBackgroundViewProvider>(t.WorldBackgroundViewProvider)
-            //     .Register<IBattleSignViewProvider>(t.BattleSignViewProvider)
-            //     .Register<IMainmenuViewProvider>(t.MainmenuViewProvider)
-            //     ;
-            // ReSharper restore RedundantTypeArgumentsOfMethod
         }
-
-        public void Disconnect(IContentViewRegistryProvider t)
+        void IConnector<IContentViewRegistryProvider>.Disconnect(IContentViewRegistryProvider t)
         {
             foreach (var item in t.Providers.Values)
             {
                 Unregister(item.ProviderType);
             }
-            // Unregister<IResearchViewProvider>()
-            //     .Unregister<IDialogueViewProvider>()
-            //     .Unregister<IWorldBackgroundViewProvider>()
-            //     .Unregister<IBattleSignViewProvider>()
-            //     .Unregister<IMainmenuViewProvider>()
-            //     ;
 
             m_ContentViewRegistryProvider = null;
         }

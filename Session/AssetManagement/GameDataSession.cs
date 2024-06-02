@@ -56,39 +56,22 @@ namespace Vvr.Session.AssetManagement
                 ));
             Register<IAssetProvider>(assetSession);
 
+            await UniTask.SwitchToMainThread();
             SheetContainer = new GameDataSheets(UnityLogger.Default);
-            var dataContainer
+            IImmutableObject<SheetContainerScriptableObject> dataContainer
                 = await assetSession.LoadAsync<SheetContainerScriptableObject>(DATA_KEY);
 
             ScriptableObjectSheetImporter imp = new(dataContainer.Object);
-            await SheetContainer.Bake(imp).AsUniTask();
-
-            StatProvider.GetOrCreate(SheetContainer.StatTable);
-
-            var gameConfigSessionTask = CreateSession<GameConfigSession>(
-                new GameConfigSession.SessionData(SheetContainer.GameConfigTable));
-            var actorDataSessionTask = CreateSession<ActorDataSession>(
-                new ActorDataSession.SessionData(SheetContainer.Actors));
-            var customMethodSessionTask = CreateSession<CustomMethodSession>(
-                new CustomMethodSession.SessionData(SheetContainer.CustomMethodTable));
-            var stageDataSessionTask = CreateSession<StageDataSession>(
-                new StageDataSession.SessionData(SheetContainer.Stages));
-            var researchDataSessionTask = CreateSession<ResearchDataSession>(
-                new ResearchDataSession.SessionData(SheetContainer.ResearchTable));
-
-            await UniTask.WhenAll(
-                gameConfigSessionTask,
-                actorDataSessionTask,
-                customMethodSessionTask,
-                stageDataSessionTask,
-                researchDataSessionTask);
+            await SheetContainer.Bake(imp);
+            var result
+                = await UniTask.RunOnThreadPool(LoadAsync, cancellationToken: ReserveToken);
 
             Parent
-                .Register<IGameConfigProvider>(await gameConfigSessionTask)
-                .Register<IActorDataProvider>(await actorDataSessionTask)
-                .Register<ICustomMethodProvider>(await customMethodSessionTask)
-                .Register<IStageDataProvider>(await stageDataSessionTask)
-                .Register<IResearchDataProvider>(await researchDataSessionTask)
+                .Register<IGameConfigProvider>(result.Item1)
+                .Register<IActorDataProvider>(result.Item2)
+                .Register<ICustomMethodProvider>(result.Item3)
+                .Register<IStageDataProvider>(result.Item4)
+                .Register<IResearchDataProvider>(result.Item5)
                 ;
         }
         protected override UniTask OnReserve()
@@ -104,6 +87,31 @@ namespace Vvr.Session.AssetManagement
             SheetContainer.Dispose();
 
             return base.OnReserve();
+        }
+
+        private async
+            UniTask<(GameConfigSession, ActorDataSession, CustomMethodSession, StageDataSession, ResearchDataSession)>
+            LoadAsync()
+        {
+            StatProvider.GetOrCreate(SheetContainer.StatTable);
+
+            var gameConfigSessionTask = CreateSessionOnBackground<GameConfigSession>(
+                new GameConfigSession.SessionData(SheetContainer.GameConfigTable));
+            var actorDataSessionTask = CreateSessionOnBackground<ActorDataSession>(
+                new ActorDataSession.SessionData(SheetContainer.Actors));
+            var customMethodSessionTask = CreateSessionOnBackground<CustomMethodSession>(
+                new CustomMethodSession.SessionData(SheetContainer.CustomMethodTable));
+            var stageDataSessionTask = CreateSessionOnBackground<StageDataSession>(
+                new StageDataSession.SessionData(SheetContainer.Stages));
+            var researchDataSessionTask = CreateSessionOnBackground<ResearchDataSession>(
+                new ResearchDataSession.SessionData(SheetContainer.ResearchTable));
+
+            return await UniTask.WhenAll(
+                gameConfigSessionTask,
+                actorDataSessionTask,
+                customMethodSessionTask,
+                stageDataSessionTask,
+                researchDataSessionTask);
         }
     }
 }

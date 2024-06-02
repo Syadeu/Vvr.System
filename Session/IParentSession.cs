@@ -41,30 +41,53 @@ namespace Vvr.Session
         IReadOnlyList<IChildSession> ChildSessions { get; }
 
         /// <summary>
+        /// Creates a new child session of type TChildSession on a background thread.
+        /// </summary>
+        /// <typeparam name="TChildSession">The type of the child session to create.</typeparam>
+        /// <param name="data">The session data for initializing the child session.</param>
+        /// <returns>The created child session of type TChildSession.</returns>
+        /// <remarks>
+        /// The method creates the child session of type TChildSession by invoking the <see cref="CreateSession{TChildSession}"/> method in a background thread.
+        /// </remarks>
+        [PublicAPI]
+        UniTask<TChildSession> CreateSessionOnBackground<TChildSession>([CanBeNull] ISessionData data)
+            where TChildSession : IChildSession;
+
+        /// <summary>
         /// Creates a new child session of type TChildSession.
         /// </summary>
         /// <typeparam name="TChildSession">The type of the child session to create.</typeparam>
         /// <param name="data">The session data for initializing the child session.</param>
         /// <returns>The created child session of type TChildSession.</returns>
         [PublicAPI]
-        UniTask<TChildSession> CreateSession<TChildSession>(ISessionData data) where TChildSession : IChildSession;
+        UniTask<TChildSession> CreateSession<TChildSession>([CanBeNull] ISessionData data) where TChildSession : IChildSession;
 
         /// <summary>
         /// Waits until a session of the specified sessionType becomes available in the IParentSession.
         /// </summary>
         /// <param name="sessionType">The type of the session to wait for.</param>
+        /// <param name="timeout">The maximum time to wait in seconds. Defaults to 10 seconds.</param>
         /// <returns>A UniTask representing the asynchronous wait operation, which completes when the session becomes available.</returns>
+        /// <remarks>
+        /// The method waits until a session of the specified sessionType becomes available in the IParentSession. If a session of the specified sessionType is already available, the method returns immediately. Otherwise, it keeps checking for the availability of the session in the background, until a session of the specified sessionType is found or the specified timeout is reached. Once the session becomes available, the UniTask is completed and the found session is returned.
+        /// </remarks>
+        /// <exception cref="ArgumentNullException">Thrown if sessionType is null.</exception>
         [PublicAPI]
         [ContractAnnotation("sessionType:null => halt")]
-        UniTask<IChildSession> WaitUntilSessionAvailableAsync([NotNull] Type sessionType);
+        UniTask<IChildSession> WaitUntilSessionAvailableAsync([NotNull] Type sessionType, float timeout = 10);
 
         /// <summary>
-        /// Waits until a session of type TChildSession becomes available.
+        /// Waits until a session of the specified Type becomes available.
         /// </summary>
         /// <typeparam name="TChildSession">The type of the child session to wait for.</typeparam>
+        /// <param name="timeout">The timeout duration in seconds (optional, default is 10 seconds).</param>
         /// <returns>A UniTask representing the asynchronous operation.</returns>
+        /// <remarks>
+        /// The method waits until a session of type TChildSession becomes available by invoking the appropriate session method. If the session does not become available within the specified timeout duration, an exception is thrown.
+        /// </remarks>
+        /// <exception cref="ArgumentNullException">Thrown when sessionType is null.</exception>
         [PublicAPI]
-        UniTask<TChildSession> WaitUntilSessionAvailableAsync<TChildSession>()
+        UniTask<TChildSession> WaitUntilSessionAvailableAsync<TChildSession>(float timeout = 10)
             where TChildSession : class, IChildSession;
 
         /// <summary>
@@ -75,6 +98,7 @@ namespace Vvr.Session
         [PublicAPI, MustUseReturnValue]
         [ContractAnnotation("sessionType:null => halt")]
         IChildSession GetSession([NotNull] Type sessionType);
+
         /// <summary>
         /// Gets the child session of the specified session type.
         /// </summary>

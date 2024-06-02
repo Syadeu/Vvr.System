@@ -48,7 +48,15 @@ namespace Vvr.Session.ContentView.Core
     /// </summary>
     public interface IContentViewProvider : IProvider
     {
+        /// <summary>
+        /// Represents the type of event associated with a content view provider.
+        /// </summary>
         Type EventType { get; }
+
+        /// <summary>
+        /// Gets the type of the content view provider.
+        /// </summary>
+        /// <value>The type of the content view provider.</value>
         Type ProviderType { get; }
 
         /// <summary>

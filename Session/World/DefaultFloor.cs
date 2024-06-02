@@ -220,23 +220,25 @@ namespace Vvr.Session.World
 
             if (backgroundImg is not null)
             {
-                m_ViewEventHandlerProvider.WorldBackground.ExecuteAsync(
+                m_ViewEventHandlerProvider.Resolve<WorldBackgroundViewEvent>()
+                    .ExecuteAsync(
                         WorldBackgroundViewEvent.Open,
                         new WorldBackgroundViewEventContext(DisplayName, backgroundImg.Object))
                     .Forget();
             }
 
-            m_ViewEventHandlerProvider.Mainmenu
+            m_ViewEventHandlerProvider.Resolve<MainmenuViewEvent>()
                 .ExecuteAsync(MainmenuViewEvent.SetStageText,
                     // $"{stageData.Name} {stageData.Floor}-{index}"
                     $"{stageData.Name}"
                 )
                 .Forget();
-            m_ViewEventHandlerProvider.Mainmenu
+            m_ViewEventHandlerProvider.Resolve<MainmenuViewEvent>()
                 .ExecuteAsync(MainmenuViewEvent.SetStageProgress,
                     (float)index / count)
                 .Forget();
-            m_ViewEventHandlerProvider.Mainmenu.ExecuteAsync(MainmenuViewEvent.ShowStageInfo)
+            m_ViewEventHandlerProvider.Resolve<MainmenuViewEvent>()
+                .ExecuteAsync(MainmenuViewEvent.ShowStageInfo)
                 .Forget();
         }
 
