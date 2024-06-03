@@ -28,7 +28,7 @@ namespace Vvr.Session.ContentView.Mainmenu
     /// <summary>
     /// Represents the provider for the main menu view.
     /// </summary>
-    [LocalProvider, PublicAPI]
+    [PublicAPI, LocalProvider]
     public interface IMainmenuViewProvider : IContentViewProvider<MainmenuViewEvent>
     {
 

@@ -19,16 +19,18 @@
 
 #endregion
 
+using System;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 using Vvr.Provider;
 
 namespace Vvr.Session.ContentView.Core
 {
+    [DisallowMultipleComponent]
     public abstract class ContentViewProviderComponent : MonoBehaviour, IContentViewProvider
     {
-        public abstract System.Type EventType { get; }
-        public abstract System.Type ProviderType { get; }
+        public abstract Type EventType { get; }
+        public abstract Type ProviderType { get; }
 
         public abstract void    Reserve();
 
@@ -38,5 +40,13 @@ namespace Vvr.Session.ContentView.Core
             object              ctx);
 
         public abstract UniTask CloseAsync(object ctx);
+    }
+
+    public abstract class ContentViewProviderComponent<TEvent, TProvider> : ContentViewProviderComponent
+        where TEvent : struct, IConvertible
+        where TProvider : IContentViewProvider
+    {
+        public sealed override Type EventType    => typeof(TEvent);
+        public sealed override Type ProviderType => typeof(TProvider);
     }
 }

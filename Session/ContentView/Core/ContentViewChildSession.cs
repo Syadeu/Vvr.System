@@ -20,6 +20,7 @@
 #endregion
 
 using System;
+using JetBrains.Annotations;
 using Vvr.Provider;
 
 namespace Vvr.Session.ContentView.Core
@@ -28,6 +29,7 @@ namespace Vvr.Session.ContentView.Core
     /// Represents an abstract child session that is used in a content view and can be managed by a parent session.
     /// </summary>
     /// <typeparam name="TEvent"></typeparam>
+    [PublicAPI]
     public abstract class ContentViewChildSession<TEvent> :
         ParentSession<ContentViewSessionData>, IContentViewChildSession,
         IConnector<ICanvasViewProvider>
@@ -71,6 +73,27 @@ namespace Vvr.Session.ContentView.Core
         protected virtual IContentViewEventHandler<TEvent> CreateEventHandler()
         {
             return new ContentViewEventHandler<TEvent>();
+        }
+    }
+
+    [PublicAPI]
+    public abstract class ContentViewChildSession<TEvent, TProvider>
+        : ContentViewChildSession<TEvent>, IConnector<TProvider>
+
+        where TEvent : struct, IConvertible
+        where TProvider : IContentViewProvider<TEvent>
+    {
+        protected TProvider ViewProvider { get; private set; }
+
+        void IConnector<TProvider>.Connect(TProvider t)
+        {
+            ViewProvider = t;
+            ViewProvider.Initialize(EventHandler);
+        }
+        void IConnector<TProvider>.Disconnect(TProvider t)
+        {
+            ViewProvider.Reserve();
+            ViewProvider = default;
         }
     }
 }

@@ -44,10 +44,17 @@ namespace Vvr.Model
             All = 0b11
         }
 
-        public sealed class Row : SheetRow, IActorData
+        [UsedImplicitly]
+        public struct Definition
         {
             [UsedImplicitly] public ActorType Type       { get; private set; }
+            [UsedImplicitly] public int       Grade      { get; private set; }
             [UsedImplicitly] public int       Population { get; private set; }
+        }
+
+        public sealed class Row : SheetRow, IActorData
+        {
+            [UsedImplicitly] public Definition Definition { get; private set; }
 
             [SheetValueConverter(typeof(UnresolvedStatValuesConverter))]
             [UsedImplicitly]
@@ -61,8 +68,11 @@ namespace Vvr.Model
             private PassiveSheet.Row[] m_Passive;
             private SkillSheet.Row[] m_Skills;
 
-            IReadOnlyList<PassiveSheet.Row> IActorData.Passive => m_Passive ?? Array.Empty<PassiveSheet.Row>();
-            IReadOnlyList<SkillSheet.Row> IActorData.  Skills  => m_Skills  ?? Array.Empty<SkillSheet.Row>();
+            ActorType IActorData.                      Type       => Definition.Type;
+            int IActorData.                            Grade      => Definition.Grade;
+            int IActorData.                            Population => Definition.Population;
+            IReadOnlyList<PassiveSheet.Row> IActorData.Passive    => m_Passive ?? Array.Empty<PassiveSheet.Row>();
+            IReadOnlyList<SkillSheet.Row> IActorData.  Skills     => m_Skills  ?? Array.Empty<SkillSheet.Row>();
 
             public override void PostLoad(SheetConvertingContext context)
             {

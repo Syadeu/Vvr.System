@@ -21,13 +21,16 @@
 
 using System.Collections.Generic;
 using Cathei.BakingSheet.Unity;
+using JetBrains.Annotations;
 using Vvr.Model.Stat;
 
 namespace Vvr.Model
 {
+    [PublicAPI]
     public interface IActorData : IRawData
     {
         ActorSheet.ActorType Type       { get; }
+        int                  Grade      { get; }
         int                  Population { get; }
 
         IReadOnlyStatValues           Stats   { get; }

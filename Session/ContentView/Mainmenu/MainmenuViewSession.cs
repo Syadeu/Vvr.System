@@ -32,12 +32,10 @@ namespace Vvr.Session.ContentView.Mainmenu
     /// Represents a session for the main menu view.
     /// </summary>
     [UsedImplicitly]
-    public sealed class MainmenuViewSession : ContentViewChildSession<MainmenuViewEvent>,
-        IConnector<IMainmenuViewProvider>,
+    public sealed class MainmenuViewSession : ContentViewChildSession<MainmenuViewEvent, IMainmenuViewProvider>,
         IConnector<IActorDataProvider>
     {
         private IAssetProvider        m_AssetProvider;
-        private IMainmenuViewProvider m_MainmenuViewProvider;
         private IActorDataProvider    m_ActorDataProvider;
 
         public override string DisplayName => nameof(MainmenuViewSession);
@@ -115,21 +113,9 @@ namespace Vvr.Session.ContentView.Mainmenu
         {
             // Because main menu view should be provided right away
             // after world has been initialized
-            await UniTask.WaitWhile(() => m_MainmenuViewProvider == null);
+            await UniTask.WaitWhile(() => ViewProvider is null);
 
-            await m_MainmenuViewProvider.OpenAsync(CanvasViewProvider, m_AssetProvider, null);
-        }
-
-        void IConnector<IMainmenuViewProvider>.Connect(IMainmenuViewProvider t)
-        {
-            m_MainmenuViewProvider = t;
-            m_MainmenuViewProvider.Initialize(EventHandler);
-        }
-
-        void IConnector<IMainmenuViewProvider>.Disconnect(IMainmenuViewProvider t)
-        {
-            m_MainmenuViewProvider.Reserve();
-            m_MainmenuViewProvider = null;
+            await ViewProvider.OpenAsync(CanvasViewProvider, m_AssetProvider, null);
         }
 
         void IConnector<IActorDataProvider>.Connect(IActorDataProvider t) => m_ActorDataProvider = t;

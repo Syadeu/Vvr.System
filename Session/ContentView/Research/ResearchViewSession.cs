@@ -32,10 +32,9 @@ namespace Vvr.Session.ContentView.Research
     /// Represents a research view session.
     /// </summary>
     [UsedImplicitly]
-    public sealed class ResearchViewSession : ContentViewChildSession<ResearchViewEvent>,
+    public sealed class ResearchViewSession : ContentViewChildSession<ResearchViewEvent, IResearchViewProvider>,
         IConnector<IUserDataProvider>,
-        IConnector<IResearchDataProvider>,
-        IConnector<IResearchViewProvider>
+        IConnector<IResearchDataProvider>
     {
         public override string DisplayName => nameof(ResearchViewSession);
 
@@ -43,7 +42,6 @@ namespace Vvr.Session.ContentView.Research
 
         private IUserDataProvider     m_UserDataProvider;
         private IResearchDataProvider m_ResearchDataProvider;
-        private IResearchViewProvider m_ResearchViewProvider;
 
         private bool m_Opened;
 
@@ -74,7 +72,7 @@ namespace Vvr.Session.ContentView.Research
                 nodeGroup.RegisterAssetProvider(m_AssetSession);
             }
 
-            await m_ResearchViewProvider.OpenAsync(
+            await ViewProvider.OpenAsync(
                 CanvasViewProvider,
                 m_AssetSession, ctx);
 
@@ -96,7 +94,7 @@ namespace Vvr.Session.ContentView.Research
             if (!m_Opened)
                 return;
 
-            await m_ResearchViewProvider.CloseAsync(ctx);
+            await ViewProvider.CloseAsync(ctx);
 
             foreach (var nodeGroup in m_ResearchDataProvider)
             {
@@ -153,18 +151,6 @@ namespace Vvr.Session.ContentView.Research
 
         void IConnector<IResearchDataProvider>.Connect(IResearchDataProvider    t) => m_ResearchDataProvider = t;
         void IConnector<IResearchDataProvider>.Disconnect(IResearchDataProvider t) => m_ResearchDataProvider = null;
-
-        void IConnector<IResearchViewProvider>.Connect(IResearchViewProvider    t)
-        {
-            m_ResearchViewProvider = t;
-
-            m_ResearchViewProvider.Initialize(EventHandler);
-        }
-        void IConnector<IResearchViewProvider>.Disconnect(IResearchViewProvider t)
-        {
-            m_ResearchViewProvider.Reserve();
-            m_ResearchViewProvider = null;
-        }
 
         void IConnector<IUserDataProvider>.    Connect(IUserDataProvider        t) => m_UserDataProvider = t;
         void IConnector<IUserDataProvider>.    Disconnect(IUserDataProvider     t) => m_UserDataProvider = null;

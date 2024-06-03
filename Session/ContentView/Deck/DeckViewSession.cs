@@ -1,4 +1,5 @@
 #region Copyrights
+
 // Copyright 2024 Syadeu
 // Author : Seung Ha Kim
 //
@@ -15,14 +16,60 @@
 // limitations under the License.
 //
 // File created : 2024, 06, 02 20:06
+
 #endregion
 
+using Cysharp.Threading.Tasks;
+using JetBrains.Annotations;
+using Vvr.Provider;
+using Vvr.Session.AssetManagement;
 using Vvr.Session.ContentView.Core;
+using Vvr.Session.Provider;
 
 namespace Vvr.Session.ContentView.Deck
 {
-    public sealed class DeckViewSession : ContentViewChildSession<DeckViewEvent>
+    [UsedImplicitly]
+    public sealed class DeckViewSession : ContentViewChildSession<DeckViewEvent, IDeckViewProvider>,
+        IConnector<IUserActorProvider>
     {
+        private IAssetProvider     m_AssetProvider;
+        private IUserActorProvider m_UserActorProvider;
+
         public override string DisplayName => nameof(DeckViewSession);
+
+        protected override async UniTask OnInitialize(IParentSession session, ContentViewSessionData data)
+        {
+            await base.OnInitialize(session, data);
+
+            m_AssetProvider = await CreateSession<AssetSession>(default);
+
+            EventHandler
+                .Register(DeckViewEvent.Open, OnOpen)
+                .Register(DeckViewEvent.Close, OnClose)
+                ;
+        }
+        protected override UniTask OnReserve()
+        {
+            EventHandler
+                .Unregister(DeckViewEvent.Open, OnOpen)
+                .Unregister(DeckViewEvent.Close, OnClose)
+                ;
+
+            return base.OnReserve();
+        }
+
+        private async UniTask OnOpen(DeckViewEvent e, object ctx)
+        {
+            await ViewProvider.OpenAsync(CanvasViewProvider, m_AssetProvider, ctx);
+
+            await EventHandler.ExecuteAsync(DeckViewEvent.SetActor, ctx);
+        }
+        private async UniTask OnClose(DeckViewEvent e, object ctx)
+        {
+            await ViewProvider.CloseAsync(ctx);
+        }
+
+        void IConnector<IUserActorProvider>.Connect(IUserActorProvider    t) => m_UserActorProvider = t;
+        void IConnector<IUserActorProvider>. Disconnect(IUserActorProvider t) => m_UserActorProvider = null;
     }
 }

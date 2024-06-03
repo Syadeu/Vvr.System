@@ -20,6 +20,7 @@
 #endregion
 
 using System;
+using JetBrains.Annotations;
 
 namespace Vvr.Provider
 {
@@ -31,6 +32,7 @@ namespace Vvr.Provider
     /// They are usually implemented by classes within the same module or component.
     /// </remarks>
     [AttributeUsage(AttributeTargets.Interface)]
+    [BaseTypeRequired(typeof(IProvider))]
     public sealed class LocalProviderAttribute : Attribute
     {
 
