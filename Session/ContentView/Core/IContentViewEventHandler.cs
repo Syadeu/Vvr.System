@@ -38,6 +38,7 @@ namespace Vvr.Session.ContentView.Core
     /// <summary>
     /// Event handler interface for ContentView events.
     /// </summary>
+    [LocalProvider]
     public interface IContentViewEventHandler<TEvent> : IContentViewEventHandler
         where TEvent : struct, IConvertible
     {

@@ -34,8 +34,11 @@ namespace Vvr.Session.ContentView.Core
         private readonly Dictionary<TEvent, List<uint>>                     m_Actions   = new();
         private readonly Dictionary<uint, ContentViewEventDelegate<TEvent>> m_ActionMap = new();
 
+        private SpinLock m_SpinLock;
+
         private readonly CancellationTokenSource m_CancellationTokenSource = new();
 
+        [Pure]
         private static uint CalculateHash(ContentViewEventDelegate<TEvent> x)
         {
             uint hash =
@@ -51,32 +54,55 @@ namespace Vvr.Session.ContentView.Core
 
         public IContentViewEventHandler<TEvent> Register(TEvent e, ContentViewEventDelegate<TEvent> x)
         {
-            if (!m_Actions.TryGetValue(e, out var list))
+            bool lt = false;
+
+            try
             {
-                list         = new(8);
-                m_Actions[e] = list;
+                m_SpinLock.Enter(ref lt);
+                if (!m_Actions.TryGetValue(e, out var list))
+                {
+                    list         = new(8);
+                    m_Actions[e] = list;
+                }
+
+                uint hash = CalculateHash(x);
+                if (!m_ActionMap.TryAdd(hash, x))
+                {
+                    throw new InvalidOperationException();
+                }
+
+                m_ActionMap[hash] = x;
+                list.Add(hash);
+            }
+            finally
+            {
+                if (lt)
+                    m_SpinLock.Exit();
             }
 
-            uint hash = CalculateHash(x);
-            if (!m_ActionMap.TryAdd(hash, x))
-            {
-                throw new InvalidOperationException("hash collusion");
-            }
-
-            m_ActionMap[hash] = x;
-
-            list.Add(hash);
             return this;
         }
 
         public IContentViewEventHandler<TEvent> Unregister(TEvent e, ContentViewEventDelegate<TEvent> x)
         {
-            if (!m_Actions.TryGetValue(e, out var list)) return this;
+            bool lt = false;
 
-            uint hash = CalculateHash(x);
-            if (!m_ActionMap.Remove(hash)) return this;
+            try
+            {
+                m_SpinLock.Enter(ref lt);
+                if (!m_Actions.TryGetValue(e, out var list)) return this;
 
-            list.Remove(hash);
+                uint hash = CalculateHash(x);
+                if (!m_ActionMap.Remove(hash)) return this;
+
+                list.Remove(hash);
+            }
+            finally
+            {
+                if (lt)
+                    m_SpinLock.Exit();
+            }
+
             return this;
         }
 
@@ -89,7 +115,8 @@ namespace Vvr.Session.ContentView.Core
 
             for (int i = 0; i < count; i++)
             {
-                array[i] = m_ActionMap[list[i]](e, null);
+                array[i] = m_ActionMap[list[i]](e, null)
+                    .AttachExternalCancellation(m_CancellationTokenSource.Token);
             }
 
             await UniTask.WhenAll(array);
@@ -105,7 +132,8 @@ namespace Vvr.Session.ContentView.Core
 
             for (int i = 0; i < count; i++)
             {
-                array[i] = m_ActionMap[list[i]](e, ctx);
+                array[i] = m_ActionMap[list[i]](e, ctx)
+                    .AttachExternalCancellation(m_CancellationTokenSource.Token);
             }
 
             await UniTask.WhenAll(array);
