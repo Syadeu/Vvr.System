@@ -245,7 +245,6 @@ namespace Vvr.Model.Stat
             if (y?.Values == null) return x;
 
             var newTypes = (x.Types | y.Types);
-            // var result   = (x.Types & y.Types) != y.Types ? Create(x.Types | y.Types) : x;
             var result = Create(x.Types | y.Types);
 
             int maxIndex = result.Values.Count;
@@ -266,7 +265,6 @@ namespace Vvr.Model.Stat
             if (y?.Values == null) return x;
 
             var newTypes = (x.Types | y.Types);
-            // var result   = (x.Types & y.Types) != y.Types ? Create(x.Types | y.Types) : x;
             var result   = Create(x.Types | y.Types);
 
             int maxIndex = result.Values.Count;

@@ -219,23 +219,23 @@ public static StatValues operator |(StatValues x, StatType t)
 }
 public static StatValues operator +(StatValues x, IReadOnlyStatValues y)
 {
-    if (y?.Values == null) return x;
+  if (y?.Values == null) return x;
 
-    var newTypes = (x.Types | y.Types);
-    var result   = (x.Types & y.Types) != y.Types ? Create(x.Types | y.Types) : x;
+  var newTypes = (x.Types | y.Types);
+  var result = Create(x.Types | y.Types);
 
-    int maxIndex = result.Values.Count;
-    for (int i = 0, c = 0, xx = 0, yy = 0; i < 64 && c < maxIndex; i++)
-    {
-        var e = 1L << i;
-        if (((long)newTypes & e) == 0) continue;
+  int maxIndex = result.Values.Count;
+  for (int i = 0, c = 0, xx = 0, yy = 0; i < 64 && c < maxIndex; i++)
+  {
+    var e = 1L << i;
+    if (((long)newTypes & e) == 0) continue;
 
-        if (((long)x.Types & e) != 0) result.m_Values[c] =  x.m_Values[xx++];
-        if (((long)y.Types & e) != 0) result.m_Values[c] += y.Values[yy++];
-        c++;
-    }
+    if (((long)x.Types & e) != 0) result.m_Values[c] =  x.m_Values[xx++];
+    if (((long)y.Types & e) != 0) result.m_Values[c] += y.Values[yy++];
+    c++;
+  }
 
-    return result;
+  return result;
 }
 ```
 
@@ -425,21 +425,49 @@ public interface IEventTarget
 
 [ConditionTrigger](Controller/Condition/ConditionTrigger.cs)는 Flyweight 디자인 패턴으로 설계된 게임내 이벤트들에 대한 모든 조건에 대해 발생하였음을 알리는 Event Broadcaster 입니다. 
 
-```C#
-public static bool Any(IEventTarget target, Condition condition, string value)
+```c#
+public static bool Any(IEventTarget target, Model.Condition condition, string value)
 {
-    Event e = new Event(condition, value);
+    const string debugName  = "ConditionTrigger.Any";
+    using var    debugTimer = DebugTimer.StartWithCustomName(debugName);
+
     // if value is null, should check only condition
     if (value.IsNullOrEmpty())
     {
-        return s_Stack
-            .Where(x => x.m_Target == target)
-            .SelectMany(x => x.m_Events)
-            .Any(x => x.condition == condition);
+        for (var i = 0; i < s_Stack.Count; i++)
+        {
+            var conditionTrigger = s_Stack[i];
+            if (conditionTrigger.m_Target != target) continue;
+
+            var events = s_Stack[i].m_Events;
+            for (var node = events.First; node != null; node = node.Next)
+            {
+                if (node.Value.condition == condition)
+                {
+                    return true;
+                }
+            }
+        }
     }
-    return s_Stack
-        .Where(x => x.m_Target == target)
-        .Any(x => x.m_Events.Contains(e));
+    else
+    {
+        Event e = new Event(condition, value);
+        for (var i = 0; i < s_Stack.Count; i++)
+        {
+            if (s_Stack[i].m_Target != target) continue;
+
+            var events = s_Stack[i].m_Events;
+            for (var node = events.First; node != null; node = node.Next)
+            {
+                if (node.Value.Equals(e))
+                {
+                    return true;
+                }
+            }
+        }
+    }
+
+    return false;
 }
 ```
 
