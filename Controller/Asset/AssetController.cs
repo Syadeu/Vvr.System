@@ -30,13 +30,13 @@ namespace Vvr.Controller.Asset
     /// </summary>
     public class AssetController : IAsset
     {
-        private readonly IReadOnlyDictionary<AssetType, AddressablePath> m_AssetsPath;
+        private readonly IReadOnlyDictionary<AssetType, string> m_AssetsPath;
 
-        public object this[AssetType t] => m_AssetsPath.TryGetValue(t, out var p) ? p.FullPath : null;
+        public object this[AssetType t] => m_AssetsPath.TryGetValue(t, out var p) ? p : null;
 
         public IAssetProvider AssetProvider { get; private set; }
 
-        public AssetController(IReadOnlyDictionary<AssetType, AddressablePath> t)
+        public AssetController(IReadOnlyDictionary<AssetType, string> t)
         {
             m_AssetsPath = t;
         }

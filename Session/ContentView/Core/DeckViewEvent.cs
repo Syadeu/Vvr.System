@@ -19,6 +19,10 @@
 
 #endregion
 
+using System.Collections.Generic;
+using UnityEngine;
+using Vvr.Model;
+
 namespace Vvr.Session.ContentView.Core
 {
     public enum DeckViewEvent : short
@@ -29,8 +33,37 @@ namespace Vvr.Session.ContentView.Core
         SetActor = 100,
     }
 
+    public struct DeckViewOpenContext
+    {
+        public IEnumerable<DeckViewSetActorContext> actorContexts;
+
+        public override int GetHashCode()
+        {
+            int h = 0;
+            if (actorContexts is null) return h;
+
+            foreach (var actorContext in actorContexts)
+            {
+                h ^= actorContext.GetHashCode();
+            }
+            return h;
+        }
+    }
     public struct DeckViewSetActorContext
     {
+        public int    index;
+        public string id;
 
+        public Sprite portrait;
+        public string title;
+        public int    grade;
+        public int    level;
+
+        public override int GetHashCode()
+        {
+            return
+                unchecked((int)FNV1a32.Calculate(title))
+                ^ index ^ grade ^ level ^ 367;
+        }
     }
 }

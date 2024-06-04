@@ -19,8 +19,11 @@
 
 #endregion
 
+using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
+using UnityEngine;
+using Vvr.Model;
 using Vvr.Provider;
 using Vvr.Session.AssetManagement;
 using Vvr.Session.ContentView.Core;
@@ -60,9 +63,45 @@ namespace Vvr.Session.ContentView.Deck
 
         private async UniTask OnOpen(DeckViewEvent e, object ctx)
         {
-            await ViewProvider.OpenAsync(CanvasViewProvider, m_AssetProvider, ctx);
+            if (ctx is not DeckViewOpenContext)
+            {
+                DeckViewSetActorContext[] actorContexts = new DeckViewSetActorContext[5];
 
-            await EventHandler.ExecuteAsync(DeckViewEvent.SetActor, ctx);
+                int i = 0;
+                foreach (var actor in m_UserActorProvider.GetCurrentTeam())
+                {
+                    var portraitAssetPath = actor.Assets[AssetType.ContextPortrait];
+                    var    portraitImg  = await m_AssetProvider
+                        .LoadAsync<Sprite>(portraitAssetPath);
+
+                    actorContexts[i] = new DeckViewSetActorContext()
+                    {
+                        index    = i++,
+                        id = actor.Id,
+
+                        portrait = portraitImg.Object,
+                        title    = actor.Id,
+                        grade    = actor.Grade,
+                        // TODO: actor level
+                        level = 0
+                    };
+                }
+
+                for (; i < 5; i++)
+                {
+                    actorContexts[i] = new DeckViewSetActorContext()
+                    {
+                        index = i
+                    };
+                }
+
+                ctx = new DeckViewOpenContext()
+                {
+                    actorContexts = actorContexts,
+                };
+            }
+
+            await ViewProvider.OpenAsync(CanvasViewProvider, m_AssetProvider, ctx);
         }
         private async UniTask OnClose(DeckViewEvent e, object ctx)
         {

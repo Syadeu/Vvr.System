@@ -42,6 +42,7 @@ namespace Vvr.Session.ContentView.Core
         SetStageText = 1120,
         SetStageProgress,
 
-        OpenResearch = 2000
+        OpenResearch = 30000,
+        OpenActorBatch,
     }
 }

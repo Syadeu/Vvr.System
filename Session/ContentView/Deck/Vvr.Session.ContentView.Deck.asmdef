@@ -15,6 +15,7 @@
     "Unity.TextMeshPro",
 
     "UniTask",
-    "UniTask.Addressables"
+    "UniTask.Addressables",
+    "GUID:eff4759ec02784e83a3522cd45057e0b"
   ]
 }

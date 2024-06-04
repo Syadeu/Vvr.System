@@ -24,6 +24,7 @@ namespace Vvr.Provider
     /// <summary>
     /// Represents a base provider interface for all other providers.
     /// </summary>
+    [AbstractProvider]
     public interface IProvider
     {
 

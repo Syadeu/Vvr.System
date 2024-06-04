@@ -48,6 +48,7 @@ namespace Vvr.Session.ContentView.Mainmenu
 
             EventHandler
                 .Register(MainmenuViewEvent.OpenResearch, OnOpenResearch)
+                .Register(MainmenuViewEvent.OpenActorBatch, OnOpenActorBatch)
                 .Register(MainmenuViewEvent.SetupActorInputs, OnSetupActorInputs)
                 ;
 
@@ -58,6 +59,7 @@ namespace Vvr.Session.ContentView.Mainmenu
         {
             EventHandler
                 .Unregister(MainmenuViewEvent.OpenResearch, OnOpenResearch)
+                .Unregister(MainmenuViewEvent.OpenActorBatch, OnOpenActorBatch)
                 .Unregister(MainmenuViewEvent.SetupActorInputs, OnSetupActorInputs)
                 ;
 
@@ -107,6 +109,13 @@ namespace Vvr.Session.ContentView.Mainmenu
             await EventHandlerProvider
                 .Resolve<ResearchViewEvent>()
                 .ExecuteAsync(ResearchViewEvent.Open, 0);
+        }
+
+        private async UniTask OnOpenActorBatch(MainmenuViewEvent e, object ctx)
+        {
+            await EventHandlerProvider
+                .Resolve<DeckViewEvent>()
+                .ExecuteAsync(DeckViewEvent.Open);
         }
 
         private async UniTaskVoid Setup()

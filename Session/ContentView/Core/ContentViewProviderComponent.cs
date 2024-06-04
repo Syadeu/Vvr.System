@@ -29,8 +29,8 @@ namespace Vvr.Session.ContentView.Core
     [DisallowMultipleComponent]
     public abstract class ContentViewProviderComponent : MonoBehaviour, IContentViewProvider
     {
-        public abstract Type EventType { get; }
-        public abstract Type ProviderType { get; }
+        public abstract Type EventType    { get; }
+        public virtual  Type ProviderType => Vvr.Provider.Provider.ExtractType(GetType());
 
         public abstract void    Reserve();
 
@@ -42,11 +42,9 @@ namespace Vvr.Session.ContentView.Core
         public abstract UniTask CloseAsync(object ctx);
     }
 
-    public abstract class ContentViewProviderComponent<TEvent, TProvider> : ContentViewProviderComponent
+    public abstract class ContentViewProviderComponent<TEvent> : ContentViewProviderComponent
         where TEvent : struct, IConvertible
-        where TProvider : IContentViewProvider
     {
         public sealed override Type EventType    => typeof(TEvent);
-        public sealed override Type ProviderType => typeof(TProvider);
     }
 }

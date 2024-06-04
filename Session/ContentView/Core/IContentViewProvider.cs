@@ -29,6 +29,7 @@ namespace Vvr.Session.ContentView.Core
     /// <summary>
     /// Represents a content view provider interface.
     /// </summary>
+    [AbstractProvider]
     public interface IContentViewProvider<TEvent> : IContentViewProvider
         where TEvent : struct, IConvertible
     {
@@ -46,6 +47,7 @@ namespace Vvr.Session.ContentView.Core
     /// <summary>
     /// Represents a content view provider interface.
     /// </summary>
+    [AbstractProvider]
     public interface IContentViewProvider : IProvider
     {
         /// <summary>

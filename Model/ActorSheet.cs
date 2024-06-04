@@ -63,7 +63,7 @@ namespace Vvr.Model
             [UsedImplicitly] public List<PassiveSheet.Reference>    Passive { get; private set; }
             [UsedImplicitly] public List<SkillSheet.Reference> Skills  { get; private set; }
 
-            [UsedImplicitly] public Dictionary<AssetType, AddressablePath> Assets { get; private set; }
+            [UsedImplicitly] public Dictionary<AssetType, string> Assets { get; private set; }
 
             private PassiveSheet.Row[] m_Passive;
             private SkillSheet.Row[] m_Skills;

@@ -19,13 +19,40 @@
 
 #endregion
 
+using System;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
+using Vvr.Provider;
 using Vvr.Session.ContentView.Core;
 
 namespace Vvr.Session.ContentView.Deck
 {
-    public abstract class DeckViewProviderComponent : ContentViewProviderComponent<DeckViewEvent, IDeckViewProvider>
+    public abstract class DeckViewProviderComponent
+        : ContentViewProviderComponent<DeckViewEvent>, IDeckViewProvider
     {
-        public abstract void Initialize(IContentViewEventHandler<DeckViewEvent> eventHandler);
+        private IContentViewEventHandler<DeckViewEvent> m_EventHandler;
+
+        protected IContentViewEventHandler<DeckViewEvent> EventHandler => m_EventHandler;
+
+        public void Initialize(IContentViewEventHandler<DeckViewEvent> eventHandler)
+        {
+            m_EventHandler = eventHandler;
+            OnInitialize(eventHandler);
+        }
+        public override void Reserve()
+        {
+            m_EventHandler = null;
+        }
+
+        protected virtual void OnInitialize(IContentViewEventHandler<DeckViewEvent> eventHandler){}
+
+        protected void Inject(Transform t)
+        {
+            foreach (var child in
+                     t.GetComponentsInChildren<IConnector<IContentViewEventHandler<DeckViewEvent>>>())
+            {
+                child.Connect(m_EventHandler);
+            }
+        }
     }
 }

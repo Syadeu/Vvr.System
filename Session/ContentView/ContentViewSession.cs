@@ -26,6 +26,7 @@ using JetBrains.Annotations;
 using Vvr.Provider;
 using Vvr.Session.ContentView.Canvas;
 using Vvr.Session.ContentView.Core;
+using Vvr.Session.ContentView.Deck;
 using Vvr.Session.ContentView.Dialogue;
 using Vvr.Session.ContentView.Mainmenu;
 using Vvr.Session.ContentView.Research;
@@ -88,7 +89,8 @@ namespace Vvr.Session.ContentView
             await UniTask.WhenAll(
                 CreateSession<ResearchViewSession>(null),
                 CreateSession<MainmenuViewSession>(null),
-                CreateSession<WorldBackgroundViewSession>(null)
+                CreateSession<WorldBackgroundViewSession>(null),
+                CreateSession<DeckViewSession>(null)
             );
             var dialogueViewSession = await CreateSession<DialogueViewSession>(null);
 

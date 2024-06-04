@@ -81,11 +81,17 @@ namespace Vvr.Provider
             if (!VvrTypeHelper.InheritsFrom<IProvider>(t))
                 throw new InvalidOperationException(t.FullName);
 
-            if (t.IsInterface) return t;
+            if (t.IsInterface)
+            {
+                if (t.GetCustomAttribute<AbstractProviderAttribute>() is not null)
+                    throw new InvalidOperationException("Abstract provider cannot be extract");
+                return t;
+            }
 
             return t.GetInterfaces()
                 .First(x =>
                     x != VvrTypeHelper.TypeOf<IProvider>.Type &&
+                    x.GetCustomAttribute<AbstractProviderAttribute>() is null &&
                     VvrTypeHelper.InheritsFrom(x, VvrTypeHelper.TypeOf<IProvider>.Type));
         }
 
