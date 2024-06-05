@@ -353,10 +353,6 @@ namespace Vvr.Session
             const string debugName  = "ChildSession.Inject";
             using var    debugTimer = DebugTimer.StartWithCustomName(debugName);
 
-            Type t0 = typeof(IConnector<IProvider>);
-            Type t1 = typeof(IConnector<>).MakeGenericType(typeof(IProvider));
-            Assert.AreEqual(t0, t1);
-
             foreach (var item in m_ConnectedProviders)
             {
                 Type connectorType = ConnectorReflectionUtils.GetConnectorType(item.Key);
