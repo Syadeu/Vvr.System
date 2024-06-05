@@ -146,7 +146,7 @@ namespace Vvr.Session
         /// This allows the object to access the required dependencies through the connectors.
         /// </remarks>
         [PublicAPI]
-        public static void Inject(this IDependencyContainer container, object o)
+        public static void Inject([NotNull] this IDependencyContainer container, [NotNull] object o)
         {
             const string debugName  = "DependencyContainerExtensions.Inject(object)";
             using var    debugTimer = DebugTimer.StartWithCustomName(debugName);
@@ -171,7 +171,7 @@ namespace Vvr.Session
         /// The object's dependencies are identified by the [IConnector] attributes applied to its properties or fields.
         /// </remarks>
         [PublicAPI]
-        public static void Inject(this IDependencyContainer container, GameObject go)
+        public static void Inject([NotNull] this IDependencyContainer container, [NotNull] GameObject go)
         {
             const string debugName  = "DependencyContainerExtensions.Inject(GameObject)";
             using var    debugTimer = DebugTimer.StartWithCustomName(debugName);
@@ -196,13 +196,13 @@ namespace Vvr.Session
         /// Injects dependencies into the specified object or game object.
         /// </summary>
         /// <param name="container">The dependency container.</param>
-        /// <param name="o">The object to inject dependencies into.</param>
+        /// <param name="injector">The object to inject dependencies into.</param>
         /// <remarks>
         /// This method injects dependencies into the specified object or game object. It connects the object or game object with the appropriate providers contained in the dependency container.
         /// If the specified object is a game object, it first tries to find a `DependencyInjector` component attached to the game object. If found, it invokes the `Inject` method of the `DependencyInjector` to perform the injection.
         /// If the specified object is not a game object or does not have a `DependencyInjector`, it iterates over all registered dependencies in the container and performs the injection manually.
         /// </remarks>
-        private static void Inject(IDependencyContainer container, DependencyInjector injector)
+        private static void Inject([NotNull] IDependencyContainer container, [NotNull] DependencyInjector injector)
         {
             const string debugName  = "DependencyContainerExtensions.Inject(DependencyInjector)";
             using var    debugTimer = DebugTimer.StartWithCustomName(debugName);

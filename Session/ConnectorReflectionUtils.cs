@@ -74,6 +74,11 @@ namespace Vvr.Session
         private static readonly Dictionary<Type, Type> s_CachedConnectorTypes = new();
         private static readonly ThreadLocal<object[]>  s_MethodParameter      = new(() => new object[1]);
 
+        /// <summary>
+        /// Returns the connector type for the specified provider type.
+        /// </summary>
+        /// <param name="providerType">The type of the provider.</param>
+        /// <returns>The connector type.</returns>
         public static Type GetConnectorType(Type providerType)
         {
             if (s_CachedConnectorTypes.TryGetValue(providerType, out var r)) return r;
@@ -85,6 +90,11 @@ namespace Vvr.Session
             return r;
         }
 
+        /// <summary>
+        /// Returns all the connector types implemented by the specified type.
+        /// </summary>
+        /// <param name="type">The type to get the connector types for.</param>
+        /// <returns>All the connector types implemented by the specified type.</returns>
         public static IEnumerable<Type> GetAllConnectors(Type type)
         {
             var interfaceTypes = type.GetInterfaces();

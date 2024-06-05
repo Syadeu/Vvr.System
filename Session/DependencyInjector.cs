@@ -22,6 +22,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using JetBrains.Annotations;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using Vvr.Provider;
@@ -38,7 +39,7 @@ namespace Vvr.Session
         [ChildGameObjectsOnly] [SerializeField, Required]
         private GameObject[] m_Objects;
 
-        internal void Inject(Type providerType, IProvider provider)
+        internal void Inject([NotNull] Type providerType, [NotNull] IProvider provider)
         {
             Type connectorType = ConnectorReflectionUtils.GetConnectorType(providerType);
 
