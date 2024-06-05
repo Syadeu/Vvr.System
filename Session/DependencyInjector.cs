@@ -34,6 +34,9 @@ namespace Vvr.Session
     /// </summary>
     [DisallowMultipleComponent]
     [HideMonoScript]
+    [InfoBox(
+        "The DependencyInjector is responsible for injecting dependencies into game objects " +
+        "by connecting them with the appropriate providers.")]
     internal sealed class DependencyInjector : MonoBehaviour
     {
         [ChildGameObjectsOnly] [SerializeField, Required]
