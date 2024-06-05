@@ -63,6 +63,7 @@ namespace Vvr.Session.ContentView.Dialogue
             await base.OnInitialize(session, data);
 
             m_AssetProvider = await CreateSession<AssetSession>(default);
+            Register(m_AssetProvider);
 
             EventHandler
                 .Register(DialogueViewEvent.Open, OnOpen)
@@ -144,8 +145,9 @@ namespace Vvr.Session.ContentView.Dialogue
 
             while (wrapper.Data != null)
             {
-                await m_DialogueViewProvider
+                var obj = await m_DialogueViewProvider
                     .OpenAsync(CanvasViewProvider, m_AssetProvider, wrapper.Data);
+                this.Inject(obj);
 
                 foreach (var attribute in wrapper.Attributes)
                 {
@@ -194,7 +196,11 @@ namespace Vvr.Session.ContentView.Dialogue
                 IDialogueData prevData = wrapper.Data;
                 var newTask = UniTask.WhenAll(wrapper.Tasks.ToArray())
                     // .ContinueWith(async () => await m_DialogueViewProvider.CloseAsync(prevData));
-                    .ContinueWith(async () => await EventHandler.ExecuteAsync(DialogueViewEvent.Close, prevData));
+                    .ContinueWith(async () =>
+                    {
+                        this.Detach(obj);
+                        await EventHandler.ExecuteAsync(DialogueViewEvent.Close, prevData);
+                    });
                 lastCloseTask = UniTask.WhenAll(lastCloseTask, newTask);
 
                 wrapper.Tasks.Clear();
@@ -205,17 +211,7 @@ namespace Vvr.Session.ContentView.Dialogue
             await lastCloseTask;
         }
 
-        void IConnector<IDialogueViewProvider>.Connect(IDialogueViewProvider    t)
-        {
-            m_DialogueViewProvider = t;
-
-            m_DialogueViewProvider.Initialize(EventHandler);
-        }
-
-        void IConnector<IDialogueViewProvider>.Disconnect(IDialogueViewProvider t)
-        {
-            m_DialogueViewProvider.Reserve();
-            m_DialogueViewProvider = null;
-        }
+        void IConnector<IDialogueViewProvider>.Connect(IDialogueViewProvider    t) => m_DialogueViewProvider = t;
+        void IConnector<IDialogueViewProvider>.Disconnect(IDialogueViewProvider t) => m_DialogueViewProvider = null;
     }
 }

@@ -38,6 +38,8 @@ namespace Vvr.Session.ContentView.Deck
         private IAssetProvider     m_AssetProvider;
         private IUserActorProvider m_UserActorProvider;
 
+        private GameObject m_ViewInstance;
+
         public override string DisplayName => nameof(DeckViewSession);
 
         protected override async UniTask OnInitialize(IParentSession session, ContentViewSessionData data)
@@ -53,17 +55,22 @@ namespace Vvr.Session.ContentView.Deck
         }
         protected override UniTask OnReserve()
         {
+            if (m_ViewInstance is not null)
+                this.Detach(m_ViewInstance);
+
             EventHandler
                 .Unregister(DeckViewEvent.Open, OnOpen)
                 .Unregister(DeckViewEvent.Close, OnClose)
                 ;
+
+            m_ViewInstance = null;
 
             return base.OnReserve();
         }
 
         private async UniTask OnOpen(DeckViewEvent e, object ctx)
         {
-            if (ctx is not DeckViewOpenContext)
+            if (ctx is not DeckViewOpenContext openContext)
             {
                 DeckViewSetActorContext[] actorContexts = new DeckViewSetActorContext[5];
 
@@ -95,18 +102,26 @@ namespace Vvr.Session.ContentView.Deck
                     };
                 }
 
-                ctx = new DeckViewOpenContext()
+                openContext = new DeckViewOpenContext()
                 {
                     actorContexts = actorContexts,
                 };
             }
 
-            var contentObj = await ViewProvider.OpenAsync(CanvasViewProvider, m_AssetProvider, ctx);
-            this.Inject(contentObj);
+            m_ViewInstance = await ViewProvider.OpenAsync(CanvasViewProvider, m_AssetProvider, ctx);
+            this.Inject(m_ViewInstance);
+
+            foreach (var actorContext in openContext.actorContexts)
+            {
+                await EventHandler.ExecuteAsync(DeckViewEvent.SetActor, actorContext);
+            }
         }
         private async UniTask OnClose(DeckViewEvent e, object ctx)
         {
+            this.Detach(m_ViewInstance);
             await ViewProvider.CloseAsync(ctx);
+
+            m_ViewInstance = null;
         }
 
         void IConnector<IUserActorProvider>.Connect(IUserActorProvider    t) => m_UserActorProvider = t;

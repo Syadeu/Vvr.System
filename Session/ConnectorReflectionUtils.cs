@@ -23,6 +23,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Threading;
+using JetBrains.Annotations;
 using Vvr.Provider;
 
 namespace Vvr.Session
@@ -79,6 +80,7 @@ namespace Vvr.Session
         /// </summary>
         /// <param name="providerType">The type of the provider.</param>
         /// <returns>The connector type.</returns>
+        [NotNull]
         public static Type GetConnectorType(Type providerType)
         {
             if (s_CachedConnectorTypes.TryGetValue(providerType, out var r)) return r;

@@ -20,6 +20,7 @@
 using System;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
+using UnityEngine;
 using Vvr.Controller.Research;
 using Vvr.Provider;
 using Vvr.Session.AssetManagement;
@@ -43,7 +44,7 @@ namespace Vvr.Session.ContentView.Research
         private IUserDataProvider     m_UserDataProvider;
         private IResearchDataProvider m_ResearchDataProvider;
 
-        private bool m_Opened;
+        private GameObject m_ViewInstance;
 
         protected override async UniTask OnInitialize(IParentSession session, ContentViewSessionData data)
         {
@@ -55,26 +56,36 @@ namespace Vvr.Session.ContentView.Research
                 .Register(ResearchViewEvent.SelectGroupWithIndex, OnSelectGroupWithIndex)
                 .Register(ResearchViewEvent.Upgrade, OnUpgrade);
         }
+        protected override async UniTask OnReserve()
+        {
+            if (m_ViewInstance is not null)
+                this.Detach(m_ViewInstance);
+
+            m_AssetSession = null;
+            m_ViewInstance = null;
+
+            await base.OnReserve();
+        }
 
         private async UniTask OnOpen(ResearchViewEvent e, object ctx)
         {
-            if (m_Opened)
+            if (m_ViewInstance is not null)
             {
                 // Is in opening sequence or already opened
                 return;
             }
 
-            m_Opened = true;
-
             m_AssetSession = await CreateSession<AssetSession>(default);
+            Register<IAssetProvider>(m_AssetSession);
             foreach (var nodeGroup in m_ResearchDataProvider)
             {
                 nodeGroup.RegisterAssetProvider(m_AssetSession);
             }
 
-            await ViewProvider.OpenAsync(
+            m_ViewInstance = await ViewProvider.OpenAsync(
                 CanvasViewProvider,
                 m_AssetSession, ctx);
+            this.Inject(m_ViewInstance);
 
             if (ctx is int groupIndex)
             {
@@ -91,28 +102,23 @@ namespace Vvr.Session.ContentView.Research
         }
         private async UniTask OnClose(ResearchViewEvent e, object ctx)
         {
-            if (!m_Opened)
+            if (m_ViewInstance is null)
                 return;
 
+            this.Detach(m_ViewInstance);
             await ViewProvider.CloseAsync(ctx);
 
             foreach (var nodeGroup in m_ResearchDataProvider)
             {
                 nodeGroup.UnregisterAssetProvider();
             }
+
+            Unregister<IAssetProvider>();
             await m_AssetSession.Reserve();
 
             m_AssetSession = null;
-            m_Opened       = false;
+            m_ViewInstance = null;
         }
-
-        protected override async UniTask OnReserve()
-        {
-            m_AssetSession = null;
-
-            await base.OnReserve();
-        }
-
         private async UniTask OnUpgrade(ResearchViewEvent e, object ctx)
         {
             IResearchNode node = (IResearchNode)ctx;

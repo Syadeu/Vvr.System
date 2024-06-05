@@ -38,6 +38,8 @@ namespace Vvr.Session.ContentView.Mainmenu
         private IAssetProvider        m_AssetProvider;
         private IActorDataProvider    m_ActorDataProvider;
 
+        private GameObject m_ViewInstance;
+
         public override string DisplayName => nameof(MainmenuViewSession);
 
         protected override async UniTask OnInitialize(IParentSession session, ContentViewSessionData data)
@@ -45,6 +47,7 @@ namespace Vvr.Session.ContentView.Mainmenu
             await base.OnInitialize(session, data);
 
             m_AssetProvider = await CreateSession<AssetSession>(default);
+            Register(m_AssetProvider);
 
             EventHandler
                 .Register(MainmenuViewEvent.OpenResearch, OnOpenResearch)
@@ -52,16 +55,24 @@ namespace Vvr.Session.ContentView.Mainmenu
                 .Register(MainmenuViewEvent.SetupActorInputs, OnSetupActorInputs)
                 ;
 
-            Setup().Forget();
+            Setup()
+                .AttachExternalCancellation(ReserveToken)
+                .SuppressCancellationThrow()
+                .Forget();
         }
 
         protected override UniTask OnReserve()
         {
+            if (m_ViewInstance is not null)
+                this.Detach(m_ViewInstance);
+
             EventHandler
                 .Unregister(MainmenuViewEvent.OpenResearch, OnOpenResearch)
                 .Unregister(MainmenuViewEvent.OpenActorBatch, OnOpenActorBatch)
                 .Unregister(MainmenuViewEvent.SetupActorInputs, OnSetupActorInputs)
                 ;
+
+            m_ViewInstance = null;
 
             return base.OnReserve();
         }
@@ -118,14 +129,14 @@ namespace Vvr.Session.ContentView.Mainmenu
                 .ExecuteAsync(DeckViewEvent.Open);
         }
 
-        private async UniTaskVoid Setup()
+        private async UniTask Setup()
         {
             // Because main menu view should be provided right away
             // after world has been initialized
             await UniTask.WaitWhile(() => ViewProvider is null);
 
-            GameObject obj = await ViewProvider.OpenAsync(CanvasViewProvider, m_AssetProvider, null);
-            this.Inject(obj);
+            m_ViewInstance = await ViewProvider.OpenAsync(CanvasViewProvider, m_AssetProvider, null);
+            this.Inject(m_ViewInstance);
         }
 
         void IConnector<IActorDataProvider>.Connect(IActorDataProvider t) => m_ActorDataProvider = t;

@@ -133,6 +133,9 @@ namespace Vvr.Session
         IEnumerable<KeyValuePair<Type, IProvider>> GetEnumerable();
     }
 
+    /// <summary>
+    /// Contains extension methods for the IDependencyContainer interface.
+    /// </summary>
     public static class DependencyContainerExtensions
     {
         /// <summary>
@@ -158,6 +161,31 @@ namespace Vvr.Session
                 if (!container.TryGetProvider(providerType, out var p)) continue;
 
                 ConnectorReflectionUtils.Connect(connectorType, o, p);
+            }
+        }
+
+        /// <summary>
+        /// Detaches the specified object from the dependency container.
+        /// </summary>
+        /// <param name="container">The dependency container.</param>
+        /// <param name="o">The object to detach.</param>
+        /// <remarks>
+        /// This method is used to detach the specified object from the dependency container.
+        /// It iterates through all connector types of the object and disconnects them from their corresponding providers in the container.
+        /// </remarks>
+        [PublicAPI]
+        public static void Detach([NotNull] this IDependencyContainer container, [NotNull] object o)
+        {
+            const string debugName  = "DependencyContainerExtensions.Detach(object)";
+            using var    debugTimer = DebugTimer.StartWithCustomName(debugName);
+
+            Type t = o.GetType();
+            foreach (var connectorType in ConnectorReflectionUtils.GetAllConnectors(t))
+            {
+                Type providerType = connectorType.GetGenericArguments()[0];
+                if (!container.TryGetProvider(providerType, out var p)) continue;
+
+                ConnectorReflectionUtils.Disconnect(connectorType, o, p);
             }
         }
 
@@ -189,10 +217,54 @@ namespace Vvr.Session
             }
         }
 
+        /// <summary>
+        /// Detaches the specified game object from the dependency container.
+        /// </summary>
+        /// <param name="container">The dependency container to detach from.</param>
+        /// <param name="go">The game object to detach.</param>
+        /// <remarks>
+        /// This method detaches the specified game object from the dependency container. It is used to remove the game object from any registered connectors and disconnect any associated dependencies.
+        /// If the game object has a <see cref="DependencyInjector"/> component attached, it will be detached using <see cref="Detach(IDependencyContainer, DependencyInjector)"/> method.
+        /// Otherwise, the method iterates over all registered connectors in the container, and detaches the game object recursively for each connector type using <see cref="DetachRecursive(IDependencyContainer, GameObject, Type, object)"/> method.
+        /// </remarks>
+        [PublicAPI]
+        public static void Detach([NotNull] this IDependencyContainer container, [NotNull] GameObject go)
+        {
+            const string debugName  = "DependencyContainerExtensions.Detach(GameObject)";
+            using var    debugTimer = DebugTimer.StartWithCustomName(debugName);
+
+            if (go.TryGetComponent(out DependencyInjector injector))
+            {
+                Detach(container, injector);
+                return;
+            }
+
+            foreach (var item in container.GetEnumerable())
+            {
+                Type connectorType = ConnectorReflectionUtils.GetConnectorType(item.Key);
+                DetachRecursive(container, go, connectorType, item.Value);
+            }
+        }
+
+        /// <summary>
+        /// Injects the specified provider recursively into game objects that have a specified connector type.
+        /// </summary>
+        /// <param name="container">The dependency container.</param>
+        /// <param name="go">The game object to inject into.</param>
+        /// <param name="connectorType">The type of the connector.</param>
+        /// <param name="provider">The provider to inject.</param>
+        /// <remarks>
+        /// This method is used to inject a provider into game objects recursively.
+        /// It searches for game objects that have a dependency injector component and injects the provider into them.
+        /// It also connects the connector of the specified type with the provider on each game object that has the connector component.
+        /// </remarks>
         private static void InjectRecursive(
             IDependencyContainer container,
             GameObject go, Type connectorType, IProvider provider)
         {
+            const string debugName  = "DependencyContainerExtensions.InjectRecursive";
+            using var    debugTimer = DebugTimer.StartWithCustomName(debugName);
+
             var queue = new Queue<GameObject>(2);
             queue.Enqueue(go);
 
@@ -219,6 +291,50 @@ namespace Vvr.Session
         }
 
         /// <summary>
+        /// Detaches the specified game object from the dependency container recursively.
+        /// </summary>
+        /// <param name="container">The dependency container to detach from.</param>
+        /// <param name="go">The game object to detach.</param>
+        /// <param name="connectorType">The type of the connector.</param>
+        /// <param name="provider">The instance of the provider.</param>
+        /// <remarks>
+        /// This method detaches the specified game object from the dependency container recursively. It is used to remove the game object from any registered connectors and disconnect any associated dependencies.
+        /// If the game object has a <see cref="DependencyInjector"/> component attached, it will be detached using the <see cref="Detach(IDependencyContainer, DependencyInjector)"/> method.
+        /// Otherwise, the method iterates over all registered connectors in the container, and detaches the game object recursively for each connector type using this method.
+        /// </remarks>
+        private static void DetachRecursive(
+            IDependencyContainer container,
+            GameObject go, Type connectorType, IProvider provider)
+        {
+            const string debugName  = "DependencyContainerExtensions.DetachRecursive";
+            using var    debugTimer = DebugTimer.StartWithCustomName(debugName);
+
+            var queue = new Queue<GameObject>(2);
+            queue.Enqueue(go);
+
+            while (queue.Count > 0)
+            {
+                GameObject current = queue.Dequeue();
+
+                if (current.TryGetComponent(out DependencyInjector injector))
+                {
+                    Detach(container, injector);
+                    continue;
+                }
+
+                foreach (var com in current.GetComponents(connectorType))
+                {
+                    ConnectorReflectionUtils.Disconnect(connectorType, com, provider);
+                }
+
+                foreach (Transform child in current.transform)
+                {
+                    queue.Enqueue(child.gameObject);
+                }
+            }
+        }
+
+        /// <summary>
         /// Injects dependencies into the specified object or game object.
         /// </summary>
         /// <param name="container">The dependency container.</param>
@@ -230,12 +346,33 @@ namespace Vvr.Session
         /// </remarks>
         private static void Inject([NotNull] IDependencyContainer container, [NotNull] DependencyInjector injector)
         {
-            const string debugName  = "DependencyContainerExtensions.Inject(DependencyInjector)";
+            const string debugName  = "DependencyContainerExtensions.Inject(IDependencyContainer, DependencyInjector)";
             using var    debugTimer = DebugTimer.StartWithCustomName(debugName);
 
             foreach (var item in container.GetEnumerable())
             {
                 injector.Inject(item.Key, item.Value);
+            }
+        }
+
+        /// <summary>
+        /// Detaches the specified game object from the dependency container.
+        /// </summary>
+        /// <param name="container">The dependency container to detach from.</param>
+        /// <param name="go">The game object to detach.</param>
+        /// <remarks>
+        /// This method detaches the specified game object from the dependency container. It is used to remove the game object from any registered connectors and disconnect any associated dependencies.
+        /// If the game object has a <see cref="DependencyInjector"/> component attached, it will be detached using <see cref="Detach(IDependencyContainer, DependencyInjector)"/> method.
+        /// Otherwise, the method iterates over all registered connectors in the container, and detaches the game object recursively for each connector type using <see cref="DetachRecursive(IDependencyContainer, GameObject, Type, object)"/> method.
+        /// </remarks>
+        private static void Detach([NotNull] IDependencyContainer container, [NotNull] DependencyInjector injector)
+        {
+            const string debugName  = "DependencyContainerExtensions.Detach(IDependencyContainer, DependencyInjector)";
+            using var    debugTimer = DebugTimer.StartWithCustomName(debugName);
+
+            foreach (var item in container.GetEnumerable())
+            {
+                injector.Detach(item.Key, item.Value);
             }
         }
     }

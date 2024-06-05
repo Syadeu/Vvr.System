@@ -24,11 +24,9 @@ using Vvr.Session.ContentView.Core;
 
 namespace Vvr.Session.ContentView.Mainmenu
 {
-    public abstract class MainmenuViewProviderComponent : ContentViewProviderComponent, IMainmenuViewProvider
+    public abstract class MainmenuViewProviderComponent
+        : ContentViewProviderComponent<MainmenuViewEvent>, IMainmenuViewProvider
     {
-        public sealed override Type EventType    => VvrTypeHelper.TypeOf<MainmenuViewEvent>.Type;
         public sealed override Type ProviderType => VvrTypeHelper.TypeOf<IMainmenuViewProvider>.Type;
-
-        public abstract void Initialize(IContentViewEventHandler<MainmenuViewEvent> eventHandler);
     }
 }

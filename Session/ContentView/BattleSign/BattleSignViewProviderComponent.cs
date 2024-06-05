@@ -24,11 +24,9 @@ using Vvr.Session.ContentView.Core;
 
 namespace Vvr.Session.ContentView.BattleSign
 {
-    public abstract class BattleSignViewProviderComponent : ContentViewProviderComponent, IBattleSignViewProvider
+    public abstract class BattleSignViewProviderComponent
+        : ContentViewProviderComponent<BattleSignViewEvent>, IBattleSignViewProvider
     {
-        public sealed override Type EventType    => VvrTypeHelper.TypeOf<BattleSignViewEvent>.Type;
         public sealed override Type ProviderType => VvrTypeHelper.TypeOf<IBattleSignViewProvider>.Type;
-
-        public abstract void Initialize(IContentViewEventHandler<BattleSignViewEvent> eventHandler);
     }
 }

@@ -20,15 +20,13 @@
 #endregion
 
 using System;
-using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
-using UnityEngine;
-using Vvr.Provider;
 using Vvr.Session.ContentView.Core;
 
 namespace Vvr.Session.ContentView.WorldBackground
 {
-    public abstract class WorldBackgroundViewProvider : ContentViewProviderComponent, IWorldBackgroundViewProvider
+    public abstract class WorldBackgroundViewProvider
+        : ContentViewProviderComponent<WorldBackgroundViewEvent>, IWorldBackgroundViewProvider
     {
 #if UNITY_EDITOR
         private static WorldBackgroundViewProvider s_EditorInstance;
@@ -63,10 +61,7 @@ namespace Vvr.Session.ContentView.WorldBackground
             throw new NotImplementedException();
         }
 #endif
-        public sealed override Type EventType    => VvrTypeHelper.TypeOf<WorldBackgroundViewEvent>.Type;
         public sealed override Type ProviderType => VvrTypeHelper.TypeOf<IWorldBackgroundViewProvider>.Type;
-
-        public abstract void Initialize(IContentViewEventHandler<WorldBackgroundViewEvent> eventHandler);
 
         public abstract IWorldBackgroundView GetView(object ctx);
     }

@@ -42,6 +42,7 @@ namespace Vvr.Session.ContentView.WorldBackground
             await base.OnInitialize(session, data);
 
             m_AssetProvider = await CreateSession<AssetSession>(default);
+            Register(m_AssetProvider);
 
             EventHandler
                 .Register(WorldBackgroundViewEvent.Open, OnOpen)
@@ -57,23 +58,7 @@ namespace Vvr.Session.ContentView.WorldBackground
             await m_ViewProvider.CloseAsync(ctx);
         }
 
-        // public async UniTask OpenAsync(Sprite sprite)
-        // {
-        //     await m_ViewProvider.OpenAsync(m_AssetProvider, sprite);
-        //
-        //     await m_ViewProvider.View.SetBackgroundAsync(sprite);
-        // }
-
-        void IConnector<IWorldBackgroundViewProvider>.Connect(IWorldBackgroundViewProvider t)
-        {
-            m_ViewProvider = t;
-
-            m_ViewProvider.Initialize(EventHandler);
-        }
-        void IConnector<IWorldBackgroundViewProvider>.Disconnect(IWorldBackgroundViewProvider t)
-        {
-            m_ViewProvider.Reserve();
-            m_ViewProvider = null;
-        }
+        void IConnector<IWorldBackgroundViewProvider>.Connect(IWorldBackgroundViewProvider    t) => m_ViewProvider = t;
+        void IConnector<IWorldBackgroundViewProvider>.Disconnect(IWorldBackgroundViewProvider t) => m_ViewProvider = null;
     }
 }

@@ -42,6 +42,11 @@ namespace Vvr.Session
         [ChildGameObjectsOnly] [SerializeField, Required]
         private GameObject[] m_Objects;
 
+        /// <summary>
+        /// Injects dependencies into game objects by connecting them with the appropriate providers.
+        /// </summary>
+        /// <param name="providerType">The type of the provider.</param>
+        /// <param name="provider">The provider instance.</param>
         internal void Inject([NotNull] Type providerType, [NotNull] IProvider provider)
         {
             Type connectorType = ConnectorReflectionUtils.GetConnectorType(providerType);
@@ -52,6 +57,24 @@ namespace Vvr.Session
                 if (!e.TryGetComponent(connectorType, out var connector)) continue;
 
                 ConnectorReflectionUtils.Connect(connectorType, connector, provider);
+            }
+        }
+
+        /// <summary>
+        /// Detaches dependencies from game objects by disconnecting them from the specified provider.
+        /// </summary>
+        /// <param name="providerType">The type of the provider.</param>
+        /// <param name="provider">The provider instance.</param>
+        internal void Detach([NotNull] Type providerType, [NotNull] IProvider provider)
+        {
+            Type connectorType = ConnectorReflectionUtils.GetConnectorType(providerType);
+
+            for (int i = 0; i < m_Objects.Length; i++)
+            {
+                var e = m_Objects[i];
+                if (!e.TryGetComponent(connectorType, out var connector)) continue;
+
+                ConnectorReflectionUtils.Disconnect(connectorType, connector, provider);
             }
         }
 

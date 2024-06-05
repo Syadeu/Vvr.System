@@ -21,15 +21,14 @@
 
 using System;
 using System.Diagnostics;
-using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using UnityEngine;
-using Vvr.Provider;
 using Vvr.Session.ContentView.Core;
 
 namespace Vvr.Session.ContentView.Dialogue
 {
-    public abstract class DialogueViewProviderComponent : ContentViewProviderComponent, IDialogueViewProvider
+    public abstract class DialogueViewProviderComponent
+        : ContentViewProviderComponent<DialogueViewEvent>, IDialogueViewProvider
     {
 #if UNITY_EDITOR
         private static DialogueViewProviderComponent s_EditorInstance;
@@ -65,7 +64,6 @@ namespace Vvr.Session.ContentView.Dialogue
             s_EditorInstance.SetupDestroyEditorPreview();
         }
 #endif
-        public sealed override Type EventType    => VvrTypeHelper.TypeOf<DialogueViewEvent>.Type;
         public sealed override Type ProviderType => VvrTypeHelper.TypeOf<IDialogueViewProvider>.Type;
 
         public abstract IDialogueView View { get; }
@@ -80,8 +78,5 @@ namespace Vvr.Session.ContentView.Dialogue
         protected virtual void SetupEditorPreview()
         {
         }
-
-        public abstract void Initialize(IContentViewEventHandler<DialogueViewEvent> eventHandler);
     }
-
 }

@@ -20,7 +20,6 @@
 #endregion
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -29,7 +28,6 @@ using System.Threading;
 using Cathei.BakingSheet.Internal;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
-using UnityEngine;
 using UnityEngine.Assertions;
 using Vvr.Controller.Condition;
 using Vvr.Provider;
@@ -59,25 +57,8 @@ namespace Vvr.Session
 
         protected IReadOnlyDictionary<Type, IProvider> ConnectedProviders => m_ConnectedProviders;
 
-        public Type Type => (m_Type ??= GetType());
-        private Type[] ConnectorTypes
-        {
-            get
-            {
-                if (m_ConnectorTypes == null)
-                {
-                    // var tp = typeof(IConnector<>);
-                    // m_ConnectorTypes =
-                    //     Type.GetInterfaces()
-                    //         .Where(x=>x.IsGenericType && x.GetGenericTypeDefinition() == tp)
-                    //         .ToArray();
-
-                    m_ConnectorTypes = ConnectorReflectionUtils.GetAllConnectors(Type).ToArray();
-                }
-
-                return m_ConnectorTypes;
-            }
-        }
+        public  Type   Type           => (m_Type ??= GetType());
+        private Type[] ConnectorTypes => m_ConnectorTypes ??= ConnectorReflectionUtils.GetAllConnectors(Type).ToArray();
 
         public          Owner  Owner       { get; private set; }
         public abstract string DisplayName { get; }
@@ -236,6 +217,7 @@ namespace Vvr.Session
 
         public IDependencyContainer Register(Type pType, IProvider provider)
         {
+            pType = Vvr.Provider.Provider.ExtractType(pType);
             EvaluateProviderRegistration(pType, provider);
 
             // $"[Session: {Type.FullName}] Connectors {ConnectorTypes.Length}".ToLog();
@@ -266,6 +248,7 @@ namespace Vvr.Session
         {
             if (m_ConnectedProviders == null) return this;
 
+            pType = Vvr.Provider.Provider.ExtractType(pType);
             if (m_ConnectedProviders.Remove(pType, out var provider))
             {
                 for (var i = 0; i < ConnectorTypes.Length; i++)

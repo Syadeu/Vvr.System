@@ -20,19 +20,17 @@
 #endregion
 
 using System;
-using Cysharp.Threading.Tasks;
 using UnityEngine;
-using Vvr.Provider;
 using Vvr.Session.ContentView.Core;
 
 namespace Vvr.Session.ContentView.Research
 {
     [DisallowMultipleComponent]
-    public abstract class ResearchViewProviderComponent : ContentViewProviderComponent, IResearchViewProvider
+    public abstract class ResearchViewProviderComponent
+        : ContentViewProviderComponent<ResearchViewEvent>, IResearchViewProvider
     {
-        public sealed override Type EventType    => VvrTypeHelper.TypeOf<ResearchViewEvent>.Type;
         public sealed override Type ProviderType => VvrTypeHelper.TypeOf<IResearchViewProvider>.Type;
 
-        public abstract void Initialize(IContentViewEventHandler<ResearchViewEvent> eventHandler);
+        // public abstract void Initialize(IContentViewEventHandler<ResearchViewEvent> eventHandler);
     }
 }
