@@ -88,7 +88,7 @@ namespace Vvr.Session
 
             await OnCreateSession(session);
 
-            if (session is IChildSessionConnector sessionConnector)
+            if (session is IDependencyContainer sessionConnector)
             {
                 // $"[Session: {Type.FullName}] Chain connector to {childType.FullName}".ToLog();
                 using var debugTimer = DebugTimer.Start();
@@ -179,7 +179,7 @@ namespace Vvr.Session
             foreach (var childSession in ChildSessions)
             {
                 if (ReferenceEquals(childSession, provider)) continue;
-                if (childSession is not IChildSessionConnector c) continue;
+                if (childSession is not IDependencyContainer c) continue;
 
                 c.Register(providerType, provider);
             }
@@ -188,7 +188,7 @@ namespace Vvr.Session
         {
             foreach (var childSession in ChildSessions)
             {
-                if (childSession is not IChildSessionConnector c) continue;
+                if (childSession is not IDependencyContainer c) continue;
 
                 c.Unregister(providerType);
             }

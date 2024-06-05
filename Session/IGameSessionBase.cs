@@ -49,51 +49,6 @@ namespace Vvr.Session
         UniTask Reserve();
 
         /// <summary>
-        /// Registers a provider of the specified type with the game session.
-        /// </summary>
-        /// <param name="type">The type of provider to register.</param>
-        /// <param name="provider">The provider to register.</param>
-        /// <returns>The game session instance.</returns>
-        [PublicAPI]
-        IGameSessionBase Register([NotNull] Type type, IProvider provider);
-
-        /// <summary>
-        /// Connects the specified provider to the game session.
-        /// </summary>
-        /// <remarks>
-        /// If connector found, also connect provider respectfully.
-        /// </remarks>
-        /// <typeparam name="TProvider">The type of the provider.</typeparam>
-        /// <param name="provider">The provider instance to connect.</param>
-        [PublicAPI]
-        [ContractAnnotation("provider:null => halt")]
-        IGameSessionBase Register<TProvider>([NotNull] TProvider provider) where TProvider : IProvider;
-
-        /// <summary>
-        /// Unregisters a provider of the specified type from the game session.
-        /// </summary>
-        /// <param name="providerType">The type of the provider to unregister.</param>
-        /// <returns>
-        /// The current instance of the game session after unregistering the provider.
-        /// </returns>
-        [PublicAPI]
-        IGameSessionBase Unregister(Type providerType);
-
-        /// <summary>
-        /// Disconnects the specified provider from the game session.
-        /// </summary>
-        /// <typeparam name="TProvider">The type of the provider.</typeparam>
-        /// <remarks>
-        /// This method disconnects the specified provider from the game session.
-        /// The provider must implement the <see cref="IProvider"/> interface.
-        ///
-        /// If there is relevant connectors also disconnect respectfully.
-        /// </remarks>
-        /// <seealso cref="Register{TProvider}"/>
-        [PublicAPI]
-        IGameSessionBase Unregister<TProvider>() where TProvider : IProvider;
-
-        /// <summary>
         /// Connects a connector to the session for the specified provider.
         /// </summary>
         /// <remarks>

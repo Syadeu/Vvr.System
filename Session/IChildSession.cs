@@ -28,7 +28,7 @@ namespace Vvr.Session
     /// <summary>
     /// Represents a child session.
     /// </summary>
-    public interface IChildSession : IGameSessionBase, ISessionTarget
+    public interface IChildSession : IGameSessionBase, ISessionTarget, IDependencyContainer
     {
         /// <summary>
         /// Represents the type of the session.

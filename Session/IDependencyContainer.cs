@@ -20,17 +20,15 @@
 #endregion
 
 using System;
+using JetBrains.Annotations;
 using Vvr.Provider;
 
 namespace Vvr.Session
 {
-    /// <summary>
-    /// Connect provider interface to session for internal uses.
-    /// </summary>
-    internal interface IChildSessionConnector
+    public interface IDependencyContainer
     {
         /// <summary>
-        /// Connects the provider interface to the session for internal uses.
+        /// Connects the provider interface to the session.
         /// </summary>
         /// <param name="pType">The type of the provider.</param>
         /// <param name="provider">The instance of the provider.</param>
@@ -38,7 +36,9 @@ namespace Vvr.Session
         /// This method connects the specified provider interface to the session for internal use within the ChildSession class.
         /// It is used to establish communication between the session and the provider.
         /// </remarks>
-        void Register(Type pType, IProvider provider);
+        IDependencyContainer Register([NotNull] Type pType, IProvider provider);
+        IDependencyContainer Register<TProvider>([NotNull] TProvider provider) where TProvider : IProvider;
+
         /// <summary>
         /// Disconnects the provider interface from the session.
         /// </summary>
@@ -46,6 +46,7 @@ namespace Vvr.Session
         /// <remarks>
         /// This method disconnects the specified provider interface from the session. It is used to terminate communication between the session and the provider.
         /// </remarks>
-        void Unregister(Type pType);
+        IDependencyContainer Unregister([NotNull] Type pType);
+        IDependencyContainer Unregister<TProvider>() where TProvider : IProvider;
     }
 }

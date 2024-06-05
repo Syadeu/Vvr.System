@@ -40,7 +40,7 @@ namespace Vvr.Session
     /// </summary>
     /// <typeparam name="TSessionData">The type of session data associated with the session.</typeparam>
     [Preserve, UnityEngine.Scripting.RequireDerived]
-    public abstract class ChildSession<TSessionData> : IChildSession, IChildSessionConnector, IDisposable
+    public abstract class ChildSession<TSessionData> : IChildSession, IDependencyContainer, IDisposable
         where TSessionData : ISessionData
     {
         private          Type                        m_Type;
@@ -247,30 +247,63 @@ namespace Vvr.Session
 
         protected virtual void Register(ConditionResolver conditionResolver) {}
 
-        public IGameSessionBase Register(Type type, IProvider provider)
+        public IDependencyContainer Register(Type pType, IProvider provider)
         {
-            type = Vvr.Provider.Provider.ExtractType(type);
-            IChildSessionConnector t = this;
-            t.Register(type, provider);
+            EvaluateProviderRegistration(pType, provider);
 
+            // $"[Session: {Type.FullName}] Connectors {ConnectorTypes.Length}".ToLog();
+            m_ConnectedProviders[pType] = provider;
+            {
+                foreach (var connectorType in ConnectorTypes)
+                {
+                    // $"[Session:{Type.FullName}] Found {connectorType.FullName}".ToLog();
+                    if (connectorType.GetGenericArguments()[0] != pType)
+                    {
+                        // $"{connectorType.GetGenericArguments()[0].AssemblyQualifiedName} != {pType.AssemblyQualifiedName}"
+                        // .ToLog();
+                        continue;
+                    }
+
+                    ConnectorReflectionUtils.Connect(connectorType, this, provider);
+                    break;
+                }
+            }
+
+            ConnectObservers(pType, provider);
+            // $"[Session:{Type.FullName}] Connected {pType.FullName}".ToLog();
+
+            OnProviderRegistered(pType, provider);
             return this;
         }
 
-        public IGameSessionBase Unregister(Type providerType)
+        public IDependencyContainer Unregister(Type pType)
         {
-            providerType = Vvr.Provider.Provider.ExtractType(providerType);
+            if (m_ConnectedProviders == null) return this;
 
-            IChildSessionConnector t = this;
-            t.Unregister(providerType);
+            if (m_ConnectedProviders.Remove(pType, out var provider))
+            {
+                for (var i = 0; i < ConnectorTypes.Length; i++)
+                {
+                    var connectorType = ConnectorTypes[i];
+                    if (connectorType.GetGenericArguments()[0] != pType) continue;
 
+                    ConnectorReflectionUtils.Disconnect(connectorType, this, provider);
+                    $"[Session:{Type.FullName}] Disconnected {pType.FullName}".ToLog();
+                    break;
+                }
+
+                DisconnectObservers(pType);
+            }
+
+            OnProviderUnregistered(pType);
             return this;
         }
-        public IGameSessionBase Register<TProvider>(TProvider provider) where TProvider : IProvider
+        public IDependencyContainer Register<TProvider>(TProvider provider) where TProvider : IProvider
         {
             Type pType = typeof(TProvider);
             return Register(pType, provider);
         }
-        public IGameSessionBase Unregister<TProvider>() where TProvider : IProvider
+        public IDependencyContainer Unregister<TProvider>() where TProvider : IProvider
         {
             Type pType = typeof(TProvider);
             return Unregister(pType);
@@ -419,60 +452,13 @@ namespace Vvr.Session
             return this;
         }
 
-        void IChildSessionConnector.Register(Type pType, IProvider provider)
-        {
-            EvaluateProviderRegistration(pType, provider);
 
-            // $"[Session: {Type.FullName}] Connectors {ConnectorTypes.Length}".ToLog();
-            m_ConnectedProviders[pType] = provider;
-            {
-                foreach (var connectorType in ConnectorTypes)
-                {
-                    // $"[Session:{Type.FullName}] Found {connectorType.FullName}".ToLog();
-                    if (connectorType.GetGenericArguments()[0] != pType)
-                    {
-                        // $"{connectorType.GetGenericArguments()[0].AssemblyQualifiedName} != {pType.AssemblyQualifiedName}"
-                        // .ToLog();
-                        continue;
-                    }
-
-                    ConnectorReflectionUtils.Connect(connectorType, this, provider);
-                    break;
-                }
-            }
-
-            ConnectObservers(pType, provider);
-            // $"[Session:{Type.FullName}] Connected {pType.FullName}".ToLog();
-
-            OnProviderRegistered(pType, provider);
-        }
-        void IChildSessionConnector.Unregister(Type pType)
-        {
-            if (m_ConnectedProviders == null) return;
-
-            if (m_ConnectedProviders.Remove(pType, out var provider))
-            {
-                for (var i = 0; i < ConnectorTypes.Length; i++)
-                {
-                    var connectorType = ConnectorTypes[i];
-                    if (connectorType.GetGenericArguments()[0] != pType) continue;
-
-                    ConnectorReflectionUtils.Disconnect(connectorType, this, provider);
-                    $"[Session:{Type.FullName}] Disconnected {pType.FullName}".ToLog();
-                    break;
-                }
-
-                DisconnectObservers(pType);
-            }
-
-            OnProviderUnregistered(pType);
-        }
         /// <summary>
         /// Unregisters all connected providers from the child session.
         /// </summary>
         private void UnregisterAll()
         {
-            IChildSessionConnector t = this;
+            IDependencyContainer t = this;
             foreach (var pType in m_ConnectedProviders.Keys.ToArray())
             {
                 t.Unregister(pType);

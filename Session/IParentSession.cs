@@ -29,7 +29,7 @@ namespace Vvr.Session
     /// <summary>
     /// Represents a parent session.
     /// </summary>
-    public interface IParentSession : IGameSessionBase, ISessionTarget
+    public interface IParentSession : IGameSessionBase, ISessionTarget, IDependencyContainer
     {
         /// <summary>
         /// Gets the list of child sessions associated with the parent session.
