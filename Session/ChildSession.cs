@@ -40,7 +40,7 @@ namespace Vvr.Session
     /// </summary>
     /// <typeparam name="TSessionData">The type of session data associated with the session.</typeparam>
     [Preserve, UnityEngine.Scripting.RequireDerived]
-    public abstract class ChildSession<TSessionData> : IChildSession, IDependencyContainer, IDisposable
+    public abstract class ChildSession<TSessionData> : IChildSession, IDisposable
         where TSessionData : ISessionData
     {
         private          Type                        m_Type;
@@ -396,7 +396,7 @@ namespace Vvr.Session
             }
         }
 
-        public IGameSessionBase Connect<TProvider>(IConnector<TProvider> c) where TProvider : IProvider
+        public IDependencyContainer Connect<TProvider>(IConnector<TProvider> c) where TProvider : IProvider
         {
             const string debugName  = "ChildSession.Connect<TProvider>";
             using var    debugTimer = DebugTimer.StartWithCustomName(debugName);
@@ -432,7 +432,7 @@ namespace Vvr.Session
 
             return this;
         }
-        public IGameSessionBase Disconnect<TProvider>(IConnector<TProvider> c) where TProvider : IProvider
+        public IDependencyContainer Disconnect<TProvider>(IConnector<TProvider> c) where TProvider : IProvider
         {
             const string debugName  = "ChildSession.Disconnect<TProvider>";
             using var    debugTimer = DebugTimer.StartWithCustomName(debugName);

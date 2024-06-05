@@ -47,49 +47,5 @@ namespace Vvr.Session
         /// </summary>
         /// <returns>A UniTask representing the completion of reserving the game session.</returns>
         UniTask Reserve();
-
-        /// <summary>
-        /// Connects a connector to the session for the specified provider.
-        /// </summary>
-        /// <remarks>
-        /// If target provider already registerd, connect immediately.
-        /// </remarks>
-        /// <typeparam name="TProvider">The type of the provider.</typeparam>
-        /// <param name="c">The connector to connect.</param>
-        /// <returns>void</returns>
-        [PublicAPI]
-        [ContractAnnotation("c:null => halt")]
-        IGameSessionBase Connect<TProvider>([NotNull] IConnector<TProvider> c) where TProvider : IProvider;
-
-        /// <summary>
-        /// Disconnects the specified provider from the game session.
-        /// </summary>
-        /// <typeparam name="TProvider">The type of provider to disconnect.</typeparam>
-        /// <param name="c">The connector of the provider.</param>
-        [PublicAPI]
-        [ContractAnnotation("c:null => halt")]
-        IGameSessionBase Disconnect<TProvider>([NotNull] IConnector<TProvider> c) where TProvider : IProvider;
-
-        /// <summary>
-        /// Recursively gets the provider of the specified type.
-        /// </summary>
-        /// <typeparam name="TProvider">The type of the provider to retrieve.</typeparam>
-        /// <returns>The provider of the specified type if it exists, otherwise null.</returns>
-        [PublicAPI, CanBeNull]
-        TProvider GetProviderRecursive<TProvider>() where TProvider : class, IProvider;
-
-        /// <summary>
-        /// Retrieves a provider recursively from the game session hierarchy based on the specified provider type.
-        /// </summary>
-        /// <remarks>
-        /// This method searches for a provider of the specified type in the current session and its parent sessions recursively.
-        /// If a match is found, the provider is returned. Otherwise, null is returned.
-        /// </remarks>
-        /// <param name="providerType">The type of the provider to retrieve.</param>
-        /// <returns>The provider of the specified type, or null if not found.</returns>
-        /// <exception cref="ArgumentNullException">Thrown if <paramref name="providerType"/> is null.</exception>
-        [PublicAPI, CanBeNull]
-        [ContractAnnotation("providerType:null => halt")]
-        IProvider GetProviderRecursive([NotNull] Type providerType);
     }
 }
