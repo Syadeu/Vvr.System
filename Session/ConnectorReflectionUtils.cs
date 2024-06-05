@@ -109,6 +109,11 @@ namespace Vvr.Session
             }
         }
 
+        [ThreadStatic]
+        private static Type s_PreviousConnectType;
+        [ThreadStatic]
+        private static MethodInfo s_PreviousConnectMethodInfo;
+
         /// <summary>
         /// Connects the specified connector to the given value.
         /// </summary>
@@ -120,17 +125,24 @@ namespace Vvr.Session
             const string debugName = nameof(ConnectorReflectionUtils) + "." + nameof(Connect);
             using var    timer     = DebugTimer.StartWithCustomName(debugName);
 
-            var methodInfo = connectorType.GetMethod(
-                nameof(IConnector<ConnectorImpl>.Connect),
-                BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
-
-            if (methodInfo == null)
+            if (s_PreviousConnectType != connectorType ||
+                s_PreviousConnectMethodInfo is null)
             {
-                throw new InvalidOperationException($"{connectorType} not found");
+                MethodInfo methodInfo = connectorType.GetMethod(
+                    nameof(IConnector<ConnectorImpl>.Connect),
+                    BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+
+                if (methodInfo == null)
+                {
+                    throw new InvalidOperationException($"{connectorType} not found");
+                }
+
+                s_PreviousConnectType       = connectorType;
+                s_PreviousConnectMethodInfo = methodInfo;
             }
 
             s_MethodParameter.Value[0] = value;
-            methodInfo.Invoke(connector, s_MethodParameter.Value);
+            s_PreviousConnectMethodInfo.Invoke(connector, s_MethodParameter.Value);
         }
 
         /// <summary>

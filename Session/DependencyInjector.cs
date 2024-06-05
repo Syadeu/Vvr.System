@@ -53,8 +53,18 @@ namespace Vvr.Session
         }
 
 #if UNITY_EDITOR
+        /// <summary>
+        /// Registers all connectors in the game objects by adding them to the list of objects.
+        /// </summary>
+        /// <remarks>
+        /// This method is responsible for finding all game objects that have connectors attached to them and adding them to the list of objects in the <see cref="DependencyInjector"/> class.
+        /// </remarks>
         [PropertySpace]
         [Button(DirtyOnClick = true)]
+        [DetailedInfoBox(
+            "Registers all connectors in the game objects by adding them to the list of objects.",
+            "This method is responsible for finding all game objects that have connectors attached to them " +
+            "and adding them to the list of objects in the \"DependencyInjector\" class.")]
         private void RegisterAllConnectors()
         {
             HashSet<GameObject> list = new();

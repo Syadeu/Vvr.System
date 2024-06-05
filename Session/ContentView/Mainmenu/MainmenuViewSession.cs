@@ -124,7 +124,8 @@ namespace Vvr.Session.ContentView.Mainmenu
             // after world has been initialized
             await UniTask.WaitWhile(() => ViewProvider is null);
 
-            await ViewProvider.OpenAsync(CanvasViewProvider, m_AssetProvider, null);
+            GameObject obj = await ViewProvider.OpenAsync(CanvasViewProvider, m_AssetProvider, null);
+            this.Inject(obj);
         }
 
         void IConnector<IActorDataProvider>.Connect(IActorDataProvider t) => m_ActorDataProvider = t;

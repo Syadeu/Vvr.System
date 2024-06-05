@@ -185,9 +185,35 @@ namespace Vvr.Session
             foreach (var item in container.GetEnumerable())
             {
                 Type connectorType = ConnectorReflectionUtils.GetConnectorType(item.Key);
-                foreach (var com in go.GetComponentsInChildren(connectorType))
+                InjectRecursive(container, go, connectorType, item.Value);
+            }
+        }
+
+        private static void InjectRecursive(
+            IDependencyContainer container,
+            GameObject go, Type connectorType, IProvider provider)
+        {
+            var queue = new Queue<GameObject>(2);
+            queue.Enqueue(go);
+
+            while (queue.Count > 0)
+            {
+                GameObject current = queue.Dequeue();
+
+                if (current.TryGetComponent(out DependencyInjector injector))
                 {
-                    ConnectorReflectionUtils.Connect(connectorType, com, item.Value);
+                    Inject(container, injector);
+                    continue;
+                }
+
+                foreach (var com in current.GetComponents(connectorType))
+                {
+                    ConnectorReflectionUtils.Connect(connectorType, com, provider);
+                }
+
+                foreach (Transform child in current.transform)
+                {
+                    queue.Enqueue(child.gameObject);
                 }
             }
         }

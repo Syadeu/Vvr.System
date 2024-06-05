@@ -31,6 +31,7 @@ namespace Vvr.Session.ContentView.Core
 {
     [HideMonoScript]
     [RequireComponent(typeof(Button))]
+    [DisallowMultipleComponent]
     public abstract class ContentViewEventButton<TEvent> : MonoBehaviour,
         IConnector<IContentViewEventHandler<TEvent>>
         where TEvent: struct, IConvertible
