@@ -28,6 +28,7 @@ using System.Threading;
 using Cathei.BakingSheet.Internal;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
+using UnityEngine;
 using UnityEngine.Assertions;
 using Vvr.Controller.Condition;
 using Vvr.Provider;
@@ -64,11 +65,13 @@ namespace Vvr.Session
             {
                 if (m_ConnectorTypes == null)
                 {
-                    var tp = typeof(IConnector<>);
-                    m_ConnectorTypes =
-                        Type.GetInterfaces()
-                            .Where(x=>x.IsGenericType && x.GetGenericTypeDefinition() == tp)
-                            .ToArray();
+                    // var tp = typeof(IConnector<>);
+                    // m_ConnectorTypes =
+                    //     Type.GetInterfaces()
+                    //         .Where(x=>x.IsGenericType && x.GetGenericTypeDefinition() == tp)
+                    //         .ToArray();
+
+                    m_ConnectorTypes = ConnectorReflectionUtils.GetAllConnectors(Type).ToArray();
                 }
 
                 return m_ConnectorTypes;
@@ -329,13 +332,50 @@ namespace Vvr.Session
             return result;
         }
 
+        [PublicAPI]
+        protected void Inject(object to)
+        {
+            const string debugName  = "ChildSession.Inject";
+            using var    debugTimer = DebugTimer.StartWithCustomName(debugName);
+
+            Type t = to.GetType();
+            foreach (var connectorType in ConnectorReflectionUtils.GetAllConnectors(t))
+            {
+                Type providerType = connectorType.GetGenericArguments()[0];
+                if (!m_ConnectedProviders.TryGetValue(providerType, out var p)) continue;
+
+                ConnectorReflectionUtils.Connect(connectorType, to, p);
+            }
+        }
+        [PublicAPI]
+        protected void Inject(GameObject go)
+        {
+            const string debugName  = "ChildSession.Inject";
+            using var    debugTimer = DebugTimer.StartWithCustomName(debugName);
+
+            Type t0 = typeof(IConnector<IProvider>);
+            Type t1 = typeof(IConnector<>).MakeGenericType(typeof(IProvider));
+            Assert.AreEqual(t0, t1);
+
+            foreach (var item in m_ConnectedProviders)
+            {
+                Type connectorType = ConnectorReflectionUtils.GetConnectorType(item.Key);
+                foreach (var com in go.GetComponentsInChildren(connectorType))
+                {
+                    ConnectorReflectionUtils.Connect(connectorType, com, item.Value);
+                }
+            }
+        }
+
         public IGameSessionBase Connect<TProvider>(IConnector<TProvider> c) where TProvider : IProvider
         {
             const string debugName  = "ChildSession.Connect<TProvider>";
             using var    debugTimer = DebugTimer.StartWithCustomName(debugName);
 
             Assert.IsNotNull(c);
-            Assert.IsFalse(ReferenceEquals(this, c), "cannot connect self");
+            if (ReferenceEquals(this, c))
+                throw new InvalidOperationException("cannot connect self");
+
             Type t = typeof(TProvider);
             t = Vvr.Provider.Provider.ExtractType(t);
 

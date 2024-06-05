@@ -101,7 +101,8 @@ namespace Vvr.Session.ContentView.Deck
                 };
             }
 
-            await ViewProvider.OpenAsync(CanvasViewProvider, m_AssetProvider, ctx);
+            var contentObj = await ViewProvider.OpenAsync(CanvasViewProvider, m_AssetProvider, ctx);
+            Inject(contentObj);
         }
         private async UniTask OnClose(DeckViewEvent e, object ctx)
         {

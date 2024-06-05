@@ -1,5 +1,4 @@
 #region Copyrights
-
 // Copyright 2024 Syadeu
 // Author : Seung Ha Kim
 //
@@ -15,15 +14,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// File created : 2024, 06, 04 12:06
-
+// File created : 2024, 06, 04 23:06
 #endregion
 
 using Vvr.Session.ContentView.Core;
 
-namespace Vvr.Session.ContentView.Deck
+namespace Vvr.Session.ContentView.CardCollection
 {
-    class DeckViewEventButton : ContentViewEventButton<DeckViewEvent>
+    public class CardCollectionViewSession
+        : ContentViewChildSession<CardCollectionViewEvent, ICardCollectionViewProvider>
     {
+        public override string DisplayName => nameof(CardCollectionViewSession);
+    }
+
+    public interface ICardCollectionViewProvider : IContentViewProvider<CardCollectionViewEvent>
+    {
+
     }
 }

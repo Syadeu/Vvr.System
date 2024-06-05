@@ -22,6 +22,7 @@
 using System;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
+using UnityEngine;
 using Vvr.Provider;
 
 namespace Vvr.Session.ContentView.Core
@@ -47,7 +48,7 @@ namespace Vvr.Session.ContentView.Core
     /// <summary>
     /// Represents a content view provider interface.
     /// </summary>
-    [AbstractProvider]
+    [PublicAPI, AbstractProvider]
     public interface IContentViewProvider : IProvider
     {
         /// <summary>
@@ -76,7 +77,7 @@ namespace Vvr.Session.ContentView.Core
         /// <param name="assetProvider">The IAssetProvider instance used for opening the ContentViewProvider.</param>
         /// <param name="ctx">The context object passed to OpenAsync method.</param>
         /// <returns>A UniTask representing the asynchronous operation. It completes when the ContentViewProvider is opened.</returns>
-        UniTask OpenAsync(
+        UniTask<GameObject> OpenAsync(
             [NotNull]
             ICanvasViewProvider canvasProvider,
             [NotNull]

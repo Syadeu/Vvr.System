@@ -34,7 +34,7 @@ namespace Vvr.Session.ContentView.Core
 
         public abstract void    Reserve();
 
-        public abstract UniTask OpenAsync(
+        public abstract UniTask<GameObject> OpenAsync(
             ICanvasViewProvider canvasProvider,
             IAssetProvider      assetProvider,
             object              ctx);

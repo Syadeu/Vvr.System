@@ -45,14 +45,5 @@ namespace Vvr.Session.ContentView.Deck
         }
 
         protected virtual void OnInitialize(IContentViewEventHandler<DeckViewEvent> eventHandler){}
-
-        protected void Inject(Transform t)
-        {
-            foreach (var child in
-                     t.GetComponentsInChildren<IConnector<IContentViewEventHandler<DeckViewEvent>>>())
-            {
-                child.Connect(m_EventHandler);
-            }
-        }
     }
 }

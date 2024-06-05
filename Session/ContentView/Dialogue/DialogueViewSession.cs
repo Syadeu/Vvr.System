@@ -144,9 +144,8 @@ namespace Vvr.Session.ContentView.Dialogue
 
             while (wrapper.Data != null)
             {
-                m_DialogueViewProvider
-                    .OpenAsync(CanvasViewProvider, m_AssetProvider, wrapper.Data)
-                    .Forget();
+                await m_DialogueViewProvider
+                    .OpenAsync(CanvasViewProvider, m_AssetProvider, wrapper.Data);
 
                 foreach (var attribute in wrapper.Attributes)
                 {

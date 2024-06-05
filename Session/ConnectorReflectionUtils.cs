@@ -20,6 +20,7 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
 using System.Reflection;
 using Vvr.Provider;
 
@@ -67,6 +68,39 @@ namespace Vvr.Session
             }
         }
 
+        private static readonly Type s_ConnectorGenericType = typeof(IConnector<>);
+
+        private static readonly Dictionary<Type, Type>
+            s_CachedConnectorTypes = new();
+
+        public static Type GetConnectorType(Type providerType)
+        {
+            if (s_CachedConnectorTypes.TryGetValue(providerType, out var r)) return r;
+
+            r = s_ConnectorGenericType.MakeGenericType(providerType);
+
+            s_CachedConnectorTypes[providerType] = r;
+
+            return r;
+        }
+
+        public static IEnumerable<Type> GetAllConnectors(Type type)
+        {
+            const string debugName = nameof(ConnectorReflectionUtils) + "." + nameof(GetAllConnectors);
+            using var    timer     = DebugTimer.StartWithCustomName(debugName);
+
+            var interfaceTypes = type.GetInterfaces();
+            for (int i = 0; i < interfaceTypes.Length; i++)
+            {
+                var e = interfaceTypes[i];
+
+                if (e.IsGenericType && e.GetGenericTypeDefinition() == s_ConnectorGenericType)
+                {
+                    yield return e;
+                }
+            }
+        }
+
         /// <summary>
         /// Connects the specified connector to the given value.
         /// </summary>
@@ -75,7 +109,8 @@ namespace Vvr.Session
         /// <param name="value">The value to connect to.</param>
         public static void Connect(Type connectorType, object connector, object value)
         {
-            using var timer = DebugTimer.Start();
+            const string debugName = nameof(ConnectorReflectionUtils) + "." + nameof(Connect);
+            using var    timer     = DebugTimer.StartWithCustomName(debugName);
 
             var methodInfo = connectorType.GetMethod(
                 nameof(IConnector<ConnectorImpl>.Connect),
@@ -97,7 +132,8 @@ namespace Vvr.Session
         /// <param name="value"></param>
         public static void Disconnect(Type connectorType, object connector, object value)
         {
-            using var timer = DebugTimer.Start();
+            const string debugName = nameof(ConnectorReflectionUtils) + "." + nameof(Disconnect);
+            using var    timer     = DebugTimer.StartWithCustomName(debugName);
 
             var methodInfo = connectorType.GetMethod(
                 nameof(IConnector<ConnectorImpl>.Disconnect),

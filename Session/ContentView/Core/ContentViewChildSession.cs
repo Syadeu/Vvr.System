@@ -57,10 +57,12 @@ namespace Vvr.Session.ContentView.Core
                 throw new InvalidOperationException();
 
             m_EventHandler = CreateEventHandler();
+            Register(typeof(IContentViewEventHandler<TEvent>), m_EventHandler);
             return m_EventHandler;
         }
         void IContentViewChildSession.ReserveEventHandler()
         {
+            Unregister(typeof(IContentViewEventHandler<TEvent>));
             m_EventHandler.Dispose();
             m_EventHandler       = null;
             EventHandlerProvider = null;

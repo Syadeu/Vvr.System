@@ -15,15 +15,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// File created : 2024, 06, 04 12:06
+// File created : 2024, 06, 04 23:06
 
 #endregion
 
-using Vvr.Session.ContentView.Core;
-
-namespace Vvr.Session.ContentView.Deck
+namespace Vvr.Session.ContentView.Core
 {
-    class DeckViewEventButton : ContentViewEventButton<DeckViewEvent>
+    public enum CardCollectionViewEvent : short
     {
+
     }
 }

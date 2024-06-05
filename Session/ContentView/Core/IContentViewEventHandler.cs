@@ -57,7 +57,7 @@ namespace Vvr.Session.ContentView.Core
     /// This interface extends the <see cref="IContentViewEventHandler"/> interface and is used for handling specific ContentView events.
     /// It provides methods for registering and unregistering event delegates, as well as executing the events asynchronously.
     /// </remarks>
-    [LocalProvider]
+    [AbstractProvider]
     public interface IContentViewEventHandler : IProvider, IDisposable
     {
     }
