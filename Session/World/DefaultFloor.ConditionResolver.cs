@@ -30,7 +30,7 @@ namespace Vvr.Session.World
         private bool WasStartedOnce { get; set; }
         private bool Started        { get; set; }
 
-        protected override void Register(ConditionResolver conditionResolver)
+        protected override void SetupConditionResolver(ConditionResolver conditionResolver)
         {
             // While floor manages all given stages and itself,
             // resolve method must only floor and stage.

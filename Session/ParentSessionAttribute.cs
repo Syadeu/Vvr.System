@@ -20,6 +20,7 @@
 #endregion
 
 using System;
+using System.Diagnostics;
 
 namespace Vvr.Session
 {
@@ -38,6 +39,7 @@ namespace Vvr.Session
     /// </code>
     /// </example>
     [AttributeUsage(AttributeTargets.Class)]
+    [Conditional("UNITY_EDITOR")]
     public sealed class ParentSessionAttribute : Attribute
     {
         /// <summary>

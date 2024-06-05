@@ -20,6 +20,7 @@
 #endregion
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -132,36 +133,22 @@ namespace Vvr.Session
         /// </remarks>
         public bool Disposed { get; private set; }
 
+        /// <summary>
+        /// Represents the token used for reserving resources in a session.
+        /// </summary>
+        /// <remarks>
+        /// The ReserveToken property provides a cancellation token that can be used to reserve resources in a session.
+        /// It is accessible in child sessions that derive from the ChildSession base class.
+        /// The ReserveToken is obtained from a CancellationTokenSource and can be used to request cancellation of the operation.
+        /// </remarks>
+        [PublicAPI]
         protected CancellationToken ReserveToken => m_ReserveTokenSource.Token;
 
         UniTask IGameSessionBase.Initialize(Owner owner, IParentSession parent, ISessionData data)
         {
             Owner = owner;
 
-            ParentSessionAttribute att = Type.GetCustomAttribute<ParentSessionAttribute>();
-            if (att != null)
-            {
-                if (parent == null)
-                    throw new InvalidOperationException(
-                        $"Session({Type.FullName}) is trying to create without any parent " +
-                        $"while its child marked by attribute.");
-
-                Type parentType = parent.GetType();
-                if (att.IncludeInherits)
-                {
-                    if (!VvrTypeHelper.InheritsFrom(parentType, att.Type))
-                        throw new InvalidOperationException(
-                            $"Session({Type.FullName}) trying to create under " +
-                            $"{parentType.FullName} is not inherits from {att.Type.FullName}");
-                }
-                else
-                {
-                    if (att.Type != parentType)
-                        throw new InvalidOperationException(
-                            $"Session({Type.FullName}) trying to create under " +
-                            $"{parentType.FullName} but only accepts {att.Type.FullName}");
-                }
-            }
+            EvaluateSessionCreation(parent);
 
             if (m_ReserveTokenSource != null)
             {
@@ -177,7 +164,7 @@ namespace Vvr.Session
             m_Initialized = true;
 
             m_ConditionResolver = Controller.Condition.ConditionResolver.Create(this, parent?.ConditionResolver);
-            Register(m_ConditionResolver);
+            SetupConditionResolver(m_ConditionResolver);
 
             m_ReserveTokenSource = new();
 
@@ -245,7 +232,7 @@ namespace Vvr.Session
         [PublicAPI]
         protected virtual UniTask OnReserve() => UniTask.CompletedTask;
 
-        protected virtual void Register(ConditionResolver conditionResolver) {}
+        #region IDependencyContainer
 
         public IDependencyContainer Register(Type pType, IProvider provider)
         {
@@ -275,7 +262,6 @@ namespace Vvr.Session
             OnProviderRegistered(pType, provider);
             return this;
         }
-
         public IDependencyContainer Unregister(Type pType)
         {
             if (m_ConnectedProviders == null) return this;
@@ -365,37 +351,6 @@ namespace Vvr.Session
             return result;
         }
 
-        [PublicAPI]
-        protected void Inject(object to)
-        {
-            const string debugName  = "ChildSession.Inject";
-            using var    debugTimer = DebugTimer.StartWithCustomName(debugName);
-
-            Type t = to.GetType();
-            foreach (var connectorType in ConnectorReflectionUtils.GetAllConnectors(t))
-            {
-                Type providerType = connectorType.GetGenericArguments()[0];
-                if (!m_ConnectedProviders.TryGetValue(providerType, out var p)) continue;
-
-                ConnectorReflectionUtils.Connect(connectorType, to, p);
-            }
-        }
-        [PublicAPI]
-        protected void Inject(GameObject go)
-        {
-            const string debugName  = "ChildSession.Inject";
-            using var    debugTimer = DebugTimer.StartWithCustomName(debugName);
-
-            foreach (var item in m_ConnectedProviders)
-            {
-                Type connectorType = ConnectorReflectionUtils.GetConnectorType(item.Key);
-                foreach (var com in go.GetComponentsInChildren(connectorType))
-                {
-                    ConnectorReflectionUtils.Connect(connectorType, com, item.Value);
-                }
-            }
-        }
-
         public IDependencyContainer Connect<TProvider>(IConnector<TProvider> c) where TProvider : IProvider
         {
             const string debugName  = "ChildSession.Connect<TProvider>";
@@ -452,6 +407,17 @@ namespace Vvr.Session
             return this;
         }
 
+        bool IDependencyContainer.TryGetProvider(Type providerType, out IProvider provider)
+        {
+            return m_ConnectedProviders.TryGetValue(providerType, out provider);
+        }
+
+        IEnumerable<KeyValuePair<Type, IProvider>> IDependencyContainer.GetEnumerable()
+        {
+            return m_ConnectedProviders;
+        }
+
+        #endregion
 
         /// <summary>
         /// Unregisters all connected providers from the child session.
@@ -518,12 +484,44 @@ namespace Vvr.Session
 
         [Conditional("UNITY_EDITOR")]
         [Conditional("DEVELOPMENT_BUILD")]
+        protected virtual void EvaluateSessionCreation(IParentSession parent)
+        {
+            ParentSessionAttribute att = Type.GetCustomAttribute<ParentSessionAttribute>();
+            if (att != null)
+            {
+                if (parent == null)
+                    throw new InvalidOperationException(
+                        $"Session({Type.FullName}) is trying to create without any parent " +
+                        $"while its child marked by attribute.");
+
+                Type parentType = parent.Type;
+                if (att.IncludeInherits)
+                {
+                    if (!VvrTypeHelper.InheritsFrom(parentType, att.Type))
+                        throw new InvalidOperationException(
+                            $"Session({Type.FullName}) trying to create under " +
+                            $"{parentType.FullName} is not inherits from {att.Type.FullName}");
+                }
+                else
+                {
+                    if (att.Type != parentType)
+                        throw new InvalidOperationException(
+                            $"Session({Type.FullName}) trying to create under " +
+                            $"{parentType.FullName} but only accepts {att.Type.FullName}");
+                }
+            }
+        }
+
+        [Conditional("UNITY_EDITOR")]
+        [Conditional("DEVELOPMENT_BUILD")]
         protected virtual void EvaluateProviderRegistration(Type providerType, IProvider provider)
         {
             if (m_ConnectedProviders.TryGetValue(providerType, out var existing) &&
                 !ReferenceEquals(existing, provider))
                 throw new InvalidOperationException($"Already registered {providerType.FullName}.");
         }
+
+        protected virtual void SetupConditionResolver(ConditionResolver conditionResolver) {}
 
         /// <summary>
         /// This method is called when a provider is registered with the child session.

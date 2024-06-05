@@ -31,6 +31,8 @@ namespace Vvr.Session
     /// </summary>
     public interface IParentSession : IGameSessionBase, ISessionTarget, IDependencyContainer
     {
+        Type Type { get; }
+
         /// <summary>
         /// Gets the list of child sessions associated with the parent session.
         /// </summary>

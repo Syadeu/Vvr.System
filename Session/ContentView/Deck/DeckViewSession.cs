@@ -102,7 +102,7 @@ namespace Vvr.Session.ContentView.Deck
             }
 
             var contentObj = await ViewProvider.OpenAsync(CanvasViewProvider, m_AssetProvider, ctx);
-            Inject(contentObj);
+            this.Inject(contentObj);
         }
         private async UniTask OnClose(DeckViewEvent e, object ctx)
         {
