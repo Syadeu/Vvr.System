@@ -29,6 +29,10 @@ using Vvr.Provider;
 
 namespace Vvr.Session.ContentView.Core
 {
+    /// <summary>
+    /// Base class for buttons that handle ContentView events.
+    /// </summary>
+    /// <typeparam name="TEvent">The type of ContentView event that the button handles.</typeparam>
     [HideMonoScript]
     [RequireComponent(typeof(Button))]
     [DisallowMultipleComponent]
@@ -40,6 +44,10 @@ namespace Vvr.Session.ContentView.Core
 
         private Button m_Button;
 
+        /// <summary>
+        /// Event handler interface for ContentView events.
+        /// </summary>
+        /// <typeparam name="TEvent">The type of ContentView event that the event handler handles.</typeparam>
         [PublicAPI]
         protected IContentViewEventHandler<TEvent> EventHandler { get; private set; }
 
@@ -57,6 +65,9 @@ namespace Vvr.Session.ContentView.Core
             Button.onClick.AddListener(OnClick);
         }
 
+        /// <summary>
+        /// Called when the button is clicked.
+        /// </summary>
         protected virtual void OnClick()
         {
             EventHandler?.ExecuteAsync(m_Event).Forget();

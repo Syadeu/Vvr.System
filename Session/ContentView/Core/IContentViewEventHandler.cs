@@ -38,21 +38,50 @@ namespace Vvr.Session.ContentView.Core
     /// <summary>
     /// Event handler interface for ContentView events.
     /// </summary>
-    [LocalProvider]
+    [PublicAPI, LocalProvider]
     public interface IContentViewEventHandler<TEvent> : IContentViewEventHandler
         where TEvent : struct, IConvertible
     {
+        /// <summary>
+        /// Registers an event delegate for the specified event.
+        /// </summary>
+        /// <typeparam name="TEvent">The type of event to register.</typeparam>
+        /// <param name="e">The event to register.</param>
+        /// <param name="x">The event delegate to be invoked when the event is triggered.</param>
+        /// <returns>The updated instance of the <see cref="IContentViewEventHandler{TEvent}"/> interface.</returns>
+        [NotNull]
         IContentViewEventHandler<TEvent> Register(TEvent   e, [NotNull] ContentViewEventDelegate<TEvent> x);
+
+        /// <summary>
+        /// Unregisters an event delegate for the specified event.
+        /// </summary>
+        /// <typeparam name="TEvent">The type of event to unregister.</typeparam>
+        /// <param name="e">The event to unregister.</param>
+        /// <param name="x">The event delegate to be unregistered.</param>
+        /// <returns>The updated instance of the <see cref="IContentViewEventHandler{TEvent}"/> interface.</returns>
+        [NotNull]
         IContentViewEventHandler<TEvent> Unregister(TEvent e, [NotNull] ContentViewEventDelegate<TEvent> x);
 
+        /// <summary>
+        /// Executes the specified event asynchronously.
+        /// </summary>
+        /// <typeparam name="TEvent">The type of event to execute.</typeparam>
+        /// <param name="e">The event to execute.</param>
+        /// <returns>A <see cref="UniTask"/> representing the asynchronous operation.</returns>
         UniTask ExecuteAsync(TEvent e);
+
+        /// <summary>
+        /// Executes the specified event asynchronously.
+        /// </summary>
+        /// <param name="e">The event to execute.</param>
+        /// <param name="ctx">The context object to pass to the event handler. Can be null.</param>
+        /// <returns>A <see cref="UniTask"/> representing the asynchronous execution of the event.</returns>
         UniTask ExecuteAsync(TEvent e, [CanBeNull] object ctx);
     }
 
     /// <summary>
     /// Event handler interface for ContentView events.
     /// </summary>
-    /// <typeparam name="TEvent">The type of the ContentView event.</typeparam>
     /// <remarks>
     /// This interface extends the <see cref="IContentViewEventHandler"/> interface and is used for handling specific ContentView events.
     /// It provides methods for registering and unregistering event delegates, as well as executing the events asynchronously.

@@ -21,6 +21,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using Vvr.Provider;
@@ -57,11 +58,20 @@ namespace Vvr.Session.ContentView
 
             public IContentViewEventHandler Resolve(Type eventType)
             {
+                EvaluateEventType(eventType);
                 return ViewEventHandlers[eventType];
             }
             public IContentViewEventHandler<TEvent> Resolve<TEvent>() where TEvent : struct, IConvertible
             {
                 return (IContentViewEventHandler<TEvent>)Resolve(VvrTypeHelper.TypeOf<TEvent>.Type);
+            }
+
+            [Conditional("UNITY_EDITOR")]
+            [Conditional("DEVELOPMENT_BUILD")]
+            private static void EvaluateEventType(Type t)
+            {
+                if (!t.IsEnum)
+                    throw new InvalidOperationException(t.FullName);
             }
 
             public void Dispose()

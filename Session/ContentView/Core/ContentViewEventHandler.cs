@@ -28,12 +28,17 @@ using JetBrains.Annotations;
 
 namespace Vvr.Session.ContentView.Core
 {
-    class ContentViewEventHandler<TEvent> : IContentViewEventHandler<TEvent>
+    /// <summary>
+    /// Represents an event handler for ContentView events.
+    /// </summary>
+    /// <typeparam name="TEvent">The event type.</typeparam>
+    internal sealed class ContentViewEventHandler<TEvent> : IContentViewEventHandler<TEvent>
         where TEvent : struct, IConvertible
     {
         private readonly Dictionary<TEvent, List<uint>>                     m_Actions   = new();
         private readonly Dictionary<uint, ContentViewEventDelegate<TEvent>> m_ActionMap = new();
 
+        // TODO: multi-threaded ui task job
         private SpinLock m_SpinLock;
 
         private readonly CancellationTokenSource m_CancellationTokenSource = new();
@@ -113,10 +118,22 @@ namespace Vvr.Session.ContentView.Core
             int count = list.Count;
             var array = ArrayPool<UniTask>.Shared.Rent(count);
 
-            for (int i = 0; i < count; i++)
+            bool lt = false;
+            try
             {
-                array[i] = m_ActionMap[list[i]](e, null)
-                    .AttachExternalCancellation(m_CancellationTokenSource.Token);
+                m_SpinLock.Enter(ref lt);
+
+                for (int i = 0; i < count; i++)
+                {
+                    array[i] = m_ActionMap[list[i]](e, null)
+                        .AttachExternalCancellation(m_CancellationTokenSource.Token)
+                        .SuppressCancellationThrow()
+                        ;
+                }
+            }
+            finally
+            {
+                if (lt) m_SpinLock.Exit();
             }
 
             await UniTask.WhenAll(array);
@@ -130,10 +147,20 @@ namespace Vvr.Session.ContentView.Core
             int count = list.Count;
             var array = ArrayPool<UniTask>.Shared.Rent(count);
 
-            for (int i = 0; i < count; i++)
+            bool lt = false;
+            try
             {
-                array[i] = m_ActionMap[list[i]](e, ctx)
-                    .AttachExternalCancellation(m_CancellationTokenSource.Token);
+                m_SpinLock.Enter(ref lt);
+
+                for (int i = 0; i < count; i++)
+                {
+                    array[i] = m_ActionMap[list[i]](e, ctx)
+                        .AttachExternalCancellation(m_CancellationTokenSource.Token);
+                }
+            }
+            finally
+            {
+                if (lt) m_SpinLock.Exit();
             }
 
             await UniTask.WhenAll(array);

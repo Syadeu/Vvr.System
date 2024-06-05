@@ -259,8 +259,10 @@ namespace Vvr.Session
         /// It also connects the connector of the specified type with the provider on each game object that has the connector component.
         /// </remarks>
         private static void InjectRecursive(
-            IDependencyContainer container,
-            GameObject go, Type connectorType, IProvider provider)
+            [NotNull] IDependencyContainer container,
+            [NotNull] GameObject go,
+            [NotNull] Type       connectorType,
+            [NotNull] IProvider  provider)
         {
             const string debugName  = "DependencyContainerExtensions.InjectRecursive";
             using var    debugTimer = DebugTimer.StartWithCustomName(debugName);
@@ -303,8 +305,10 @@ namespace Vvr.Session
         /// Otherwise, the method iterates over all registered connectors in the container, and detaches the game object recursively for each connector type using this method.
         /// </remarks>
         private static void DetachRecursive(
-            IDependencyContainer container,
-            GameObject go, Type connectorType, IProvider provider)
+            [NotNull] IDependencyContainer container,
+            [NotNull] GameObject           go,
+            [NotNull] Type                 connectorType,
+            [NotNull] IProvider            provider)
         {
             const string debugName  = "DependencyContainerExtensions.DetachRecursive";
             using var    debugTimer = DebugTimer.StartWithCustomName(debugName);
@@ -344,7 +348,8 @@ namespace Vvr.Session
         /// If the specified object is a game object, it first tries to find a `DependencyInjector` component attached to the game object. If found, it invokes the `Inject` method of the `DependencyInjector` to perform the injection.
         /// If the specified object is not a game object or does not have a `DependencyInjector`, it iterates over all registered dependencies in the container and performs the injection manually.
         /// </remarks>
-        private static void Inject([NotNull] IDependencyContainer container, [NotNull] DependencyInjector injector)
+        private static void Inject(
+            [NotNull] IDependencyContainer container, [NotNull] DependencyInjector injector)
         {
             const string debugName  = "DependencyContainerExtensions.Inject(IDependencyContainer, DependencyInjector)";
             using var    debugTimer = DebugTimer.StartWithCustomName(debugName);
@@ -359,13 +364,14 @@ namespace Vvr.Session
         /// Detaches the specified game object from the dependency container.
         /// </summary>
         /// <param name="container">The dependency container to detach from.</param>
-        /// <param name="go">The game object to detach.</param>
+        /// <param name="injector">The game object to detach.</param>
         /// <remarks>
         /// This method detaches the specified game object from the dependency container. It is used to remove the game object from any registered connectors and disconnect any associated dependencies.
         /// If the game object has a <see cref="DependencyInjector"/> component attached, it will be detached using <see cref="Detach(IDependencyContainer, DependencyInjector)"/> method.
         /// Otherwise, the method iterates over all registered connectors in the container, and detaches the game object recursively for each connector type using <see cref="DetachRecursive(IDependencyContainer, GameObject, Type, IProvider)"/> method.
         /// </remarks>
-        private static void Detach([NotNull] IDependencyContainer container, [NotNull] DependencyInjector injector)
+        private static void Detach(
+            [NotNull] IDependencyContainer container, [NotNull] DependencyInjector injector)
         {
             const string debugName  = "DependencyContainerExtensions.Detach(IDependencyContainer, DependencyInjector)";
             using var    debugTimer = DebugTimer.StartWithCustomName(debugName);

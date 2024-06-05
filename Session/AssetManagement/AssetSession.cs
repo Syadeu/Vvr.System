@@ -152,25 +152,29 @@ namespace Vvr.Session.AssetManagement
             int i = 0;
             foreach (IResourceLocation location in m_PreloadedLocations)
             {
-                var loadhandle = Addressables.LoadAssetAsync<UnityEngine.Object>(location);
-                var loadTask = loadhandle.ToUniTask()
+                var loadHandle = Addressables.LoadAssetAsync<UnityEngine.Object>(location);
+                var loadTask = loadHandle.ToUniTask()
                     .SuppressCancellationThrow()
                     .AttachExternalCancellation(ReserveToken);
                 loadTasks[i++] = loadTask;
 
-                m_Handles.AddLast(loadhandle);
+                m_Handles.AddLast(loadHandle);
             }
 
-            await UniTask.WhenAll(loadTasks);
+            var results = await UniTask.WhenAll(loadTasks);
 
             i = 0;
-            foreach (var item in loadTasks)
+            foreach (var item in results)
             {
-                var result = await item;
+                if (item.canceled)
+                {
+                    i++;
+                    continue;
+                }
 
                 IResourceLocation location = m_PreloadedLocations[i++];
 
-                var r = new ImmutableObject<UnityEngine.Object>(result.obj);
+                var r = new ImmutableObject<UnityEngine.Object>(item.obj);
 
                 Hash hash = new Hash(
                     FNV1a32.Calculate(location.PrimaryKey)
@@ -232,13 +236,12 @@ namespace Vvr.Session.AssetManagement
             }
 
             var handle = Addressables.LoadAssetAsync<TObject>(key);
-            handle.CompletedTypeless += HandleOnCompletedTypeless;
-
             m_Handles.AddLast(handle);
 
-            await handle.ToUniTask()
-                .SuppressCancellationThrow()
-                .AttachExternalCancellation(ReserveToken);
+            await handle;
+            // await handle.ToUniTask()
+            //     .SuppressCancellationThrow()
+            //     .AttachExternalCancellation(ReserveToken);
 
             if (handle.OperationException is HttpRequestException http)
             {
@@ -250,15 +253,6 @@ namespace Vvr.Session.AssetManagement
             m_LoadedObjects[hash] = obj;
 
             return obj;
-        }
-
-        private void HandleOnCompletedTypeless(AsyncOperationHandle obj)
-        {
-            if (obj.OperationException != null)
-            {
-                var ex = obj.OperationException.GetBaseException();
-                $"{ex.GetType().Name}, {ex.Message}".ToLogError();
-            }
         }
     }
 }

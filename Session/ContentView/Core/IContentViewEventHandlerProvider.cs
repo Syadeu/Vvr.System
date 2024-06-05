@@ -31,9 +31,25 @@ namespace Vvr.Session.ContentView.Core
     [PublicAPI, LocalProvider]
     public interface IContentViewEventHandlerProvider : IProvider
     {
+        /// <summary>
+        /// Gets the content view event handler for the specified type.
+        /// </summary>
+        /// <param name="t">The type for which the content view event handler is retrieved.</param>
+        /// <returns>The content view event handler for the specified type.</returns>
         IContentViewEventHandler this[Type t] { get; }
 
-        IContentViewEventHandler         Resolve(Type eventType);
+        /// <summary>
+        /// Resolves the event handler for the specified event type.
+        /// </summary>
+        /// <param name="eventType">The type of the event.</param>
+        /// <returns>The event handler for the specified event type.</returns>
+        IContentViewEventHandler Resolve(Type eventType);
+
+        /// <summary>
+        /// Resolves the event handler for the specified event type.
+        /// </summary>
+        /// <typeparam name="TEvent">The type of the event.</typeparam>
+        /// <returns>The event handler for the specified event type.</returns>
         IContentViewEventHandler<TEvent> Resolve<TEvent>() where TEvent : struct, IConvertible;
     }
 }

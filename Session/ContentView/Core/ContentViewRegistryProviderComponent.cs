@@ -23,9 +23,8 @@ using System;
 using System.Collections.Generic;
 using Sirenix.OdinInspector;
 using UnityEngine;
-using Vvr.Session.ContentView.Core;
 
-namespace Vvr.Session.ContentView
+namespace Vvr.Session.ContentView.Core
 {
     /// <summary>
     /// Represents a component that provides a registry of content view providers.
