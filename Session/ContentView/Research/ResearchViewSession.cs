@@ -91,12 +91,16 @@ namespace Vvr.Session.ContentView.Research
             {
                 EventHandler
                     .ExecuteAsync(ResearchViewEvent.SelectGroupWithIndex, groupIndex)
+                    .AttachExternalCancellation(ReserveToken)
+                    .SuppressCancellationThrow()
                     .Forget();
             }
             else
             {
                 EventHandler
                     .ExecuteAsync(ResearchViewEvent.SelectGroupWithIndex, 0)
+                    .AttachExternalCancellation(ReserveToken)
+                    .SuppressCancellationThrow()
                     .Forget();
             }
         }
@@ -141,6 +145,8 @@ namespace Vvr.Session.ContentView.Research
 
             EventHandler
                 .ExecuteAsync(ResearchViewEvent.Update, node)
+                .AttachExternalCancellation(ReserveToken)
+                .SuppressCancellationThrow()
                 .Forget();
         }
 

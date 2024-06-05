@@ -225,7 +225,7 @@ namespace Vvr.Session
         /// <remarks>
         /// This method detaches the specified game object from the dependency container. It is used to remove the game object from any registered connectors and disconnect any associated dependencies.
         /// If the game object has a <see cref="DependencyInjector"/> component attached, it will be detached using <see cref="Detach(IDependencyContainer, DependencyInjector)"/> method.
-        /// Otherwise, the method iterates over all registered connectors in the container, and detaches the game object recursively for each connector type using <see cref="DetachRecursive(IDependencyContainer, GameObject, Type, object)"/> method.
+        /// Otherwise, the method iterates over all registered connectors in the container, and detaches the game object recursively for each connector type using <see cref="DetachRecursive(IDependencyContainer, GameObject, Type, IProvider)"/> method.
         /// </remarks>
         [PublicAPI]
         public static void Detach([NotNull] this IDependencyContainer container, [NotNull] GameObject go)
@@ -363,7 +363,7 @@ namespace Vvr.Session
         /// <remarks>
         /// This method detaches the specified game object from the dependency container. It is used to remove the game object from any registered connectors and disconnect any associated dependencies.
         /// If the game object has a <see cref="DependencyInjector"/> component attached, it will be detached using <see cref="Detach(IDependencyContainer, DependencyInjector)"/> method.
-        /// Otherwise, the method iterates over all registered connectors in the container, and detaches the game object recursively for each connector type using <see cref="DetachRecursive(IDependencyContainer, GameObject, Type, object)"/> method.
+        /// Otherwise, the method iterates over all registered connectors in the container, and detaches the game object recursively for each connector type using <see cref="DetachRecursive(IDependencyContainer, GameObject, Type, IProvider)"/> method.
         /// </remarks>
         private static void Detach([NotNull] IDependencyContainer container, [NotNull] DependencyInjector injector)
         {
