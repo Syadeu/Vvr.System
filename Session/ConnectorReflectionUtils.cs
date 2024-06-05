@@ -22,6 +22,7 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Threading;
 using Vvr.Provider;
 
 namespace Vvr.Session
@@ -70,8 +71,8 @@ namespace Vvr.Session
 
         private static readonly Type s_ConnectorGenericType = typeof(IConnector<>);
 
-        private static readonly Dictionary<Type, Type>
-            s_CachedConnectorTypes = new();
+        private static readonly Dictionary<Type, Type> s_CachedConnectorTypes = new();
+        private static readonly ThreadLocal<object[]>  s_MethodParameter      = new(() => new object[1]);
 
         public static Type GetConnectorType(Type providerType)
         {
@@ -86,9 +87,6 @@ namespace Vvr.Session
 
         public static IEnumerable<Type> GetAllConnectors(Type type)
         {
-            const string debugName = nameof(ConnectorReflectionUtils) + "." + nameof(GetAllConnectors);
-            using var    timer     = DebugTimer.StartWithCustomName(debugName);
-
             var interfaceTypes = type.GetInterfaces();
             for (int i = 0; i < interfaceTypes.Length; i++)
             {
@@ -121,7 +119,8 @@ namespace Vvr.Session
                 throw new InvalidOperationException($"{connectorType} not found");
             }
 
-            methodInfo.Invoke(connector, new object[] { value });
+            s_MethodParameter.Value[0] = value;
+            methodInfo.Invoke(connector, s_MethodParameter.Value);
         }
 
         /// <summary>

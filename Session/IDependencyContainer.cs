@@ -176,6 +176,12 @@ namespace Vvr.Session
             const string debugName  = "DependencyContainerExtensions.Inject(GameObject)";
             using var    debugTimer = DebugTimer.StartWithCustomName(debugName);
 
+            if (go.TryGetComponent(out DependencyInjector injector))
+            {
+                Inject(container, injector);
+                return;
+            }
+
             foreach (var item in container.GetEnumerable())
             {
                 Type connectorType = ConnectorReflectionUtils.GetConnectorType(item.Key);
@@ -183,6 +189,27 @@ namespace Vvr.Session
                 {
                     ConnectorReflectionUtils.Connect(connectorType, com, item.Value);
                 }
+            }
+        }
+
+        /// <summary>
+        /// Injects dependencies into the specified object or game object.
+        /// </summary>
+        /// <param name="container">The dependency container.</param>
+        /// <param name="o">The object to inject dependencies into.</param>
+        /// <remarks>
+        /// This method injects dependencies into the specified object or game object. It connects the object or game object with the appropriate providers contained in the dependency container.
+        /// If the specified object is a game object, it first tries to find a `DependencyInjector` component attached to the game object. If found, it invokes the `Inject` method of the `DependencyInjector` to perform the injection.
+        /// If the specified object is not a game object or does not have a `DependencyInjector`, it iterates over all registered dependencies in the container and performs the injection manually.
+        /// </remarks>
+        private static void Inject(IDependencyContainer container, DependencyInjector injector)
+        {
+            const string debugName  = "DependencyContainerExtensions.Inject(DependencyInjector)";
+            using var    debugTimer = DebugTimer.StartWithCustomName(debugName);
+
+            foreach (var item in container.GetEnumerable())
+            {
+                injector.Inject(item.Key, item.Value);
             }
         }
     }
