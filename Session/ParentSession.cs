@@ -21,6 +21,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using UnityEngine.Assertions;
@@ -51,6 +52,8 @@ namespace Vvr.Session
 
         private readonly List<IChildSession> m_ChildSessions  = new();
 
+        private SpinLock m_CreateSessionLock;
+
         public  IReadOnlyList<IChildSession> ChildSessions => m_ChildSessions;
 
         protected override async UniTask OnReserve()
@@ -67,7 +70,18 @@ namespace Vvr.Session
             var  ctx       = new SessionCreateContext(childType, data);
 
             var result = await UniTask.RunOnThreadPool(CreateSession, ctx, cancellationToken: ReserveToken);
-            m_ChildSessions.Add(result);
+
+            bool lt = false;
+            try
+            {
+                m_CreateSessionLock.Enter(ref lt);
+
+                m_ChildSessions.Add(result);
+            }
+            finally
+            {
+                if (lt) m_CreateSessionLock.Exit();
+            }
 
             return (TChildSession)result;
         }
@@ -79,7 +93,17 @@ namespace Vvr.Session
             Type childType = typeof(TChildSession);
             var  result    = await CreateSession(new SessionCreateContext(childType, data));
 
-            m_ChildSessions.Add(result);
+            bool lt = false;
+            try
+            {
+                m_CreateSessionLock.Enter(ref lt);
+
+                m_ChildSessions.Add(result);
+            }
+            finally
+            {
+                if (lt) m_CreateSessionLock.Exit();
+            }
 
             return (TChildSession)result;
         }
@@ -115,20 +139,41 @@ namespace Vvr.Session
             Type childType = session.Type;
 
             await OnSessionClose(session);
-            m_ChildSessions.Remove(session);
+
+            bool lt = false;
+            try
+            {
+                m_CreateSessionLock.Enter(ref lt);
+
+                m_ChildSessions.Remove(session);
+            }
+            finally
+            {
+                if (lt) m_CreateSessionLock.Exit();
+            }
 
             $"[Session: {Type.FullName}] closed {childType.FullName}".ToLog();
         }
 
         public async UniTask CloseAllSessions()
         {
-            for (var i = m_ChildSessions.Count - 1; i >= 0; i--)
+            bool lt = false;
+            try
             {
-                var session = m_ChildSessions[i];
-                await session.Reserve();
-            }
+                m_CreateSessionLock.Enter(ref lt);
 
-            m_ChildSessions.Clear();
+                for (var i = m_ChildSessions.Count - 1; i >= 0; i--)
+                {
+                    var session = m_ChildSessions[i];
+                    await session.Reserve();
+                }
+
+                m_ChildSessions.Clear();
+            }
+            finally
+            {
+                if (lt) m_CreateSessionLock.Exit();
+            }
         }
         public async UniTask<IChildSession> WaitUntilSessionAvailableAsync(Type sessionType, float timeout)
         {
@@ -153,19 +198,29 @@ namespace Vvr.Session
         }
         public IChildSession GetSession(Type sessionType)
         {
-            foreach (var session in m_ChildSessions)
+            bool lt = false;
+            try
             {
-                IChildSession found;
-                if (session is IParentSession parentSession &&
-                    (found = parentSession.GetSession(sessionType)) != null)
-                {
-                    return found;
-                }
+                m_CreateSessionLock.Enter(ref lt);
 
-                if (VvrTypeHelper.InheritsFrom(session.Type, sessionType))
+                foreach (var session in m_ChildSessions)
                 {
-                    return session;
+                    IChildSession found;
+                    if (session is IParentSession parentSession &&
+                        (found = parentSession.GetSession(sessionType)) != null)
+                    {
+                        return found;
+                    }
+
+                    if (VvrTypeHelper.InheritsFrom(session.Type, sessionType))
+                    {
+                        return session;
+                    }
                 }
+            }
+            finally
+            {
+                if (lt) m_CreateSessionLock.Exit();
             }
 
             return null;
@@ -177,21 +232,41 @@ namespace Vvr.Session
 
         protected sealed override void OnProviderRegistered(Type providerType, IProvider provider)
         {
-            foreach (var childSession in ChildSessions)
+            bool lt = false;
+            try
             {
-                if (ReferenceEquals(childSession, provider)) continue;
-                if (childSession is not IDependencyContainer c) continue;
+                m_CreateSessionLock.Enter(ref lt);
 
-                c.Register(providerType, provider);
+                foreach (var childSession in ChildSessions)
+                {
+                    if (ReferenceEquals(childSession, provider)) continue;
+                    if (childSession is not IDependencyContainer c) continue;
+
+                    c.Register(providerType, provider);
+                }
+            }
+            finally
+            {
+                if (lt) m_CreateSessionLock.Exit();
             }
         }
         protected sealed override void OnProviderUnregistered(Type providerType)
         {
-            foreach (var childSession in ChildSessions)
+            bool lt = false;
+            try
             {
-                if (childSession is not IDependencyContainer c) continue;
+                m_CreateSessionLock.Enter(ref lt);
 
-                c.Unregister(providerType);
+                foreach (var childSession in ChildSessions)
+                {
+                    if (childSession is not IDependencyContainer c) continue;
+
+                    c.Unregister(providerType);
+                }
+            }
+            finally
+            {
+                if (lt) m_CreateSessionLock.Exit();
             }
         }
 
