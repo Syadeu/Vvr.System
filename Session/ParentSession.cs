@@ -40,13 +40,18 @@ namespace Vvr.Session
     {
         private class SessionCreateContext
         {
+            public readonly ParentSession<TSessionData> parentSession;
+
             public readonly Type         sessionType;
             public readonly ISessionData data;
 
-            public SessionCreateContext(Type t, ISessionData ta)
+            public SessionCreateContext(
+                ParentSession<TSessionData> t,
+                Type ta, ISessionData taa)
             {
-                sessionType = t;
-                data        = ta;
+                parentSession = t;
+                sessionType   = ta;
+                data          = taa;
             }
         }
 
@@ -67,7 +72,7 @@ namespace Vvr.Session
             Assert.IsFalse(VvrTypeHelper.TypeOf<TChildSession>.IsAbstract);
 
             Type childType = typeof(TChildSession);
-            var  ctx       = new SessionCreateContext(childType, data);
+            var  ctx       = new SessionCreateContext(this, childType, data);
 
             var result = await UniTask.RunOnThreadPool(CreateSession, ctx, cancellationToken: ReserveToken);
 
@@ -91,7 +96,9 @@ namespace Vvr.Session
             Assert.IsFalse(VvrTypeHelper.TypeOf<TChildSession>.IsAbstract);
 
             Type childType = typeof(TChildSession);
-            var  result    = await CreateSession(new SessionCreateContext(childType, data));
+            var  ctx       = new SessionCreateContext(this, childType, data);
+
+            var  result    = await CreateSession(ctx);
 
             bool lt = false;
             try
@@ -108,18 +115,18 @@ namespace Vvr.Session
             return (TChildSession)result;
         }
 
-        private async UniTask<IChildSession> CreateSession([NotNull] object state)
+        private static async UniTask<IChildSession> CreateSession([NotNull] object state)
         {
             SessionCreateContext ctx     = (SessionCreateContext)state;
             IChildSession        session = (IChildSession)Activator.CreateInstance(ctx.sessionType);
 
-            await OnCreateSession(session);
+            await ctx.parentSession.OnCreateSession(session);
 
             if (session is IDependencyContainer sessionConnector)
             {
                 // $"[Session: {Type.FullName}] Chain connector to {childType.FullName}".ToLog();
                 using var debugTimer = DebugTimer.Start();
-                foreach (var item in ConnectedProviders)
+                foreach (var item in ctx.parentSession.ConnectedProviders)
                 {
                     var pType = item.Key;
                     sessionConnector.Register(pType, item.Value);
@@ -127,8 +134,8 @@ namespace Vvr.Session
             }
             // else $"[Session: {Type.FullName}] No connector for {childType.FullName}".ToLog();
 
-            await session.Initialize(Owner, this, ctx.data);
-            $"[Session: {Type.FullName}] created {ctx.sessionType.FullName}".ToLog();
+            await session.Initialize(ctx.parentSession.Owner, ctx.parentSession, ctx.data);
+            $"[Session: {ctx.parentSession.Type.FullName}] created {ctx.sessionType.FullName}".ToLog();
             return session;
         }
 

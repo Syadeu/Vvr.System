@@ -20,6 +20,7 @@
 #endregion
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -44,7 +45,7 @@ namespace Vvr.Session
     {
         private          Type                        m_Type;
         private          Type[]                      m_ConnectorTypes;
-        private readonly Dictionary<Type, IProvider> m_ConnectedProviders = new();
+        private readonly ConcurrentDictionary<Type, IProvider> m_ConnectedProviders = new();
 
         private readonly Dictionary<Type, LinkedList<ConnectorReflectionUtils.Wrapper>>
             m_ConnectorWrappers = new();
