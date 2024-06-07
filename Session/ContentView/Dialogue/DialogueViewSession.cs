@@ -32,9 +32,8 @@ using Vvr.Session.ContentView.Dialogue.Attributes;
 namespace Vvr.Session.ContentView.Dialogue
 {
     [UsedImplicitly]
-    public sealed class DialogueViewSession : ContentViewChildSession<DialogueViewEvent>,
-        IDialoguePlayProvider,
-        IConnector<IDialogueViewProvider>
+    public sealed class DialogueViewSession
+        : ContentViewChildSession<DialogueViewEvent, IDialogueViewProvider>, IDialoguePlayProvider
     {
         class DialogueWrapper : IDialogue
         {
@@ -51,8 +50,7 @@ namespace Vvr.Session.ContentView.Dialogue
             }
         }
 
-        private IAssetProvider        m_AssetProvider;
-        private IDialogueViewProvider m_DialogueViewProvider;
+        private IAssetProvider m_AssetProvider;
 
         private CancellationTokenSource m_AttributeSkipToken;
 
@@ -76,7 +74,7 @@ namespace Vvr.Session.ContentView.Dialogue
             if (ctx is not IDialogueData data)
                 throw new NotImplementedException();
 
-            await m_DialogueViewProvider.CloseAsync(data);
+            await ViewProvider.CloseAsync(data);
         }
 
         private  async UniTask OnSkip(DialogueViewEvent e, object ctx)
@@ -126,7 +124,6 @@ namespace Vvr.Session.ContentView.Dialogue
                 throw new InvalidOperationException($"{dialogueAssetPath}");
 
             var asset = await m_AssetProvider.LoadAsync<DialogueData>(dialogueAssetPath);
-            // await Play(asset.Object);
 
             await EventHandler.ExecuteAsync(DialogueViewEvent.Open, asset.Object);
         }
@@ -137,15 +134,14 @@ namespace Vvr.Session.ContentView.Dialogue
             DialogueProviderResolveDelegate
                 resolveProvider = Parent.GetProviderRecursive;
 
-            DialogueWrapper wrapper         = new DialogueWrapper();
+            DialogueWrapper wrapper = new DialogueWrapper();
             wrapper.Data = dialogue;
-            // IDialogueData   currentDialogue = dialogue;
 
             m_AttributeSkipToken = new CancellationTokenSource();
 
             while (wrapper.Data != null)
             {
-                var obj = await m_DialogueViewProvider
+                var obj = await ViewProvider
                     .OpenAsync(CanvasViewProvider, m_AssetProvider, wrapper.Data);
                 this.Inject(obj);
 
@@ -155,7 +151,7 @@ namespace Vvr.Session.ContentView.Dialogue
 
                     var task = attribute.ExecuteAsync(
                         new DialogueAttributeContext(
-                            wrapper, m_AssetProvider, m_DialogueViewProvider, resolveProvider,
+                            wrapper, m_AssetProvider, ViewProvider, resolveProvider,
                             EventHandlerProvider));
 
                     // Attributes can be skipped if attribute has SkipAttribute
@@ -168,7 +164,7 @@ namespace Vvr.Session.ContentView.Dialogue
                         if (canceled)
                         {
                             await skipAttribute.OnSkip(new DialogueAttributeContext(
-                                wrapper, m_AssetProvider, m_DialogueViewProvider, resolveProvider,
+                                wrapper, m_AssetProvider, ViewProvider, resolveProvider,
                                 EventHandlerProvider));
 
                             m_AttributeSkipToken = new CancellationTokenSource();
@@ -188,14 +184,13 @@ namespace Vvr.Session.ContentView.Dialogue
                         await task;
                 }
 
-                while (!m_DialogueViewProvider.IsFullyOpened)
+                while (!ViewProvider.IsFullyOpened)
                 {
                     await UniTask.Yield();
                 }
 
                 IDialogueData prevData = wrapper.Data;
                 var newTask = UniTask.WhenAll(wrapper.Tasks.ToArray())
-                    // .ContinueWith(async () => await m_DialogueViewProvider.CloseAsync(prevData));
                     .ContinueWith(async () =>
                     {
                         this.Detach(obj);
@@ -204,14 +199,9 @@ namespace Vvr.Session.ContentView.Dialogue
                 lastCloseTask = UniTask.WhenAll(lastCloseTask, newTask);
 
                 wrapper.Tasks.Clear();
-                // lastCloseTask = m_DialogueViewProvider.CloseAsync(wrapper.Data);
-
                 wrapper.Data = wrapper.Data.NextDialogue;
             }
             await lastCloseTask;
         }
-
-        void IConnector<IDialogueViewProvider>.Connect(IDialogueViewProvider    t) => m_DialogueViewProvider = t;
-        void IConnector<IDialogueViewProvider>.Disconnect(IDialogueViewProvider t) => m_DialogueViewProvider = null;
     }
 }
