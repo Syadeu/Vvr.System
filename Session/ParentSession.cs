@@ -67,6 +67,7 @@ namespace Vvr.Session
             var  ctx       = new SessionCreateContext(childType, data);
 
             var result = await UniTask.RunOnThreadPool(CreateSession, ctx, cancellationToken: ReserveToken);
+            m_ChildSessions.Add(result);
 
             return (TChildSession)result;
         }
@@ -77,6 +78,8 @@ namespace Vvr.Session
 
             Type childType = typeof(TChildSession);
             var  result    = await CreateSession(new SessionCreateContext(childType, data));
+
+            m_ChildSessions.Add(result);
 
             return (TChildSession)result;
         }
@@ -99,8 +102,6 @@ namespace Vvr.Session
                 }
             }
             // else $"[Session: {Type.FullName}] No connector for {childType.FullName}".ToLog();
-
-            m_ChildSessions.Add(session);
 
             await session.Initialize(Owner, this, ctx.data);
             $"[Session: {Type.FullName}] created {ctx.sessionType.FullName}".ToLog();
