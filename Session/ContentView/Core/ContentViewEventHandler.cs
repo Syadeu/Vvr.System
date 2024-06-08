@@ -75,19 +75,19 @@ namespace Vvr.Session.ContentView.Core
                 }
             }
             [Conditional("UNITY_EDITOR")]
-            private void EvaluateEventStackAndThrow(int evtIdx, TEvent e)
+            private void EvaluateEventStackAndThrow()
             {
-                if (m_EventStack.Count <= evtIdx)
+                if (m_EventStack.Count <= m_Index)
                     throw new InvalidOperationException();
-                if (m_EventStack.Count - 1 != evtIdx)
+                if (m_EventStack.Count - 1 != m_Index)
                     throw new InvalidOperationException();
-                if (!m_EventStack[evtIdx].Equals(e))
+                if (!m_EventStack[m_Index].Equals(m_Event))
                     throw new InvalidOperationException();
             }
 
             public void Dispose()
             {
-                EvaluateEventStackAndThrow(m_Index, m_Event);
+                EvaluateEventStackAndThrow();
 
                 m_EventStack.RemoveAt(m_Index);
             }
