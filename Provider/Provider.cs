@@ -28,6 +28,8 @@ using UnityEngine.Assertions;
 
 namespace Vvr.Provider
 {
+    public delegate TProvider ProviderFactoryDelegate<out TProvider>();
+
     /// <summary>
     /// Global provider that provides all <see cref="IProvider"/> to requesters.
     /// </summary>
@@ -60,7 +62,57 @@ namespace Vvr.Provider
                 }
             }
         }
-        public static Provider Static { get; } = default;
+        public struct Registry
+        {
+            abstract class Template
+            {
+                public abstract IProvider Create();
+            }
+            sealed class Template<TProvider> : Template where TProvider : IProvider
+            {
+                private readonly ProviderFactoryDelegate<TProvider> m_FactoryDelegate;
+
+                public Template(ProviderFactoryDelegate<TProvider> t)
+                {
+                    m_FactoryDelegate = t;
+                }
+
+                public override IProvider Create() => m_FactoryDelegate();
+            }
+
+            public static Registry Static => default;
+
+            private static readonly Dictionary<Type, Template> m_Map = new();
+
+            public Registry Lazy<TProvider>(ProviderFactoryDelegate<TProvider> factory = null)
+                where TProvider : IProvider
+            {
+                Type t = typeof(TProvider);
+                m_Map[t] = new Template<TProvider>(factory);
+
+                return this;
+            }
+
+            public static TProvider Resolve<TProvider>() where TProvider : IProvider
+            {
+                Type t = typeof(TProvider);
+                if (s_Providers.TryGetValue(t, out var existingProvider))
+                {
+                    return (TProvider)existingProvider;
+                }
+
+                if (m_Map.TryGetValue(t, out var template))
+                {
+                    existingProvider = template.Create();
+                    Register(t, existingProvider);
+                    return (TProvider)existingProvider;
+                }
+
+                throw new InvalidOperationException($"Provider of type {t.FullName} is not registered");
+            }
+        }
+
+        public static Provider Static => default;
 
         private static readonly Dictionary<Type, IProvider>      s_Providers = new();
         private static readonly Dictionary<Type, List<Observer>> s_Observers = new();
@@ -108,6 +160,13 @@ namespace Vvr.Provider
 
             EvaluateType(t);
 
+            Register(t, p);
+
+            return this;
+        }
+
+        private static void Register(Type t, IProvider p)
+        {
             if (!s_Providers.TryAdd(t, p))
                 throw new InvalidOperationException("Multiple provider is not allowed");
 
@@ -121,8 +180,6 @@ namespace Vvr.Provider
             }
 
             $"[Provider] {VvrTypeHelper.ToString(t)} registered".ToLog();
-
-            return this;
         }
 
         /// <summary>

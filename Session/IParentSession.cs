@@ -53,7 +53,7 @@ namespace Vvr.Session
         /// </remarks>
         [PublicAPI]
         UniTask<TChildSession> CreateSessionOnBackground<TChildSession>([CanBeNull] ISessionData data)
-            where TChildSession : IChildSession;
+            where TChildSession : IChildSession, new();
 
         /// <summary>
         /// Creates a new child session of type TChildSession.
@@ -62,7 +62,8 @@ namespace Vvr.Session
         /// <param name="data">The session data for initializing the child session.</param>
         /// <returns>The created child session of type TChildSession.</returns>
         [PublicAPI]
-        UniTask<TChildSession> CreateSession<TChildSession>([CanBeNull] ISessionData data) where TChildSession : IChildSession;
+        UniTask<TChildSession> CreateSession<TChildSession>([CanBeNull] ISessionData data)
+            where TChildSession : IChildSession, new();
 
         /// <summary>
         /// Waits until a session of the specified sessionType becomes available in the IParentSession.
