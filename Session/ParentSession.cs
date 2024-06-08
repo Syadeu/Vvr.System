@@ -107,7 +107,7 @@ namespace Vvr.Session
 
             if (session is IDependencyContainer sessionConnector)
             {
-                // $"[Session: {ctx.parentSession.Type.FullName}] Chain connector to {ctx.sessionType.FullName}".ToLog();
+                $"[Session: {ctx.parentSession.Type.FullName}] Chain connector to {ctx.sessionType.FullName}".ToLog();
                 using var debugTimer = DebugTimer.Start();
                 foreach (var item in ctx.parentSession.ConnectedProviders)
                 {

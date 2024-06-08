@@ -223,7 +223,7 @@ namespace Vvr.Session
         public IDependencyContainer Register(Type pType, IProvider provider)
         {
             pType = Vvr.Provider.Provider.ExtractType(pType);
-            EvaluateProviderRegistration(pType, provider);
+            // EvaluateProviderRegistration(pType, provider);
 
             // $"[Session: {Type.FullName}] Connectors {ConnectorTypes.Length}".ToLog();
             if (!m_ConnectedProviders.TryGetValue(pType, out var pStack))
@@ -234,7 +234,10 @@ namespace Vvr.Session
 
             if (pStack.Count > 0)
             {
-                DisconnectProvider(pType, pStack.Peek());
+                var existingProvider = pStack.Peek();
+                if (ReferenceEquals(existingProvider, provider)) return this;
+
+                DisconnectProvider(pType, existingProvider);
             }
 
             pStack.Push(provider);
@@ -294,7 +297,7 @@ namespace Vvr.Session
                 break;
             }
 
-            DisconnectObservers(pType);
+            DisconnectObservers(pType, provider);
         }
         public IDependencyContainer Register<TProvider>(TProvider provider) where TProvider : IProvider
         {
@@ -470,15 +473,14 @@ namespace Vvr.Session
         /// Disconnects the observers associated with the specified provider type.
         /// </summary>
         /// <param name="providerType">The type of the provider.</param>
-        private void DisconnectObservers(Type providerType)
+        /// <param name="provider">The provider object</param>
+        private void DisconnectObservers(Type providerType, IProvider provider)
         {
             if (!m_ConnectorWrappers.TryGetValue(providerType, out var list)) return;
 
-            if (!m_ConnectedProviders.TryGetValue(providerType, out var provider)) return;
-
             foreach (var wr in list)
             {
-                wr.disconnect(provider.Peek());
+                wr.disconnect(provider);
             }
         }
         /// <summary>
@@ -531,19 +533,19 @@ namespace Vvr.Session
             }
         }
 
-        [Conditional("UNITY_EDITOR")]
-        [Conditional("DEVELOPMENT_BUILD")]
-        protected virtual void EvaluateProviderRegistration(Type providerType, IProvider provider)
-        {
-            if (!m_ConnectedProviders.TryGetValue(providerType, out var existing))
-                return;
-
-            if (ReferenceEquals(existing.Peek(), provider))
-                throw new InvalidOperationException($"Already registered {providerType.FullName}.");
-
-            if (existing.Any(x => ReferenceEquals(x, provider)))
-                throw new InvalidOperationException($"Already registered {providerType.FullName}.");
-        }
+        // [Conditional("UNITY_EDITOR")]
+        // [Conditional("DEVELOPMENT_BUILD")]
+        // protected virtual void EvaluateProviderRegistration(Type providerType, IProvider provider)
+        // {
+        //     if (!m_ConnectedProviders.TryGetValue(providerType, out var existing))
+        //         return;
+        //
+        //     if (ReferenceEquals(existing.Peek(), provider))
+        //         throw new InvalidOperationException($"Already registered {providerType.FullName}.");
+        //
+        //     if (existing.Any(x => ReferenceEquals(x, provider)))
+        //         throw new InvalidOperationException($"Already registered {providerType.FullName}.");
+        // }
 
         protected virtual void SetupConditionResolver(ConditionResolver conditionResolver) {}
 
