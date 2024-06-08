@@ -64,7 +64,7 @@ namespace Vvr.Session.AssetManagement
             ScriptableObjectSheetImporter imp = new(dataContainer.Object);
             await SheetContainer.Bake(imp);
 
-            StatDataSession statDataSession = await CreateSession<StatDataSession>(
+            StatDataSession statDataSession = await CreateSessionOnBackground<StatDataSession>(
                 new StatDataSession.SessionData(SheetContainer.StatTable));
             Parent
                 .Register<IStatConditionProvider>(statDataSession);
@@ -98,17 +98,15 @@ namespace Vvr.Session.AssetManagement
             UniTask<(GameConfigSession, ActorDataSession, CustomMethodSession, StageDataSession, ResearchDataSession)>
             LoadAsync()
         {
-            // StatProvider.GetOrCreate(SheetContainer.StatTable);
-
-            var gameConfigSessionTask = CreateSession<GameConfigSession>(
+            var gameConfigSessionTask = CreateSessionOnBackground<GameConfigSession>(
                 new GameConfigSession.SessionData(SheetContainer.GameConfigTable));
-            var actorDataSessionTask = CreateSession<ActorDataSession>(
+            var actorDataSessionTask = CreateSessionOnBackground<ActorDataSession>(
                 new ActorDataSession.SessionData(SheetContainer.Actors));
-            var customMethodSessionTask = CreateSession<CustomMethodSession>(
+            var customMethodSessionTask = CreateSessionOnBackground<CustomMethodSession>(
                 new CustomMethodSession.SessionData(SheetContainer.CustomMethodTable));
-            var stageDataSessionTask = CreateSession<StageDataSession>(
+            var stageDataSessionTask = CreateSessionOnBackground<StageDataSession>(
                 new StageDataSession.SessionData(SheetContainer.Stages));
-            var researchDataSessionTask = CreateSession<ResearchDataSession>(
+            var researchDataSessionTask = CreateSessionOnBackground<ResearchDataSession>(
                 new ResearchDataSession.SessionData(SheetContainer.ResearchTable));
 
             return await UniTask.WhenAll(

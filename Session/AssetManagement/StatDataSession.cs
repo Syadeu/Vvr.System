@@ -29,6 +29,9 @@ using Vvr.Provider;
 
 namespace Vvr.Session.AssetManagement
 {
+    /// <summary>
+    /// StatDataSession is a child session that provides access to stat data.
+    /// </summary>
     [UsedImplicitly]
     public sealed class StatDataSession : ChildSession<StatDataSession.SessionData>,
         IStatConditionProvider

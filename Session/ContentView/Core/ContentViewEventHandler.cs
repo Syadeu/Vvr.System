@@ -22,6 +22,7 @@
 using System;
 using System.Buffers;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
@@ -35,8 +36,69 @@ namespace Vvr.Session.ContentView.Core
     internal sealed class ContentViewEventHandler<TEvent> : IContentViewEventHandler<TEvent>
         where TEvent : struct, IConvertible
     {
+        /// <summary>
+        /// Represents an event stack that keeps track of the event hierarchy.
+        /// </summary>
+        private readonly struct EventStack : IDisposable
+        {
+            private readonly List<TEvent> m_EventStack;
+
+            private readonly int    m_Index;
+            private readonly TEvent m_Event;
+
+            public EventStack(List<TEvent> l, TEvent e)
+            {
+                m_EventStack = l;
+                m_Index = m_EventStack.Count;
+                m_Event = e;
+
+                m_EventStack.Add(e);
+
+                CheckPossibleInfiniteLoopAndThrow();
+            }
+
+            [Conditional("UNITY_EDITOR")]
+            private void CheckPossibleInfiniteLoopAndThrow()
+            {
+                int xx = m_Index,
+                    yy = m_Index;
+
+                while (true)
+                {
+                    xx--;
+                    if (xx < 0) return;
+                    yy -= 2;
+                    if (yy < 0) return;
+
+                    if (m_EventStack[xx].Equals(m_EventStack[yy]))
+                        throw new InvalidOperationException("Possible infinite loop detected.");
+                }
+            }
+            [Conditional("UNITY_EDITOR")]
+            private void EvaluateEventStackAndThrow(int evtIdx, TEvent e)
+            {
+                if (m_EventStack.Count <= evtIdx)
+                    throw new InvalidOperationException();
+                if (m_EventStack.Count - 1 != evtIdx)
+                    throw new InvalidOperationException();
+                if (!m_EventStack[evtIdx].Equals(e))
+                    throw new InvalidOperationException();
+            }
+
+            public void Dispose()
+            {
+                EvaluateEventStackAndThrow(m_Index, m_Event);
+
+                m_EventStack.RemoveAt(m_Index);
+            }
+        }
+
+        private readonly List<TEvent> m_EventStack = new();
+
         private readonly Dictionary<TEvent, List<uint>>                     m_Actions   = new();
         private readonly Dictionary<uint, ContentViewEventDelegate<TEvent>> m_ActionMap = new();
+
+        private SpinLock m_WriteLock;
 
         private readonly CancellationTokenSource m_CancellationTokenSource = new();
 
@@ -56,32 +118,50 @@ namespace Vvr.Session.ContentView.Core
 
         public IContentViewEventHandler<TEvent> Register(TEvent e, ContentViewEventDelegate<TEvent> x)
         {
-            if (!m_Actions.TryGetValue(e, out var list))
+            bool lt = false;
+            try
             {
-                list         = new(8);
-                m_Actions[e] = list;
-            }
+                m_WriteLock.Enter(ref lt);
+                if (!m_Actions.TryGetValue(e, out var list))
+                {
+                    list         = new(8);
+                    m_Actions[e] = list;
+                }
 
-            uint hash = CalculateHash(x);
-            if (!m_ActionMap.TryAdd(hash, x))
+                uint hash = CalculateHash(x);
+                if (!m_ActionMap.TryAdd(hash, x))
+                {
+                    throw new InvalidOperationException("hash conflict possibly registering same method");
+                }
+
+                m_ActionMap[hash] = x;
+                list.Add(hash);
+            }
+            finally
             {
-                throw new InvalidOperationException();
+                if (lt) m_WriteLock.Exit();
             }
-
-            m_ActionMap[hash] = x;
-            list.Add(hash);
 
             return this;
         }
 
         public IContentViewEventHandler<TEvent> Unregister(TEvent e, ContentViewEventDelegate<TEvent> x)
         {
-            if (!m_Actions.TryGetValue(e, out var list)) return this;
+            bool lt = false;
+            try
+            {
+                m_WriteLock.Enter(ref lt);
+                if (!m_Actions.TryGetValue(e, out var list)) return this;
 
-            uint hash = CalculateHash(x);
-            if (!m_ActionMap.Remove(hash)) return this;
+                uint hash = CalculateHash(x);
+                if (!m_ActionMap.Remove(hash)) return this;
 
-            list.Remove(hash);
+                list.Remove(hash);
+            }
+            finally
+            {
+                if (lt) m_WriteLock.Exit();
+            }
 
             return this;
         }
@@ -90,11 +170,14 @@ namespace Vvr.Session.ContentView.Core
         {
             if (!m_Actions.TryGetValue(e, out var list)) return;
 
+            using var st = new EventStack(m_EventStack, e);
+
             int count = list.Count;
             var array = ArrayPool<UniTask>.Shared.Rent(count);
 
             for (int i = 0; i < count; i++)
             {
+                // This operation can be recursively calling this method.
                 array[i] = m_ActionMap[list[i]](e, null)
                         .AttachExternalCancellation(m_CancellationTokenSource.Token)
                         .SuppressCancellationThrow()
@@ -109,11 +192,14 @@ namespace Vvr.Session.ContentView.Core
         {
             if (!m_Actions.TryGetValue(e, out var list)) return;
 
+            using var st = new EventStack(m_EventStack, e);
+
             int count = list.Count;
             var array = ArrayPool<UniTask>.Shared.Rent(count);
 
             for (int i = 0; i < count; i++)
             {
+                // This operation can be recursively calling this method.
                 array[i] = m_ActionMap[list[i]](e, ctx)
                     .AttachExternalCancellation(m_CancellationTokenSource.Token);
             }

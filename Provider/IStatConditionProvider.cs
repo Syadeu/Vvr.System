@@ -24,11 +24,27 @@ using Vvr.Model.Stat;
 
 namespace Vvr.Provider
 {
+    /// <summary>
+    /// Represents a provider for stat condition resolution.
+    /// </summary>
     [LocalProvider]
     public interface IStatConditionProvider : IProvider
     {
+        /// <summary>
+        /// Represents an indexer for the IStatConditionProvider interface.
+        /// </summary>
+        /// <param name="t">The string key used to retrieve the StatType value.</param>
+        /// <returns>The StatType value associated with the specified key.</returns>
         StatType this[string t] { get; }
 
+        /// <summary>
+        /// Resolves a stat condition.
+        /// </summary>
+        /// <param name="centerStats">The center stats to compare against.</param>
+        /// <param name="stats">The stats to compare.</param>
+        /// <param name="condition">The operator condition.</param>
+        /// <param name="value">The value of the condition.</param>
+        /// <returns>True if the condition is resolved successfully, otherwise false.</returns>
         bool Resolve(
             IReadOnlyStatValues centerStats,
             IReadOnlyStatValues stats, OperatorCondition condition, string value);
