@@ -112,7 +112,7 @@ namespace Vvr.Session
                 foreach (var item in ctx.parentSession.ConnectedProviders)
                 {
                     var pType = item.Key;
-                    sessionConnector.Register(pType, item.Value);
+                    sessionConnector.Register(pType, item.Value.Peek());
                 }
             }
             // else $"[Session: {Type.FullName}] No connector for {childType.FullName}".ToLog();

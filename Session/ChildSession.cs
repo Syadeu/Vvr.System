@@ -43,9 +43,9 @@ namespace Vvr.Session
     public abstract class ChildSession<TSessionData> : IChildSession, IDisposable
         where TSessionData : ISessionData
     {
-        private          Type                        m_Type;
-        private          Type[]                      m_ConnectorTypes;
-        private readonly ConcurrentDictionary<Type, IProvider> m_ConnectedProviders = new();
+        private          Type                                         m_Type;
+        private          Type[]                                       m_ConnectorTypes;
+        private readonly ConcurrentDictionary<Type, Stack<IProvider>> m_ConnectedProviders = new();
 
         private readonly Dictionary<Type, LinkedList<ConnectorReflectionUtils.Wrapper>>
             m_ConnectorWrappers = new();
@@ -56,7 +56,7 @@ namespace Vvr.Session
         private TSessionData      m_SessionData;
         private bool              m_Initialized;
 
-        protected IReadOnlyDictionary<Type, IProvider> ConnectedProviders => m_ConnectedProviders;
+        protected IReadOnlyDictionary<Type, Stack<IProvider>> ConnectedProviders => m_ConnectedProviders;
 
         public  Type   Type           => (m_Type ??= GetType());
         private Type[] ConnectorTypes => m_ConnectorTypes ??= ConnectorReflectionUtils.GetAllConnectors(Type).ToArray();
@@ -175,6 +175,10 @@ namespace Vvr.Session
                 callback.OnSessionClose(this);
             }
 
+            foreach (var item in m_ConnectedProviders.Values)
+            {
+                item.Clear();
+            }
             m_ConnectedProviders.Clear();
             m_ConnectorWrappers.Clear();
 
@@ -222,25 +226,19 @@ namespace Vvr.Session
             EvaluateProviderRegistration(pType, provider);
 
             // $"[Session: {Type.FullName}] Connectors {ConnectorTypes.Length}".ToLog();
-            m_ConnectedProviders[pType] = provider;
+            if (!m_ConnectedProviders.TryGetValue(pType, out var pStack))
             {
-                foreach (var connectorType in ConnectorTypes)
-                {
-                    // $"[Session:{Type.FullName}] Found {connectorType.FullName} and {pType.FullName}".ToLog();
-                    if (connectorType.GetGenericArguments()[0] != pType)
-                    {
-                        // $"{connectorType.GetGenericArguments()[0].AssemblyQualifiedName} != {pType.AssemblyQualifiedName}"
-                        // .ToLog();
-                        continue;
-                    }
-
-                    ConnectorReflectionUtils.Connect(connectorType, this, provider);
-                    break;
-                }
+                pStack                      = new();
+                m_ConnectedProviders[pType] = pStack;
             }
 
-            ConnectObservers(pType, provider);
-            // $"[Session:{Type.FullName}] Connected {pType.FullName}".ToLog();
+            if (pStack.Count > 0)
+            {
+                DisconnectProvider(pType, pStack.Peek());
+            }
+
+            pStack.Push(provider);
+            ConnectProvider(pType, provider);
 
             OnProviderRegistered(pType, provider);
             return this;
@@ -250,23 +248,53 @@ namespace Vvr.Session
             if (m_ConnectedProviders == null) return this;
 
             pType = Vvr.Provider.Provider.ExtractType(pType);
-            if (m_ConnectedProviders.Remove(pType, out var provider))
+            if (m_ConnectedProviders.TryGetValue(pType, out var providerStack))
             {
-                for (var i = 0; i < ConnectorTypes.Length; i++)
-                {
-                    var connectorType = ConnectorTypes[i];
-                    if (connectorType.GetGenericArguments()[0] != pType) continue;
+                if (providerStack.TryPop(out var prevProvider))
+                    DisconnectProvider(pType, prevProvider);
 
-                    ConnectorReflectionUtils.Disconnect(connectorType, this, provider);
-                    $"[Session:{Type.FullName}] Disconnected {pType.FullName}".ToLog();
-                    break;
-                }
-
-                DisconnectObservers(pType);
+                if (providerStack.TryPeek(out prevProvider))
+                    ConnectProvider(pType, prevProvider);
+                else
+                    m_ConnectedProviders.TryRemove(pType, out providerStack);
             }
 
             OnProviderUnregistered(pType);
             return this;
+        }
+
+        private void ConnectProvider(Type pType, IProvider provider)
+        {
+            foreach (var connectorType in ConnectorTypes)
+            {
+                // $"[Session:{Type.FullName}] Found {connectorType.FullName} and {pType.FullName}".ToLog();
+                if (connectorType.GetGenericArguments()[0] != pType)
+                {
+                    // $"{connectorType.GetGenericArguments()[0].AssemblyQualifiedName} != {pType.AssemblyQualifiedName}"
+                    // .ToLog();
+                    continue;
+                }
+
+                ConnectorReflectionUtils.Connect(connectorType, this, provider);
+                break;
+            }
+
+            ConnectObservers(pType, provider);
+            // $"[Session:{Type.FullName}] Connected {pType.FullName}".ToLog();
+        }
+        private void DisconnectProvider(Type pType, IProvider provider)
+        {
+            for (var i = 0; i < ConnectorTypes.Length; i++)
+            {
+                var connectorType = ConnectorTypes[i];
+                if (connectorType.GetGenericArguments()[0] != pType) continue;
+
+                ConnectorReflectionUtils.Disconnect(connectorType, this, provider);
+                $"[Session:{Type.FullName}] Disconnected {pType.FullName}".ToLog();
+                break;
+            }
+
+            DisconnectObservers(pType);
         }
         public IDependencyContainer Register<TProvider>(TProvider provider) where TProvider : IProvider
         {
@@ -295,7 +323,7 @@ namespace Vvr.Session
             {
                 if (VvrTypeHelper.InheritsFrom(providerType, injectedProvider.Key))
                 {
-                    return injectedProvider.Value;
+                    return injectedProvider.Value.Peek();
                 }
             }
 
@@ -319,7 +347,7 @@ namespace Vvr.Session
             if (this is TProvider p) return p;
             foreach (var injectedProvider in m_ConnectedProviders.Values)
             {
-                if (injectedProvider is TProvider r) return r;
+                if (injectedProvider.Peek() is TProvider r) return r;
             }
 
             TProvider result = null;
@@ -366,7 +394,7 @@ namespace Vvr.Session
 
             if (m_ConnectedProviders.TryGetValue(t, out var provider))
             {
-                c.Connect((TProvider)provider);
+                c.Connect((TProvider)provider.Peek());
             }
 
             return this;
@@ -382,7 +410,7 @@ namespace Vvr.Session
             if (!m_ConnectorWrappers.TryGetValue(t, out var list)) return this;
 
             if (m_ConnectedProviders.TryGetValue(t, out var provider))
-                c.Disconnect((TProvider)provider);
+                c.Disconnect((TProvider)provider.Peek());
 
             uint hash = unchecked((uint)c.GetHashCode() ^ FNV1a32.Calculate(t.AssemblyQualifiedName));
             bool result = list.Remove(new ConnectorReflectionUtils.Wrapper(hash));
@@ -393,12 +421,19 @@ namespace Vvr.Session
 
         bool IDependencyContainer.TryGetProvider(Type providerType, out IProvider provider)
         {
-            return m_ConnectedProviders.TryGetValue(providerType, out provider);
+            provider = null;
+            if (!m_ConnectedProviders.TryGetValue(providerType, out var pStack)) return false;
+            provider = pStack.Peek();
+            return true;
         }
 
         IEnumerable<KeyValuePair<Type, IProvider>> IDependencyContainer.GetEnumerable()
         {
-            return m_ConnectedProviders;
+            foreach (var item in m_ConnectedProviders)
+            {
+                yield return new KeyValuePair<Type, IProvider>(
+                    item.Key, item.Value.Peek());
+            }
         }
 
         #endregion
@@ -443,7 +478,7 @@ namespace Vvr.Session
 
             foreach (var wr in list)
             {
-                wr.disconnect(provider);
+                wr.disconnect(provider.Peek());
             }
         }
         /// <summary>
@@ -458,7 +493,7 @@ namespace Vvr.Session
 
                 foreach (var wr in list.Value)
                 {
-                    wr.disconnect(provider);
+                    wr.disconnect(provider.Peek());
                 }
                 list.Value.Clear();
             }
@@ -500,8 +535,13 @@ namespace Vvr.Session
         [Conditional("DEVELOPMENT_BUILD")]
         protected virtual void EvaluateProviderRegistration(Type providerType, IProvider provider)
         {
-            if (m_ConnectedProviders.TryGetValue(providerType, out var existing) &&
-                !ReferenceEquals(existing, provider))
+            if (!m_ConnectedProviders.TryGetValue(providerType, out var existing))
+                return;
+
+            if (ReferenceEquals(existing.Peek(), provider))
+                throw new InvalidOperationException($"Already registered {providerType.FullName}.");
+
+            if (existing.Any(x => ReferenceEquals(x, provider)))
                 throw new InvalidOperationException($"Already registered {providerType.FullName}.");
         }
 
