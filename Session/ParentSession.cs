@@ -75,23 +75,24 @@ namespace Vvr.Session
             Assert.IsFalse(VvrTypeHelper.TypeOf<TChildSession>.IsAbstract);
 
             Type childType = typeof(TChildSession);
-            var  ctx       = new SessionCreateContext(this, new TChildSession(), childType, data);
+            var  ins       = new TChildSession();
+            var  ctx       = new SessionCreateContext(this, ins, childType, data);
 
-            var result = await UniTask.RunOnThreadPool(CreateSession, ctx, cancellationToken: ReserveToken);
+            await UniTask.RunOnThreadPool(CreateSession, ctx, cancellationToken: ReserveToken);
 
             bool lt = false;
             try
             {
                 m_CreateSessionLock.Enter(ref lt);
 
-                m_ChildSessions.Add(result);
+                m_ChildSessions.Add(ins);
             }
             finally
             {
                 if (lt) m_CreateSessionLock.Exit();
             }
 
-            return (TChildSession)result;
+            return ins;
         }
         public async UniTask<TChildSession> CreateSession<TChildSession>(ISessionData data)
             where TChildSession : IChildSession, new()
@@ -99,26 +100,27 @@ namespace Vvr.Session
             Assert.IsFalse(VvrTypeHelper.TypeOf<TChildSession>.IsAbstract);
 
             Type childType = typeof(TChildSession);
-            var  ctx       = new SessionCreateContext(this, new TChildSession(), childType, data);
+            var  ins       = new TChildSession();
+            var  ctx       = new SessionCreateContext(this, ins, childType, data);
 
-            var  result    = await CreateSession(ctx);
+            await CreateSession(ctx);
 
             bool lt = false;
             try
             {
                 m_CreateSessionLock.Enter(ref lt);
 
-                m_ChildSessions.Add(result);
+                m_ChildSessions.Add(ins);
             }
             finally
             {
                 if (lt) m_CreateSessionLock.Exit();
             }
 
-            return (TChildSession)result;
+            return ins;
         }
 
-        private static async UniTask<IChildSession> CreateSession([NotNull] object state)
+        private static async UniTask CreateSession([NotNull] object state)
         {
             SessionCreateContext ctx     = (SessionCreateContext)state;
             IChildSession        session = ctx.instance;
@@ -139,7 +141,6 @@ namespace Vvr.Session
 
             await session.Initialize(ctx.parentSession.Owner, ctx.parentSession, ctx.data);
             $"[Session: {ctx.parentSession.Type.FullName}] created {ctx.sessionType.FullName}".ToLog();
-            return session;
         }
 
         async UniTask IGameSessionCallback.OnSessionClose(IGameSessionBase child)
