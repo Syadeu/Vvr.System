@@ -45,7 +45,7 @@ namespace Vvr.Session
     {
         private          Type                                         m_Type;
         private          Type[]                                       m_ConnectorTypes;
-        private readonly ConcurrentDictionary<Type, Stack<IProvider>> m_ConnectedProviders = new();
+        private readonly ConcurrentDictionary<Type, ConcurrentStack<IProvider>> m_ConnectedProviders = new();
 
         private readonly Dictionary<Type, LinkedList<ConnectorReflectionUtils.Wrapper>>
             m_ConnectorWrappers = new();
@@ -56,7 +56,7 @@ namespace Vvr.Session
         private TSessionData      m_SessionData;
         private bool              m_Initialized;
 
-        protected IReadOnlyDictionary<Type, Stack<IProvider>> ConnectedProviders => m_ConnectedProviders;
+        protected IReadOnlyDictionary<Type, ConcurrentStack<IProvider>> ConnectedProviders => m_ConnectedProviders;
 
         public  Type   Type           => (m_Type ??= GetType());
         private Type[] ConnectorTypes => m_ConnectorTypes ??= ConnectorReflectionUtils.GetAllConnectors(Type).ToArray();
@@ -232,9 +232,8 @@ namespace Vvr.Session
                 m_ConnectedProviders[pType] = pStack;
             }
 
-            if (pStack.Count > 0)
+            if (pStack.TryPeek(out var existingProvider))
             {
-                var existingProvider = pStack.Peek();
                 if (ReferenceEquals(existingProvider, provider)) return this;
 
                 DisconnectProvider(pType, existingProvider);
@@ -322,15 +321,16 @@ namespace Vvr.Session
 
             if (VvrTypeHelper.InheritsFrom<IProvider>(Type)) return (IProvider)this;
 
+            IProvider result = null;
             foreach (var injectedProvider in m_ConnectedProviders)
             {
-                if (VvrTypeHelper.InheritsFrom(providerType, injectedProvider.Key))
+                if (VvrTypeHelper.InheritsFrom(providerType, injectedProvider.Key) &&
+                    injectedProvider.Value.TryPeek(out result))
                 {
-                    return injectedProvider.Value.Peek();
+                    return result;
                 }
             }
 
-            IProvider result = null;
             if (this is IParentSession parentSession)
             {
                 foreach (var s in parentSession.ChildSessions)
@@ -350,7 +350,7 @@ namespace Vvr.Session
             if (this is TProvider p) return p;
             foreach (var injectedProvider in m_ConnectedProviders.Values)
             {
-                if (injectedProvider.Peek() is TProvider r) return r;
+                if (injectedProvider.TryPeek(out IProvider peek) && peek is TProvider r) return r;
             }
 
             TProvider result = null;
@@ -395,9 +395,10 @@ namespace Vvr.Session
                     x => c.Disconnect((TProvider)x));
             list.AddLast(wr);
 
-            if (m_ConnectedProviders.TryGetValue(t, out var provider))
+            if (m_ConnectedProviders.TryGetValue(t, out var pStack) &&
+                pStack.TryPeek(out var provider))
             {
-                c.Connect((TProvider)provider.Peek());
+                c.Connect((TProvider)provider);
             }
 
             return this;
@@ -412,8 +413,9 @@ namespace Vvr.Session
 
             if (!m_ConnectorWrappers.TryGetValue(t, out var list)) return this;
 
-            if (m_ConnectedProviders.TryGetValue(t, out var provider))
-                c.Disconnect((TProvider)provider.Peek());
+            if (m_ConnectedProviders.TryGetValue(t, out var pStack) &&
+                pStack.TryPeek(out var provider))
+                c.Disconnect((TProvider)provider);
 
             uint hash = unchecked((uint)c.GetHashCode() ^ FNV1a32.Calculate(t.AssemblyQualifiedName));
             bool result = list.Remove(new ConnectorReflectionUtils.Wrapper(hash));
@@ -425,8 +427,9 @@ namespace Vvr.Session
         bool IDependencyContainer.TryGetProvider(Type providerType, out IProvider provider)
         {
             provider = null;
-            if (!m_ConnectedProviders.TryGetValue(providerType, out var pStack)) return false;
-            provider = pStack.Peek();
+            if (!m_ConnectedProviders.TryGetValue(providerType, out var pStack) ||
+                !pStack.TryPeek(out provider)) return false;
+
             return true;
         }
 
@@ -434,8 +437,10 @@ namespace Vvr.Session
         {
             foreach (var item in m_ConnectedProviders)
             {
+                if (!item.Value.TryPeek(out var v)) continue;
+
                 yield return new KeyValuePair<Type, IProvider>(
-                    item.Key, item.Value.Peek());
+                    item.Key, v);
             }
         }
 
@@ -491,11 +496,12 @@ namespace Vvr.Session
         {
             foreach (var list in m_ConnectorWrappers)
             {
-                if (!m_ConnectedProviders.TryGetValue(list.Key, out var provider)) continue;
+                if (!m_ConnectedProviders.TryGetValue(list.Key, out var pStack) ||
+                    !pStack.TryPeek(out var provider)) continue;
 
                 foreach (var wr in list.Value)
                 {
-                    wr.disconnect(provider.Peek());
+                    wr.disconnect(provider);
                 }
                 list.Value.Clear();
             }

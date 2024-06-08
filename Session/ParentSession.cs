@@ -111,8 +111,10 @@ namespace Vvr.Session
                 using var debugTimer = DebugTimer.Start();
                 foreach (var item in ctx.parentSession.ConnectedProviders)
                 {
+                    if (!item.Value.TryPeek(out var v)) continue;
+
                     var pType = item.Key;
-                    sessionConnector.Register(pType, item.Value.Peek());
+                    sessionConnector.Register(pType, v);
                 }
             }
             // else $"[Session: {Type.FullName}] No connector for {childType.FullName}".ToLog();
