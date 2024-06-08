@@ -33,6 +33,7 @@ namespace Vvr.Provider
     /// Due to stats are immutable, stat types can be held at static.
     /// Because stat type will not be changed during application life-cycle.
     /// </remarks>
+    [Obsolete("Due to possibly violate archtecture")]
     public sealed class StatProvider : IStatConditionProvider
     {
         public static  StatProvider Static { get; private set; }
@@ -45,9 +46,9 @@ namespace Vvr.Provider
         }
 
         private readonly Dictionary<string, StatType>        m_Map     = new();
-        private readonly Dictionary<StatType, StatSheet.Row> m_DataMap = new();
+        // private readonly Dictionary<StatType, StatSheet.Row> m_DataMap = new();
 
-        public StatSheet.Row this[StatType t] => m_DataMap[t];
+        // public StatSheet.Row this[StatType t] => m_DataMap[t];
         public StatType this[string t] => m_Map[t];
 
         private StatProvider(StatSheet t)
@@ -57,7 +58,7 @@ namespace Vvr.Provider
                 int      i    = row.Index;
                 StatType type = (StatType)(1L << i);
                 m_Map[row.Id]   = type;
-                m_DataMap[type] = row;
+                // m_DataMap[type] = row;
             }
         }
 
