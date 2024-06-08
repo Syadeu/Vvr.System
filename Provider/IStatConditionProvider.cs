@@ -24,6 +24,7 @@ using Vvr.Model.Stat;
 
 namespace Vvr.Provider
 {
+    [LocalProvider]
     public interface IStatConditionProvider : IProvider
     {
         StatType this[string t] { get; }

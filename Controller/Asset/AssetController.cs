@@ -17,9 +17,8 @@
 // File created : 2024, 05, 14 01:05
 #endregion
 
+using System;
 using System.Collections.Generic;
-using Cathei.BakingSheet.Unity;
-using JetBrains.Annotations;
 using Vvr.Model;
 using Vvr.Provider;
 
@@ -28,6 +27,7 @@ namespace Vvr.Controller.Asset
     /// <summary>
     /// Local asset path container
     /// </summary>
+    [Obsolete("This design makes more complex to all designs")]
     public class AssetController : IAsset
     {
         private readonly IReadOnlyDictionary<AssetType, string> m_AssetsPath;

@@ -19,9 +19,11 @@
 
 #endregion
 
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using JetBrains.Annotations;
+using UnityEngine.AddressableAssets;
 using Vvr.Model;
 using Vvr.Provider;
 
@@ -54,6 +56,9 @@ namespace Vvr.Session.AssetManagement
 
         public IActorData Resolve(string key)
         {
+            if (key.IsNullOrEmpty())
+                throw new InvalidKeyException("Key cannot be null or empty");
+
             return Data.sheet[key];
         }
 

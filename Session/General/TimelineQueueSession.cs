@@ -23,11 +23,13 @@ using System;
 using System.Buffers;
 using System.Collections.Generic;
 using System.Linq;
+using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using UnityEngine;
 using UnityEngine.Assertions;
 using Vvr.Controller.Actor;
 using Vvr.Model;
+using Vvr.Model.Stat;
 using Vvr.Provider;
 using Vvr.Session.Actor;
 using Vvr.Session.Provider;
@@ -37,7 +39,8 @@ namespace Vvr.Session
     [UsedImplicitly]
     public class TimelineQueueSession : ChildSession<TimelineQueueSession.SessionData>,
         ITimelineQueueProvider,
-        IConnector<ICustomMethodProvider>
+        IConnector<ICustomMethodProvider>,
+        IConnector<IStatConditionProvider>
     {
         public struct SessionData : ISessionData
         {
@@ -45,9 +48,10 @@ namespace Vvr.Session
 
         public override string DisplayName => nameof(TimelineQueueSession);
 
-        private class Entry : IComparable<Entry>, IMethodArgumentResolver
+        private class Entry : IComparable<Entry>, IMethodArgumentResolver, IDisposable
         {
-            private readonly CustomMethodDelegate m_Method;
+            private readonly CustomMethodDelegate   m_Method;
+            private readonly IStatConditionProvider m_StatConditionProvider;
 
             public IStageActor actor;
             public int         index;
@@ -57,11 +61,15 @@ namespace Vvr.Session
 
             public float Time => m_Method(this);
 
-            public Entry([NotNull] CustomMethodDelegate m)
+            public Entry(
+                [NotNull] IStatConditionProvider sp,
+                [NotNull] CustomMethodDelegate m)
             {
+                Assert.IsNotNull(sp);
                 Assert.IsNotNull(m, "timeline method is null");
 
-                m_Method = m;
+                m_StatConditionProvider = sp;
+                m_Method                = m;
             }
 
             public int CompareTo(Entry other)
@@ -79,12 +87,13 @@ namespace Vvr.Session
 
             float IMethodArgumentResolver.Resolve(string arg)
             {
-                if (StatProvider.Static.TryGetType(arg, out var s))
-                {
-                    return actor.Owner.Stats[s];
-                }
+                StatType s = m_StatConditionProvider[arg];
+                return actor.Owner.Stats[s];
+            }
 
-                throw new NotImplementedException();
+            public void Dispose()
+            {
+                actor = null;
             }
         }
 
@@ -92,10 +101,23 @@ namespace Vvr.Session
         private readonly SortedSet<Entry> m_Queue  = new();
         private          int              m_Index;
 
-        private ICustomMethodProvider m_CustomMethodProvider;
+        private ICustomMethodProvider  m_CustomMethodProvider;
+        private IStatConditionProvider m_StatConditionProvider;
 
         public int  Count         => m_Queue.Count;
         public bool HasAnyEnabled => m_Queue.Count > 0 && m_Queue.Any(x => !x.disabled);
+
+        protected override UniTask OnInitialize(IParentSession session, SessionData data)
+        {
+            return base.OnInitialize(session, data);
+        }
+
+        protected override UniTask OnReserve()
+        {
+            m_Actors.Clear();
+            m_Queue.Clear();
+            return base.OnReserve();
+        }
 
         public int IndexOf(IStageActor actor)
         {
@@ -120,7 +142,9 @@ namespace Vvr.Session
             if (!m_Actors.Add(actor.GetHashCode()))
                 throw new InvalidOperationException("duplicated");
 
-            m_Queue.Add(new Entry(m_CustomMethodProvider[CustomMethodNames.TIMELINE])
+            m_Queue.Add(new Entry(
+                m_StatConditionProvider,
+                m_CustomMethodProvider[CustomMethodNames.TIMELINE])
             {
                 actor = actor,
                 index = m_Index++,
@@ -154,7 +178,9 @@ namespace Vvr.Session
 
             ArrayPool<Entry>.Shared.Return(tempArr, true);
 
-            m_Queue.Add(new Entry(m_CustomMethodProvider[CustomMethodNames.TIMELINE])
+            m_Queue.Add(new Entry(
+                m_StatConditionProvider,
+                m_CustomMethodProvider[CustomMethodNames.TIMELINE])
             {
                 actor = actor,
                 index = index + 1,
@@ -268,5 +294,8 @@ namespace Vvr.Session
             Assert.IsTrue(ReferenceEquals(m_CustomMethodProvider, t));
             m_CustomMethodProvider = null;
         }
+
+        void IConnector<IStatConditionProvider>.Connect(IStatConditionProvider    t) => m_StatConditionProvider = t;
+        void IConnector<IStatConditionProvider>.Disconnect(IStatConditionProvider t) => m_StatConditionProvider = null;
     }
 }

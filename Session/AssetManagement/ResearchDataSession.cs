@@ -23,6 +23,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
+using UnityEngine.Assertions;
 using Vvr.Controller.Research;
 using Vvr.Model;
 using Vvr.Provider;
@@ -34,7 +35,8 @@ namespace Vvr.Session.AssetManagement
     [ParentSession(typeof(GameDataSession))]
     public sealed class ResearchDataSession : ChildSession<ResearchDataSession.SessionData>,
         IResearchDataProvider,
-        IConnector<IUserDataProvider>
+        IConnector<IUserDataProvider>,
+        IConnector<IStatConditionProvider>
     {
         public struct SessionData : ISessionData
         {
@@ -48,6 +50,8 @@ namespace Vvr.Session.AssetManagement
 
         public override string DisplayName => nameof(ResearchDataSession);
 
+        private IStatConditionProvider m_StatConditionProvider;
+
         // TODO: probably change int key to enum?
         private readonly Dictionary<int, IResearchNodeGroup> m_NodeGroups = new();
 
@@ -56,6 +60,8 @@ namespace Vvr.Session.AssetManagement
         protected override async UniTask OnInitialize(IParentSession session, SessionData data)
         {
             await base.OnInitialize(session, data);
+
+            Assert.IsNotNull(m_StatConditionProvider);
 
             Dictionary<int, LinkedList<ResearchSheet.Row>> dataMap = new();
             foreach (var e in data.sheet)
@@ -71,7 +77,9 @@ namespace Vvr.Session.AssetManagement
 
             foreach (var item in dataMap)
             {
-                IResearchNodeGroup group = ResearchNodeGroup.Build(item.Value);
+                ResearchNodeGroup group = ResearchNodeGroup.Build(
+                    m_StatConditionProvider,
+                    item.Value);
                 m_NodeGroups[item.Key] = group;
             }
         }
@@ -111,5 +119,8 @@ namespace Vvr.Session.AssetManagement
         void IConnector<IUserDataProvider>.Disconnect(IUserDataProvider t)
         {
         }
+
+        void IConnector<IStatConditionProvider>.Connect(IStatConditionProvider    t) => m_StatConditionProvider = t;
+        void IConnector<IStatConditionProvider>.Disconnect(IStatConditionProvider t) => m_StatConditionProvider = null;
     }
 }

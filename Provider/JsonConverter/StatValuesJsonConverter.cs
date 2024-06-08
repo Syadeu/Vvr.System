@@ -27,7 +27,7 @@ using Vvr.Model.Stat;
 
 namespace Vvr.Provider.JsonConverter
 {
-    [Preserve]
+    [Preserve][Obsolete("", true)]
     internal sealed class StatValuesJsonConverter : JsonConverter<StatValues>
     {
         public override void WriteJson(JsonWriter writer, StatValues value, JsonSerializer serializer)

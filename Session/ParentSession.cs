@@ -76,22 +76,11 @@ namespace Vvr.Session
 
             Type childType = typeof(TChildSession);
             var  ins       = new TChildSession();
+            m_ChildSessions.Add(ins);
+
             var  ctx       = new SessionCreateContext(this, ins, childType, data);
 
             await UniTask.RunOnThreadPool(CreateSession, ctx, cancellationToken: ReserveToken);
-
-            bool lt = false;
-            try
-            {
-                m_CreateSessionLock.Enter(ref lt);
-
-                m_ChildSessions.Add(ins);
-            }
-            finally
-            {
-                if (lt) m_CreateSessionLock.Exit();
-            }
-
             return ins;
         }
         public async UniTask<TChildSession> CreateSession<TChildSession>(ISessionData data)
@@ -101,21 +90,10 @@ namespace Vvr.Session
 
             Type childType = typeof(TChildSession);
             var  ins       = new TChildSession();
+            m_ChildSessions.Add(ins);
             var  ctx       = new SessionCreateContext(this, ins, childType, data);
 
             await CreateSession(ctx);
-
-            bool lt = false;
-            try
-            {
-                m_CreateSessionLock.Enter(ref lt);
-
-                m_ChildSessions.Add(ins);
-            }
-            finally
-            {
-                if (lt) m_CreateSessionLock.Exit();
-            }
 
             return ins;
         }
@@ -129,7 +107,7 @@ namespace Vvr.Session
 
             if (session is IDependencyContainer sessionConnector)
             {
-                // $"[Session: {Type.FullName}] Chain connector to {childType.FullName}".ToLog();
+                // $"[Session: {ctx.parentSession.Type.FullName}] Chain connector to {ctx.sessionType.FullName}".ToLog();
                 using var debugTimer = DebugTimer.Start();
                 foreach (var item in ctx.parentSession.ConnectedProviders)
                 {

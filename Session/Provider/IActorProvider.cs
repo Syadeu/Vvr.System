@@ -19,6 +19,7 @@
 
 #endregion
 
+using JetBrains.Annotations;
 using Vvr.Controller.Actor;
 using Vvr.Model;
 using Vvr.Provider;
@@ -39,6 +40,10 @@ namespace Vvr.Session.Provider
         /// </remarks>
         /// <param name="data">The data used to resolve the actor.</param>
         /// <returns>The resolved actor.</returns>
-        IReadOnlyActor Resolve(IActorData data);
+        [PublicAPI, NotNull]
+        IReadOnlyActor Resolve([NotNull] IActorData data);
+
+        [PublicAPI, NotNull]
+        IActor Create(Owner owner, [NotNull] IActorData data);
     }
 }

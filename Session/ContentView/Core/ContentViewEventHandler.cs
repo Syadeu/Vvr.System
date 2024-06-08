@@ -38,9 +38,6 @@ namespace Vvr.Session.ContentView.Core
         private readonly Dictionary<TEvent, List<uint>>                     m_Actions   = new();
         private readonly Dictionary<uint, ContentViewEventDelegate<TEvent>> m_ActionMap = new();
 
-        // TODO: multi-threaded ui task job
-        private SpinLock m_SpinLock;
-
         private readonly CancellationTokenSource m_CancellationTokenSource = new();
 
         [Pure]
@@ -59,54 +56,32 @@ namespace Vvr.Session.ContentView.Core
 
         public IContentViewEventHandler<TEvent> Register(TEvent e, ContentViewEventDelegate<TEvent> x)
         {
-            bool lt = false;
-
-            try
+            if (!m_Actions.TryGetValue(e, out var list))
             {
-                m_SpinLock.Enter(ref lt);
-                if (!m_Actions.TryGetValue(e, out var list))
-                {
-                    list         = new(8);
-                    m_Actions[e] = list;
-                }
-
-                uint hash = CalculateHash(x);
-                if (!m_ActionMap.TryAdd(hash, x))
-                {
-                    throw new InvalidOperationException();
-                }
-
-                m_ActionMap[hash] = x;
-                list.Add(hash);
+                list         = new(8);
+                m_Actions[e] = list;
             }
-            finally
+
+            uint hash = CalculateHash(x);
+            if (!m_ActionMap.TryAdd(hash, x))
             {
-                if (lt)
-                    m_SpinLock.Exit();
+                throw new InvalidOperationException();
             }
+
+            m_ActionMap[hash] = x;
+            list.Add(hash);
 
             return this;
         }
 
         public IContentViewEventHandler<TEvent> Unregister(TEvent e, ContentViewEventDelegate<TEvent> x)
         {
-            bool lt = false;
+            if (!m_Actions.TryGetValue(e, out var list)) return this;
 
-            try
-            {
-                m_SpinLock.Enter(ref lt);
-                if (!m_Actions.TryGetValue(e, out var list)) return this;
+            uint hash = CalculateHash(x);
+            if (!m_ActionMap.Remove(hash)) return this;
 
-                uint hash = CalculateHash(x);
-                if (!m_ActionMap.Remove(hash)) return this;
-
-                list.Remove(hash);
-            }
-            finally
-            {
-                if (lt)
-                    m_SpinLock.Exit();
-            }
+            list.Remove(hash);
 
             return this;
         }
@@ -118,22 +93,12 @@ namespace Vvr.Session.ContentView.Core
             int count = list.Count;
             var array = ArrayPool<UniTask>.Shared.Rent(count);
 
-            bool lt = false;
-            try
+            for (int i = 0; i < count; i++)
             {
-                m_SpinLock.Enter(ref lt);
-
-                for (int i = 0; i < count; i++)
-                {
-                    array[i] = m_ActionMap[list[i]](e, null)
+                array[i] = m_ActionMap[list[i]](e, null)
                         .AttachExternalCancellation(m_CancellationTokenSource.Token)
                         .SuppressCancellationThrow()
-                        ;
-                }
-            }
-            finally
-            {
-                if (lt) m_SpinLock.Exit();
+                    ;
             }
 
             await UniTask.WhenAll(array);
@@ -147,20 +112,10 @@ namespace Vvr.Session.ContentView.Core
             int count = list.Count;
             var array = ArrayPool<UniTask>.Shared.Rent(count);
 
-            bool lt = false;
-            try
+            for (int i = 0; i < count; i++)
             {
-                m_SpinLock.Enter(ref lt);
-
-                for (int i = 0; i < count; i++)
-                {
-                    array[i] = m_ActionMap[list[i]](e, ctx)
-                        .AttachExternalCancellation(m_CancellationTokenSource.Token);
-                }
-            }
-            finally
-            {
-                if (lt) m_SpinLock.Exit();
+                array[i] = m_ActionMap[list[i]](e, ctx)
+                    .AttachExternalCancellation(m_CancellationTokenSource.Token);
             }
 
             await UniTask.WhenAll(array);

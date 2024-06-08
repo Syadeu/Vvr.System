@@ -105,11 +105,14 @@ namespace Vvr.Controller.Research
             bool IStatModifier.IsDirty => m_IsDirty;
             int IStatModifier. Order   => StatModifierOrder.Item - 1;
 
-            public ResearchNode(ResearchSheet.Row data)
+            public ResearchNode(
+                IStatConditionProvider statConditionProvider,
+                ResearchSheet.Row data)
             {
                 m_Data = data;
 
-                m_TargetStatType = StatProvider.Static[data.Definition.TargetStat.Id];
+                // m_TargetStatType = StatProvider.Static[data.Definition.TargetStat.Id];
+                m_TargetStatType = statConditionProvider[data.Definition.TargetStat.Id];
                 m_StatGetter     = StatValues.GetGetMethod(m_TargetStatType);
                 m_StatSetter     = StatValues.GetSetMethod(m_TargetStatType);
 
@@ -189,10 +192,12 @@ namespace Vvr.Controller.Research
             }
         }
 
-        public static IResearchNodeGroup Build(IEnumerable<ResearchSheet.Row> nodes)
+        public static ResearchNodeGroup Build(
+            IStatConditionProvider statConditionProvider,
+            IEnumerable<ResearchSheet.Row> nodes)
         {
             Dictionary<string, ResearchNode> map = nodes.ToDictionary(
-                x => x.Id, x => new ResearchNode(x));
+                x => x.Id, x => new ResearchNode(statConditionProvider, x));
 
             var result = new ResearchNode[map.Count];
             foreach (var node in map.Values)

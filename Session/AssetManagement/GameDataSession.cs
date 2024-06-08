@@ -63,8 +63,13 @@ namespace Vvr.Session.AssetManagement
 
             ScriptableObjectSheetImporter imp = new(dataContainer.Object);
             await SheetContainer.Bake(imp);
-            var result
-                = await UniTask.RunOnThreadPool(LoadAsync, cancellationToken: ReserveToken);
+
+            StatDataSession statDataSession = await CreateSession<StatDataSession>(
+                new StatDataSession.SessionData(SheetContainer.StatTable));
+            Parent
+                .Register<IStatConditionProvider>(statDataSession);
+
+            var result = await LoadAsync();
 
             Parent
                 .Register<IGameConfigProvider>(result.Item1)
@@ -93,17 +98,17 @@ namespace Vvr.Session.AssetManagement
             UniTask<(GameConfigSession, ActorDataSession, CustomMethodSession, StageDataSession, ResearchDataSession)>
             LoadAsync()
         {
-            StatProvider.GetOrCreate(SheetContainer.StatTable);
+            // StatProvider.GetOrCreate(SheetContainer.StatTable);
 
-            var gameConfigSessionTask = CreateSessionOnBackground<GameConfigSession>(
+            var gameConfigSessionTask = CreateSession<GameConfigSession>(
                 new GameConfigSession.SessionData(SheetContainer.GameConfigTable));
-            var actorDataSessionTask = CreateSessionOnBackground<ActorDataSession>(
+            var actorDataSessionTask = CreateSession<ActorDataSession>(
                 new ActorDataSession.SessionData(SheetContainer.Actors));
-            var customMethodSessionTask = CreateSessionOnBackground<CustomMethodSession>(
+            var customMethodSessionTask = CreateSession<CustomMethodSession>(
                 new CustomMethodSession.SessionData(SheetContainer.CustomMethodTable));
-            var stageDataSessionTask = CreateSessionOnBackground<StageDataSession>(
+            var stageDataSessionTask = CreateSession<StageDataSession>(
                 new StageDataSession.SessionData(SheetContainer.Stages));
-            var researchDataSessionTask = CreateSessionOnBackground<ResearchDataSession>(
+            var researchDataSessionTask = CreateSession<ResearchDataSession>(
                 new ResearchDataSession.SessionData(SheetContainer.ResearchTable));
 
             return await UniTask.WhenAll(

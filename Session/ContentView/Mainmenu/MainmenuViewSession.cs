@@ -20,6 +20,7 @@
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using UnityEngine;
+using UnityEngine.Assertions;
 using Vvr.Controller.Actor;
 using Vvr.Model;
 using Vvr.Provider;
@@ -82,6 +83,9 @@ namespace Vvr.Session.ContentView.Mainmenu
             IActor actor = (IActor)ctx;
 
             IActorData data = m_ActorDataProvider.Resolve(actor.Id);
+            Assert.IsNotNull(data);
+            Assert.IsNotNull(data.Skills);
+            Assert.IsNotNull(actor.Skill);
 
             float
                 skill0Cooltime = actor.Skill.GetSkillCooltime(data.Skills[0]),

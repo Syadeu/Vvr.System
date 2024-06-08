@@ -226,7 +226,7 @@ namespace Vvr.Session
             {
                 foreach (var connectorType in ConnectorTypes)
                 {
-                    // $"[Session:{Type.FullName}] Found {connectorType.FullName}".ToLog();
+                    // $"[Session:{Type.FullName}] Found {connectorType.FullName} and {pType.FullName}".ToLog();
                     if (connectorType.GetGenericArguments()[0] != pType)
                     {
                         // $"{connectorType.GetGenericArguments()[0].AssemblyQualifiedName} != {pType.AssemblyQualifiedName}"

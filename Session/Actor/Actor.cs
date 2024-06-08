@@ -43,9 +43,10 @@ using Vvr.Provider;
 namespace Vvr.Session.Actor
 {
     [Serializable]
-    internal class Actor : ScriptableObject, IActor, IInitialize<Owner, IActorData>
+    internal class Actor : ScriptableObject, IActor
     {
-        [SerializeField] private Owner m_Owner;
+        [SerializeField] private string m_Id;
+        [SerializeField] private Owner  m_Owner;
 
         private  StatValueStack         m_Stats;
         private  ConditionResolver      m_ConditionResolver;
@@ -59,7 +60,13 @@ namespace Vvr.Session.Actor
         public Owner Owner
         {
             get => m_Owner;
-            private set => m_Owner = value;
+            set => m_Owner = value;
+        }
+
+        public string Id
+        {
+            get => m_Id;
+            set => m_Id = value;
         }
 
         public string DisplayName => Id;
@@ -68,7 +75,6 @@ namespace Vvr.Session.Actor
         public bool Initialized { get; private set; }
         public bool Instanced   { get; private set; }
 
-        public string                     Id            { get; private set; }
         public IReadOnlyConditionResolver ConditionResolver => m_ConditionResolver;
         public IStatValueStack            Stats             => m_Stats;
 
@@ -93,12 +99,12 @@ namespace Vvr.Session.Actor
             Destroy(this);
         }
 
-        public void Initialize(Owner t, IActorData ta)
+        public void Initialize(Owner owner,
+            IStatConditionProvider statConditionProvider, IActorData ta)
         {
             Assert.IsFalse(Initialized);
 
-            Owner  = t;
-            Id = ta.Id;
+            Owner   = owner;
 
             m_Stats = new StatValueStack(this, ta.Stats);
 
@@ -117,7 +123,7 @@ namespace Vvr.Session.Actor
 
             m_ConditionResolver
                 .Connect(m_AbnormalController)
-                .Connect(Stats, StatProvider.Static)
+                .Connect(Stats, statConditionProvider)
 
                 .Subscribe(m_AbnormalController)
                 .Subscribe(m_PassiveController)

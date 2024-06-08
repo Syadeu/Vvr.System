@@ -24,6 +24,7 @@ using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using UnityEngine;
+using UnityEngine.Assertions;
 using Vvr.Controller.Actor;
 using Vvr.Model;
 using Vvr.Provider;
@@ -33,7 +34,9 @@ namespace Vvr.Session
 {
     [UsedImplicitly]
     public sealed class ActorFactorySession : ChildSession<ActorFactorySession.SessionData>,
-        IActorProvider, IConnector<IEventViewProvider>
+        IActorProvider,
+        IConnector<IEventViewProvider>,
+        IConnector<IStatConditionProvider>
     {
         public struct SessionData : ISessionData
         {
@@ -58,7 +61,8 @@ namespace Vvr.Session
             }
         }
 
-        private IEventViewProvider m_ViewProvider;
+        private IEventViewProvider     m_ViewProvider;
+        private IStatConditionProvider m_StatConditionProvider;
 
         private readonly List<CachedActor> m_ResolvedActors = new();
 
@@ -80,17 +84,44 @@ namespace Vvr.Session
         {
             using var timer = DebugTimer.Start();
 
+            // TODO: Should remove this Prototype pattern?
+            // I thought making new instance for every call(& initialize as well)
+            // would be critical to system.
+            // so my intention in very first design was the actor initialized at once when it's resolved.
+            // but later i realize this usage adding complexity to system.
+            // because all the components are independently works...
+
             int i = m_ResolvedActors.BinarySearch(new CachedActor() { hash = FNV1a32.Calculate(data.Id) });
             if (0 <= i) return m_ResolvedActors[i].actor;
 
             Actor.Actor actor = ScriptableObject.CreateInstance<Actor.Actor>();
+            actor.Owner = Owner;
+            actor.Id    = data.Id;
 
             m_ResolvedActors.Add(new CachedActor(actor));
             m_ResolvedActors.Sort();
             return actor;
         }
 
-        public void Connect(IEventViewProvider t) => m_ViewProvider = t;
-        public void Disconnect(IEventViewProvider t) => m_ViewProvider = null;
+        public IActor Create(Owner owner, IActorData data)
+        {
+            Assert.IsNotNull(m_StatConditionProvider);
+
+            IReadOnlyActor    template = Resolve(data);
+            Assert.IsNotNull(template);
+
+            IActor result = template.CreateInstance();
+            Assert.IsNotNull(result);
+
+            result.Initialize(owner, m_StatConditionProvider, data);
+
+            return result;
+        }
+
+        void IConnector<IEventViewProvider>.Connect(IEventViewProvider    t) => m_ViewProvider = t;
+        void IConnector<IEventViewProvider>.Disconnect(IEventViewProvider t) => m_ViewProvider = null;
+
+        void IConnector<IStatConditionProvider>.Connect(IStatConditionProvider    t) => m_StatConditionProvider = t;
+        void IConnector<IStatConditionProvider>.Disconnect(IStatConditionProvider t) => m_StatConditionProvider = null;
     }
 }

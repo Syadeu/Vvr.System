@@ -15,69 +15,67 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// File created : 2024, 05, 10 22:05
+// File created : 2024, 06, 08 22:06
 
 #endregion
 
 using System;
 using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
+using JetBrains.Annotations;
 using Vvr.Model;
 using Vvr.Model.Stat;
+using Vvr.Provider;
 
-namespace Vvr.Provider
+namespace Vvr.Session.AssetManagement
 {
-    /// <summary>
-    /// Global stat provider
-    /// </summary>
-    /// <remarks>
-    /// Due to stats are immutable, stat types can be held at static.
-    /// Because stat type will not be changed during application life-cycle.
-    /// </remarks>
-    [Obsolete("Due to possibly violate architecture. " +
-              "This implements has been moved to StatDataSession", true)]
-    public sealed class StatProvider : IStatConditionProvider
+    [UsedImplicitly]
+    public sealed class StatDataSession : ChildSession<StatDataSession.SessionData>,
+        IStatConditionProvider
     {
-        public static  StatProvider Static { get; private set; }
-
-        [Obsolete]
-        public static StatProvider GetOrCreate(StatSheet sheet)
+        public struct SessionData : ISessionData
         {
-            Static ??= new StatProvider(sheet);
-            return Static;
-        }
+            public readonly StatSheet sheet;
 
-        private readonly Dictionary<string, StatType>        m_Map     = new();
-        // private readonly Dictionary<StatType, StatSheet.Row> m_DataMap = new();
-
-        // public StatSheet.Row this[StatType t] => m_DataMap[t];
-        public StatType this[string t] => m_Map[t];
-
-        private StatProvider(StatSheet t)
-        {
-            foreach (var row in t)
+            public SessionData(StatSheet s)
             {
-                int      i    = row.Index;
-                StatType type = (StatType)(1L << i);
-                m_Map[row.Id]   = type;
-                // m_DataMap[type] = row;
+                sheet = s;
             }
         }
 
-        public bool TryGetType(string id, out StatType result)
+        public override string DisplayName => nameof(StatDataSession);
+
+        private readonly Dictionary<string, StatType> m_Map = new();
+
+        public StatType this[string t] => m_Map[t];
+
+        protected override UniTask OnInitialize(IParentSession session, SessionData data)
         {
-            return m_Map.TryGetValue(id, out result);
+            foreach (var row in data.sheet)
+            {
+                int      i    = row.Index;
+                StatType type = (StatType)(1L << i);
+                m_Map[row.Id] = type;
+            }
+            return base.OnInitialize(session, data);
+        }
+
+        protected override UniTask OnReserve()
+        {
+            m_Map.Clear();
+            return base.OnReserve();
         }
 
         bool IStatConditionProvider.Resolve(
             IReadOnlyStatValues centerStats,
             IReadOnlyStatValues stats, OperatorCondition condition, string value)
         {
-            const char ValueDelimiter = '|';
-            const char PercentChar = '%';
+            const char valueDelimiter = '|';
+            const char percentChar    = '%';
 
             using var debugTimer = DebugTimer.Start();
 
-            int i = value.IndexOf(ValueDelimiter, StringComparison.Ordinal);
+            int i = value.IndexOf(valueDelimiter, StringComparison.Ordinal);
             if (i < 0)
             {
                 $"Cannot resolve {condition} {value}".ToLogError();
@@ -96,7 +94,7 @@ namespace Vvr.Provider
             }
 
             bool result;
-            if (indexString[^1] == PercentChar)
+            if (indexString[^1] == percentChar)
             {
                 float v = FastFloat.Parse(indexString[..^1]);
 

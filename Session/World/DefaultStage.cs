@@ -246,8 +246,7 @@ namespace Vvr.Session.World
                 {
                     foreach (var data in Data.players)
                     {
-                        IActor target = m_ActorProvider.Resolve(data).CreateInstance();
-                        target.Initialize(Owner, data);
+                        IActor target = m_ActorProvider.Create(Owner, data);
 
                         IStageActor runtimeActor = m_StageActorProvider.Create(target, data);
 
@@ -267,8 +266,7 @@ namespace Vvr.Session.World
             }
             foreach (var data in Data.actors)
             {
-                IActor target = m_ActorProvider.Resolve(data).CreateInstance();
-                target.Initialize(m_EnemyId, data);
+                IActor target = m_ActorProvider.Create(m_EnemyId, data);
 
                 IStageActor runtimeActor = m_StageActorProvider.Create(target, data);
 

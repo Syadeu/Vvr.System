@@ -43,6 +43,6 @@ namespace Vvr.Provider
         /// </summary>
         /// <param name="key">The key used to locate the actor data.</param>
         /// <returns>The actor data with the specified key.</returns>
-        IActorData Resolve(string key);
+        [NotNull] IActorData Resolve([NotNull] string key);
     }
 }

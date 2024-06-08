@@ -88,7 +88,9 @@ namespace Vvr.Provider
                 where TProvider : IProvider
             {
                 Type t = typeof(TProvider);
-                m_Map[t] = new Template<TProvider>(factory);
+                m_Map[t] = new Template<TProvider>(
+                    factory ?? (() => (TProvider)Activator.CreateInstance(t))
+                    );
 
                 return this;
             }
