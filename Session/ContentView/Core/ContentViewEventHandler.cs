@@ -180,7 +180,6 @@ namespace Vvr.Session.ContentView.Core
                 // This operation can be recursively calling this method.
                 array[i] = m_ActionMap[list[i]](e, null)
                         .AttachExternalCancellation(m_CancellationTokenSource.Token)
-                        .SuppressCancellationThrow()
                     ;
             }
 
