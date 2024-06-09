@@ -172,7 +172,7 @@ namespace Vvr.Session
 
             if (Parent is IGameSessionCallback callback)
             {
-                callback.OnSessionClose(this);
+                await callback.OnSessionClose(this);
             }
 
             foreach (var item in m_ConnectedProviders.Values)

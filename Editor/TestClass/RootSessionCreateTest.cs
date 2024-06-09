@@ -1,4 +1,5 @@
 #region Copyrights
+
 // Copyright 2024 Syadeu
 // Author : Seung Ha Kim
 //
@@ -14,23 +15,35 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// File created : 2024, 06, 04 23:06
+// File created : 2024, 06, 09 20:06
+
 #endregion
 
-using JetBrains.Annotations;
-using Vvr.Session.ContentView.Core;
+using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
+using NUnit.Framework;
+using Vvr.Session;
 
-namespace Vvr.Session.ContentView.CardCollection
+namespace Vvr.TestClass
 {
-    [UsedImplicitly]
-    public sealed class CardCollectionViewSession
-        : ContentViewChildSession<CardCollectionViewEvent, ICardCollectionViewProvider>
+    sealed class RootSessionCreateTest : SessionTest<TestRootSession>
     {
-        public override string DisplayName => nameof(CardCollectionViewSession);
+        [Test]
+        public async void CreateSession()
+        {
+            await Root.CreateSession<TestChildSession>(null);
+
+            await UniTask.WaitForSeconds(1);
+        }
     }
 
-    public interface ICardCollectionViewProvider : IContentViewProvider<CardCollectionViewEvent>
+    public struct TestSessionData : ISessionData
     {
 
+    }
+
+    public class TestChildSession : ChildSession<TestSessionData>
+    {
+        public override string DisplayName => nameof(TestChildSession);
     }
 }

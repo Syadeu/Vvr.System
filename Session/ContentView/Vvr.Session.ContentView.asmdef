@@ -27,6 +27,7 @@
     "UniTask.Addressables",
 
     "BakingSheet",
-    "BakingSheet.ScriptableObject"
+    "BakingSheet.ScriptableObject",
+    "GUID:a4a8d67d3eea4d599b77d846b57f9865"
   ]
 }

@@ -1,4 +1,5 @@
 #region Copyrights
+
 // Copyright 2024 Syadeu
 // Author : Seung Ha Kim
 //
@@ -14,23 +15,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// File created : 2024, 06, 04 23:06
+// File created : 2024, 06, 09 20:06
+
 #endregion
 
-using JetBrains.Annotations;
-using Vvr.Session.ContentView.Core;
+using Vvr.Session;
 
-namespace Vvr.Session.ContentView.CardCollection
+namespace Vvr.TestClass
 {
-    [UsedImplicitly]
-    public sealed class CardCollectionViewSession
-        : ContentViewChildSession<CardCollectionViewEvent, ICardCollectionViewProvider>
+    public class TestRootSession : RootSession
     {
-        public override string DisplayName => nameof(CardCollectionViewSession);
-    }
-
-    public interface ICardCollectionViewProvider : IContentViewProvider<CardCollectionViewEvent>
-    {
-
+        public override string DisplayName => nameof(TestRootSession);
     }
 }

@@ -26,6 +26,7 @@ using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using Vvr.Provider;
 using Vvr.Session.ContentView.Canvas;
+using Vvr.Session.ContentView.CardCollection;
 using Vvr.Session.ContentView.Core;
 using Vvr.Session.ContentView.Deck;
 using Vvr.Session.ContentView.Dialogue;
@@ -123,7 +124,8 @@ namespace Vvr.Session.ContentView
                 CreateSession<ResearchViewSession>(null),
                 CreateSession<MainmenuViewSession>(null),
                 CreateSession<WorldBackgroundViewSession>(null),
-                CreateSession<DeckViewSession>(null)
+                CreateSession<DeckViewSession>(null),
+                CreateSession<CardCollectionViewSession>(null)
             );
             var dialogueViewSession = await CreateSession<DialogueViewSession>(null);
 
@@ -147,25 +149,6 @@ namespace Vvr.Session.ContentView
 
             await base.OnReserve();
         }
-
-        // protected override UniTask OnCreateSession(IChildSession session)
-        // {
-        //     if (session is IContentViewChildSession childSession)
-        //     {
-        //         m_ViewEventHandlerProvider[childSession.EventType]
-        //             = childSession.CreateEventHandler();
-        //     }
-        //     return base.OnCreateSession(session);
-        // }
-        // protected override UniTask OnSessionClose(IChildSession session)
-        // {
-        //     if (session is IContentViewChildSession childSession)
-        //     {
-        //         childSession.ReserveEventHandler();
-        //         m_ViewEventHandlerProvider.ViewEventHandlers.Remove(childSession.EventType);
-        //     }
-        //     return base.OnSessionClose(session);
-        // }
 
         void IConnector<IContentViewRegistryProvider>.Connect(IContentViewRegistryProvider t)
         {

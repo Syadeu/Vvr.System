@@ -148,22 +148,10 @@ namespace Vvr.Session
 
         public async UniTask CloseAllSessions()
         {
-            bool lt = false;
-            try
+            for (var i = m_ChildSessions.Count - 1; i >= 0; i--)
             {
-                m_CreateSessionLock.Enter(ref lt);
-
-                for (var i = m_ChildSessions.Count - 1; i >= 0; i--)
-                {
-                    var session = m_ChildSessions[i];
-                    await session.Reserve();
-                }
-
-                m_ChildSessions.Clear();
-            }
-            finally
-            {
-                if (lt) m_CreateSessionLock.Exit();
+                var session = m_ChildSessions[i];
+                await session.Reserve();
             }
         }
         public async UniTask<IChildSession> WaitUntilSessionAvailableAsync(Type sessionType, float timeout)

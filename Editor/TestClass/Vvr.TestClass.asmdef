@@ -2,6 +2,9 @@
   "name": "Vvr.TestClass",
   "rootNamespace": "Vvr.TestClass",
   "references": [
+    "UnityEngine.TestRunner",
+    "UnityEditor.TestRunner",
+
     "Vvr",
     "Vvr.UI",
     "GUID:3957eefabf624d2485d569ea058bfc85",
@@ -24,7 +27,14 @@
     "BakingSheet.ScriptableObject",
     "GUID:f2e4e751cc80e493bb01487f3fdb9536"
   ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "precompiledReferences": [
+    "nunit.framework.dll"
+  ],
   "defineConstraints": [
-    "UNITY_EDITOR"
+    "UNITY_EDITOR",
+    "UNITY_INCLUDE_TESTS"
   ]
 }
