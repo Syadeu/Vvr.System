@@ -27,6 +27,8 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using Vvr.Session.ContentView.Core;
 
+using Assert = NUnit.Framework.Assert;
+
 namespace Vvr.Session.ContentView.Tests
 {
     public sealed class ContentViewEventHandlerTests
@@ -56,6 +58,71 @@ namespace Vvr.Session.ContentView.Tests
             return UniTask.CompletedTask;
         }
 
+        private async UniTask RecursiveEvent1Method(TestContentViewEvent e, object ctx)
+        {
+            Debug.Log($"Executed: {e} with {ctx}");
+            await EventHandler.ExecuteAsync(TestContentViewEvent.Test1);
+        }
+        private async UniTask RecursiveEvent2Method(TestContentViewEvent e, object ctx)
+        {
+            Debug.Log($"Executed: {e} with {ctx}");
+            await EventHandler.ExecuteAsync(TestContentViewEvent.Test2);
+        }
+
+        private UniTask RegisterOnMainThread(TestContentViewEvent e, ContentViewEventDelegate<TestContentViewEvent> x)
+        {
+            return UniTask.Create(
+                async () =>
+                {
+                    Debug.Log($"{e} registered");
+                    return EventHandler.Register(e, x);
+                });
+        }
+        private UniTask RegisterOnBackground(TestContentViewEvent e, ContentViewEventDelegate<TestContentViewEvent> x)
+        {
+            return UniTask.RunOnThreadPool(
+                async () =>
+                {
+                    Debug.Log($"{e} registered");
+                    return EventHandler.Register(e, x);
+                });
+        }
+        private UniTask UnregisterOnMainThread(TestContentViewEvent e, ContentViewEventDelegate<TestContentViewEvent> x)
+        {
+            return UniTask.Create(
+                async () =>
+                {
+                    Debug.Log($"{e} unregistered");
+                    return EventHandler.Unregister(e, x);
+                });
+        }
+        private UniTask UnregisterOnBackground(TestContentViewEvent e, ContentViewEventDelegate<TestContentViewEvent> x)
+        {
+            return UniTask.RunOnThreadPool(
+                async () =>
+                {
+                    Debug.Log($"{e} unregistered");
+                    return EventHandler.Unregister(e, x);
+                });
+        }
+
+        private UniTask ExecuteOnMainThread(TestContentViewEvent e, object ctx = null)
+        {
+            return UniTask.Create(() =>
+            {
+                Debug.Log($"{e} execute with ctx");
+                return EventHandler.ExecuteAsync(e, ctx);
+            });
+        }
+        private UniTask ExecuteOnBackground(TestContentViewEvent e, object ctx = null)
+        {
+            return UniTask.RunOnThreadPool(() =>
+            {
+                Debug.Log($"{e} execute with ctx");
+                return EventHandler.ExecuteAsync(e, ctx);
+            });
+        }
+
         [Test]
         public void RegistrationTest_0()
         {
@@ -75,26 +142,170 @@ namespace Vvr.Session.ContentView.Tests
         public async Task RegistrationTest_2()
         {
             await UniTask.WhenAll(
-                UniTask.Create(async () => EventHandler.Register(TestContentViewEvent.Test0, TestMethod)),
-                UniTask.Create(async () => EventHandler.Register(TestContentViewEvent.Test1, TestMethod)),
-                UniTask.RunOnThreadPool(async () => EventHandler.Register(TestContentViewEvent.Test2, TestMethod)),
-                UniTask.RunOnThreadPool(async () => EventHandler.Register(TestContentViewEvent.Test3, TestMethod))
+                RegisterOnMainThread(TestContentViewEvent.Test0, TestMethod),
+                RegisterOnMainThread(TestContentViewEvent.Test1, TestMethod),
+
+                RegisterOnBackground(TestContentViewEvent.Test2, TestMethod),
+                RegisterOnBackground(TestContentViewEvent.Test3, TestMethod)
             );
         }
         [Test]
         public async Task ExecuteTest_0()
         {
             await UniTask.WhenAll(
-                UniTask.Create(async () => EventHandler.Register(TestContentViewEvent.Test0, TestMethod)),
-                UniTask.Create(async () => EventHandler.Register(TestContentViewEvent.Test1, TestMethod)),
-                UniTask.RunOnThreadPool(async () => EventHandler.Register(TestContentViewEvent.Test2, TestMethod)),
-                UniTask.RunOnThreadPool(async () => EventHandler.Register(TestContentViewEvent.Test3, TestMethod))
+                RegisterOnMainThread(TestContentViewEvent.Test0, TestMethod),
+                RegisterOnMainThread(TestContentViewEvent.Test1, TestMethod),
+
+                RegisterOnBackground(TestContentViewEvent.Test2, TestMethod),
+                RegisterOnBackground(TestContentViewEvent.Test3, TestMethod)
             );
 
             await EventHandler.ExecuteAsync(TestContentViewEvent.Test0);
             await EventHandler.ExecuteAsync(TestContentViewEvent.Test1);
             await EventHandler.ExecuteAsync(TestContentViewEvent.Test2);
             await EventHandler.ExecuteAsync(TestContentViewEvent.Test3);
+        }
+        [Test]
+        public async Task ExecuteTest_1()
+        {
+            await UniTask.WhenAll(
+                RegisterOnMainThread(TestContentViewEvent.Test0, TestMethod),
+                RegisterOnMainThread(TestContentViewEvent.Test1, TestMethod),
+
+                RegisterOnBackground(TestContentViewEvent.Test2, TestMethod),
+                RegisterOnBackground(TestContentViewEvent.Test3, TestMethod)
+            );
+
+            await UniTask.WhenAll(
+                    EventHandler.ExecuteAsync(TestContentViewEvent.Test0),
+                    EventHandler.ExecuteAsync(TestContentViewEvent.Test1),
+                    UniTask.RunOnThreadPool(() => EventHandler.ExecuteAsync(TestContentViewEvent.Test2)),
+                    UniTask.RunOnThreadPool(() => EventHandler.ExecuteAsync(TestContentViewEvent.Test3))
+            );
+        }
+        [Test]
+        public async Task ExecuteTest_2()
+        {
+            await UniTask.WhenAll(
+                RegisterOnBackground(TestContentViewEvent.Test0, RecursiveEvent1Method),
+                RegisterOnBackground(TestContentViewEvent.Test1, RecursiveEvent2Method),
+                RegisterOnBackground(TestContentViewEvent.Test2, TestMethod)
+            );
+
+            await UniTask.RunOnThreadPool(() => EventHandler.ExecuteAsync(TestContentViewEvent.Test0));
+        }
+        [Test]
+        public async Task ExecuteTest_3()
+        {
+            bool
+                e0 = false,
+                e1 = false;
+
+            await UniTask.WhenAll(
+                RegisterOnBackground(TestContentViewEvent.Test0, RecursiveEvent1Method),
+                RegisterOnBackground(TestContentViewEvent.Test0, async (e, x) =>
+                {
+                    e0 = true;
+                }),
+                RegisterOnBackground(TestContentViewEvent.Test1, RecursiveEvent2Method),
+                RegisterOnBackground(TestContentViewEvent.Test2, TestMethod),
+                RegisterOnBackground(TestContentViewEvent.Test2, async (e, x) =>
+                {
+                    e1 = true;
+                })
+            );
+
+            await ExecuteOnBackground(TestContentViewEvent.Test0);
+
+            Assert.IsTrue(e0);
+            Assert.IsTrue(e1);
+        }
+
+        [Test]
+        public async Task MultiExecuteTest_0()
+        {
+            bool
+                e0 = false,
+                e1 = false;
+
+            EventHandler.Register(TestContentViewEvent.Test0, async (e, x) =>
+            {
+                await EventHandler.ExecuteAsync(TestContentViewEvent.Test1);
+            });
+            EventHandler.Register(TestContentViewEvent.Test1, async (e, x) =>
+            {
+                e0 = true;
+                Debug.Log($"{e} end");
+            });
+            EventHandler.Register(TestContentViewEvent.Test2, async (e, x) =>
+            {
+                await EventHandler.ExecuteAsync(TestContentViewEvent.Test3);
+            });
+            EventHandler.Register(TestContentViewEvent.Test3, async (e, x) =>
+            {
+                e1 = true;
+                Debug.Log($"{e} end");
+            });
+
+            await UniTask.WhenAll(
+                EventHandler.ExecuteAsync(TestContentViewEvent.Test0),
+                EventHandler.ExecuteAsync(TestContentViewEvent.Test2));
+
+            Assert.IsTrue(e0);
+            Assert.IsTrue(e1);
+        }
+        [Test]
+        public async Task MultiExecuteTest_1()
+        {
+            bool
+                e0 = false,
+                e1 = false;
+
+            EventHandler.Register(TestContentViewEvent.Test0, async (e, x) =>
+            {
+                await EventHandler.ExecuteAsync(TestContentViewEvent.Test1);
+            });
+            EventHandler.Register(TestContentViewEvent.Test1, async (e, x) =>
+            {
+                e0 = true;
+                Debug.Log($"{e} end");
+            });
+            EventHandler.Register(TestContentViewEvent.Test2, async (e, x) =>
+            {
+                await EventHandler.ExecuteAsync(TestContentViewEvent.Test3);
+            });
+            EventHandler.Register(TestContentViewEvent.Test3, async (e, x) =>
+            {
+                e1 = true;
+                Debug.Log($"{e} end");
+            });
+
+            await UniTask.WhenAll(
+                ExecuteOnBackground(TestContentViewEvent.Test0),
+                ExecuteOnBackground(TestContentViewEvent.Test2)
+            );
+
+            Assert.IsTrue(e0);
+            Assert.IsTrue(e1);
+        }
+
+        [Test]
+        public async Task InterceptionTest_0()
+        {
+            await UniTask.WhenAll(
+                RegisterOnMainThread(TestContentViewEvent.Test0, TestMethod),
+
+                ExecuteOnMainThread(TestContentViewEvent.Test0)
+            );
+        }
+        [Test]
+        public async Task InterceptionTest_1()
+        {
+            await UniTask.WhenAll(
+                RegisterOnBackground(TestContentViewEvent.Test0, TestMethod),
+
+                ExecuteOnMainThread(TestContentViewEvent.Test0)
+            );
         }
     }
 }
