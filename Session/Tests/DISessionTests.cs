@@ -122,8 +122,7 @@ namespace Vvr.Session.Tests
         public async void ConnectionTest_2()
         {
             ITestLocalProvider
-                p0 = new TestLocalProvider(),
-                p1 = new TestLocalProvider();
+                p0 = new TestLocalProvider();
 
             var t0 = await Root.CreateSession<DITestSession>(null);
             var t1 = await t0.CreateSession<DITestSession>(null);
