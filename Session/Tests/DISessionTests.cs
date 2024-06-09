@@ -61,5 +61,46 @@ namespace Vvr.Session.Tests
             var t0 = await Root.CreateSession<DITestSession>(null);
             Assert.IsNotNull(t0.Provider);
         }
+
+        [Test]
+        public async void DetachTest_0()
+        {
+            var t0 = await Root.CreateSession<DITestSession>(null);
+            t0.Register(new TestLocalProvider());
+            t0.Unregister<TestLocalProvider>();
+
+            Assert.IsNull(t0.Provider);
+        }
+        [Test]
+        public async void DetachTest_1()
+        {
+            var t0 = await Root.CreateSession<DITestSession>(null);
+            Root.Register(new TestLocalProvider());
+            Root.Unregister<TestLocalProvider>();
+
+            Assert.IsNull(t0.Provider);
+        }
+        [Test]
+        public async void DetachTest_2()
+        {
+            Root.Register(new TestLocalProvider());
+            var t0 = await Root.CreateSession<DITestSession>(null);
+            Root.Unregister<TestLocalProvider>();
+
+            Assert.IsNull(t0.Provider);
+        }
+        [Test]
+        public async void DetachTest_3()
+        {
+            var t0 = await Root.CreateSession<DITestSession>(null);
+            var t1 = await t0.CreateSession<DITestSession>(null);
+            t1.Register<ITestLocalProvider>(new TestLocalProvider());
+            t1.Connect(t0);
+
+            Assert.NotNull(t0.Provider);
+            await t1.Reserve();
+
+            Assert.IsNull(t0.Provider);
+        }
     }
 }
