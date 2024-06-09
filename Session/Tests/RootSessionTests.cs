@@ -20,6 +20,7 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using NUnit.Framework;
 using Vvr.TestClass;
 
@@ -104,6 +105,41 @@ namespace Vvr.Session.Tests
 
             Assert.IsTrue(t2.Disposed);
             Assert.IsTrue(t1.Disposed);
+            Assert.IsFalse(t0.Disposed);
+        }
+        [Test]
+        public async Task BuildHierarchyTest_3()
+        {
+            var t0 = await Root.CreateSession<TestParentSession>(null);
+            var task = await UniTask.WhenAll(
+                t0.CreateSessionOnBackground<TestParentSession>(null),
+                t0.CreateSessionOnBackground<TestChildSession>(null),
+                t0.CreateSessionOnBackground<TestChildSession>(null),
+                t0.CreateSessionOnBackground<TestChildSession>(null),
+                t0.CreateSessionOnBackground<TestChildSession>(null),
+                t0.CreateSessionOnBackground<TestChildSession>(null)
+            );
+
+            Assert.IsTrue(t0.ChildSessions.Contains(task.Item1));
+            Assert.IsTrue(t0.ChildSessions.Contains(task.Item2));
+            Assert.IsTrue(t0.ChildSessions.Contains(task.Item3));
+            Assert.IsTrue(t0.ChildSessions.Contains(task.Item4));
+            Assert.IsTrue(t0.ChildSessions.Contains(task.Item5));
+            Assert.IsTrue(t0.ChildSessions.Contains(task.Item6));
+        }
+        [Test]
+        public async Task BuildHierarchyTest_4()
+        {
+            var t0 = await Root.CreateSession<TestParentSession>(null);
+            var task = await UniTask.WhenAll(
+                t0.CreateSessionOnBackground<TestParentSession>(null),
+                t0.CreateSessionOnBackground<TestChildSession>(null)
+            );
+
+            await t0.CloseAllSessions();
+
+            Assert.IsTrue(task.Item1.Disposed);
+            Assert.IsTrue(task.Item2.Disposed);
             Assert.IsFalse(t0.Disposed);
         }
     }

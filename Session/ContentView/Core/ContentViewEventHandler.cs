@@ -186,7 +186,7 @@ namespace Vvr.Session.ContentView.Core
             }
         }
 
-        private readonly List<TEvent> m_EventStack = new();
+        // private readonly List<TEvent> m_EventStack = new();
 
         private readonly Dictionary<TEvent, List<uint>>                     m_Actions   = new();
         private readonly ConcurrentDictionary<uint, ContentViewEventDelegate<TEvent>> m_ActionMap = new();

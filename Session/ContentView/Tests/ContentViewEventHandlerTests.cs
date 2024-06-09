@@ -108,11 +108,8 @@ namespace Vvr.Session.ContentView.Tests
 
         private UniTask ExecuteOnMainThread(TestContentViewEvent e, object ctx = null)
         {
-            return UniTask.Create(() =>
-            {
-                Debug.Log($"{e} execute with ctx");
-                return EventHandler.ExecuteAsync(e, ctx);
-            });
+            Debug.Log($"{e} execute with ctx");
+            return EventHandler.ExecuteAsync(e, ctx);
         }
         private UniTask ExecuteOnBackground(TestContentViewEvent e, object ctx = null)
         {
@@ -292,20 +289,54 @@ namespace Vvr.Session.ContentView.Tests
         [Test]
         public async Task InterceptionTest_0()
         {
+            bool e0 = false;
+
             await UniTask.WhenAll(
-                RegisterOnMainThread(TestContentViewEvent.Test0, TestMethod),
+                RegisterOnMainThread(TestContentViewEvent.Test0, async (e, x) =>
+                {
+                    e0 = true;
+                }),
 
                 ExecuteOnMainThread(TestContentViewEvent.Test0)
             );
+
+            Assert.IsTrue(e0);
         }
         [Test]
         public async Task InterceptionTest_1()
         {
+            bool e0 = false;
+
             await UniTask.WhenAll(
-                RegisterOnBackground(TestContentViewEvent.Test0, TestMethod),
+                RegisterOnBackground(TestContentViewEvent.Test0, async (e, x) =>
+                {
+                    e0 = true;
+                }),
 
                 ExecuteOnMainThread(TestContentViewEvent.Test0)
             );
+
+            await ExecuteOnMainThread(TestContentViewEvent.Test0);
+
+            Assert.IsTrue(e0);
+        }
+        [Test]
+        public async Task InterceptionTest_2()
+        {
+            bool e0 = false;
+
+            await UniTask.WhenAll(
+                RegisterOnBackground(TestContentViewEvent.Test0, async (e, x) =>
+                {
+                    e0 = true;
+                }),
+
+                ExecuteOnBackground(TestContentViewEvent.Test0)
+            );
+
+            await ExecuteOnBackground(TestContentViewEvent.Test0);
+
+            Assert.IsTrue(e0);
         }
     }
 }

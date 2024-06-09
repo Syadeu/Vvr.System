@@ -20,6 +20,7 @@
 #endregion
 
 using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using NUnit.Framework;
 using Vvr.TestClass;
 using Assert = NUnit.Framework.Assert;
@@ -171,6 +172,27 @@ namespace Vvr.Session.Tests
             Assert.AreSame(p0, t0.Provider);
             Assert.AreSame(p0, t1.Provider);
             Assert.AreSame(p0, t2.Provider);
+        }
+        [Test]
+        public async Task ConnectionTest_5()
+        {
+            ITestLocalProvider
+                p0 = new TestLocalProvider();
+
+            var t0 = await Root.CreateSession<DITestSession>(null);
+
+            var lateTask = UniTask.WhenAll(
+                t0.CreateSessionOnBackground<DITestSession>(null),
+                t0.CreateSessionOnBackground<DITestSession>(null)
+            );
+
+            t0.Register(p0);
+
+            var results = await lateTask;
+
+            Assert.AreSame(p0, t0.Provider);
+            Assert.AreSame(p0, results.Item1.Provider);
+            Assert.AreSame(p0, results.Item2.Provider);
         }
     }
 }
