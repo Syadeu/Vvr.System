@@ -47,6 +47,7 @@ namespace Vvr.Session.ContentView.Deck
             await base.OnInitialize(session, data);
 
             m_AssetProvider = await CreateSession<AssetSession>(default);
+            Register(m_AssetProvider);
 
             EventHandler
                 .Register(DeckViewEvent.Open, OnOpen)

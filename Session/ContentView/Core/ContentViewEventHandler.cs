@@ -2,19 +2,19 @@
 
 // Copyright 2024 Syadeu
 // Author : Seung Ha Kim
-// 
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// 
+//
 //     http://www.apache.org/licenses/LICENSE-2.0
-// 
+//
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-// 
+//
 // File created : 2024, 06, 02 21:06
 
 #endregion
@@ -25,6 +25,7 @@
 
 using System;
 using System.Buffers;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
@@ -40,9 +41,52 @@ namespace Vvr.Session.ContentView.Core
     internal sealed class ContentViewEventHandler<TEvent> : IContentViewEventHandler<TEvent>
         where TEvent : struct, IConvertible
     {
-        /// <summary>
-        /// Represents an event stack that keeps track of the event hierarchy.
-        /// </summary>
+        private struct ExecutionLock : IDisposable
+        {
+            private readonly ContentViewEventHandler<TEvent> m_Handler;
+            private          bool                            m_Started;
+
+            public ExecutionLock(ContentViewEventHandler<TEvent> h)
+            {
+                m_Handler = h;
+                m_Started = false;
+            }
+
+            public async UniTask WaitAsync()
+            {
+                if (!m_Handler.m_ExecutionLocked.Value &&
+                    m_Handler.m_ExecutionDepth == 0)
+                {
+                    await m_Handler.m_ExecutionLock.WaitAsync();
+                    m_Handler.m_ExecutionLocked.Value = true;
+                }
+
+                m_Handler.m_ExecutionDepth++;
+                m_Started = true;
+
+                // $"in {e}: {m_ExecutionDepth}".ToLog();
+            }
+
+            public void Dispose()
+            {
+                if (!m_Started)
+                {
+                    return;
+                }
+
+                m_Handler.m_ExecutionDepth--;
+                if (m_Handler.m_ExecutionDepth < 0)
+                    throw new InvalidOperationException($"{m_Handler.m_ExecutionDepth}");
+
+                if (m_Handler.m_ExecutionDepth == 0 &&
+                    m_Handler.m_ExecutionLocked.Value)
+                {
+                    m_Handler.m_ExecutionLock.Release();
+                    m_Handler.m_ExecutionLocked.Value = false;
+                }
+            }
+        }
+        [Obsolete("need to flyweight external struct", true)]
         private readonly struct EventStack : IDisposable
         {
             private readonly List<TEvent> m_EventStack;
@@ -104,12 +148,12 @@ namespace Vvr.Session.ContentView.Core
         private readonly List<TEvent> m_EventStack = new();
 
         private readonly Dictionary<TEvent, List<uint>>                     m_Actions   = new();
-        private readonly Dictionary<uint, ContentViewEventDelegate<TEvent>> m_ActionMap = new();
+        private readonly ConcurrentDictionary<uint, ContentViewEventDelegate<TEvent>> m_ActionMap = new();
 
-        private int      m_CurrentWriteThreadId;
+        private int   m_CurrentWriteThreadId;
+        private short m_ExecutionDepth;
 
         private readonly AsyncLocal<bool> m_ExecutionLocked = new();
-        private readonly AsyncLocal<short>  m_ExecutionDepth  = new();
 
         private readonly SemaphoreSlim
             m_ExecutionLock = new(1, 1),
@@ -205,7 +249,7 @@ namespace Vvr.Session.ContentView.Core
                 if (!m_Actions.TryGetValue(e, out var list)) return this;
 
                 uint hash = CalculateHash(x);
-                if (!m_ActionMap.Remove(hash)) return this;
+                if (!m_ActionMap.TryRemove(hash, out _)) return this;
 
                 list.Remove(hash);
             }
@@ -223,48 +267,32 @@ namespace Vvr.Session.ContentView.Core
             if (Disposed)
                 throw new ObjectDisposedException(nameof(ContentViewEventHandler<TEvent>));
 
+            using ExecutionLock executionLock = new ExecutionLock(this);
+            await executionLock.WaitAsync();
+
             if (!m_Actions.TryGetValue(e, out var list)) return;
-
-            if (!m_ExecutionLocked.Value &&
-                m_ExecutionDepth.Value == 0)
-            {
-                await m_ExecutionLock.WaitAsync();
-                m_ExecutionLocked.Value = true;
-            }
-
-            m_ExecutionDepth.Value++;
-
             int count = list.Count;
             var array = ArrayPool<UniTask>.Shared.Rent(count);
 
-            await m_WriteLock.WaitAsync();
-
-            try
+            // using (new EventStack(m_EventStack, e))
             {
-                using var st = new EventStack(m_EventStack, e);
-
-                for (int i = 0; i < count; i++)
+                int i = 0;
+                for (; i < count; i++)
                 {
                     // This operation can be recursively calling this method.
-                    array[i] = m_ActionMap[list[i]](e, ctx)
+                    if (!m_ActionMap.TryGetValue(list[i], out var target))
+                        continue;
+
+                    array[i] = target(e, ctx)
                         .AttachExternalCancellation(m_CancellationTokenSource.Token);
                 }
-            }
-            finally
-            {
-                await UniTask.WhenAll(array);
 
-                m_ExecutionDepth.Value--;
-                if (m_ExecutionDepth.Value < 0)
-                    throw new InvalidOperationException($"{m_ExecutionDepth.Value}");
-
-                if (m_ExecutionDepth.Value == 0 && m_ExecutionLocked.Value)
+                for (; i < array.Length; i++)
                 {
-                    m_ExecutionLock.Release();
-                    m_ExecutionLocked.Value = false;
+                    array[i] = UniTask.CompletedTask;
                 }
 
-                m_WriteLock.Release();
+                await UniTask.WhenAll(array);
             }
 
             ArrayPool<UniTask>.Shared.Return(array, true);
