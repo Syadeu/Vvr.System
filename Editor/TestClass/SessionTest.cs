@@ -20,15 +20,15 @@
 #endregion
 
 using System.Threading;
-using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
+using JetBrains.Annotations;
 using NUnit.Framework;
-using UnityEngine.TestTools;
 using Vvr.Provider;
 using Vvr.Session;
 
 namespace Vvr.TestClass
 {
+    [PublicAPI]
     public abstract class SessionTest<TRootSession>
         where TRootSession : RootSession, IGameSessionBase, new()
     {
@@ -38,7 +38,7 @@ namespace Vvr.TestClass
         public CancellationToken CancellationToken => m_CancellationTokenSource.Token;
 
         [OneTimeSetUp]
-        public async void SetUp()
+        public async void OneTimeSetUp()
         {
             m_CancellationTokenSource = new();
 
@@ -48,14 +48,32 @@ namespace Vvr.TestClass
                 ;
         }
 
+        [SetUp]
+        public async void Setup()
+        {
+
+        }
+
+        [TearDown]
+        public async void TearDown()
+        {
+            await Root.CloseAllSessions();
+            Root.UnregisterAll();
+            Root.DisconnectAllObservers();
+        }
+
         private async UniTask InitializeRootSession()
         {
             Root = new TRootSession();
             await Root.Initialize(Owner.Issue, null, null);
+
+            await OnRootSessionCreated(Root);
         }
 
+        protected virtual UniTask OnRootSessionCreated(TRootSession session) => UniTask.CompletedTask;
+
         [OneTimeTearDown]
-        public async void TearDown()
+        public async void OneTimeTearDown()
         {
             m_CancellationTokenSource.Cancel();
 

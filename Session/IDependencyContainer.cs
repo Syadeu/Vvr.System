@@ -99,6 +99,17 @@ namespace Vvr.Session
         [ContractAnnotation("c:null => halt")]
         IDependencyContainer Disconnect<TProvider>([NotNull] IConnector<TProvider> c) where TProvider : IProvider;
 
+        /// <summary>
+        /// Unregisters all connected providers from the child session.
+        /// </summary>
+        void UnregisterAll();
+
+        /// <summary>
+        /// Disconnects all observers from the child session.
+        /// This method removes all observers that are currently connected to the child session.
+        /// </summary>
+        void DisconnectAllObservers();
+
         bool TryGetProvider([NotNull] Type providerType, out IProvider provider);
 
         /// <summary>

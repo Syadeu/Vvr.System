@@ -34,7 +34,6 @@
     "nunit.framework.dll"
   ],
   "defineConstraints": [
-    "UNITY_EDITOR",
     "UNITY_INCLUDE_TESTS"
   ]
 }

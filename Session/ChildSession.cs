@@ -45,9 +45,10 @@ namespace Vvr.Session
     {
         private          Type                                         m_Type;
         private          Type[]                                       m_ConnectorTypes;
-        private readonly ConcurrentDictionary<Type, ConcurrentStack<IProvider>> m_ConnectedProviders = new();
 
-        private readonly Dictionary<Type, LinkedList<ConnectorReflectionUtils.Wrapper>>
+        // TODO: Optimization
+        private readonly ConcurrentDictionary<Type, ConcurrentStack<IProvider>> m_ConnectedProviders = new();
+        private readonly ConcurrentDictionary<Type, ConcurrentDictionary<uint, ConnectorReflectionUtils.Wrapper>>
             m_ConnectorWrappers = new();
 
         private CancellationTokenSource m_ReserveTokenSource;
@@ -198,6 +199,11 @@ namespace Vvr.Session
             {
                 item.Clear();
             }
+
+            foreach (var item in m_ConnectorWrappers.Values)
+            {
+                item.Clear();
+            }
             m_ConnectedProviders.Clear();
             m_ConnectorWrappers.Clear();
 
@@ -317,7 +323,7 @@ namespace Vvr.Session
                 if (connectorType.GetGenericArguments()[0] != pType) continue;
 
                 ConnectorReflectionUtils.Disconnect(connectorType, this, provider);
-                $"[Session:{Type.FullName}] Disconnected {pType.FullName}".ToLog();
+                // $"[Session:{Type.FullName}] Disconnected {pType.FullName}".ToLog();
                 break;
             }
 
@@ -422,12 +428,12 @@ namespace Vvr.Session
 
             uint hash = unchecked((uint)c.GetHashCode() ^ FNV1a32.Calculate(t.AssemblyQualifiedName));
 
-            Assert.IsFalse(list.Contains(new(hash)));
+            Assert.IsFalse(list.ContainsKey(hash));
             ConnectorReflectionUtils.Wrapper
                 wr = new(hash,
                     x => c.Connect((TProvider)x),
                     x => c.Disconnect((TProvider)x));
-            list.AddLast(wr);
+            list.TryAdd(hash, wr);
 
             if (m_ConnectedProviders.TryGetValue(t, out var pStack) &&
                 pStack.TryPeek(out var provider))
@@ -455,10 +461,38 @@ namespace Vvr.Session
                 c.Disconnect((TProvider)provider);
 
             uint hash = unchecked((uint)c.GetHashCode() ^ FNV1a32.Calculate(t.AssemblyQualifiedName));
-            bool result = list.Remove(new ConnectorReflectionUtils.Wrapper(hash));
+            bool result = list.TryRemove(hash, out _);
             Assert.IsTrue(result);
 
             return this;
+        }
+
+        public void UnregisterAll()
+        {
+            IDependencyContainer t = this;
+            foreach (var pType in m_ConnectedProviders.Keys.ToArray())
+            {
+                t.Unregister(pType);
+            }
+
+            m_ConnectedProviders.Clear();
+        }
+        public void DisconnectAllObservers()
+        {
+            foreach (var list in m_ConnectorWrappers)
+            {
+                if (!m_ConnectedProviders.TryGetValue(list.Key, out var pStack) ||
+                    !pStack.TryPeek(out var provider)) continue;
+
+                foreach (var wr in list.Value)
+                {
+                    wr.Value.disconnect(provider);
+                }
+
+                list.Value.Clear();
+            }
+
+            m_ConnectorWrappers.Clear();
         }
 
         bool IDependencyContainer.TryGetProvider(Type providerType, out IProvider provider)
@@ -487,19 +521,6 @@ namespace Vvr.Session
         #endregion
 
         /// <summary>
-        /// Unregisters all connected providers from the child session.
-        /// </summary>
-        private void UnregisterAll()
-        {
-            IDependencyContainer t = this;
-            foreach (var pType in m_ConnectedProviders.Keys.ToArray())
-            {
-                t.Unregister(pType);
-            }
-            m_ConnectedProviders.Clear();
-        }
-
-        /// <summary>
         /// Connects observers to the specified provider.
         /// </summary>
         /// <param name="providerType">The type of the provider.</param>
@@ -510,7 +531,7 @@ namespace Vvr.Session
 
             foreach (var wr in list)
             {
-                wr.connect(provider);
+                wr.Value.connect(provider);
             }
         }
 
@@ -525,28 +546,8 @@ namespace Vvr.Session
 
             foreach (var wr in list)
             {
-                wr.disconnect(provider);
+                wr.Value.disconnect(provider);
             }
-        }
-        /// <summary>
-        /// Disconnects all observers from the child session.
-        /// This method removes all observers that are currently connected to the child session.
-        /// </summary>
-        private void DisconnectAllObservers()
-        {
-            foreach (var list in m_ConnectorWrappers)
-            {
-                if (!m_ConnectedProviders.TryGetValue(list.Key, out var pStack) ||
-                    !pStack.TryPeek(out var provider)) continue;
-
-                foreach (var wr in list.Value)
-                {
-                    wr.disconnect(provider);
-                }
-                list.Value.Clear();
-            }
-
-            m_ConnectorWrappers.Clear();
         }
 
         [Conditional("UNITY_EDITOR")]

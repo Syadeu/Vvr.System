@@ -1,0 +1,44 @@
+{
+    "name": "Vvr.Session.Tests",
+    "rootNamespace": "",
+    "references": [
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner",
+        "Vvr.TestClass",
+
+        "Vvr",
+        "GUID:3957eefabf624d2485d569ea058bfc85",
+        "GUID:60df735478b04dd3aa2c4819aa583f3c",
+        "GUID:0bebf4b98a2c47cd93c8f4c2f5f17d2a",
+        "GUID:ca7a9d7f2d304e6d8e77b3a8931dc117",
+
+        "Unity.Mathematics",
+        "Unity.Collections",
+        "Unity.Addressables",
+        "Unity.ResourceManager",
+        "Unity.InputSystem",
+
+        "UniTask",
+        "UniTask.Addressables",
+        "UniTask.Linq",
+
+        "BakingSheet",
+        "BakingSheet.ScriptableObject",
+        "GUID:f2e4e751cc80e493bb01487f3fdb9536"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -1,5 +1,4 @@
 #region Copyrights
-
 // Copyright 2024 Syadeu
 // Author : Seung Ha Kim
 //
@@ -15,20 +14,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// File created : 2024, 06, 09 20:06
-
+// File created : 2024, 06, 09 21:06
 #endregion
 
 using System;
 using System.Linq;
-using System.Threading.Tasks;
-using Cysharp.Threading.Tasks;
 using NUnit.Framework;
-using Vvr.Session;
+using Vvr.TestClass;
 
-namespace Vvr.TestClass
+namespace Vvr.Session.Tests
 {
-    sealed class RootSessionCreateTest : SessionTest<TestRootSession>
+    public class RootSessionTests : SessionTest<TestRootSession>
     {
         [Test]
         public async void CreateAndReserveTest()
@@ -77,6 +73,37 @@ namespace Vvr.TestClass
             Assert.IsTrue(t0.Disposed);
 
             Assert.Catch<ObjectDisposedException>(() => _ = t0.ChildSessions);
+        }
+        [Test]
+        public async void BuildHierarchyTest_1()
+        {
+            var t0 = await Root.CreateSession<TestParentSession>(null);
+            var t1 = await t0.CreateSession<TestParentSession>(null);
+            var t2 = await t1.CreateSession<TestChildSession>(null);
+
+            Assert.IsTrue(t0.ChildSessions.Contains(t1));
+            Assert.IsTrue(t1.ChildSessions.Contains(t2));
+
+            await t1.Reserve();
+
+            Assert.IsTrue(t2.Disposed);
+            Assert.IsTrue(t1.Disposed);
+
+            await t0.Reserve();
+            Assert.IsTrue(t0.Disposed);
+        }
+        [Test]
+        public async void BuildHierarchyTest_2()
+        {
+            var t0 = await Root.CreateSession<TestParentSession>(null);
+            var t1 = await t0.CreateSession<TestParentSession>(null);
+            var t2 = await t1.CreateSession<TestChildSession>(null);
+
+            await t0.CloseAllSessions();
+
+            Assert.IsTrue(t2.Disposed);
+            Assert.IsTrue(t1.Disposed);
+            Assert.IsFalse(t0.Disposed);
         }
     }
 }
