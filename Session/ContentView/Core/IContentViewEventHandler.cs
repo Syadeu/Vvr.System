@@ -89,5 +89,6 @@ namespace Vvr.Session.ContentView.Core
     [AbstractProvider]
     public interface IContentViewEventHandler : IProvider, IDisposable
     {
+        bool Disposed { get; }
     }
 }

@@ -48,18 +48,35 @@ namespace Vvr.Session.ContentView
 
         class ViewEventHandlerProvider : IContentViewEventHandlerProvider, IDisposable
         {
-            public Dictionary<Type, IContentViewEventHandler> ViewEventHandlers { get; } = new();
+            private readonly Dictionary<Type, IContentViewEventHandler> m_ViewEventHandlers = new();
 
             public IContentViewEventHandler this[Type t]
             {
                 get => Resolve(t);
-                set => ViewEventHandlers[t] = value;
+                // set => ViewEventHandlers[t] = value;
+            }
+
+            public void Register(IContentViewChildSession session)
+            {
+                Type eType = session.EventType;
+                if (m_ViewEventHandlers.ContainsKey(eType))
+                    throw new InvalidOperationException($"Already registered with same event: {eType.FullName}");
+
+                m_ViewEventHandlers.Add(eType, session.CreateEventHandler());
+            }
+
+            public void Unregister(IContentViewChildSession session)
+            {
+                session.ReserveEventHandler();
+
+                Type eType = session.EventType;
+                m_ViewEventHandlers.Remove(eType);
             }
 
             public IContentViewEventHandler Resolve(Type eventType)
             {
                 EvaluateEventType(eventType);
-                return ViewEventHandlers[eventType];
+                return m_ViewEventHandlers[eventType];
             }
             public IContentViewEventHandler<TEvent> Resolve<TEvent>() where TEvent : struct, IConvertible
             {
@@ -76,11 +93,11 @@ namespace Vvr.Session.ContentView
 
             public void Dispose()
             {
-                foreach (var v in ViewEventHandlers.Values)
+                foreach (var v in m_ViewEventHandlers.Values)
                 {
                     v.Dispose();
                 }
-                ViewEventHandlers.Clear();
+                m_ViewEventHandlers.Clear();
             }
         }
 
@@ -92,6 +109,12 @@ namespace Vvr.Session.ContentView
         protected override async UniTask OnInitialize(IParentSession session, SessionData data)
         {
             await base.OnInitialize(session, data);
+
+            Parent
+                // Because all content view needs event handler provider
+                // for communicate each content view sessions through event handler provider.
+                .Register<IContentViewEventHandlerProvider>(m_ViewEventHandlerProvider)
+                ;
 
             var canvasSession = await CreateSession<CanvasViewSession>(default);
             Register<ICanvasViewProvider>(canvasSession);
@@ -106,7 +129,6 @@ namespace Vvr.Session.ContentView
 
             Parent
                 .Register<IDialoguePlayProvider>(dialogueViewSession)
-                .Register<IContentViewEventHandlerProvider>(m_ViewEventHandlerProvider)
                 ;
 
             Vvr.Provider.Provider.Static.Connect<IContentViewRegistryProvider>(this);
@@ -126,26 +148,24 @@ namespace Vvr.Session.ContentView
             await base.OnReserve();
         }
 
-        protected override UniTask OnCreateSession(IChildSession session)
-        {
-            if (session is IContentViewChildSession childSession)
-            {
-                m_ViewEventHandlerProvider[childSession.EventType]
-                    = childSession.CreateEventHandler();
-
-                childSession.Setup(m_ViewEventHandlerProvider);
-            }
-            return base.OnCreateSession(session);
-        }
-        protected override UniTask OnSessionClose(IChildSession session)
-        {
-            if (session is IContentViewChildSession childSession)
-            {
-                childSession.ReserveEventHandler();
-                m_ViewEventHandlerProvider.ViewEventHandlers.Remove(childSession.EventType);
-            }
-            return base.OnSessionClose(session);
-        }
+        // protected override UniTask OnCreateSession(IChildSession session)
+        // {
+        //     if (session is IContentViewChildSession childSession)
+        //     {
+        //         m_ViewEventHandlerProvider[childSession.EventType]
+        //             = childSession.CreateEventHandler();
+        //     }
+        //     return base.OnCreateSession(session);
+        // }
+        // protected override UniTask OnSessionClose(IChildSession session)
+        // {
+        //     if (session is IContentViewChildSession childSession)
+        //     {
+        //         childSession.ReserveEventHandler();
+        //         m_ViewEventHandlerProvider.ViewEventHandlers.Remove(childSession.EventType);
+        //     }
+        //     return base.OnSessionClose(session);
+        // }
 
         void IConnector<IContentViewRegistryProvider>.Connect(IContentViewRegistryProvider t)
         {

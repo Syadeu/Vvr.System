@@ -32,8 +32,8 @@ namespace Vvr.Session.ContentView.Core
     [PublicAPI]
     public abstract class ContentViewChildSession<TEvent> :
         ParentSession<ContentViewSessionData>, IContentViewChildSession,
-        IConnector<ICanvasViewProvider>
-
+        IConnector<ICanvasViewProvider>,
+        IConnector<IContentViewEventHandlerProvider>
         where TEvent : struct, IConvertible
     {
         private IContentViewEventHandler m_EventHandler;
@@ -72,10 +72,6 @@ namespace Vvr.Session.ContentView.Core
             m_EventHandler       = null;
             EventHandlerProvider = null;
         }
-        void IContentViewChildSession.Setup(IContentViewEventHandlerProvider eventHandlerProvider)
-        {
-            EventHandlerProvider = eventHandlerProvider;
-        }
 
         /// <summary>
         /// Creates and returns an instance of an event handler that is used to handle ContentView events.
@@ -89,6 +85,17 @@ namespace Vvr.Session.ContentView.Core
 
         void IConnector<ICanvasViewProvider>.Connect(ICanvasViewProvider    t) => CanvasViewProvider = t;
         void IConnector<ICanvasViewProvider>.Disconnect(ICanvasViewProvider t) => CanvasViewProvider = null;
+
+        void IConnector<IContentViewEventHandlerProvider>.Connect(IContentViewEventHandlerProvider    t)
+        {
+            EventHandlerProvider = t;
+            EventHandlerProvider.Register(this);
+        }
+        void IConnector<IContentViewEventHandlerProvider>.Disconnect(IContentViewEventHandlerProvider t)
+        {
+            EventHandlerProvider.Unregister(this);
+            EventHandlerProvider = null;
+        }
     }
 
     /// <summary>

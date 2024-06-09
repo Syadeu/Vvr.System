@@ -39,12 +39,23 @@ namespace Vvr.Session.ContentView.Core
         IContentViewEventHandler this[Type t] { get; }
 
         /// <summary>
+        /// Registers a child session for the content view.
+        /// </summary>
+        /// <param name="session">The child session to register.</param>
+        void Register(IContentViewChildSession   session);
+
+        /// <summary>
+        /// Unregisters a child session from the content view.
+        /// </summary>
+        /// <param name="session">The child session to unregister.</param>
+        void Unregister(IContentViewChildSession session);
+
+        /// <summary>
         /// Resolves the event handler for the specified event type.
         /// </summary>
         /// <param name="eventType">The type of the event.</param>
         /// <returns>The event handler for the specified event type.</returns>
         IContentViewEventHandler Resolve(Type eventType);
-
         /// <summary>
         /// Resolves the event handler for the specified event type.
         /// </summary>

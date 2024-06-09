@@ -55,11 +55,5 @@ namespace Vvr.Session.ContentView.Core
         /// Reserves the event handler for the content view child session.
         /// </summary>
         void ReserveEventHandler();
-
-        /// <summary>
-        /// Sets up the event handler provider for the content view child session.
-        /// </summary>
-        /// <param name="eventHandlerProvider">The event handler provider to set up.</param>
-        void Setup(IContentViewEventHandlerProvider eventHandlerProvider);
     }
 }

@@ -89,19 +89,19 @@ namespace Vvr.Session.ContentView.Research
 
             if (ctx is int groupIndex)
             {
-                EventHandler
+                await EventHandler
                     .ExecuteAsync(ResearchViewEvent.SelectGroupWithIndex, groupIndex)
                     .AttachExternalCancellation(ReserveToken)
                     .SuppressCancellationThrow()
-                    .Forget();
+                    ;
             }
             else
             {
-                EventHandler
+                await EventHandler
                     .ExecuteAsync(ResearchViewEvent.SelectGroupWithIndex, 0)
                     .AttachExternalCancellation(ReserveToken)
                     .SuppressCancellationThrow()
-                    .Forget();
+                    ;
             }
         }
         private async UniTask OnClose(ResearchViewEvent e, object ctx)

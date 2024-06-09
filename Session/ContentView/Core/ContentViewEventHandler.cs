@@ -19,6 +19,10 @@
 
 #endregion
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#define THREAD_DEBUG
+#endif
+
 using System;
 using System.Buffers;
 using System.Collections.Generic;
@@ -55,6 +59,8 @@ namespace Vvr.Session.ContentView.Core
                 m_EventStack.Add(e);
 
                 CheckPossibleInfiniteLoopAndThrow();
+
+                $"Push {m_EventStack.Count}: {e}".ToLog();
             }
 
             [Conditional("UNITY_EDITOR")]
@@ -80,7 +86,8 @@ namespace Vvr.Session.ContentView.Core
                 if (m_EventStack.Count <= m_Index)
                     throw new InvalidOperationException();
                 if (m_EventStack.Count - 1 != m_Index)
-                    throw new InvalidOperationException();
+                    throw new InvalidOperationException(
+                        $"{m_EventStack.Count - 1} != {m_Index}, {m_Event}");
                 if (!m_EventStack[m_Index].Equals(m_Event))
                     throw new InvalidOperationException();
             }
@@ -89,6 +96,7 @@ namespace Vvr.Session.ContentView.Core
             {
                 EvaluateEventStackAndThrow();
 
+                $"Exit {m_EventStack.Count}: {m_Event}".ToLog();
                 m_EventStack.RemoveAt(m_Index);
             }
         }
@@ -98,9 +106,18 @@ namespace Vvr.Session.ContentView.Core
         private readonly Dictionary<TEvent, List<uint>>                     m_Actions   = new();
         private readonly Dictionary<uint, ContentViewEventDelegate<TEvent>> m_ActionMap = new();
 
-        private SpinLock m_WriteLock;
+        private int      m_CurrentWriteThreadId;
+
+        private readonly AsyncLocal<bool> m_ExecutionLocked = new();
+        private readonly AsyncLocal<short>  m_ExecutionDepth  = new();
+
+        private readonly SemaphoreSlim
+            m_ExecutionLock = new(1, 1),
+            m_WriteLock     = new(1, 1);
 
         private readonly CancellationTokenSource m_CancellationTokenSource = new();
+
+        public bool Disposed { get; private set; }
 
         [Pure]
         private static uint CalculateHash(ContentViewEventDelegate<TEvent> x)
@@ -118,10 +135,27 @@ namespace Vvr.Session.ContentView.Core
 
         public IContentViewEventHandler<TEvent> Register(TEvent e, ContentViewEventDelegate<TEvent> x)
         {
-            bool lt = false;
+            if (Disposed)
+                throw new ObjectDisposedException(nameof(ContentViewEventHandler<TEvent>));
+
+#if THREAD_DEBUG
+            int threadId = Thread.CurrentThread.ManagedThreadId;
+            if (m_WriteLock.CurrentCount == 0 &&
+                threadId                 != m_CurrentWriteThreadId)
+            {
+                if (UnityEditorInternal.InternalEditorUtility.CurrentThreadIsMainThread())
+                    throw new InvalidOperationException(
+                        "Another thread currently writing but main thread trying to write." +
+                        "This is not allowed main thread should not be awaited.");
+            }
+#endif
+            m_WriteLock.Wait();
+#if THREAD_DEBUG
+            m_CurrentWriteThreadId = threadId;
+#endif
+
             try
             {
-                m_WriteLock.Enter(ref lt);
                 if (!m_Actions.TryGetValue(e, out var list))
                 {
                     list         = new(8);
@@ -139,7 +173,7 @@ namespace Vvr.Session.ContentView.Core
             }
             finally
             {
-                if (lt) m_WriteLock.Exit();
+                m_WriteLock.Release();
             }
 
             return this;
@@ -147,10 +181,27 @@ namespace Vvr.Session.ContentView.Core
 
         public IContentViewEventHandler<TEvent> Unregister(TEvent e, ContentViewEventDelegate<TEvent> x)
         {
-            bool lt = false;
+            if (Disposed)
+                throw new ObjectDisposedException(nameof(ContentViewEventHandler<TEvent>));
+
+#if THREAD_DEBUG
+            int threadId = Thread.CurrentThread.ManagedThreadId;
+            if (m_WriteLock.CurrentCount == 0 &&
+                threadId != m_CurrentWriteThreadId)
+            {
+                if (UnityEditorInternal.InternalEditorUtility.CurrentThreadIsMainThread())
+                    throw new InvalidOperationException(
+                        "Another thread currently writing but main thread trying to write." +
+                        "This is not allowed main thread should not be awaited.");
+            }
+#endif
+            m_WriteLock.Wait();
+#if THREAD_DEBUG
+            m_CurrentWriteThreadId = threadId;
+#endif
+
             try
             {
-                m_WriteLock.Enter(ref lt);
                 if (!m_Actions.TryGetValue(e, out var list)) return this;
 
                 uint hash = CalculateHash(x);
@@ -160,55 +211,70 @@ namespace Vvr.Session.ContentView.Core
             }
             finally
             {
-                if (lt) m_WriteLock.Exit();
+                m_WriteLock.Release();
             }
 
             return this;
         }
 
-        public async UniTask ExecuteAsync(TEvent e)
-        {
-            if (!m_Actions.TryGetValue(e, out var list)) return;
-
-            using var st = new EventStack(m_EventStack, e);
-
-            int count = list.Count;
-            var array = ArrayPool<UniTask>.Shared.Rent(count);
-
-            for (int i = 0; i < count; i++)
-            {
-                // This operation can be recursively calling this method.
-                array[i] = m_ActionMap[list[i]](e, null)
-                        .AttachExternalCancellation(m_CancellationTokenSource.Token)
-                    ;
-            }
-
-            await UniTask.WhenAll(array);
-            ArrayPool<UniTask>.Shared.Return(array, true);
-        }
-
+        public async UniTask ExecuteAsync(TEvent e) => await ExecuteAsync(e, null);
         public async UniTask ExecuteAsync(TEvent e, object ctx)
         {
+            if (Disposed)
+                throw new ObjectDisposedException(nameof(ContentViewEventHandler<TEvent>));
+
             if (!m_Actions.TryGetValue(e, out var list)) return;
 
-            using var st = new EventStack(m_EventStack, e);
+            if (!m_ExecutionLocked.Value &&
+                m_ExecutionDepth.Value == 0)
+            {
+                await m_ExecutionLock.WaitAsync();
+                m_ExecutionLocked.Value = true;
+            }
+
+            m_ExecutionDepth.Value++;
 
             int count = list.Count;
             var array = ArrayPool<UniTask>.Shared.Rent(count);
 
-            for (int i = 0; i < count; i++)
+            await m_WriteLock.WaitAsync();
+
+            try
             {
-                // This operation can be recursively calling this method.
-                array[i] = m_ActionMap[list[i]](e, ctx)
-                    .AttachExternalCancellation(m_CancellationTokenSource.Token);
+                using var st = new EventStack(m_EventStack, e);
+
+                for (int i = 0; i < count; i++)
+                {
+                    // This operation can be recursively calling this method.
+                    array[i] = m_ActionMap[list[i]](e, ctx)
+                        .AttachExternalCancellation(m_CancellationTokenSource.Token);
+                }
+            }
+            finally
+            {
+                await UniTask.WhenAll(array);
+
+                m_ExecutionDepth.Value--;
+                if (m_ExecutionDepth.Value < 0)
+                    throw new InvalidOperationException($"{m_ExecutionDepth.Value}");
+
+                if (m_ExecutionDepth.Value == 0 && m_ExecutionLocked.Value)
+                {
+                    m_ExecutionLock.Release();
+                    m_ExecutionLocked.Value = false;
+                }
+
+                m_WriteLock.Release();
             }
 
-            await UniTask.WhenAll(array);
             ArrayPool<UniTask>.Shared.Return(array, true);
         }
 
         public void Dispose()
         {
+            if (Disposed)
+                throw new ObjectDisposedException(nameof(ContentViewEventHandler<TEvent>));
+
             m_CancellationTokenSource.Cancel();
 
             foreach (var list in m_Actions.Values)
@@ -218,6 +284,7 @@ namespace Vvr.Session.ContentView.Core
 
             m_Actions.Clear();
             m_ActionMap.Clear();
+            Disposed = true;
         }
     }
 }
