@@ -22,6 +22,7 @@
 using System;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
+using UnityEngine.Scripting;
 using Vvr.Provider;
 
 namespace Vvr.Session.ContentView.Core
@@ -39,7 +40,7 @@ namespace Vvr.Session.ContentView.Core
     /// Event handler interface for ContentView events.
     /// </summary>
     [PublicAPI, LocalProvider]
-    public interface IContentViewEventHandler<TEvent> : IContentViewEventHandler
+    public interface IContentViewEventHandler<TEvent> : IContentViewEventHandler, IContentViewEventEmitter<TEvent>
         where TEvent : struct, IConvertible
     {
         /// <summary>
@@ -61,7 +62,13 @@ namespace Vvr.Session.ContentView.Core
         /// <returns>The updated instance of the <see cref="IContentViewEventHandler{TEvent}"/> interface.</returns>
         [NotNull]
         IContentViewEventHandler<TEvent> Unregister(TEvent e, [NotNull] ContentViewEventDelegate<TEvent> x);
+    }
 
+    [RequireImplementors]
+    [PublicAPI]
+    public interface IContentViewEventEmitter<in TEvent>
+        where TEvent : struct, IConvertible
+    {
         /// <summary>
         /// Executes the specified event asynchronously.
         /// </summary>
@@ -86,7 +93,7 @@ namespace Vvr.Session.ContentView.Core
     /// This interface extends the <see cref="IContentViewEventHandler"/> interface and is used for handling specific ContentView events.
     /// It provides methods for registering and unregistering event delegates, as well as executing the events asynchronously.
     /// </remarks>
-    [AbstractProvider]
+    [PublicAPI, AbstractProvider]
     public interface IContentViewEventHandler : IProvider, IDisposable
     {
         bool Disposed { get; }

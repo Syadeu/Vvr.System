@@ -287,6 +287,129 @@ namespace Vvr.Session.ContentView.Tests
         }
 
         [Test]
+        public async Task MultiExecuteTest_2()
+        {
+            bool
+                e0 = false,
+                e1 = false;
+
+            EventHandler.Register(TestContentViewEvent.Test0,
+                async (e, x) => { await EventHandler.ExecuteAsync(TestContentViewEvent.Test1); });
+            EventHandler.Register(TestContentViewEvent.Test1, async (e, x) =>
+            {
+                await UniTask.Yield();
+                e0 = true;
+                Debug.Log($"{e} end");
+            });
+            EventHandler.Register(TestContentViewEvent.Test2,
+                async (e, x) => { await EventHandler.ExecuteAsync(TestContentViewEvent.Test3); });
+            EventHandler.Register(TestContentViewEvent.Test3, async (e, x) =>
+            {
+                await UniTask.Yield();
+                e1 = true;
+                Debug.Log($"{e} end");
+            });
+
+            await UniTask.WhenAll(
+                EventHandler.ExecuteAsync(TestContentViewEvent.Test0),
+                EventHandler.ExecuteAsync(TestContentViewEvent.Test2));
+
+            Assert.IsTrue(e0);
+            Assert.IsTrue(e1);
+        }
+        [Test]
+        public async Task MultiExecuteTest_3()
+        {
+            bool
+                e0 = false,
+                e1 = false;
+
+            EventHandler.Register(TestContentViewEvent.Test0,
+                async (e, x) =>
+                {
+                    Debug.Log($"{e} in");
+                    await UniTask.Yield();
+                    await EventHandler.ExecuteAsync(TestContentViewEvent.Test1);
+                    await UniTask.Yield();
+                });
+            EventHandler.Register(TestContentViewEvent.Test1, async (e, x) =>
+            {
+                await UniTask.Yield();
+                e0 = true;
+                Debug.Log($"{e} end");
+            });
+            EventHandler.Register(TestContentViewEvent.Test2,
+                async (e, x) =>
+                {
+                    Debug.Log($"{e} in");
+                    await EventHandler.ExecuteAsync(TestContentViewEvent.Test3);
+                });
+            EventHandler.Register(TestContentViewEvent.Test3, async (e, x) =>
+            {
+                await UniTask.Yield();
+                e1 = true;
+                Debug.Log($"{e} end");
+            });
+
+            await UniTask.WhenAll(
+                EventHandler.ExecuteAsync(TestContentViewEvent.Test0),
+                ExecuteOnBackground(TestContentViewEvent.Test2)
+                );
+
+            Assert.IsTrue(e0);
+            Assert.IsTrue(e1);
+        }
+        [Test]
+        public async Task MultiExecuteTest_4()
+        {
+            bool
+                e0 = false,
+                e1 = false;
+
+            EventHandler.Register(TestContentViewEvent.Test0,
+                async (e, x) =>
+                {
+                    Debug.Log($"{e} in");
+                    await UniTask.Yield();
+                    await EventHandler.ExecuteAsync(TestContentViewEvent.Test1);
+                    await UniTask.Yield();
+                });
+            EventHandler.Register(TestContentViewEvent.Test1, async (e, x) =>
+            {
+                await UniTask.Yield();
+                e0 = true;
+                Debug.Log($"{e} end");
+            });
+            EventHandler.Register(TestContentViewEvent.Test2,
+                async (e, x) =>
+                {
+                    Debug.Log($"{e} in");
+                    await EventHandler.ExecuteAsync(TestContentViewEvent.Test3);
+                });
+            EventHandler.Register(TestContentViewEvent.Test3, async (e, x) =>
+            {
+                await UniTask.Yield();
+                e1 = true;
+                Debug.Log($"{e} end");
+            });
+
+            await UniTask.WhenAll(
+                ExecuteOnMainThread(TestContentViewEvent.Test0)
+                // ,
+                // ExecuteOnMainThread(TestContentViewEvent.Test0),
+                //
+                // ExecuteOnBackground(TestContentViewEvent.Test2),
+                // ExecuteOnBackground(TestContentViewEvent.Test2)
+                );
+
+            Assert.IsTrue(e0);
+            // Assert.IsTrue(e1);
+
+            Assert.IsFalse(EventHandler.WriteLocked);
+            Assert.IsFalse(EventHandler.ExecutionLocked);
+        }
+
+        [Test]
         public async Task InterceptionTest_0()
         {
             bool e0 = false;

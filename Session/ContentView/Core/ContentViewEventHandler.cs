@@ -31,6 +31,7 @@ using System.Diagnostics;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
+using UnityEngine.Assertions;
 
 namespace Vvr.Session.ContentView.Core
 {
@@ -67,7 +68,7 @@ namespace Vvr.Session.ContentView.Core
 #endif
                 m_Handler.m_WriteLock.Wait();
 #if THREAD_DEBUG
-                m_Handler.m_CurrentWriteThreadId = threadId;
+                Interlocked.Exchange(ref m_Handler.m_CurrentWriteThreadId, threadId);
 #endif
                 m_Started = true;
             }
@@ -85,116 +86,61 @@ namespace Vvr.Session.ContentView.Core
         private struct ExecutionLock : IDisposable
         {
             private readonly ContentViewEventHandler<TEvent> m_Handler;
-            private          bool                            m_Started;
+
+            public bool Started { get; private set; }
 
             public ExecutionLock(ContentViewEventHandler<TEvent> h)
             {
                 m_Handler = h;
-                m_Started = false;
+                Started   = true;
             }
 
             public async UniTask WaitAsync()
             {
-                if (!m_Handler.m_ExecutionLocked.Value &&
+                if (m_Handler.m_ExecutionLocked == 0 &&
                     m_Handler.m_ExecutionDepth == 0)
                 {
+                    "execution lock in".ToLog();
                     await m_Handler.m_ExecutionLock.WaitAsync();
-                    m_Handler.m_ExecutionLocked.Value = true;
+
+                    Interlocked.Exchange(ref m_Handler.m_ExecutionLocked, 1);
                 }
 
-                m_Handler.m_ExecutionDepth++;
-                m_Started = true;
-
-                // $"in {e}: {m_ExecutionDepth}".ToLog();
+                $"in {m_Handler.m_ExecutionDepth}, {m_Handler.m_ExecutionLocked == 1}".ToLog();
+                Interlocked.Increment(ref m_Handler.m_ExecutionDepth);
             }
 
             public void Dispose()
             {
-                if (!m_Started)
+                if (!Started)
                 {
                     return;
                 }
 
-                m_Handler.m_ExecutionDepth--;
+                Interlocked.Decrement(ref m_Handler.m_ExecutionDepth);
                 if (m_Handler.m_ExecutionDepth < 0)
                     throw new InvalidOperationException($"{m_Handler.m_ExecutionDepth}");
 
                 if (m_Handler.m_ExecutionDepth == 0 &&
-                    m_Handler.m_ExecutionLocked.Value)
+                    m_Handler.m_ExecutionLocked == 1)
                 {
                     m_Handler.m_ExecutionLock.Release();
-                    m_Handler.m_ExecutionLocked.Value = false;
+                    Interlocked.Exchange(ref m_Handler.m_ExecutionLocked, 0);
+
+                    "execution lock out".ToLog();
                 }
+                else $"depth: {m_Handler.m_ExecutionDepth} exit, {m_Handler.m_ExecutionLocked == 1}".ToLog();
             }
         }
-        [Obsolete("need to flyweight external struct", true)]
-        private readonly struct EventStack : IDisposable
-        {
-            private readonly List<TEvent> m_EventStack;
-
-            private readonly int    m_Index;
-            private readonly TEvent m_Event;
-
-            public EventStack(List<TEvent> l, TEvent e)
-            {
-                m_EventStack = l;
-                m_Index = m_EventStack.Count;
-                m_Event = e;
-
-                m_EventStack.Add(e);
-
-                CheckPossibleInfiniteLoopAndThrow();
-
-                $"Push {m_EventStack.Count}: {e}".ToLog();
-            }
-
-            [Conditional("UNITY_EDITOR")]
-            private void CheckPossibleInfiniteLoopAndThrow()
-            {
-                int xx = m_Index,
-                    yy = m_Index;
-
-                while (true)
-                {
-                    xx--;
-                    if (xx < 0) return;
-                    yy -= 2;
-                    if (yy < 0) return;
-
-                    if (m_EventStack[xx].Equals(m_EventStack[yy]))
-                        throw new InvalidOperationException("Possible infinite loop detected.");
-                }
-            }
-            [Conditional("UNITY_EDITOR")]
-            private void EvaluateEventStackAndThrow()
-            {
-                if (m_EventStack.Count <= m_Index)
-                    throw new InvalidOperationException();
-                if (m_EventStack.Count - 1 != m_Index)
-                    throw new InvalidOperationException(
-                        $"{m_EventStack.Count - 1} != {m_Index}, {m_Event}");
-                if (!m_EventStack[m_Index].Equals(m_Event))
-                    throw new InvalidOperationException();
-            }
-
-            public void Dispose()
-            {
-                EvaluateEventStackAndThrow();
-
-                $"Exit {m_EventStack.Count}: {m_Event}".ToLog();
-                m_EventStack.RemoveAt(m_Index);
-            }
-        }
-
-        // private readonly List<TEvent> m_EventStack = new();
 
         private readonly Dictionary<TEvent, List<uint>>                     m_Actions   = new();
         private readonly ConcurrentDictionary<uint, ContentViewEventDelegate<TEvent>> m_ActionMap = new();
 
-        private int   m_CurrentWriteThreadId;
-        private short m_ExecutionDepth;
-
-        private readonly AsyncLocal<bool> m_ExecutionLocked = new();
+#if THREAD_DEBUG
+        private int m_CurrentWriteThreadId;
+#endif
+        private int m_ExecutionDepth;
+        private int m_ExecutionLocked;
 
         private readonly SemaphoreSlim
             m_ExecutionLock = new(1, 1),
@@ -203,6 +149,9 @@ namespace Vvr.Session.ContentView.Core
         private readonly CancellationTokenSource m_CancellationTokenSource = new();
 
         public bool Disposed { get; private set; }
+
+        public bool ExecutionLocked => m_ExecutionLock.CurrentCount == 0;
+        public bool WriteLocked => m_WriteLock.CurrentCount == 0;
 
         [Pure]
         private static uint CalculateHash(ContentViewEventDelegate<TEvent> x)
@@ -285,6 +234,8 @@ namespace Vvr.Session.ContentView.Core
 
             using ExecutionLock executionLock = new ExecutionLock(this);
             await executionLock.WaitAsync();
+
+            Assert.IsTrue(executionLock.Started);
 
             if (!m_Actions.TryGetValue(e, out var list)) return;
             int count = list.Count;
