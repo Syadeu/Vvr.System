@@ -20,6 +20,7 @@
 #endregion
 
 using System.Threading;
+using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using NUnit.Framework;
@@ -38,7 +39,7 @@ namespace Vvr.TestClass
         public CancellationToken CancellationToken => m_CancellationTokenSource.Token;
 
         [OneTimeSetUp]
-        public async void OneTimeSetUp()
+        public async Task OneTimeSetUp()
         {
             m_CancellationTokenSource = new();
 
@@ -49,7 +50,7 @@ namespace Vvr.TestClass
         }
 
         [TearDown]
-        public async void TearDown()
+        public async Task TearDown()
         {
             await Root.CloseAllSessions();
             Root.UnregisterAll();
@@ -67,7 +68,7 @@ namespace Vvr.TestClass
         protected virtual UniTask OnRootSessionCreated(TRootSession session) => UniTask.CompletedTask;
 
         [OneTimeTearDown]
-        public async void OneTimeTearDown()
+        public async Task OneTimeTearDown()
         {
             m_CancellationTokenSource.Cancel();
 

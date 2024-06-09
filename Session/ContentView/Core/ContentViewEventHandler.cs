@@ -38,9 +38,50 @@ namespace Vvr.Session.ContentView.Core
     /// Represents an event handler for ContentView events.
     /// </summary>
     /// <typeparam name="TEvent">The event type.</typeparam>
-    internal sealed class ContentViewEventHandler<TEvent> : IContentViewEventHandler<TEvent>
+    public sealed class ContentViewEventHandler<TEvent> : IContentViewEventHandler<TEvent>
         where TEvent : struct, IConvertible
     {
+        private struct WriteLock : IDisposable
+        {
+            private readonly ContentViewEventHandler<TEvent> m_Handler;
+            private          bool                            m_Started;
+
+            public WriteLock(ContentViewEventHandler<TEvent> h)
+            {
+                m_Handler = h;
+                m_Started = false;
+            }
+
+            public void Wait()
+            {
+#if THREAD_DEBUG
+                int threadId = Thread.CurrentThread.ManagedThreadId;
+                if (m_Handler.m_WriteLock.CurrentCount == 0 &&
+                    threadId                           != m_Handler.m_CurrentWriteThreadId)
+                {
+                    if (UnityEditorInternal.InternalEditorUtility.CurrentThreadIsMainThread())
+                        throw new InvalidOperationException(
+                            "Another thread currently writing but main thread trying to write." +
+                            "This is not allowed main thread should not be awaited.");
+                }
+#endif
+                m_Handler.m_WriteLock.Wait();
+#if THREAD_DEBUG
+                m_Handler.m_CurrentWriteThreadId = threadId;
+#endif
+                m_Started = true;
+            }
+
+            public void Dispose()
+            {
+                if (!m_Started)
+                {
+                    return;
+                }
+
+                m_Handler.m_WriteLock.Release();
+            }
+        }
         private struct ExecutionLock : IDisposable
         {
             private readonly ContentViewEventHandler<TEvent> m_Handler;
@@ -177,48 +218,43 @@ namespace Vvr.Session.ContentView.Core
             return hash;
         }
 
+        public void Clear()
+        {
+            if (Disposed)
+                throw new ObjectDisposedException(nameof(ContentViewEventHandler<TEvent>));
+
+            using var writeLock = new WriteLock(this);
+            writeLock.Wait();
+
+            foreach (var list in m_Actions.Values)
+            {
+                list.Clear();
+            }
+
+            m_Actions.Clear();
+            m_ActionMap.Clear();
+        }
+
         public IContentViewEventHandler<TEvent> Register(TEvent e, ContentViewEventDelegate<TEvent> x)
         {
             if (Disposed)
                 throw new ObjectDisposedException(nameof(ContentViewEventHandler<TEvent>));
 
-#if THREAD_DEBUG
-            int threadId = Thread.CurrentThread.ManagedThreadId;
-            if (m_WriteLock.CurrentCount == 0 &&
-                threadId                 != m_CurrentWriteThreadId)
-            {
-                if (UnityEditorInternal.InternalEditorUtility.CurrentThreadIsMainThread())
-                    throw new InvalidOperationException(
-                        "Another thread currently writing but main thread trying to write." +
-                        "This is not allowed main thread should not be awaited.");
-            }
-#endif
-            m_WriteLock.Wait();
-#if THREAD_DEBUG
-            m_CurrentWriteThreadId = threadId;
-#endif
+            using var writeLock = new WriteLock(this);
+            writeLock.Wait();
 
-            try
+            if (!m_Actions.TryGetValue(e, out var list))
             {
-                if (!m_Actions.TryGetValue(e, out var list))
-                {
-                    list         = new(8);
-                    m_Actions[e] = list;
-                }
-
-                uint hash = CalculateHash(x);
-                if (!m_ActionMap.TryAdd(hash, x))
-                {
-                    throw new InvalidOperationException("hash conflict possibly registering same method");
-                }
-
-                m_ActionMap[hash] = x;
-                list.Add(hash);
+                list         = new(8);
+                m_Actions[e] = list;
             }
-            finally
-            {
-                m_WriteLock.Release();
-            }
+
+            uint hash = CalculateHash(x);
+            if (list.Contains(hash))
+                throw new InvalidOperationException("hash conflict possibly registering same method");
+
+            m_ActionMap[hash] = x;
+            list.Add(hash);
 
             return this;
         }
@@ -228,35 +264,15 @@ namespace Vvr.Session.ContentView.Core
             if (Disposed)
                 throw new ObjectDisposedException(nameof(ContentViewEventHandler<TEvent>));
 
-#if THREAD_DEBUG
-            int threadId = Thread.CurrentThread.ManagedThreadId;
-            if (m_WriteLock.CurrentCount == 0 &&
-                threadId != m_CurrentWriteThreadId)
-            {
-                if (UnityEditorInternal.InternalEditorUtility.CurrentThreadIsMainThread())
-                    throw new InvalidOperationException(
-                        "Another thread currently writing but main thread trying to write." +
-                        "This is not allowed main thread should not be awaited.");
-            }
-#endif
-            m_WriteLock.Wait();
-#if THREAD_DEBUG
-            m_CurrentWriteThreadId = threadId;
-#endif
+            using var writeLock = new WriteLock(this);
+            writeLock.Wait();
 
-            try
-            {
-                if (!m_Actions.TryGetValue(e, out var list)) return this;
+            if (!m_Actions.TryGetValue(e, out var list)) return this;
 
-                uint hash = CalculateHash(x);
-                if (!m_ActionMap.TryRemove(hash, out _)) return this;
+            uint hash = CalculateHash(x);
+            if (!m_ActionMap.TryRemove(hash, out _)) return this;
 
-                list.Remove(hash);
-            }
-            finally
-            {
-                m_WriteLock.Release();
-            }
+            list.Remove(hash);
 
             return this;
         }
@@ -304,14 +320,8 @@ namespace Vvr.Session.ContentView.Core
                 throw new ObjectDisposedException(nameof(ContentViewEventHandler<TEvent>));
 
             m_CancellationTokenSource.Cancel();
+            Clear();
 
-            foreach (var list in m_Actions.Values)
-            {
-                list.Clear();
-            }
-
-            m_Actions.Clear();
-            m_ActionMap.Clear();
             Disposed = true;
         }
     }

@@ -19,6 +19,7 @@
 
 #endregion
 
+using System.Threading.Tasks;
 using NUnit.Framework;
 using Vvr.TestClass;
 using Assert = NUnit.Framework.Assert;
@@ -28,7 +29,7 @@ namespace Vvr.Session.Tests
     public class DISessionTests : SessionTest<TestRootSession>
     {
         [Test]
-        public async void NoInjectionTest()
+        public async Task NoInjectionTest()
         {
             var t0 = await Root.CreateSession<DITestSession>(null);
 
@@ -36,7 +37,7 @@ namespace Vvr.Session.Tests
         }
 
         [Test]
-        public async void InjectionTest_0()
+        public async Task InjectionTest_0()
         {
             var t0 = await Root.CreateSession<DITestSession>(null);
 
@@ -45,7 +46,7 @@ namespace Vvr.Session.Tests
             Assert.IsNotNull(t0.Provider);
         }
         [Test]
-        public async void InjectionTest_1()
+        public async Task InjectionTest_1()
         {
             var t0 = await Root.CreateSession<DITestSession>(null);
 
@@ -54,7 +55,7 @@ namespace Vvr.Session.Tests
             Assert.IsNotNull(t0.Provider);
         }
         [Test]
-        public async void InjectionTest_2()
+        public async Task InjectionTest_2()
         {
             Root.Register(new TestLocalProvider());
 
@@ -63,7 +64,7 @@ namespace Vvr.Session.Tests
         }
 
         [Test]
-        public async void DetachTest_0()
+        public async Task DetachTest_0()
         {
             var t0 = await Root.CreateSession<DITestSession>(null);
             t0.Register(new TestLocalProvider());
@@ -72,7 +73,7 @@ namespace Vvr.Session.Tests
             Assert.IsNull(t0.Provider);
         }
         [Test]
-        public async void DetachTest_1()
+        public async Task DetachTest_1()
         {
             var t0 = await Root.CreateSession<DITestSession>(null);
             Root.Register(new TestLocalProvider());
@@ -81,7 +82,7 @@ namespace Vvr.Session.Tests
             Assert.IsNull(t0.Provider);
         }
         [Test]
-        public async void DetachTest_2()
+        public async Task DetachTest_2()
         {
             Root.Register(new TestLocalProvider());
             var t0 = await Root.CreateSession<DITestSession>(null);
@@ -91,7 +92,7 @@ namespace Vvr.Session.Tests
         }
 
         [Test]
-        public async void ConnectionTest_0()
+        public async Task ConnectionTest_0()
         {
             var t0 = await Root.CreateSession<DITestSession>(null);
             var t1 = await Root.CreateSession<DITestSession>(null);
@@ -106,7 +107,7 @@ namespace Vvr.Session.Tests
             Assert.IsNull(t0.Provider);
         }
         [Test]
-        public async void ConnectionTest_1()
+        public async Task ConnectionTest_1()
         {
             var t0 = await Root.CreateSession<DITestSession>(null);
             var t1 = await t0.CreateSession<DITestSession>(null);
@@ -119,7 +120,7 @@ namespace Vvr.Session.Tests
             Assert.IsNull(t0.Provider);
         }
         [Test]
-        public async void ConnectionTest_2()
+        public async Task ConnectionTest_2()
         {
             ITestLocalProvider
                 p0 = new TestLocalProvider();
@@ -135,7 +136,7 @@ namespace Vvr.Session.Tests
             Assert.NotNull(t2.Provider);
         }
         [Test]
-        public async void ConnectionTest_3()
+        public async Task ConnectionTest_3()
         {
             ITestLocalProvider
                 p0 = new TestLocalProvider(),
@@ -153,7 +154,7 @@ namespace Vvr.Session.Tests
             Assert.AreSame(p1, t2.Provider);
         }
         [Test]
-        public async void ConnectionTest_4()
+        public async Task ConnectionTest_4()
         {
             ITestLocalProvider
                 p0 = new TestLocalProvider(),

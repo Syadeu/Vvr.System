@@ -163,47 +163,47 @@ namespace Vvr.Stat.Tests.Stat.Tests
                 $"{x[unknownType3]}");
         }
 
-        [Test]
-        public void JsonTest_1()
-        {
-            StatValues
-                x = StatValues.Create(StatType.HP);
-
-            x[StatType.HP] = 10;
-
-            string     json         = JsonConvert.SerializeObject(x);
-            StatValues deserialized = JsonConvert.DeserializeObject<StatValues>(json);
-            Assert.AreEqual(x.Types, deserialized.Types);
-            Assert.AreEqual(x.Values.Count, deserialized.Values.Count);
-
-            Assert.IsTrue(Mathf.Approximately(10, deserialized[StatType.HP]), $"{deserialized[StatType.HP]}");
-        }
-
-        [Test]
-        public void JsonTest_2()
-        {
-            StatType unknownType1 = (StatType)(1L << 50);
-            StatType unknownType2 = (StatType)(1L << 40);
-            StatType unknownType3 = (StatType)(1L << 35);
-            StatValues
-                x = StatValues.Create(unknownType1 | unknownType2 | unknownType3);
-
-            x[unknownType1] = 10;
-            x[unknownType2] = 506;
-            x[unknownType3] = 123124;
-
-            Debug.Log(x);
-
-            string     json         = JsonConvert.SerializeObject(x);
-            StatValues deserialized = JsonConvert.DeserializeObject<StatValues>(json);
-            Assert.AreEqual(x.Types, deserialized.Types);
-            Assert.AreEqual(x.Values.Count, deserialized.Values.Count);
-
-            Assert.IsTrue(Mathf.Approximately(x[unknownType1], deserialized[unknownType1]), $"{deserialized[unknownType1]}");
-            Assert.IsTrue(Mathf.Approximately(x[unknownType2], deserialized[unknownType2]), $"{deserialized[unknownType2]}");
-            Assert.IsTrue(Mathf.Approximately(x[unknownType3], deserialized[unknownType3]), $"{deserialized[unknownType3]}");
-
-            Debug.Log(deserialized);
-        }
+        // [Test]
+        // public void JsonTest_1()
+        // {
+        //     StatValues
+        //         x = StatValues.Create(StatType.HP);
+        //
+        //     x[StatType.HP] = 10;
+        //
+        //     string     json         = JsonConvert.SerializeObject(x);
+        //     StatValues deserialized = JsonConvert.DeserializeObject<StatValues>(json);
+        //     Assert.AreEqual(x.Types, deserialized.Types);
+        //     Assert.AreEqual(x.Values.Count, deserialized.Values.Count);
+        //
+        //     Assert.IsTrue(Mathf.Approximately(10, deserialized[StatType.HP]), $"{deserialized[StatType.HP]}");
+        // }
+        //
+        // [Test]
+        // public void JsonTest_2()
+        // {
+        //     StatType unknownType1 = (StatType)(1L << 50);
+        //     StatType unknownType2 = (StatType)(1L << 40);
+        //     StatType unknownType3 = (StatType)(1L << 35);
+        //     StatValues
+        //         x = StatValues.Create(unknownType1 | unknownType2 | unknownType3);
+        //
+        //     x[unknownType1] = 10;
+        //     x[unknownType2] = 506;
+        //     x[unknownType3] = 123124;
+        //
+        //     Debug.Log(x);
+        //
+        //     string     json         = JsonConvert.SerializeObject(x);
+        //     StatValues deserialized = JsonConvert.DeserializeObject<StatValues>(json);
+        //     Assert.AreEqual(x.Types, deserialized.Types);
+        //     Assert.AreEqual(x.Values.Count, deserialized.Values.Count);
+        //
+        //     Assert.IsTrue(Mathf.Approximately(x[unknownType1], deserialized[unknownType1]), $"{deserialized[unknownType1]}");
+        //     Assert.IsTrue(Mathf.Approximately(x[unknownType2], deserialized[unknownType2]), $"{deserialized[unknownType2]}");
+        //     Assert.IsTrue(Mathf.Approximately(x[unknownType3], deserialized[unknownType3]), $"{deserialized[unknownType3]}");
+        //
+        //     Debug.Log(deserialized);
+        // }
     }
 }

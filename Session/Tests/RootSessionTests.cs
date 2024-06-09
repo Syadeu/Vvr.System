@@ -19,6 +19,7 @@
 
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using NUnit.Framework;
 using Vvr.TestClass;
 
@@ -27,7 +28,7 @@ namespace Vvr.Session.Tests
     public class RootSessionTests : SessionTest<TestRootSession>
     {
         [Test]
-        public async void CreateAndReserveTest()
+        public async Task CreateAndReserveTest()
         {
             var ins = await Root.CreateSession<TestChildSession>(null);
             Assert.IsTrue(Root.ChildSessions.Contains(ins));
@@ -39,7 +40,7 @@ namespace Vvr.Session.Tests
         }
 
         [Test]
-        public async void CreateMultipleSameSessionTest()
+        public async Task CreateMultipleSameSessionTest()
         {
             IChildSession
                 t0 = await Root.CreateSession<TestChildSession>(null),
@@ -60,7 +61,7 @@ namespace Vvr.Session.Tests
         }
 
         [Test]
-        public async void BuildHierarchyTest_0()
+        public async Task BuildHierarchyTest_0()
         {
             var t0 = await Root.CreateSession<TestParentSession>(null);
             var t1 = await t0.CreateSession<TestChildSession>(null);
@@ -75,7 +76,7 @@ namespace Vvr.Session.Tests
             Assert.Catch<ObjectDisposedException>(() => _ = t0.ChildSessions);
         }
         [Test]
-        public async void BuildHierarchyTest_1()
+        public async Task BuildHierarchyTest_1()
         {
             var t0 = await Root.CreateSession<TestParentSession>(null);
             var t1 = await t0.CreateSession<TestParentSession>(null);
@@ -93,7 +94,7 @@ namespace Vvr.Session.Tests
             Assert.IsTrue(t0.Disposed);
         }
         [Test]
-        public async void BuildHierarchyTest_2()
+        public async Task BuildHierarchyTest_2()
         {
             var t0 = await Root.CreateSession<TestParentSession>(null);
             var t1 = await t0.CreateSession<TestParentSession>(null);
