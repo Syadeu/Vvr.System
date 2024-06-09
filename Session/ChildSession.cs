@@ -68,6 +68,9 @@ namespace Vvr.Session
         {
             get
             {
+                if (Disposed)
+                    throw new ObjectDisposedException(Type.Name);
+
                 IParentSession current = Parent;
                 while (current is IChildSession { Parent: not null } childSession)
                 {
@@ -92,6 +95,8 @@ namespace Vvr.Session
         {
             get
             {
+                if (Disposed)
+                    throw new ObjectDisposedException(Type.Name);
                 if (!m_Initialized)
                     throw new InvalidOperationException("You are trying to access session data before initialized");
                 return m_SessionData;
@@ -102,7 +107,15 @@ namespace Vvr.Session
         /// <summary>
         /// Represents a resolver used for resolving conditions in a session.
         /// </summary>
-        public IReadOnlyConditionResolver ConditionResolver => m_ConditionResolver;
+        public IReadOnlyConditionResolver ConditionResolver
+        {
+            get
+            {
+                if (Disposed)
+                    throw new ObjectDisposedException(Type.Name);
+                return m_ConditionResolver;
+            }
+        }
 
         /// <summary>
         /// Indicates whether the object has been disposed.
@@ -128,6 +141,9 @@ namespace Vvr.Session
 
         UniTask IGameSessionBase.Initialize(Owner owner, IParentSession parent, ISessionData data)
         {
+            if (Disposed)
+                throw new ObjectDisposedException(Type.Name);
+
             Owner = owner;
 
             EvaluateSessionCreation(parent);
@@ -163,6 +179,9 @@ namespace Vvr.Session
         /// <returns>A UniTask representing the asynchronous operation.</returns>
         public async UniTask Reserve()
         {
+            if (Disposed)
+                throw new ObjectDisposedException(Type.Name);
+
             m_ReserveTokenSource.Cancel();
 
             await OnReserve();
@@ -222,6 +241,9 @@ namespace Vvr.Session
 
         public IDependencyContainer Register(Type pType, IProvider provider)
         {
+            if (Disposed)
+                throw new ObjectDisposedException(Type.Name);
+
             pType = Vvr.Provider.Provider.ExtractType(pType);
             // EvaluateProviderRegistration(pType, provider);
 
@@ -247,6 +269,9 @@ namespace Vvr.Session
         }
         public IDependencyContainer Unregister(Type pType)
         {
+            if (Disposed)
+                throw new ObjectDisposedException(Type.Name);
+
             if (m_ConnectedProviders == null) return this;
 
             pType = Vvr.Provider.Provider.ExtractType(pType);
@@ -311,6 +336,9 @@ namespace Vvr.Session
 
         public IProvider GetProviderRecursive(Type providerType)
         {
+            if (Disposed)
+                throw new ObjectDisposedException(Type.Name);
+
             const string debugName  = "ChildSession.GetProviderRecursive";
             using var    debugTimer = DebugTimer.StartWithCustomName(debugName);
 
@@ -344,6 +372,9 @@ namespace Vvr.Session
         }
         public TProvider GetProviderRecursive<TProvider>() where TProvider : class, IProvider
         {
+            if (Disposed)
+                throw new ObjectDisposedException(Type.Name);
+
             const string debugName  = "ChildSession.GetProviderRecursive<TProvider>";
             using var    debugTimer = DebugTimer.StartWithCustomName(debugName);
 
@@ -368,6 +399,9 @@ namespace Vvr.Session
 
         public IDependencyContainer Connect<TProvider>(IConnector<TProvider> c) where TProvider : IProvider
         {
+            if (Disposed)
+                throw new ObjectDisposedException(Type.Name);
+
             const string debugName  = "ChildSession.Connect<TProvider>";
             using var    debugTimer = DebugTimer.StartWithCustomName(debugName);
 
@@ -405,6 +439,9 @@ namespace Vvr.Session
         }
         public IDependencyContainer Disconnect<TProvider>(IConnector<TProvider> c) where TProvider : IProvider
         {
+            if (Disposed)
+                throw new ObjectDisposedException(Type.Name);
+
             const string debugName  = "ChildSession.Disconnect<TProvider>";
             using var    debugTimer = DebugTimer.StartWithCustomName(debugName);
 
@@ -435,6 +472,9 @@ namespace Vvr.Session
 
         IEnumerable<KeyValuePair<Type, IProvider>> IDependencyContainer.GetEnumerable()
         {
+            if (Disposed)
+                throw new ObjectDisposedException(Type.Name);
+
             foreach (var item in m_ConnectedProviders)
             {
                 if (!item.Value.TryPeek(out var v)) continue;

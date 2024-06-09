@@ -62,7 +62,15 @@ namespace Vvr.Session
 
         private SpinLock m_CreateSessionLock;
 
-        public  IReadOnlyList<IChildSession> ChildSessions => m_ChildSessions;
+        public  IReadOnlyList<IChildSession> ChildSessions
+        {
+            get
+            {
+                if (Disposed)
+                    throw new ObjectDisposedException(Type.Name);
+                return m_ChildSessions;
+            }
+        }
 
         protected override async UniTask OnReserve()
         {
@@ -72,6 +80,9 @@ namespace Vvr.Session
         public async UniTask<TChildSession> CreateSessionOnBackground<TChildSession>(ISessionData data)
             where TChildSession : IChildSession, new()
         {
+            if (Disposed)
+                throw new ObjectDisposedException(Type.Name);
+
             Assert.IsFalse(VvrTypeHelper.TypeOf<TChildSession>.IsAbstract);
 
             Type childType = typeof(TChildSession);
@@ -86,6 +97,9 @@ namespace Vvr.Session
         public async UniTask<TChildSession> CreateSession<TChildSession>(ISessionData data)
             where TChildSession : IChildSession, new()
         {
+            if (Disposed)
+                throw new ObjectDisposedException(Type.Name);
+
             Assert.IsFalse(VvrTypeHelper.TypeOf<TChildSession>.IsAbstract);
 
             Type childType = typeof(TChildSession);
@@ -107,7 +121,7 @@ namespace Vvr.Session
 
             if (session is IDependencyContainer sessionConnector)
             {
-                $"[Session: {ctx.parentSession.Type.FullName}] Chain connector to {ctx.sessionType.FullName}".ToLog();
+                // $"[Session: {ctx.parentSession.Type.FullName}] Chain connector to {ctx.sessionType.FullName}".ToLog();
                 using var debugTimer = DebugTimer.Start();
                 foreach (var item in ctx.parentSession.ConnectedProviders)
                 {
@@ -120,14 +134,17 @@ namespace Vvr.Session
             // else $"[Session: {Type.FullName}] No connector for {childType.FullName}".ToLog();
 
             await session.Initialize(ctx.parentSession.Owner, ctx.parentSession, ctx.data);
-            $"[Session: {ctx.parentSession.Type.FullName}] created {ctx.sessionType.FullName}".ToLog();
+            // $"[Session: {ctx.parentSession.Type.FullName}] created {ctx.sessionType.FullName}".ToLog();
         }
 
         async UniTask IGameSessionCallback.OnSessionClose(IGameSessionBase child)
         {
+            if (Disposed)
+                throw new ObjectDisposedException(Type.Name);
+
             IChildSession session = (IChildSession)child;
 
-            Type childType = session.Type;
+            // Type childType = session.Type;
 
             await OnSessionClose(session);
 
@@ -143,11 +160,14 @@ namespace Vvr.Session
                 if (lt) m_CreateSessionLock.Exit();
             }
 
-            $"[Session: {Type.FullName}] closed {childType.FullName}".ToLog();
+            // $"[Session: {Type.FullName}] closed {childType.FullName}".ToLog();
         }
 
         public async UniTask CloseAllSessions()
         {
+            if (Disposed)
+                throw new ObjectDisposedException(Type.Name);
+
             for (var i = m_ChildSessions.Count - 1; i >= 0; i--)
             {
                 var session = m_ChildSessions[i];
@@ -156,6 +176,9 @@ namespace Vvr.Session
         }
         public async UniTask<IChildSession> WaitUntilSessionAvailableAsync(Type sessionType, float timeout)
         {
+            if (Disposed)
+                throw new ObjectDisposedException(Type.Name);
+
             Timer timer = Timer.Start();
 
             IChildSession found;
@@ -177,6 +200,9 @@ namespace Vvr.Session
         }
         public IChildSession GetSession(Type sessionType)
         {
+            if (Disposed)
+                throw new ObjectDisposedException(Type.Name);
+
             bool lt = false;
             try
             {

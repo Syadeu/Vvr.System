@@ -42,7 +42,10 @@ namespace Vvr.TestClass
         {
             m_CancellationTokenSource = new();
 
-            await InitializeRootSession();
+            await InitializeRootSession()
+                    .AttachExternalCancellation(CancellationToken)
+                    .SuppressCancellationThrow()
+                ;
         }
 
         private async UniTask InitializeRootSession()

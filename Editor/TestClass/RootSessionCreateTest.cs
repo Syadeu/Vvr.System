@@ -19,6 +19,8 @@
 
 #endregion
 
+using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
 using NUnit.Framework;
@@ -29,21 +31,52 @@ namespace Vvr.TestClass
     sealed class RootSessionCreateTest : SessionTest<TestRootSession>
     {
         [Test]
-        public async void CreateSession()
+        public async void CreateAndReserveTest()
         {
-            await Root.CreateSession<TestChildSession>(null);
+            var ins = await Root.CreateSession<TestChildSession>(null);
+            Assert.IsTrue(Root.ChildSessions.Contains(ins));
 
-            await UniTask.WaitForSeconds(1);
+            await ins.Reserve();
+
+            Assert.IsTrue(ins.Disposed);
+            Assert.IsFalse(Root.ChildSessions.Contains(ins));
         }
-    }
 
-    public struct TestSessionData : ISessionData
-    {
+        [Test]
+        public async void CreateMultipleSameSessionTest()
+        {
+            IChildSession
+                t0 = await Root.CreateSession<TestChildSession>(null),
+                t1 = await Root.CreateSession<TestChildSession>(null),
+                t2 = await Root.CreateSession<TestChildSession>(null);
 
-    }
+            Assert.IsTrue(Root.ChildSessions.Contains(t0));
+            Assert.IsTrue(Root.ChildSessions.Contains(t1));
+            Assert.IsTrue(Root.ChildSessions.Contains(t2));
 
-    public class TestChildSession : ChildSession<TestSessionData>
-    {
-        public override string DisplayName => nameof(TestChildSession);
+            await t0.Reserve();
+            await t1.Reserve();
+            await t2.Reserve();
+
+            Assert.IsFalse(Root.ChildSessions.Contains(t0));
+            Assert.IsFalse(Root.ChildSessions.Contains(t1));
+            Assert.IsFalse(Root.ChildSessions.Contains(t2));
+        }
+
+        [Test]
+        public async void BuildHierarchyTest_0()
+        {
+            var t0 = await Root.CreateSession<TestParentSession>(null);
+            var t1 = await t0.CreateSession<TestChildSession>(null);
+
+            Assert.IsTrue(t0.ChildSessions.Contains(t1));
+
+            await t0.Reserve();
+
+            Assert.IsTrue(t1.Disposed);
+            Assert.IsTrue(t0.Disposed);
+
+            Assert.Catch<ObjectDisposedException>(() => _ = t0.ChildSessions);
+        }
     }
 }
