@@ -89,8 +89,24 @@ namespace Vvr.Session.Tests
 
             Assert.IsNull(t0.Provider);
         }
+
         [Test]
-        public async void DetachTest_3()
+        public async void ConnectionTest_0()
+        {
+            var t0 = await Root.CreateSession<DITestSession>(null);
+            var t1 = await Root.CreateSession<DITestSession>(null);
+
+            t1.Register<ITestLocalProvider>(new TestLocalProvider());
+            t1.Connect(t0);
+
+            Assert.NotNull(t0.Provider);
+
+            t1.Disconnect(t0);
+
+            Assert.IsNull(t0.Provider);
+        }
+        [Test]
+        public async void ConnectionTest_1()
         {
             var t0 = await Root.CreateSession<DITestSession>(null);
             var t1 = await t0.CreateSession<DITestSession>(null);
@@ -101,6 +117,60 @@ namespace Vvr.Session.Tests
             await t1.Reserve();
 
             Assert.IsNull(t0.Provider);
+        }
+        [Test]
+        public async void ConnectionTest_2()
+        {
+            ITestLocalProvider
+                p0 = new TestLocalProvider(),
+                p1 = new TestLocalProvider();
+
+            var t0 = await Root.CreateSession<DITestSession>(null);
+            var t1 = await t0.CreateSession<DITestSession>(null);
+            var t2 = await t1.CreateSession<DITestSession>(null);
+
+            t0.Register(p0);
+
+            Assert.NotNull(t0.Provider);
+            Assert.NotNull(t1.Provider);
+            Assert.NotNull(t2.Provider);
+        }
+        [Test]
+        public async void ConnectionTest_3()
+        {
+            ITestLocalProvider
+                p0 = new TestLocalProvider(),
+                p1 = new TestLocalProvider();
+
+            var t0 = await Root.CreateSession<DITestSession>(null);
+            var t1 = await t0.CreateSession<DITestSession>(null);
+            var t2 = await t1.CreateSession<DITestSession>(null);
+
+            t0.Register(p0);
+            t1.Register(p1);
+
+            Assert.AreSame(p0, t0.Provider);
+            Assert.AreSame(p1, t1.Provider);
+            Assert.AreSame(p1, t2.Provider);
+        }
+        [Test]
+        public async void ConnectionTest_4()
+        {
+            ITestLocalProvider
+                p0 = new TestLocalProvider(),
+                p1 = new TestLocalProvider();
+
+            var t0 = await Root.CreateSession<DITestSession>(null);
+            var t1 = await t0.CreateSession<DITestSession>(null);
+            var t2 = await t1.CreateSession<DITestSession>(null);
+
+            t0.Register(p0);
+            t1.Register(p1);
+            t1.Unregister<ITestLocalProvider>();
+
+            Assert.AreSame(p0, t0.Provider);
+            Assert.AreSame(p0, t1.Provider);
+            Assert.AreSame(p0, t2.Provider);
         }
     }
 }
