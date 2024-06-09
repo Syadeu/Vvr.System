@@ -48,12 +48,6 @@ namespace Vvr.TestClass
                 ;
         }
 
-        [SetUp]
-        public async void Setup()
-        {
-
-        }
-
         [TearDown]
         public async void TearDown()
         {
