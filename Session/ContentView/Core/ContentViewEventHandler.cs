@@ -50,9 +50,17 @@ namespace Vvr.Session.ContentView.Core
             public WriteLock(ContentViewEventHandler<TEvent> h)
             {
                 m_Handler = h;
-                m_Started = false;
+                m_Started = true;
             }
 
+            public async UniTask WaitAsync()
+            {
+                if (!m_Handler.m_WriteLocked.Value)
+                {
+                    await m_Handler.m_WriteLock.WaitAsync();
+                    m_Handler.m_WriteLocked.Value = true;
+                }
+            }
             public void Wait()
             {
 #if THREAD_DEBUG
@@ -66,11 +74,14 @@ namespace Vvr.Session.ContentView.Core
                             "This is not allowed main thread should not be awaited.");
                 }
 #endif
-                m_Handler.m_WriteLock.Wait();
+                if (!m_Handler.m_WriteLocked.Value)
+                {
+                    m_Handler.m_WriteLock.Wait();
+                    m_Handler.m_WriteLocked.Value = true;
+                }
 #if THREAD_DEBUG
                 Interlocked.Exchange(ref m_Handler.m_CurrentWriteThreadId, threadId);
 #endif
-                m_Started = true;
             }
 
             public void Dispose()
@@ -80,7 +91,13 @@ namespace Vvr.Session.ContentView.Core
                     return;
                 }
 
-                m_Handler.m_WriteLock.Release();
+                if (m_Handler.m_WriteLocked.Value)
+                {
+                    m_Handler.m_WriteLock.Release();
+                    m_Handler.m_WriteLocked.Value = false;
+
+                    // $"write lock out".ToLog();
+                }
             }
         }
         private struct ExecutionLock : IDisposable
@@ -97,17 +114,20 @@ namespace Vvr.Session.ContentView.Core
 
             public async UniTask WaitAsync()
             {
-                if (m_Handler.m_ExecutionLocked == 0 &&
-                    m_Handler.m_ExecutionDepth == 0)
+                if (!m_Handler.m_ExecutionLocked.Value
+                    && m_Handler.m_ExecutionDepth.Value == 0
+                    )
                 {
-                    "execution lock in".ToLog();
+                    // $"execution lock in {m_Handler.m_ExecutionDepth.Value}".ToLog();
                     await m_Handler.m_ExecutionLock.WaitAsync();
 
-                    Interlocked.Exchange(ref m_Handler.m_ExecutionLocked, 1);
+                    m_Handler.m_ExecutionLocked.Value = true;
                 }
 
-                $"in {m_Handler.m_ExecutionDepth}, {m_Handler.m_ExecutionLocked == 1}".ToLog();
-                Interlocked.Increment(ref m_Handler.m_ExecutionDepth);
+                m_Handler.m_ExecutionDepth.Value += 1;
+                // $"in {m_Handler.m_ExecutionDepth.Value}, {m_Handler.m_ExecutionLocked.Value}".ToLog();
+
+                Started = true;
             }
 
             public void Dispose()
@@ -117,19 +137,22 @@ namespace Vvr.Session.ContentView.Core
                     return;
                 }
 
-                Interlocked.Decrement(ref m_Handler.m_ExecutionDepth);
-                if (m_Handler.m_ExecutionDepth < 0)
-                    throw new InvalidOperationException($"{m_Handler.m_ExecutionDepth}");
+                // $"depth: {m_Handler.m_ExecutionDepth.Value}".ToLog();
+                m_Handler.m_ExecutionDepth.Value -= 1;
+                if (m_Handler.m_ExecutionDepth.Value < 0)
+                    throw new InvalidOperationException($"{m_Handler.m_ExecutionDepth.Value}");
 
-                if (m_Handler.m_ExecutionDepth == 0 &&
-                    m_Handler.m_ExecutionLocked == 1)
+                if (
+                    m_Handler.m_ExecutionDepth.Value == 0 &&
+                    m_Handler.m_ExecutionLocked.Value)
                 {
                     m_Handler.m_ExecutionLock.Release();
-                    Interlocked.Exchange(ref m_Handler.m_ExecutionLocked, 0);
+                    m_Handler.m_ExecutionLocked.Value = false;
 
-                    "execution lock out".ToLog();
+                    // $"execution lock out {m_Handler.m_ExecutionDepth.Value}".ToLog();
                 }
-                else $"depth: {m_Handler.m_ExecutionDepth} exit, {m_Handler.m_ExecutionLocked == 1}".ToLog();
+                // else $"depth: {m_Handler.m_ExecutionDepth} exit, {m_Handler.m_ExecutionLocked == 1}".ToLog();
+                // else $"depth: {m_Handler.m_ExecutionDepth.Value} exit, {m_Handler.m_ExecutionLocked.Value}".ToLog();
             }
         }
 
@@ -139,8 +162,10 @@ namespace Vvr.Session.ContentView.Core
 #if THREAD_DEBUG
         private int m_CurrentWriteThreadId;
 #endif
-        private int m_ExecutionDepth;
-        private int m_ExecutionLocked;
+        private readonly AsyncLocal<int>  m_ExecutionDepth  = new();
+        private readonly AsyncLocal<bool>
+            m_WriteLocked = new(),
+            m_ExecutionLocked = new();
 
         private readonly SemaphoreSlim
             m_ExecutionLock = new(1, 1),
@@ -232,7 +257,7 @@ namespace Vvr.Session.ContentView.Core
             if (Disposed)
                 throw new ObjectDisposedException(nameof(ContentViewEventHandler<TEvent>));
 
-            using ExecutionLock executionLock = new ExecutionLock(this);
+            ExecutionLock executionLock = new ExecutionLock(this);
             await executionLock.WaitAsync();
 
             Assert.IsTrue(executionLock.Started);
@@ -244,20 +269,30 @@ namespace Vvr.Session.ContentView.Core
             // using (new EventStack(m_EventStack, e))
             {
                 int i = 0;
-                for (; i < count; i++)
+                // using (var writeLock = new WriteLock(this))
                 {
-                    // This operation can be recursively calling this method.
-                    if (!m_ActionMap.TryGetValue(list[i], out var target))
-                        continue;
+                    // writeLock.Wait();
 
-                    array[i] = target(e, ctx)
-                        .AttachExternalCancellation(m_CancellationTokenSource.Token);
+                    for (; i < count; i++)
+                    {
+                        // This operation can be recursively calling this method.
+                        if (!m_ActionMap.TryGetValue(list[i], out var target))
+                            continue;
+
+                        array[i] = target(e, ctx)
+                            .AttachExternalCancellation(m_CancellationTokenSource.Token);
+                    }
                 }
 
                 for (; i < array.Length; i++)
                 {
                     array[i] = UniTask.CompletedTask;
                 }
+
+                // Because thread can be changed after yield.
+                // Executions are protected by TLS,
+                // so make sure stacks after all execute has been queued.
+                executionLock.Dispose();
 
                 await UniTask.WhenAll(array);
             }
