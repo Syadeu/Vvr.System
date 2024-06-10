@@ -87,7 +87,18 @@ namespace Vvr.Session
 
             Type childType = typeof(TChildSession);
             var  ins       = new TChildSession();
-            m_ChildSessions.Add(ins);
+
+            bool lt = false;
+            try
+            {
+                m_CreateSessionLock.Enter(ref lt);
+                m_ChildSessions.Add(ins);
+            }
+            finally
+            {
+                if (lt)
+                    m_CreateSessionLock.Exit();
+            }
 
             var  ctx       = new SessionCreateContext(this, ins, childType, data);
 
@@ -104,8 +115,21 @@ namespace Vvr.Session
 
             Type childType = typeof(TChildSession);
             var  ins       = new TChildSession();
-            m_ChildSessions.Add(ins);
-            var  ctx       = new SessionCreateContext(this, ins, childType, data);
+
+             bool lt = false;
+             try
+             {
+                 m_CreateSessionLock.Enter(ref lt);
+                 m_ChildSessions.Add(ins);
+             }
+             finally
+             {
+                 if (lt)
+                     m_CreateSessionLock.Exit();
+             }
+
+
+             var ctx = new SessionCreateContext(this, ins, childType, data);
 
             await CreateSession(ctx);
 
