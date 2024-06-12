@@ -23,6 +23,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Threading;
 using Cathei.BakingSheet;
 using Cysharp.Threading.Tasks;
 using Cysharp.Threading.Tasks.Linq;
@@ -88,9 +89,13 @@ namespace Vvr.Controller.Skill
         private readonly List<Hash>              m_SkillCooltimeKeys = new(2);
         private readonly Dictionary<Hash, float> m_SkillCooltimes    = new(2);
 
+        private readonly CancellationTokenSource m_CancellationTokenSource = new();
+
         private IActor Owner         { get; }
         private bool   IsInExecution { get; set; }
         private bool   Disposed      { get; set; }
+
+        private CancellationToken CancellationToken => m_CancellationTokenSource.Token;
 
         public SkillController(IActor o)
         {
@@ -98,6 +103,11 @@ namespace Vvr.Controller.Skill
         }
         public void Dispose()
         {
+            if (Disposed)
+                throw new ObjectDisposedException(nameof(SkillController));
+
+            m_CancellationTokenSource.Cancel();
+
             Clear();
 
             m_DataProvider   = null;
@@ -108,6 +118,9 @@ namespace Vvr.Controller.Skill
 
         public void Clear()
         {
+            if (Disposed)
+                throw new ObjectDisposedException(nameof(SkillController));
+
             m_SkillCooltimeKeys.Clear();
             m_SkillCooltimes.Clear();
             m_Values.Clear();
@@ -115,18 +128,27 @@ namespace Vvr.Controller.Skill
 
         float ISkill.GetSkillCooltime(ISkillID skill)
         {
+            if (Disposed)
+                throw new ObjectDisposedException(nameof(SkillController));
+
             Hash hash = new Hash(skill.Id);
             m_SkillCooltimes.TryGetValue(hash, out float v);
             return v;
         }
         int ISkill.GetSkillCount()
         {
+            if (Disposed)
+                throw new ObjectDisposedException(nameof(SkillController));
+
             var data         = m_DataProvider.Resolve(Owner.Id);
             return data.Skills.Count(x => x != null);
         }
 
         IUniTaskAsyncEnumerable<ISkillData> ISkill.GetSkills()
         {
+            if (Disposed)
+                throw new ObjectDisposedException(nameof(SkillController));
+
             return UniTaskAsyncEnumerable.Create<ISkillData>(async (wr, token) =>
             {
                 var data = m_DataProvider.Resolve(Owner.Id);
@@ -135,18 +157,25 @@ namespace Vvr.Controller.Skill
                 {
                     if (skill != null)
                     {
-                        await wr.YieldAsync(skill);
+                        await wr.YieldAsync(skill)
+                            .AttachExternalCancellation(token);
                     }
                 }
             });
         }
-        async UniTask ISkill.Queue(int index)
+        UniTask ISkill.Queue(int index)
         {
+            if (Disposed)
+                throw new ObjectDisposedException(nameof(SkillController));
+
             var data = m_DataProvider.Resolve(Owner.Id);
-            await Queue(data.Skills[index]);
+            return Queue(data.Skills[index]);
         }
-        public async UniTask Queue(ISkillID skill)
+        public UniTask Queue(ISkillID skill)
         {
+            if (Disposed)
+                throw new ObjectDisposedException(nameof(SkillController));
+
             SkillSheet.Row skillRow;
             if (skill is SkillSheet.Row row) skillRow = row;
             else
@@ -157,12 +186,16 @@ namespace Vvr.Controller.Skill
 
             if (skillRow != null)
             {
-                await Queue(skillRow, null);
+                return Queue(skillRow, null);
             }
+            return UniTask.CompletedTask;
         }
 
         public async UniTask Queue(ISkillID data, IActor specifiedTarget)
         {
+            if (Disposed)
+                throw new ObjectDisposedException(nameof(SkillController));
+
             Assert.IsNotNull(data);
             Assert.IsTrue(Owner.ConditionResolver[Model.Condition.IsActorTurn](null));
             Assert.IsFalse(m_Values.Any(x=>x.skill == data),
@@ -186,10 +219,11 @@ namespace Vvr.Controller.Skill
             var value = new Value(skillRow, specifiedTarget);
 
             using var trigger = ConditionTrigger.Push(Owner, ConditionTrigger.Skill);
-            await ExecuteSkill(trigger, value);
+            await ExecuteSkillAsync(trigger, value)
+                .AttachExternalCancellation(CancellationToken);
         }
 
-        async UniTask ExecuteSkill(ConditionTrigger trigger, Value value)
+        async UniTask ExecuteSkillAsync(ConditionTrigger trigger, Value value)
         {
             Assert.IsTrue(Owner.ConditionResolver[Model.Condition.IsActorTurn](null));
 
@@ -199,13 +233,18 @@ namespace Vvr.Controller.Skill
                 $"[Skill:{Owner.DisplayName}:{Owner.GetInstanceID()}] Skill({value.skill.Id}) is in cooltime {cooltime}"
                     .ToLog();
 
-                await trigger.Execute(Model.Condition.OnSkillCooltime, $"{cooltime}");
+                await trigger.Execute(Model.Condition.OnSkillCooltime, $"{cooltime}")
+                    .AttachExternalCancellation(CancellationToken);
                 return;
             }
 
             $"[Skill:{Owner.DisplayName}:{Owner.GetInstanceID()}] Skill start {value.skill.Id}".ToLog();
 
-            await trigger.Execute(Model.Condition.OnSkillStart, value.skill.Id);
+            await trigger.Execute(Model.Condition.OnSkillStart, value.skill.Id)
+                    .AttachExternalCancellation(CancellationToken)
+                ;
+            if (CancellationToken.IsCancellationRequested)
+                return;
 
             #region Warmup
 
@@ -216,8 +255,7 @@ namespace Vvr.Controller.Skill
                 SkillEffectEmitter emitter = new SkillEffectEmitter(value.skill.Presentation.SelfEffect, null);
                 await skillEventHandle
                     .OnSkillStart(value.skill, emitter)
-                    .SuppressCancellationThrow()
-                    .AttachExternalCancellation(viewTarget.GetCancellationTokenOnDestroy())
+                    .AttachExternalCancellation(CancellationToken)
                     .TimeoutWithoutException(TimeSpan.FromSeconds(5))
                     ;
             }
@@ -226,13 +264,19 @@ namespace Vvr.Controller.Skill
                 Transform view = await m_ViewProvider.Resolve(Owner);
 
                 var effectPool = GameObjectPool.Get(value.skill.Presentation.SelfEffect);
-                var effect = await effectPool.SpawnEffect(
-                    view.position, Quaternion.identity);
-                while (!effect.Reserved)
+                var effect = await effectPool
+                    .SpawnEffect(view.position, Quaternion.identity)
+                    .AttachExternalCancellation(CancellationToken)
+                    ;
+                while (!effect.Reserved &&
+                       !CancellationToken.IsCancellationRequested)
                 {
                     await UniTask.Yield();
                 }
             }
+
+            if (CancellationToken.IsCancellationRequested)
+                return;
 
             #endregion
 
@@ -249,12 +293,17 @@ namespace Vvr.Controller.Skill
                 await skillEventHandle
                         .OnSkillCasting(value.skill, emitter)
                         .SuppressCancellationThrow()
-                        .AttachExternalCancellation(viewTarget.GetCancellationTokenOnDestroy())
+                        .AttachExternalCancellation(CancellationToken)
                         .TimeoutWithoutException(TimeSpan.FromSeconds(5))
                     ;
+
+                if (CancellationToken.IsCancellationRequested)
+                    return;
             }
 
-            await ExecuteSkillBody(trigger, value);
+            await ExecuteSkillBody(trigger, value)
+                    .AttachExternalCancellation(CancellationToken)
+                ;
         }
 
         async UniTask ExecuteSkillBody(ConditionTrigger trigger, Value value)
@@ -268,7 +317,9 @@ namespace Vvr.Controller.Skill
                 if (!value.overrideTarget.Disposed)
                 {
                     executed = true;
-                    await ExecuteSkillTarget(trigger, value, value.overrideTarget);
+                    await ExecuteSkillTarget(trigger, value, value.overrideTarget)
+                            .AttachExternalCancellation(CancellationToken)
+                        ;
                 }
             }
             else
@@ -279,7 +330,9 @@ namespace Vvr.Controller.Skill
                     // If target count exceed its capability
                     if (value.skill.Definition.TargetCount <= count++) break;
 
-                    await ExecuteSkillTarget(trigger, value, target);
+                    await ExecuteSkillTarget(trigger, value, target)
+                            .AttachExternalCancellation(CancellationToken)
+                        ;
                     executed = true;
                 }
             }
@@ -293,7 +346,7 @@ namespace Vvr.Controller.Skill
                         .GetComponent<ISkillEventHandler>()
                         .OnSkillCanceled(value.skill)
                         .SuppressCancellationThrow()
-                        .AttachExternalCancellation(view.GetCancellationTokenOnDestroy())
+                        .AttachExternalCancellation(CancellationToken)
                         .TimeoutWithoutException(TimeSpan.FromSeconds(5))
                     ;
             }
@@ -309,8 +362,10 @@ namespace Vvr.Controller.Skill
 
             #region Warmup
 
-            Transform targetView = await m_ViewProvider.Resolve(target);
-            Transform view       = await m_ViewProvider.Resolve(Owner);
+            Transform targetView = await m_ViewProvider.Resolve(target)
+                .AttachExternalCancellation(CancellationToken);
+            Transform view       = await m_ViewProvider.Resolve(Owner)
+                .AttachExternalCancellation(CancellationToken);
 
             var skillEventHandle = view.GetComponent<ISkillEventHandler>();
             if (skillEventHandle != null)
@@ -320,7 +375,9 @@ namespace Vvr.Controller.Skill
                 // If method is damage, should shake camera
                 if (value.skill.Execution.Method == SkillSheet.Method.Damage)
                 {
-                    ICameraProvider camPrv = await Vvr.Provider.Provider.Static.GetAsync<ICameraProvider>();
+                    ICameraProvider camPrv = await Vvr.Provider.Provider.Static.GetAsync<ICameraProvider>()
+                            .AttachExternalCancellation(CancellationToken)
+                        ;
                     emitter = new SkillEffectEmitter(
                         value.skill.Presentation.TargetEffect,
                         () => camPrv.Shake().Forget());
@@ -330,7 +387,7 @@ namespace Vvr.Controller.Skill
                 await skillEventHandle
                         .OnSkillEnd(value.skill, targetView, emitter)
                         .SuppressCancellationThrow()
-                        .AttachExternalCancellation(view.GetCancellationTokenOnDestroy())
+                        .AttachExternalCancellation(CancellationToken)
                         .TimeoutWithoutException(TimeSpan.FromSeconds(5))
                     ;
 
@@ -339,9 +396,12 @@ namespace Vvr.Controller.Skill
             else if (value.skill.Presentation.TargetEffect.IsValid())
             {
                 var effectPool = GameObjectPool.Get(value.skill.Presentation.TargetEffect);
-                var effect = await effectPool.SpawnEffect(
-                    targetView.position, Quaternion.identity);
-                while (!effect.Reserved)
+                var effect = await effectPool
+                        .SpawnEffect(targetView.position, Quaternion.identity)
+                        .AttachExternalCancellation(CancellationToken)
+                    ;
+                while (!effect.Reserved &&
+                       !CancellationToken.IsCancellationRequested)
                 {
                     await UniTask.Yield();
                 }
@@ -366,7 +426,9 @@ namespace Vvr.Controller.Skill
                     case SkillSheet.Method.Damage:
                         target.Stats.Push<DamageProcessor>(
                             value.skill.Execution.TargetStat.Ref.ToStat(), dmg);
-                        await targetTrigger.Execute(Model.Condition.OnHit, null);
+                        await targetTrigger.Execute(Model.Condition.OnHit, null)
+                                .AttachExternalCancellation(CancellationToken)
+                            ;
 
                         break;
                     case SkillSheet.Method.Default:
@@ -374,14 +436,18 @@ namespace Vvr.Controller.Skill
                         target.Stats.Push(
                             value.skill.Execution.TargetStat.Ref.ToStat(), dmg);
 
-                        await targetTrigger.Execute(Model.Condition.OnHit, null);
+                        await targetTrigger.Execute(Model.Condition.OnHit, null)
+                                .AttachExternalCancellation(CancellationToken)
+                            ;
                         break;
                 }
             }
 
             #endregion
 
-            await trigger.Execute(Model.Condition.OnSkillEnd, value.skill.Id);
+            await trigger.Execute(Model.Condition.OnSkillEnd, value.skill.Id)
+                    .AttachExternalCancellation(CancellationToken)
+                ;
 
             $"[Skill:{Owner.Owner}:{Owner.GetInstanceID()}] Skill({value.skill.Id}) executed to {target.GetInstanceID()}({target.Owner})".ToLog();
         }
@@ -394,12 +460,12 @@ namespace Vvr.Controller.Skill
             m_SkillCooltimeKeys.Add(value.hash);
         }
 
-        async UniTask ITimeUpdate.OnUpdateTime(float currentTime, float deltaTime)
+        UniTask ITimeUpdate.OnUpdateTime(float currentTime, float deltaTime)
         {
             for (int i = m_SkillCooltimeKeys.Count - 1; i >= 0; i--)
             {
                 var key = m_SkillCooltimeKeys[i];
-                if (!m_SkillCooltimes.ContainsKey(key))
+                if (!m_SkillCooltimes.TryGetValue(key, out var cooltime))
                 {
                     // XXX: ???
                     $"Skill cooltime not found but has keys in: somethings went wrong {key}".ToLog();
@@ -407,7 +473,7 @@ namespace Vvr.Controller.Skill
                     continue;
                 }
 
-                float duration = m_SkillCooltimes[key] - deltaTime;
+                float duration = cooltime - deltaTime;
                 if (duration <= 0)
                 {
                     m_SkillCooltimes.Remove(key);
@@ -427,6 +493,8 @@ namespace Vvr.Controller.Skill
                 e.delayedExecutionTime -= deltaTime;
                 m_Values[i]            =  e;
             }
+
+            return UniTask.CompletedTask;
         }
         async UniTask ITimeUpdate.OnEndUpdateTime()
         {
@@ -444,10 +512,13 @@ namespace Vvr.Controller.Skill
             {
                 Value e = m_Values[i];
 
-                await trigger.Execute(Model.Condition.OnSkillCasting, e.skill.Id);
+                await trigger.Execute(Model.Condition.OnSkillCasting, e.skill.Id)
+                    .AttachExternalCancellation(CancellationToken);
 
-                Transform viewTarget       = await m_ViewProvider.Resolve(Owner);
-                var       skillEventHandle = viewTarget.GetComponent<ISkillEventHandler>();
+                Transform viewTarget       = await m_ViewProvider.Resolve(Owner)
+                    .AttachExternalCancellation(CancellationToken);
+                var skillEventHandle = viewTarget.GetComponent<ISkillEventHandler>();
+
                 if (skillEventHandle != null)
                 {
                     SkillEffectEmitter emitter = new SkillEffectEmitter(e.skill.Presentation.CastingEffect, null);

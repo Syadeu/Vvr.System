@@ -53,7 +53,6 @@ namespace Vvr.Session.World
 
         public override string DisplayName => nameof(DefaultRegion);
 
-
         protected override async UniTask OnInitialize(IParentSession session, SessionData data)
         {
             await base.OnInitialize(session, data);
@@ -63,7 +62,7 @@ namespace Vvr.Session.World
             var actorProvider = await CreateSession<ActorFactorySession>(default);
             Register<IActorProvider>(actorProvider);
 
-            Start()
+            UniTask.Create(Start)
                 .AttachExternalCancellation(ReserveToken)
                 .SuppressCancellationThrow()
                 .Forget();

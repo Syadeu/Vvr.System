@@ -29,6 +29,9 @@ namespace Vvr.Controller.Abnormal
     {
         bool IAbnormalConditionProvider.Resolve(AbnormalCondition condition, string value)
         {
+            if (Disposed)
+                throw new ObjectDisposedException(nameof(AbnormalController));
+
             bool result;
             switch (condition)
             {

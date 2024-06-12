@@ -21,7 +21,9 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using UnityEngine.Assertions;
@@ -44,7 +46,7 @@ namespace Vvr.Controller.Condition
             Abnormal = nameof(Abnormal)
             ;
 
-        public struct EventScope : IDisposable
+        public readonly struct EventScope : IDisposable
         {
             private readonly int         m_Index;
             private readonly EventMethod m_Method;
@@ -79,8 +81,22 @@ namespace Vvr.Controller.Condition
         /// </summary>
         public static event EventExecutedDelegate OnEventExecutedAsync;
 
+        [Conditional("UNITY_EDITOR")]
+        private static void CheckThreadAndThrow(string methodName)
+        {
+#if UNITY_EDITOR
+            if (!UnityEditorInternal.InternalEditorUtility.CurrentThreadIsMainThread())
+            {
+                throw new InvalidOperationException(
+                    nameof(ConditionTrigger) + $".{methodName} is not thread safe.");
+            }
+#endif
+        }
+
         public static EventScope Scope([NotNull] EventExecutedDelegate e)
         {
+            CheckThreadAndThrow(nameof(Scope));
+
             if (e == null)
                 throw new InvalidOperationException("cannot be null");
 
@@ -104,6 +120,8 @@ namespace Vvr.Controller.Condition
         /// <returns>A new instance of ConditionTrigger</returns>
         public static ConditionTrigger Push(IEventTarget target, string displayName = null)
         {
+            CheckThreadAndThrow(nameof(Push));
+
             const string debugName  = "ConditionTrigger.Push";
             using var    debugTimer = DebugTimer.StartWithCustomName(debugName);
 
@@ -135,6 +153,8 @@ namespace Vvr.Controller.Condition
         /// <returns>True if the trigger is found, otherwise false</returns>
         public static bool Last(IEventTarget target, Model.Condition condition, string value)
         {
+            CheckThreadAndThrow(nameof(Last));
+
             const string debugName  = "ConditionTrigger.Last";
             using var    debugTimer = DebugTimer.StartWithCustomName(debugName);
 
@@ -149,11 +169,15 @@ namespace Vvr.Controller.Condition
 
         public static bool Any(IEventTarget target, Model.Condition condition)
         {
+            CheckThreadAndThrow(nameof(Any));
+
             return Any(target, condition, null);
         }
 
         public static bool Any(IEventTarget target, Model.Condition condition, string value)
         {
+            CheckThreadAndThrow(nameof(Any));
+
             const string debugName  = "ConditionTrigger.Any";
             using var    debugTimer = DebugTimer.StartWithCustomName(debugName);
 
@@ -195,16 +219,6 @@ namespace Vvr.Controller.Condition
 
             return false;
         }
-        // public static bool Any(IEventTarget target, Model.Condition condition, Predicate<string> predicate)
-        // {
-        //     using var debugTimer = DebugTimer.Start();
-        //
-        //     return s_Stack
-        //         .Where(x => x.m_Target == target)
-        //         .SelectMany(x => x.m_Events)
-        //         .Any(x => x.condition == condition && predicate(x.value));
-        // }
-
         // TODO: make gc allocation free
         [UsedImplicitly]
         private class ConditionQueryWrapper
@@ -244,8 +258,9 @@ namespace Vvr.Controller.Condition
             }
         }
 
-        private readonly Hash         m_Hash;
-        private readonly IEventTarget m_Target;
+        private readonly Hash                    m_Hash;
+        private readonly IEventTarget            m_Target;
+        private readonly CancellationTokenSource m_CancellationTokenSource;
 
         private ConditionQueryWrapper m_Conditions;
         private LinkedList<Event>     m_Events;
@@ -258,6 +273,8 @@ namespace Vvr.Controller.Condition
             this     = t;
             m_Path   = path;
             m_Copied = true;
+
+            m_CancellationTokenSource = new();
         }
         private ConditionTrigger(IEventTarget ta, string path)
         {
@@ -267,6 +284,8 @@ namespace Vvr.Controller.Condition
             m_Events     = ObjectPool<LinkedList<Event>>.Shared.Get();
             m_Path       = path;
             m_Copied     = false;
+
+            m_CancellationTokenSource = new();
         }
 
         /// <summary>
@@ -277,7 +296,8 @@ namespace Vvr.Controller.Condition
         /// </remarks>
         /// <param name="condition">The condition to execute</param>
         /// <param name="value">The value to use in the execution</param>
-        public async UniTask Execute(Vvr.Model.Condition condition, string value)
+        public async UniTask Execute(
+            Vvr.Model.Condition condition, string value, CancellationToken cancellationToken = default)
         {
             Assert.IsFalse(m_Target.Disposed);
 
@@ -286,23 +306,50 @@ namespace Vvr.Controller.Condition
             m_Conditions.value |= condition;
             m_Events.AddLast(new Event(condition, value));
 
+            if (cancellationToken.CanBeCanceled)
+            {
+                using var cts = CancellationTokenSource.CreateLinkedTokenSource(
+                    m_CancellationTokenSource.Token, cancellationToken);
+
+                await Internal_Execute(condition, value, cts.Token);
+            }
+            else
+                await Internal_Execute(condition, value, m_CancellationTokenSource.Token);
+        }
+
+        private async UniTask Internal_Execute(
+            Vvr.Model.Condition condition, string value, CancellationToken cancellationToken)
+        {
             if (s_MethodStack.Count > 0)
             {
                 LinkedListNode<EventMethod> current = s_MethodStack.Last;
                 do
                 {
-                    await current.Value.action.Invoke(m_Target, condition, value);
-                } while ((current = current.Previous) != null);
+                    await current.Value.action.Invoke(m_Target, condition, value)
+                        .AttachExternalCancellation(cancellationToken);
+                } while ((current = current.Previous) != null &&
+                         !cancellationToken.IsCancellationRequested);
             }
 
-            await ConditionResolver.Execute(m_Target, condition, value);
+            if (cancellationToken.IsCancellationRequested)
+                return;
+
+            await ConditionResolver.Execute(m_Target, condition, value)
+                .AttachExternalCancellation(cancellationToken);
+
+            if (cancellationToken.IsCancellationRequested)
+                return;
 
             if (OnEventExecutedAsync != null)
-                await OnEventExecutedAsync.Invoke(m_Target, condition, value);
+                await OnEventExecutedAsync.Invoke(m_Target, condition, value)
+                    .AttachExternalCancellation(cancellationToken);
         }
 
         public void Dispose()
         {
+            m_CancellationTokenSource?.Cancel();
+            m_CancellationTokenSource?.Dispose();
+
             if (!m_Copied)
             {
                 s_Stack.RemoveAt(s_Stack.Count - 1);

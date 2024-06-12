@@ -33,6 +33,9 @@ namespace Vvr.Controller.Abnormal
     {
         private partial bool CheckTimeCondition(Value value)
          {
+             if (Disposed)
+                 throw new ObjectDisposedException(nameof(AbnormalController));
+
              if (value.abnormal.timeCondition       == null ||
                  value.abnormal.timeCondition.Count == 0) return true;
 
@@ -67,11 +70,15 @@ namespace Vvr.Controller.Abnormal
             $"[Abnormal:{Owner.GetInstanceID()}] Processing time condition: {op} = {prevResult}".ToLog();
             return prevResult;
         }
-        async UniTask ITimeUpdate.OnEndUpdateTime()
+        UniTask ITimeUpdate.OnEndUpdateTime()
         {
+            return UniTask.CompletedTask;
         }
         async UniTask ITimeUpdate.OnUpdateTime(float currentTime, float deltaTime)
         {
+            if (Disposed)
+                throw new ObjectDisposedException(nameof(AbnormalController));
+
             using var trigger = ConditionTrigger.Push(Owner, ConditionTrigger.Abnormal);
 
             bool shouldUpdate = false;
@@ -127,7 +134,12 @@ namespace Vvr.Controller.Abnormal
                             m_Values.RemoveAt(i--);
                             m_IsDirty = true;
 
-                            await trigger.Execute(Model.Condition.OnAbnormalRemoved, e.abnormal.id);
+                            await trigger.Execute(Model.Condition.OnAbnormalRemoved, e.abnormal.id)
+                                    .AttachExternalCancellation(CancellationToken)
+                                ;
+                            if (CancellationToken.IsCancellationRequested)
+                                return;
+
                             continue;
                         }
                     }
@@ -157,7 +169,13 @@ namespace Vvr.Controller.Abnormal
                     m_Values[i]       = e;
 
                     if (updateCount > 0)
-                        await trigger.Execute(Model.Condition.OnAbnormalUpdate, e.abnormal.id);
+                    {
+                        await trigger.Execute(Model.Condition.OnAbnormalUpdate, e.abnormal.id)
+                                .AttachExternalCancellation(CancellationToken)
+                            ;
+                        if (CancellationToken.IsCancellationRequested)
+                            return;
+                    }
                 }
             }
 

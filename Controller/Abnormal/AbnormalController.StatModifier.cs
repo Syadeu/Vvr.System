@@ -60,6 +60,9 @@ namespace Vvr.Controller.Abnormal
 
         void IStatModifier.UpdateValues(in IReadOnlyStatValues originalStats, ref StatValues stats)
         {
+            if (Disposed)
+                throw new ObjectDisposedException(nameof(AbnormalController));
+
             foreach (Value e in m_Values.OrderBy(ValueMethodOrderComparer.Selector, ValueMethodOrderComparer.Static))
             {
                 int length = e.updateCount;

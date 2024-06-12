@@ -19,6 +19,7 @@
 
 #endregion
 
+using System;
 using Cysharp.Threading.Tasks;
 using Vvr.Controller.Condition;
 using Vvr.Model;
@@ -29,14 +30,17 @@ namespace Vvr.Controller.Abnormal
     {
         ConditionQuery IConditionObserver.Filter => ConditionQuery.All - Model.Condition.Always;
 
-        async UniTask IConditionObserver.OnExecute(Model.Condition c, string value)
+        UniTask IConditionObserver.OnExecute(Model.Condition c, string value)
         {
+            if (Disposed)
+                throw new ObjectDisposedException(nameof(AbnormalController));
+
             EventCondition condition = (EventCondition)c;
 
             // Always should not be checked
             if (condition == 0)
             {
-                return;
+                return UniTask.CompletedTask;
             }
 
             bool shouldUpdate = false;
@@ -65,10 +69,15 @@ namespace Vvr.Controller.Abnormal
             }
 
             if (shouldUpdate) m_IsDirty = true;
+
+            return UniTask.CompletedTask;
         }
 
         private partial bool CheckCancellation(ref int index, EventCondition condition)
         {
+            if (Disposed)
+                throw new ObjectDisposedException(nameof(AbnormalController));
+
             Value e = m_Values[index];
 
             if (e.abnormal.cancelCondition != (Model.Condition)condition) return false;

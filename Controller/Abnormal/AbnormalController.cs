@@ -23,6 +23,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using Cysharp.Threading.Tasks;
 using DG.Tweening;
 using UnityEngine.Assertions;
@@ -58,12 +59,14 @@ namespace Vvr.Controller.Abnormal
             int IReadOnlyRuntimeAbnormal.   Stack   => stack;
         }
 
-        private readonly List<Value>  m_Values = new();
+        private readonly List<Value>             m_Values                  = new();
+        private readonly CancellationTokenSource m_CancellationTokenSource = new();
 
         private uint m_Counter;
         private bool m_IsDirty;
 
-        private bool Disposed { get; set; }
+        private bool              Disposed          { get; set; }
+        private CancellationToken CancellationToken => m_CancellationTokenSource.Token;
 
         public IActor Owner { get; }
         public int    Count => m_Values.Count;
@@ -76,22 +79,46 @@ namespace Vvr.Controller.Abnormal
             ObjectObserver<AbnormalController>.Get(this).EnsureContainer();
         }
 
+        public void Dispose()
+        {
+            if (Disposed)
+                throw new ObjectDisposedException(nameof(AbnormalController));
+
+            m_CancellationTokenSource.Cancel();
+
+            ObjectObserver<AbnormalController>.Remove(this);
+            TimeController.Unregister(this);
+
+            Disposed = true;
+        }
+
         public void Clear()
         {
-            Assert.IsFalse(Disposed);
+            if (Disposed)
+                throw new ObjectDisposedException(nameof(AbnormalController));
 
             m_Values.Clear();
             m_Counter = 0;
         }
         public async UniTask Add(AbnormalSheet.Row data)
         {
-            Assert.IsFalse(Disposed);
+            if (Disposed)
+                throw new ObjectDisposedException(nameof(AbnormalController));
 
             var abnormal = new RuntimeAbnormal(data);
             for (int i = 0; i < abnormal.abnormalChain?.Count; i++)
             {
-                await Add(abnormal.abnormalChain[i].Ref);
+                await Add(abnormal.abnormalChain[i].Ref)
+                    .AttachExternalCancellation(CancellationToken)
+                    ;
+
+                if (CancellationToken.IsCancellationRequested)
+                    return;
             }
+
+            if (CancellationToken.IsCancellationRequested)
+                return;
+
             if (abnormal.maxStack < 0)
             {
                 $"Trying to add abnormal has max stack {abnormal.maxStack}".ToLogError();
@@ -133,7 +160,9 @@ namespace Vvr.Controller.Abnormal
                 m_IsDirty = true;
                 ObjectObserver<AbnormalController>.ChangedEvent(this);
                 ObjectObserver<IStatValueStack>.ChangedEvent(Owner.Stats);
-                await trigger.Execute(Model.Condition.OnAbnormalAdded, data.Id);
+                await trigger.Execute(Model.Condition.OnAbnormalAdded, data.Id)
+                        .AttachExternalCancellation(CancellationToken)
+                    ;
                 return;
             }
 
@@ -171,26 +200,23 @@ namespace Vvr.Controller.Abnormal
             m_IsDirty       = true;
             ObjectObserver<AbnormalController>.ChangedEvent(this);
             ObjectObserver<IStatValueStack>.ChangedEvent(Owner.Stats);
-            await trigger.Execute(Model.Condition.OnAbnormalAdded, data.Id);
+            await trigger.Execute(Model.Condition.OnAbnormalAdded, data.Id)
+                    .AttachExternalCancellation(CancellationToken)
+                ;
         }
         public bool Contains(Hash abnormalId)
         {
-            Assert.IsFalse(Disposed);
+            if (Disposed)
+                throw new ObjectDisposedException(nameof(AbnormalController));
+
             return m_Values.Any(x => x.abnormal.hash == abnormalId);
-        }
-
-        public void Dispose()
-        {
-            Assert.IsFalse(Disposed);
-            ObjectObserver<AbnormalController>.Remove(this);
-            TimeController.Unregister(this);
-
-            Disposed = true;
         }
 
         public IEnumerator<IReadOnlyRuntimeAbnormal> GetEnumerator()
         {
-            Assert.IsFalse(Disposed);
+            if (Disposed)
+                throw new ObjectDisposedException(nameof(AbnormalController));
+
             return m_Values.Select(x => (IReadOnlyRuntimeAbnormal)x).GetEnumerator();
         }
         IEnumerator IEnumerable.GetEnumerator()

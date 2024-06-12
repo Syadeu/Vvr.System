@@ -19,30 +19,119 @@
 
 #endregion
 
+using System;
 using System.Buffers;
 using System.Collections.Generic;
+using System.Threading;
 using Cysharp.Threading.Tasks;
-using UnityEngine.Assertions;
+using JetBrains.Annotations;
 using Vvr.Crypto;
+using Vvr.Model;
 
 namespace Vvr.Controller
 {
+    [PublicAPI]
     public struct TimeController
     {
-        private static readonly List<ITimeUpdate> s_TimeUpdaters = new();
-
-        public static CryptoFloat CurrentTime { get; private set; } = 0;
-        public static bool        IsUpdating  { get; private set; }
-
-        public static void Register(ITimeUpdate t)
+        sealed class Entry : IDisposable
         {
-            Assert.IsFalse(s_TimeUpdaters.Contains(t));
-            s_TimeUpdaters.Add(t);
+            private readonly  ITimeUpdate             m_Updater;
+            private readonly CancellationTokenSource m_CancellationToken;
+            private readonly CancellationTokenSource m_LinkedToken;
+
+            private          bool          m_BackgroundTask;
+            private readonly Func<UniTask> m_UpdateFunc, m_EndUpdateFunc;
+
+            private float m_CurrentTime, m_Delta;
+
+            public CancellationToken CancellationToken => m_LinkedToken.Token;
+
+            public Entry(ITimeUpdate t, bool background, CancellationToken s)
+            {
+                m_Updater           = t;
+                m_BackgroundTask    = background;
+                m_CancellationToken = new CancellationTokenSource();
+
+                if (s.CanBeCanceled)
+                    m_LinkedToken = CancellationTokenSource.CreateLinkedTokenSource(
+                        m_CancellationToken.Token,
+                        s);
+                else
+                    m_LinkedToken = m_CancellationToken;
+
+                m_UpdateFunc    = Internal_OnUpdateTimeAsync;
+                m_EndUpdateFunc = m_Updater.OnEndUpdateTime;
+            }
+
+            public UniTask OnUpdateTimeAsync(float currentTime, float delta)
+            {
+                m_CurrentTime = currentTime;
+                m_Delta       = delta;
+
+                if (m_BackgroundTask)
+                    return UniTask
+                        .RunOnThreadPool(m_UpdateFunc, true, CancellationToken);
+                return UniTask.Create(m_UpdateFunc)
+                    .AttachExternalCancellation(CancellationToken);
+            }
+
+            public UniTask OnEndUpdateTimeAsync()
+            {
+                if (m_BackgroundTask)
+                    return UniTask
+                        .RunOnThreadPool(m_EndUpdateFunc, true, CancellationToken);
+
+                return UniTask.Create(m_EndUpdateFunc)
+                    .AttachExternalCancellation(CancellationToken);
+            }
+
+            private UniTask Internal_OnUpdateTimeAsync()
+            {
+                return m_Updater.OnUpdateTime(m_CurrentTime, m_Delta);
+            }
+
+            public void Dispose()
+            {
+                m_LinkedToken.Cancel();
+
+                m_CancellationToken?.Dispose();
+                m_LinkedToken?.Dispose();
+            }
         }
 
-        public static void Unregister(ITimeUpdate t) => s_TimeUpdaters.Remove(t);
+        private static readonly Dictionary<ITimeUpdate, Entry> s_TimeUpdaters = new();
 
-        public static void ResetTime() => CurrentTime = 0;
+        private static int   s_IsUpdating;
+        private static float s_CurrentTime;
+
+        private static readonly SemaphoreSlim           s_Slim                    = new(1, 1);
+        private static          CancellationTokenSource s_CancellationTokenSource = new();
+
+        public static CryptoFloat CurrentTime => CryptoFloat.Raw(s_CurrentTime);
+        public static bool        IsUpdating  => s_IsUpdating == 1;
+
+        public static void Register(ITimeUpdate t, bool background = false, CancellationToken externalToken = default)
+        {
+            if (s_TimeUpdaters.TryGetValue(t, out var e))
+                throw new InvalidOperationException();
+
+            s_TimeUpdaters[t] = new(t, background, externalToken);
+        }
+
+        public static void Unregister(ITimeUpdate t)
+        {
+            if (!s_TimeUpdaters.Remove(t, out var v)) return;
+
+            v.Dispose();
+        }
+
+        public static void ResetTime()
+        {
+            if (IsUpdating)
+                throw new InvalidOperationException();
+
+            Interlocked.Exchange(ref s_CurrentTime, 0);
+        }
 
         public static async UniTask WaitForUpdateCompleted()
         {
@@ -51,43 +140,116 @@ namespace Vvr.Controller
                 await UniTask.Yield();
             }
         }
-        public static async UniTask Next(float time)
+
+        private static Entry[] s_CachedArray = new Entry[8];
+
+        public static async UniTask Next(float time, CancellationToken cancellationToken = default)
         {
-            IsUpdating  =  true;
-            CurrentTime += time;
-            float currentTime = CurrentTime;
+            if (!cancellationToken.CanBeCanceled)
+            {
+                await InternalNext(time, s_CancellationTokenSource.Token);
+            }
+            else
+            {
+                using var cancelTokenSource = CancellationTokenSource.CreateLinkedTokenSource(
+                    s_CancellationTokenSource.Token, cancellationToken);
+
+                await InternalNext(time, cancelTokenSource.Token);
+            }
+
+            Array.Clear(s_CachedArray, 0, s_CachedArray.Length);
+        }
+
+        private static async UniTask InternalNext(float delta, CancellationToken cancellationToken)
+        {
+            using var sps = new SemaphoreSlimLock(s_Slim);
+            await sps.WaitAsync(cancellationToken);
+            if (cancellationToken.IsCancellationRequested)
+                return;
+
+            CryptoFloat f           = CurrentTime + delta;
+            float       currentTime = f;
+            Interlocked.Exchange(ref s_IsUpdating, 1);
+            Interlocked.Exchange(ref s_CurrentTime, f.RawValue);
 
             // This because time updater container can be changed
             // while updating their state.
-            int count       = s_TimeUpdaters.Count;
-            var cachedArray = ArrayPool<ITimeUpdate>.Shared.Rent(count);
-            s_TimeUpdaters.CopyTo(cachedArray);
-
-            for (int i = 0; i < count; i++)
+            int count = s_TimeUpdaters.Count;
+            if (s_CachedArray.Length <= count)
             {
-                var t = cachedArray[i];
-                if (!s_TimeUpdaters.Contains(t)) continue;
-
-                await t.OnUpdateTime(currentTime, time);
+                s_CachedArray = new Entry[s_CachedArray.Length * 2];
             }
 
-            ArrayPool<ITimeUpdate>.Shared.Return(cachedArray, true);
+            UpdateCachedArray(ref s_CachedArray, s_TimeUpdaters.Values);
 
-            count = s_TimeUpdaters.Count;
-            cachedArray = ArrayPool<ITimeUpdate>.Shared.Rent(count);
-            s_TimeUpdaters.CopyTo(cachedArray);
-
-            for (int i = 0; i < count; i++)
+            using (var taskArray = TempArray<UniTask>.Shared(count, true))
             {
-                var t = cachedArray[i];
-                if (!s_TimeUpdaters.Contains(t)) continue;
+                await ExecuteOnUpdateTime(
+                        taskArray.Value, currentTime, delta, s_CachedArray, count)
+                    .SuppressCancellationThrow()
+                    .AttachExternalCancellation(cancellationToken)
+                    ;
 
-                await t.OnEndUpdateTime();
+                count = UpdateCachedArray(ref s_CachedArray, s_TimeUpdaters.Values);
+
+                await ExecuteOnEndUpdateTime(taskArray.Value, s_CachedArray, count)
+                        .SuppressCancellationThrow()
+                        .AttachExternalCancellation(cancellationToken)
+                    ;
             }
 
-            ArrayPool<ITimeUpdate>.Shared.Return(cachedArray, true);
+            Interlocked.Exchange(ref s_IsUpdating, 0);
+        }
 
-            IsUpdating = false;
+        private static int UpdateCachedArray(
+            ref Entry[] array, IEnumerable<Entry> entries)
+        {
+            int i = 0;
+            foreach (var item in entries)
+            {
+                array[i++] = item;
+            }
+
+            return i;
+        }
+
+        private static UniTask ExecuteOnUpdateTime(
+            UniTask[] taskArray,
+            float currentTime, float delta,
+            Entry[] entries, int count)
+        {
+            int i = 0;
+            for (; i < count; i++)
+            {
+                var t = s_CachedArray[i];
+                taskArray[i] = t.OnUpdateTimeAsync(currentTime, delta);
+            }
+
+            for (; i < taskArray.Length; i++)
+            {
+                taskArray[i] = UniTask.CompletedTask;
+            }
+
+            return UniTask.WhenAll(taskArray);
+        }
+
+        private static UniTask ExecuteOnEndUpdateTime(
+            UniTask[] taskArray,
+            Entry[] entries, int count)
+        {
+            int i = 0;
+            for (; i < count; i++)
+            {
+                var t = s_CachedArray[i];
+                taskArray[i] = t.OnEndUpdateTimeAsync();
+            }
+
+            for (; i < taskArray.Length; i++)
+            {
+                taskArray[i] = UniTask.CompletedTask;
+            }
+
+            return UniTask.WhenAll(taskArray);
         }
     }
 
