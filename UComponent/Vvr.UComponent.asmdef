@@ -1,0 +1,14 @@
+{
+  "name": "Vvr.UComponent",
+  "references": [
+    "Vvr",
+    "Vvr.UI",
+
+    "GUID:0bebf4b98a2c47cd93c8f4c2f5f17d2a",
+
+    "UniTask",
+    "UniTask.Addressables",
+
+    "DOTween.Modules"
+  ]
+}
