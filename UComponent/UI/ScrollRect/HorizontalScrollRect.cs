@@ -18,6 +18,8 @@
 #endregion
 
 using System.Collections.Generic;
+using System.Linq;
+using JetBrains.Annotations;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.UI;
@@ -27,11 +29,11 @@ namespace Vvr.UComponent.UI
 {
     [RequireComponent(typeof(RectTransform))]
     [RequireComponent(typeof(ScrollRect))]
+    [PublicAPI, HideMonoScript]
     public class HorizontalScrollRect : MonoBehaviour,
-        IScrollRect,
+        IScrollRect, IRectLaneContainer,
         IRectTransformPool
     {
-        [SerializeField] private ScrollRectItem testItem;
         [SerializeField] private RectTransform  m_Prefab;
 
         [Space]
@@ -55,6 +57,10 @@ namespace Vvr.UComponent.UI
         }
 
         public RectLane this[int i] => m_Lanes[i];
+        public int             Count => m_Lanes.Sum(x => x.Count);
+
+        int IRectLaneContainer.Count => m_Lanes.Length;
+
         public Rect      ViewportRect       => ScrollRect.viewport.GetWorldRect();
         public Matrix4x4 ViewportMatrix     => ScrollRect.viewport.worldToLocalMatrix;
         public Vector2   NormalizedPosition => ScrollRect.normalizedPosition;
@@ -128,62 +134,6 @@ namespace Vvr.UComponent.UI
             }
         }
 
-        public void Add(IScrollRectItem item)
-        {
-
-        }
-
-        [Button, ResponsiveButtonGroup]
-        public void TestAdd()
-        {
-            this[0].Add((ScrollRectItem)testItem.Clone());
-            this[1].Add((ScrollRectItem)testItem.Clone());
-        }
-[Button, ResponsiveButtonGroup]
-        public void TestRemove()
-        {
-
-        }
-//
-// #if UNITY_EDITOR
-//         private void OnDrawGizmosSelected()
-//         {
-//             var content = ScrollRect.content;
-//             int yy      = content.childCount;
-//
-//             RectTransform viewport     = ScrollRect.viewport;
-//             Rect          viewportRect = viewport.GetWorldRect();
-//
-//             Gizmos.color = Color.red;
-//             Gizmos.DrawWireCube(viewport.GetWorldCenterPosition(), viewportRect.size);
-//
-//             for (int i = 0; i < yy; i++)
-//             {
-//                 var row = (RectTransform)content.GetChild(i);
-//
-//                 int xx = row.childCount;
-//                 for (int x = 0; x < xx; x++)
-//                 {
-//                     var e = (RectTransform)row.GetChild(x);
-//
-//                     Rect rect = e.GetWorldRect();
-//
-//                     bool overlap = rect.Overlaps(viewportRect, false);
-//                     if (!overlap)
-//                     {
-//                         Gizmos.color = Color.red;
-//                     }
-//                     else
-//                     {
-//                         Gizmos.color = Color.yellow;
-//                     }
-//
-//                     Gizmos.DrawWireCube(e.position, rect.size);
-//                 }
-//             }
-//         }
-// #endif
-
-
+        IEnumerable<RectLane> IRectLaneContainer.GetEnumerable() => m_Lanes;
     }
 }

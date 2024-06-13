@@ -20,6 +20,8 @@
 #endregion
 
 using System.Collections.Generic;
+using JetBrains.Annotations;
+using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.UI;
 using Vvr.UI;
@@ -28,6 +30,7 @@ namespace Vvr.UComponent.UI
 {
     // TODO: currently, horizontal only
     [RequireComponent(typeof(RectTransform))]
+    [HideMonoScript]
     public class RectLane : LayoutGroup
     {
         [SerializeField] private float      m_Spacing;
@@ -41,15 +44,20 @@ namespace Vvr.UComponent.UI
         private IRectTransformPool Pool => m_Pool ??= GetComponentInParent<IRectTransformPool>();
         private IScrollRect ScrollRect => m_ScrollRect ??= GetComponentInParent<IScrollRect>();
 
+        public int Count => m_Items.Count;
+
+        [PublicAPI]
         public void Add(IScrollRectItem item)
         {
             m_Items.AddLast(item);
             UpdateProxy();
         }
-        public void Remove(IScrollRectItem item)
+        [PublicAPI]
+        public bool Remove(IScrollRectItem item)
         {
-            m_Items.Remove(item);
+            if (!m_Items.Remove(item)) return false;
             UpdateProxy();
+            return true;
         }
 
         public override void CalculateLayoutInputHorizontal()
@@ -297,5 +305,14 @@ namespace Vvr.UComponent.UI
 
             return currentRect;
         }
+    }
+
+    [PublicAPI]
+    public interface IRectLaneContainer
+    {
+        RectLane this[int i] { get; }
+        int Count { get; }
+
+        IEnumerable<RectLane> GetEnumerable();
     }
 }
