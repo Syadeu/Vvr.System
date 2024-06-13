@@ -23,6 +23,9 @@ namespace Vvr.Session.ContentView.Core
 {
     public enum CardCollectionViewEvent : short
     {
+        Open,
+        Close,
+
 
     }
 }

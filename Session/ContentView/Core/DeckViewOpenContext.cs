@@ -15,22 +15,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // 
-// File created : 2024, 06, 02 20:06
+// File created : 2024, 06, 13 16:06
 
 #endregion
 
-using System;
-using Vvr.Model;
+using System.Collections.Generic;
 
 namespace Vvr.Session.ContentView.Core
 {
-    public enum DeckViewEvent : short
+    public struct DeckViewOpenContext
     {
-        Open,
-        Close,
+        public IEnumerable<DeckViewSetActorContext> actorContexts;
 
-        SetActor = 100,
+        public override int GetHashCode()
+        {
+            int h = 0;
+            if (actorContexts is null) return h;
 
-        CardSelect = 10000,
+            foreach (var actorContext in actorContexts)
+            {
+                h ^= actorContext.GetHashCode();
+            }
+            return h;
+        }
     }
 }

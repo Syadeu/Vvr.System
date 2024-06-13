@@ -15,22 +15,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // 
-// File created : 2024, 06, 02 20:06
+// File created : 2024, 06, 13 16:06
 
 #endregion
 
-using System;
-using Vvr.Model;
+using Vvr.Session.ContentView.Core;
 
-namespace Vvr.Session.ContentView.Core
+namespace Vvr.Session.ContentView.CardCollection
 {
-    public enum DeckViewEvent : short
+    public abstract class CardCollectionViewProviderComponent
+        : ContentViewProviderComponent<CardCollectionViewEvent>, ICardCollectionViewProvider
     {
-        Open,
-        Close,
-
-        SetActor = 100,
-
-        CardSelect = 10000,
+        
     }
 }

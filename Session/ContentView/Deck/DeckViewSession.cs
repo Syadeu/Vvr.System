@@ -52,6 +52,8 @@ namespace Vvr.Session.ContentView.Deck
             EventHandler
                 .Register(DeckViewEvent.Open, OnOpen)
                 .Register(DeckViewEvent.Close, OnClose)
+
+                .Register(DeckViewEvent.CardSelect, OnCardSelect)
                 ;
         }
         protected override UniTask OnReserve()
@@ -62,6 +64,8 @@ namespace Vvr.Session.ContentView.Deck
             EventHandler
                 .Unregister(DeckViewEvent.Open, OnOpen)
                 .Unregister(DeckViewEvent.Close, OnClose)
+
+                .Unregister(DeckViewEvent.CardSelect, OnCardSelect)
                 ;
 
             m_ViewInstance = null;
@@ -69,15 +73,41 @@ namespace Vvr.Session.ContentView.Deck
             return base.OnReserve();
         }
 
+        private async UniTask OnCardSelect(DeckViewEvent e, object ctx)
+        {
+            if (ctx is not int idx)
+            {
+                "invalid ctx".ToLogError();
+                return;
+            }
+
+            IActorData actor = m_UserActorProvider.GetCurrentTeam()[idx];
+            await EventHandlerProvider.Resolve<CardCollectionViewEvent>()
+                .ExecuteAsync(CardCollectionViewEvent.Open, actor)
+                .AttachExternalCancellation(ReserveToken)
+                ;
+        }
+
         private async UniTask OnOpen(DeckViewEvent e, object ctx)
         {
             if (ctx is not DeckViewOpenContext openContext)
             {
-                DeckViewSetActorContext[] actorContexts = new DeckViewSetActorContext[5];
+                var currentTeam = m_UserActorProvider.GetCurrentTeam();
+
+                DeckViewSetActorContext[] actorContexts = new DeckViewSetActorContext[currentTeam.Count];
 
                 int i = 0;
-                foreach (var actor in m_UserActorProvider.GetCurrentTeam())
+                foreach (var actor in currentTeam)
                 {
+                    if (actor is null)
+                    {
+                        actorContexts[i] = new DeckViewSetActorContext()
+                        {
+                            index = i++
+                        };
+                        continue;
+                    }
+
                     var portraitAssetPath = actor.Assets[AssetType.ContextPortrait];
                     var    portraitImg  = await m_AssetProvider
                         .LoadAsync<Sprite>(portraitAssetPath);
@@ -92,14 +122,6 @@ namespace Vvr.Session.ContentView.Deck
                         grade    = actor.Grade,
                         // TODO: actor level
                         level = 0
-                    };
-                }
-
-                for (; i < 5; i++)
-                {
-                    actorContexts[i] = new DeckViewSetActorContext()
-                    {
-                        index = i
                     };
                 }
 

@@ -15,22 +15,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // 
-// File created : 2024, 06, 02 20:06
+// File created : 2024, 06, 13 16:06
 
 #endregion
 
-using System;
-using Vvr.Model;
+using UnityEngine;
 
 namespace Vvr.Session.ContentView.Core
 {
-    public enum DeckViewEvent : short
+    public struct DeckViewSetActorContext
     {
-        Open,
-        Close,
+        public int    index;
+        public string id;
 
-        SetActor = 100,
+        public Sprite portrait;
+        public string title;
+        public int    grade;
+        public int    level;
 
-        CardSelect = 10000,
+        public override int GetHashCode()
+        {
+            return
+                unchecked((int)FNV1a32.Calculate(title))
+                ^ index ^ grade ^ level ^ 367;
+        }
     }
 }

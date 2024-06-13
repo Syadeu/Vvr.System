@@ -105,6 +105,9 @@ namespace Vvr.Session
 
         public IActor Create(Owner owner, IActorData data)
         {
+            if (data is null)
+                throw new InvalidOperationException();
+
             Assert.IsNotNull(m_StatConditionProvider);
 
             IReadOnlyActor    template = Resolve(data);

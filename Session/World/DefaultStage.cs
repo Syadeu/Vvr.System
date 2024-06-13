@@ -246,6 +246,8 @@ namespace Vvr.Session.World
                 {
                     foreach (var data in Data.players)
                     {
+                        if (data is null) continue;
+
                         IActor target = m_ActorProvider.Create(Owner, data);
 
                         IStageActor runtimeActor = m_StageActorProvider.Create(target, data);

@@ -106,6 +106,21 @@ namespace Vvr.UComponent.UI
 
         public override void SetLayoutHorizontal()
         {
+            if (!Application.isPlaying)
+            {
+                float startOffset = GetStartOffset(0, GetTotalPreferredSize(0) - m_Padding.horizontal);
+
+                foreach (var child in rectChildren)
+                {
+                    float preferred = LayoutUtility.GetPreferredSize(child, 0);
+
+                    SetChildAlongAxisWithScale(child, 0, startOffset, preferred, 1);
+                    startOffset += preferred + m_Spacing;
+                }
+
+                return;
+            }
+
             int i = 0;
             foreach (var pos in GetVisiblePositionWithAxis(0))
             {
@@ -116,6 +131,17 @@ namespace Vvr.UComponent.UI
                 float preferred = LayoutUtility.GetPreferredSize(child, 0);
 
                 SetChildAlongAxisWithScale(child, 0, pos.pos, preferred, 1);
+            }
+        }
+        public override void SetLayoutVertical()
+        {
+            float startOffset = GetStartOffset(1, GetTotalPreferredSize(1) - m_Padding.vertical);
+
+            foreach (var child in rectChildren)
+            {
+                float preferred = LayoutUtility.GetPreferredSize(child, 1);
+
+                SetChildAlongAxisWithScale(child, 1, startOffset, preferred, 1);
             }
         }
 
@@ -153,25 +179,11 @@ namespace Vvr.UComponent.UI
                 else
                     yield return (isVisible, pos);
 
-                pos   += v;
+                pos += v;
                 if (axis == 0)
                     localStartPos.x += v;
                 else
                     localStartPos.y += v;
-            }
-        }
-
-        public override void SetLayoutVertical()
-        {
-            for (int i = 0; i < rectChildren.Count; i++)
-            {
-                var child = rectChildren[i];
-
-                float startOffset = GetStartOffset(1, GetTotalPreferredSize(1) - m_Padding.vertical);
-
-                float preferred = LayoutUtility.GetPreferredSize(child, 1);
-
-                SetChildAlongAxisWithScale(child, 1, startOffset, preferred, 1);
             }
         }
 

@@ -96,15 +96,17 @@ namespace Vvr.TestClass
         {
             if (m_Actors == null)
             {
-                if (!Data.playerActorIds.Any())
+                m_Actors = new IActorData[5];
+                if (Data.playerActorIds.Any())
                 {
-                    m_Actors = Array.Empty<IActorData>();
-                }
-                else
-                {
-                    m_Actors = Data.playerActorIds
-                        .Select(m_ActorDataProvider.Resolve)
-                        .ToArray();
+                    int i = 0;
+                    foreach (var actor in Data.playerActorIds
+                                 .Select(m_ActorDataProvider.Resolve))
+                    {
+                        m_Actors[i++] = actor;
+
+                        if (m_Actors.Length <= i) break;
+                    }
                 }
             }
 

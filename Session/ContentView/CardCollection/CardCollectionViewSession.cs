@@ -17,7 +17,11 @@
 // File created : 2024, 06, 04 23:06
 #endregion
 
+using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
+using UnityEngine;
+using Vvr.Provider;
+using Vvr.Session.AssetManagement;
 using Vvr.Session.ContentView.Core;
 
 namespace Vvr.Session.ContentView.CardCollection
@@ -26,6 +30,37 @@ namespace Vvr.Session.ContentView.CardCollection
     public sealed class CardCollectionViewSession
         : ContentViewChildSession<CardCollectionViewEvent, ICardCollectionViewProvider>
     {
+        private IAssetProvider m_AssetProvider;
+
         public override string DisplayName => nameof(CardCollectionViewSession);
+
+        protected override async UniTask OnInitialize(IParentSession session, ContentViewSessionData data)
+        {
+            await base.OnInitialize(session, data);
+
+            m_AssetProvider = await CreateSession<AssetSession>(default);
+            Register(m_AssetProvider);
+
+            EventHandler
+                .Register(CardCollectionViewEvent.Open, OnOpen)
+                .Register(CardCollectionViewEvent.Close, OnClose)
+                ;
+        }
+
+        private async UniTask OnOpen(CardCollectionViewEvent e, object ctx)
+        {
+            GameObject ins = await ViewProvider
+                    .OpenAsync(CanvasViewProvider, m_AssetProvider, ctx)
+                    .AttachExternalCancellation(ReserveToken)
+                ;
+            this.Inject(ins);
+        }
+        private async UniTask OnClose(CardCollectionViewEvent e, object ctx)
+        {
+            await ViewProvider
+                    .CloseAsync(ctx)
+                    .AttachExternalCancellation(ReserveToken)
+                ;
+        }
     }
 }
