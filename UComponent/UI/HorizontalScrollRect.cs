@@ -32,9 +32,13 @@ namespace Vvr.UComponent.UI
         IRectTransformPool
     {
         [SerializeField] private ScrollRectItem testItem;
-        [SerializeField] private RectTransform  testPrefab;
+        [SerializeField] private RectTransform  m_Prefab;
 
+        [Space]
         [SerializeField] private bool m_ClearOnAwake = true;
+
+        [SerializeField] private int m_InitialCount = 8;
+        [SerializeField] private int m_MaxPoolCount = 16;
 
         private ScrollRect m_ScrollRect;
         private RectLane[] m_Lanes;
@@ -63,7 +67,9 @@ namespace Vvr.UComponent.UI
                 {
                     GameObject obj = new GameObject("Reserved");
                     m_ReservedFolder = obj.transform;
-                    m_ReservedFolder.SetParent(transform);
+                    m_ReservedFolder.SetParent(transform, false);
+
+                    obj.SetActive(false);
                 }
                 return m_ReservedFolder;
             }
@@ -92,27 +98,33 @@ namespace Vvr.UComponent.UI
                 }
             }
 
+            for (int i = 0; i < m_InitialCount; i++)
+            {
+                Return(Rent());
+            }
+
             ScrollRect.onValueChanged.AddListener(OnScrollEvent);
         }
 
         public RectTransform Rent()
         {
-            return Instantiate(testPrefab);
+            int count = ReservedFolder.childCount;
+            if (count <= 0)
+                return Instantiate(m_Prefab);
+
+            return ReservedFolder.GetChild(count - 1) as RectTransform;
         }
         public void Return(RectTransform t)
         {
-            Destroy(t.gameObject);
+            t.SetParent(ReservedFolder);
         }
 
         private void OnScrollEvent(Vector2 normalizedPosition)
         {
-            RectTransform viewport     = ScrollRect.viewport;
-            Rect          viewportRect = viewport.GetWorldRect();
-
             for (int i = 0; i < m_Lanes.Length; i++)
             {
                 var e = m_Lanes[i];
-                e.UpdateProxy(viewportRect, normalizedPosition);
+                e.UpdateProxy();
             }
         }
 

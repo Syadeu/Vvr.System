@@ -44,12 +44,12 @@ namespace Vvr.UComponent.UI
         public void Add(IScrollRectItem item)
         {
             m_Items.AddLast(item);
-            UpdateProxy(ScrollRect.ViewportRect, ScrollRect.NormalizedPosition);
+            UpdateProxy();
         }
-
         public void Remove(IScrollRectItem item)
         {
-
+            m_Items.Remove(item);
+            UpdateProxy();
         }
 
         public override void CalculateLayoutInputHorizontal()
@@ -65,8 +65,7 @@ namespace Vvr.UComponent.UI
                 {
                     if (count++ > 0) calculatedWidth += m_Spacing;
 
-                    calculatedWidth += Mathf.Max(calculatedWidth,
-                        LayoutUtility.GetPreferredSize(child, 0));
+                    calculatedWidth += LayoutUtility.GetPreferredSize(child, 0);
                 }
             }
             else
@@ -168,19 +167,11 @@ namespace Vvr.UComponent.UI
             }
         }
 
-        public void UpdateProxy(Rect viewportRect, Vector2 normalizedPosition)
+        public void UpdateProxy()
         {
             if (m_Items.Count <= 0) return;
 
-            RectTransform tr            = (RectTransform)transform;
-            int           existingCount = tr.childCount;
-            Rect          rect          = tr.GetWorldRect();
-
-            Vector3 scale   = rectTransform.lossyScale;
-            float   spacing = m_Spacing * scale.x;
-
-            int  count       = 0;
-            // Rect currentRect = GetStartRect();
+            int count = 0;
 
             var node = m_Items.First;
             foreach (var xPos in GetVisiblePositionWithAxis(0, false))
@@ -195,7 +186,7 @@ namespace Vvr.UComponent.UI
                     else
                     {
                         proxy = Pool.Rent();
-                        proxy.SetParent(tr, false);
+                        proxy.SetParent(rectTransform, false);
 
                         m_Proxy[node.Value] = proxy;
 
