@@ -91,10 +91,10 @@ namespace Vvr.Session
             "Registers all connectors in the game objects by adding them to the list of objects.",
             "This method is responsible for finding all game objects that have connectors attached to them " +
             "and adding them to the list of objects in the \"DependencyInjector\" class.")]
-        private void RegisterAllConnectors()
+        private void RegisterAllConnectors(bool includeInactive = false)
         {
             HashSet<GameObject> list = new();
-            foreach (var com in GetComponentsInChildren(VvrTypeHelper.TypeOf<MonoBehaviour>.Type))
+            foreach (var com in GetComponentsInChildren(VvrTypeHelper.TypeOf<MonoBehaviour>.Type, includeInactive))
             {
                 if (!ConnectorReflectionUtils.GetAllConnectors(com.GetType()).Any())
                 {

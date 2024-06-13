@@ -15,25 +15,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// File created : 2024, 05, 17 00:05
+// File created : 2024, 06, 13 20:06
 
 #endregion
 
-using System.Collections.Generic;
-using JetBrains.Annotations;
-using Vvr.Model;
-using Vvr.Provider;
-using Vvr.Session.Actor;
+using System;
 
-namespace Vvr.Session.Provider
+namespace Vvr.Model
 {
-    [PublicAPI, LocalProvider]
-    public interface IUserActorProvider : IProvider
+    [Serializable]
+    public struct UserActorData
     {
-        IReadOnlyList<IResolvedActorData> PlayerActors { get; }
+        public int uniqueId;
 
-        IReadOnlyList<IResolvedActorData> GetCurrentTeam();
+        public string id;
+        public int?   level;
+        public float? exp;
 
-        void Flush();
+        // TODO: equipped items
     }
 }

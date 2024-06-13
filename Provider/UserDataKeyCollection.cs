@@ -47,6 +47,18 @@ namespace Vvr.Provider
             return sb.ToString();
         }
 
+        public readonly ref struct Actor
+        {
+            public static UserDataKey UserActors()
+            {
+                return KeyFormatter(nameof(Actor), nameof(UserActors));
+            }
+            public static UserDataKey CurrentTeam()
+            {
+                return KeyFormatter(nameof(Actor), nameof(CurrentTeam));
+            }
+        }
+
         /// <summary>
         /// Represents the game configuration related to user data keys.
         /// </summary>
@@ -54,10 +66,8 @@ namespace Vvr.Provider
         {
             public static UserDataKey ExecutedCount(string id)
             {
-                const string key = "ExecutedCount";
-
                 string obj = KeyFormatter(nameof(GameConfig), id);
-                return KeyFormatter(obj, key);
+                return KeyFormatter(obj, nameof(ExecutedCount));
             }
         }
 
@@ -68,10 +78,8 @@ namespace Vvr.Provider
         {
             public static UserDataKey NodeLevel(string id)
             {
-                const string key   = "Level";
-
                 string obj = KeyFormatter(nameof(Research), id);
-                return KeyFormatter(obj, key);
+                return KeyFormatter(obj, nameof(NodeLevel));
             }
         }
     }

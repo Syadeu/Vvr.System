@@ -55,12 +55,13 @@ namespace Vvr.Session
 
         private ConditionResolver m_ConditionResolver;
         private TSessionData      m_SessionData;
-        private bool              m_Initialized;
 
         protected IReadOnlyDictionary<Type, ConcurrentStack<IProvider>> ConnectedProviders => m_ConnectedProviders;
 
         public  Type   Type           => (m_Type ??= GetType());
         private Type[] ConnectorTypes => m_ConnectorTypes ??= ConnectorReflectionUtils.GetAllConnectors(Type).ToArray();
+
+        public bool Initialized { get; private set; }
 
         public          Owner  Owner       { get; private set; }
         public abstract string DisplayName { get; }
@@ -98,8 +99,8 @@ namespace Vvr.Session
             {
                 if (Disposed)
                     throw new ObjectDisposedException(Type.Name);
-                if (!m_Initialized)
-                    throw new InvalidOperationException("You are trying to access session data before initialized");
+                if (!Initialized)
+                    throw new AccessViolationException("You are trying to access session data before initialized");
                 return m_SessionData;
             }
             private set => m_SessionData = value;
@@ -160,7 +161,7 @@ namespace Vvr.Session
             Parent = parent;
             Data   = data != null ? (TSessionData)data : default;
 
-            m_Initialized = true;
+            Initialized = true;
 
             m_ConditionResolver = Controller.Condition.ConditionResolver.Create(this, parent?.ConditionResolver);
             SetupConditionResolver(m_ConditionResolver);
@@ -215,7 +216,7 @@ namespace Vvr.Session
             m_ConditionResolver  = null;
             m_ReserveTokenSource = null;
 
-            m_Initialized = false;
+            Initialized = false;
             Disposed      = true;
             // TODO: recycling
             ((IDisposable)this).Dispose();

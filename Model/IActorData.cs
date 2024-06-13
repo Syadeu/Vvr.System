@@ -20,7 +20,6 @@
 #endregion
 
 using System.Collections.Generic;
-using Cathei.BakingSheet.Unity;
 using JetBrains.Annotations;
 using Vvr.Model.Stat;
 
@@ -37,5 +36,14 @@ namespace Vvr.Model
         IReadOnlyList<PassiveSheet.Row> Passive { get; }
         IReadOnlyList<SkillSheet.Row>    Skills { get; }
         Dictionary<AssetType, string> Assets { get; }
+    }
+
+    [PublicAPI]
+    public interface IResolvedActorData : IActorData
+    {
+        int   Level { get; }
+        float Exp   { get; }
+
+        // TODO: equipped items
     }
 }

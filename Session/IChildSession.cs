@@ -21,7 +21,6 @@
 
 using System;
 using JetBrains.Annotations;
-using Vvr.Provider;
 
 namespace Vvr.Session
 {
@@ -37,6 +36,9 @@ namespace Vvr.Session
         /// The session type is obtained by calling the Type property of the implementing class.
         /// </remarks>
         public Type Type { get; }
+
+        [PublicAPI]
+        bool Initialized { get; }
 
         /// <summary>
         /// Represents the root parent session of a child session.

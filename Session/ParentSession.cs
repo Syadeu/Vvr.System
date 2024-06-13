@@ -131,7 +131,8 @@ namespace Vvr.Session
 
              var ctx = new SessionCreateContext(this, ins, childType, data);
 
-            await CreateSession(ctx);
+            await CreateSession(ctx)
+                .AttachExternalCancellation(ReserveToken);
 
             return ins;
         }

@@ -33,19 +33,14 @@ namespace Vvr.Session
 {
     [UsedImplicitly]
     public class UserSession : ParentSession<UserSession.SessionData>,
-        IUserActorProvider, IUserStageProvider,
-        IConnector<IActorDataProvider>,
+        IUserStageProvider,
         IConnector<IStageDataProvider>
     {
         public struct SessionData : ISessionData
         {
         }
 
-        private IActorDataProvider m_ActorDataProvider;
         private IStageDataProvider m_StageDataProvider;
-
-        // TODO: temp
-        private IActorData[] m_CurrentActors;
 
         public override string DisplayName => nameof(UserSession);
 
@@ -53,45 +48,34 @@ namespace Vvr.Session
 
         protected override async UniTask OnInitialize(IParentSession session, SessionData data)
         {
-            Parent.Register<IUserDataProvider>(await CreateSession<UserDataSession>(default));
-            Parent.Register<IUserActorProvider>(this);
-            Parent.Register<IUserStageProvider>(this);
+            PlayerPrefDataSession
+                prefDataSession = await CreateSession<PlayerPrefDataSession>(default);
+
+            Parent
+                .Register<IUserDataProvider>(await CreateSession<UserDataSession>(default))
+                .Register<IPlayerPrefDataProvider>(prefDataSession)
+                .Register<IUserStageProvider>(this);
+
+            Parent
+                .Register<IUserActorProvider>(await CreateSessionOnBackground<UserActorDataSession>(
+                    new UserActorDataSession.SessionData()
+                    {
+                        // TODO: this is temporarily. Should changed to firebase
+                        dataProvider = prefDataSession
+                    }));
 
             await base.OnInitialize(session, data);
         }
         protected override UniTask OnReserve()
         {
-            Parent.Unregister<IUserDataProvider>();
-            Parent.Unregister<IUserActorProvider>();
-            Parent.Unregister<IUserStageProvider>();
+            Parent
+                .Unregister<IUserDataProvider>()
+                .Unregister<IPlayerPrefDataProvider>()
+                .Unregister<IUserActorProvider>()
+                .Unregister<IUserStageProvider>();
 
             return base.OnReserve();
         }
-
-        public IReadOnlyList<IActorData> GetCurrentTeam()
-        {
-            return m_CurrentActors;
-        }
-
-        void IConnector<IActorDataProvider>.Connect(IActorDataProvider t)
-        {
-            m_ActorDataProvider = t;
-
-            // TODO: Test code
-            m_CurrentActors = new IActorData[5];
-            List<IActorData> chList = new List<IActorData>(
-                m_ActorDataProvider.Where(x => x.Id.StartsWith("CH")));
-            int i = 0;
-            while (i < m_CurrentActors.Length)
-            {
-                for (; i < chList.Count && i < m_CurrentActors.Length; i++)
-                {
-                    m_CurrentActors[i] = chList[i];
-                }
-                chList.Shuffle();
-            }
-        }
-        void IConnector<IActorDataProvider>.Disconnect(IActorDataProvider t) => m_ActorDataProvider = null;
 
         void IConnector<IStageDataProvider>.Connect(IStageDataProvider    t) => m_StageDataProvider = t;
         void IConnector<IStageDataProvider>.Disconnect(IStageDataProvider t) => m_StageDataProvider = null;

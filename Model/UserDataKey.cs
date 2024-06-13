@@ -34,6 +34,11 @@ namespace Vvr.Model
             m_Key = k;
         }
 
+        public override int GetHashCode()
+        {
+            return unchecked((int)FNV1a32.Calculate(m_Key)) ^ 267;
+        }
+
         public override string ToString()
         {
             return m_Key;

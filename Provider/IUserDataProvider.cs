@@ -20,6 +20,7 @@
 #endregion
 
 using JetBrains.Annotations;
+using Newtonsoft.Json.Linq;
 using Vvr.Model;
 
 namespace Vvr.Provider
@@ -27,15 +28,31 @@ namespace Vvr.Provider
     /// <summary>
     /// For saving permanent data
     /// </summary>
-    [LocalProvider, PublicAPI]
-    public interface IUserDataProvider : IProvider
+    [PublicAPI, LocalProvider]
+    public interface IUserDataProvider : IDataProvider
     {
-        int GetInt(UserDataKey key, int defaultValue = 0);
-        float GetFloat(UserDataKey key, float defaultValue = 0);
-        string GetString(UserDataKey key, string defaultValue = null);
 
-        void SetInt(UserDataKey key, int value);
-        void SetFloat(UserDataKey key, float value);
-        void SetString(UserDataKey key, string value);
+    }
+
+    [PublicAPI, LocalProvider]
+    public interface IPlayerPrefDataProvider : IDataProvider
+    {
+
+    }
+
+    [PublicAPI, AbstractProvider]
+    public interface IDataProvider : IProvider
+    {
+        int    GetInt(UserDataKey    key, int    defaultValue = 0);
+        float  GetFloat(UserDataKey  key, float  defaultValue = 0);
+        [CanBeNull] string GetString(UserDataKey key, string defaultValue = null);
+
+        [CanBeNull]
+        JToken GetJson(UserDataKey key, JToken defaultValue = null);
+
+        void SetInt(UserDataKey    key, int    value);
+        void SetFloat(UserDataKey  key, float  value);
+        void SetString(UserDataKey key, [NotNull] string value);
+        void SetJson(UserDataKey key, [NotNull] JToken value);
     }
 }

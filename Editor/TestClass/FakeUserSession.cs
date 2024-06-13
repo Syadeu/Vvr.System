@@ -24,6 +24,8 @@ using System.Collections.Generic;
 using System.Linq;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
+using Newtonsoft.Json.Linq;
+using UnityEngine.Assertions;
 using Vvr.Model;
 using Vvr.Provider;
 using Vvr.Session;
@@ -33,7 +35,7 @@ namespace Vvr.TestClass
 {
     [UsedImplicitly]
     public sealed class FakeUserSession : ParentSession<FakeUserSession.SessionData>,
-        IUserActorProvider, IUserStageProvider,
+        IUserStageProvider,
         IConnector<IActorDataProvider>,
         IConnector<IStageDataProvider>
     {
@@ -60,6 +62,10 @@ namespace Vvr.TestClass
         private IActorDataProvider    m_ActorDataProvider;
         private IStageDataProvider    m_StageDataProvider;
 
+        private IActorData[] m_Actors;
+
+        private readonly List<IActorData> m_UserActors = new();
+
         public override string DisplayName => nameof(UserSession);
 
         public IStageData CurrentStage
@@ -75,22 +81,77 @@ namespace Vvr.TestClass
             }
         }
 
+        public IReadOnlyList<IActorData> PlayerActors => m_UserActors;
+
         protected override async UniTask OnInitialize(IParentSession session, SessionData data)
         {
-            Parent.Register<IUserDataProvider>(await CreateSession<UserDataSession>(default));
-            Parent.Register<IUserActorProvider>(this);
-            Parent.Register<IUserStageProvider>(this);
+            UserDataSession
+                userDataSession = await CreateSession<UserDataSession>(default);
+            PlayerPrefDataSession
+                prefDataSession = await CreateSession<PlayerPrefDataSession>(default);
+
+            Parent
+                .Register<IUserDataProvider>(userDataSession)
+                .Register<IPlayerPrefDataProvider>(prefDataSession)
+                .Register<IUserStageProvider>(this);
+
+            SetupFakeUserData(userDataSession);
+
+            Parent
+                .Register<IUserActorProvider>(await CreateSession<UserActorDataSession>(
+                    new UserActorDataSession.SessionData()
+                    {
+                        dataProvider = userDataSession
+                    }));
+
             await base.OnInitialize(session, data);
         }
         protected override UniTask OnReserve()
         {
-            Parent.Unregister<IUserDataProvider>();
-            Parent.Unregister<IUserActorProvider>();
-            Parent.Unregister<IUserStageProvider>();
+            Parent
+                .Unregister<IUserDataProvider>()
+                .Unregister<IPlayerPrefDataProvider>()
+                .Unregister<IUserActorProvider>()
+                .Unregister<IUserStageProvider>();
             return base.OnReserve();
         }
 
-        private IActorData[] m_Actors;
+        private void SetupFakeUserData(IDataProvider dataProvider)
+        {
+            int i = 0;
+
+            JObject userActorData    = new ();
+            JArray  currentTeamArray = new();
+            foreach (var actorId in Data.playerActorIds)
+            {
+                UserActorData d = new UserActorData()
+                {
+                    uniqueId = unchecked((int)FNV1a32.Calculate(Guid.NewGuid())),
+                    id       = actorId
+                };
+                userActorData.Add(d.uniqueId.ToString(), JObject.FromObject(d));
+
+                if (i++ < 5)
+                    currentTeamArray.Add(d.uniqueId);
+            }
+
+            dataProvider.SetJson(UserDataKeyCollection.Actor.UserActors(), userActorData);
+            dataProvider.SetJson(UserDataKeyCollection.Actor.CurrentTeam(), currentTeamArray);
+        }
+
+        private void LoadTestPlayerData(PlayerPrefDataSession session)
+        {
+            Assert.IsNotNull(m_ActorDataProvider);
+
+            var jr = session.GetString(UserDataKeyCollection.Actor.UserActors(), null);
+            if (jr is null) return;
+
+            JArray arr = JArray.Parse(jr);
+            for (int i = 0; i < arr.Count; i++)
+            {
+                UserActorData d = arr[i].ToObject<UserActorData>();
+            }
+        }
 
         public IReadOnlyList<IActorData> GetCurrentTeam()
         {
