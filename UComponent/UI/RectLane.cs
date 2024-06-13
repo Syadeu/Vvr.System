@@ -35,19 +35,21 @@ namespace Vvr.UComponent.UI
         private IRectTransformPool m_Pool;
         private IScrollRect        m_ScrollRect;
 
-        private readonly LinkedList<IScrollRectItem> m_Items = new();
+        private readonly LinkedList<IScrollRectItem>                m_Items = new();
+        private readonly Dictionary<IScrollRectItem, RectTransform> m_Proxy = new();
 
         private IRectTransformPool Pool => m_Pool ??= GetComponentInParent<IRectTransformPool>();
         private IScrollRect ScrollRect => m_ScrollRect ??= GetComponentInParent<IScrollRect>();
-
-        // public override float preferredWidth => m_CalculatedWidth;
-        // public override float preferredHeight => m_CalculatedHeight;
 
         public void Add(IScrollRectItem item)
         {
             m_Items.AddLast(item);
             UpdateProxy(ScrollRect.ViewportRect, ScrollRect.NormalizedPosition);
-            "add".ToLog();
+        }
+
+        public void Remove(IScrollRectItem item)
+        {
+
         }
 
         public override void CalculateLayoutInputHorizontal()
@@ -106,20 +108,22 @@ namespace Vvr.UComponent.UI
 
                 float preferred = LayoutUtility.GetPreferredSize(child, 0);
 
-                SetChildAlongAxisWithScale(child, 0, pos, preferred, 1);
+                SetChildAlongAxisWithScale(child, 0, pos.pos, preferred, 1);
             }
         }
 
-        private IEnumerable<float> GetVisiblePositionWithAxis(int axis)
+        private IEnumerable<(bool visible, float pos)> GetVisiblePositionWithAxis(int axis, bool visibleOnly = true)
         {
             float pos = GetStartOffset(axis, GetTotalPreferredSize(0) - m_Padding.horizontal);
 
-            var startRect = GetStartRect();
+            Rect rect = rectTransform.GetWorldRect();
 
-            Vector3 scale    = rectTransform.lossyScale;
-            Vector3 startPos = ScrollRect.ViewportMatrix.MultiplyPoint(startRect.position);
-
-            float spacing = m_Spacing * (axis == 0 ? scale.x : scale.y);
+            Matrix4x4 viewMatrix    = ScrollRect.ViewportMatrix;
+            Vector3   worldStartPos = rectTransform.GetWorldCenterPosition() - new Vector3(rect.size.x * .5f, 0);
+            Vector3
+                localStartPos = viewMatrix.MultiplyPoint(worldStartPos),
+                localEndPos   = ScrollRect.ViewportRect.size
+                ;
 
             for (var currentNode = m_Items.First;
                  currentNode != null;
@@ -128,14 +132,25 @@ namespace Vvr.UComponent.UI
             {
                 Vector2 sizeDelta = currentNode.Value.PreferredSizeDelta;
 
-                float start = axis == 0 ? startPos.x : startPos.y;
+                float start = axis == 0 ? localStartPos.x : localStartPos.y;
+                float end   = axis == 0 ? localEndPos.x : localEndPos.y;
                 float v     = (axis == 0 ? sizeDelta.x : sizeDelta.y) + m_Spacing;
 
-                if (0 < start + v)
-                    yield return pos;
+                bool isVisible = 0 < start + v && start + v < end + v * 2;
 
-                startPos.x += v;
-                pos        += v;
+                if (visibleOnly)
+                {
+                    if (isVisible)
+                        yield return (true, pos);
+                }
+                else
+                    yield return (isVisible, pos);
+
+                pos   += v;
+                if (axis == 0)
+                    localStartPos.x += v;
+                else
+                    localStartPos.y += v;
             }
         }
 
@@ -168,27 +183,37 @@ namespace Vvr.UComponent.UI
             // Rect currentRect = GetStartRect();
 
             var node = m_Items.First;
-            foreach (var xPos in GetVisiblePositionWithAxis(0))
+            foreach (var xPos in GetVisiblePositionWithAxis(0, false))
             {
                 RectTransform proxy;
-                if (existingCount <= count)
+                if (xPos.visible)
                 {
-                    proxy = Pool.Rent();
-                    proxy.SetParent(tr, false);
+                    if (m_Proxy.TryGetValue(node.Value, out proxy))
+                    {
+                        proxy.SetSiblingIndex(count);
+                    }
+                    else
+                    {
+                        proxy = Pool.Rent();
+                        proxy.SetParent(tr, false);
+
+                        m_Proxy[node.Value] = proxy;
+
+                        node.Value.Bind(proxy);
+                    }
                 }
                 else
                 {
-                    proxy = (RectTransform)tr.GetChild(count);
+                    if (m_Proxy.Remove(node.Value, out proxy))
+                    {
+                        node.Value.Unbind(proxy);
+                        Pool.Return(proxy);
+                    }
                 }
 
-                node.Value.Bind(proxy);
                 node = node.Next;
                 count++;
                 if (node is null) break;
-            }
-            for (int i = existingCount - 1; i >= count; i--)
-            {
-                Pool.Return((RectTransform)tr.GetChild(i));
             }
         }
 
@@ -250,11 +275,16 @@ namespace Vvr.UComponent.UI
 
                 Gizmos.DrawWireCube(currentRect.position, currentRect.size);
                 currentRect.x    += currentRect.size.x + xSpacing;
-                // currentRect.size =  currentNode.Value.PreferredSizeDelta;
             }
         }
 #endif
 
+        private Vector3 GetWorldStartPosition()
+        {
+            Rect rect = rectTransform.GetWorldRect();
+
+            return rectTransform.GetWorldCenterPosition() - new Vector3(rect.size.x * .5f, 0);
+        }
         private Rect GetStartRect()
         {
             if (m_Items.Count <= 0) return default;
@@ -276,27 +306,5 @@ namespace Vvr.UComponent.UI
 
             return currentRect;
         }
-    }
-
-
-    public interface IRectTransformPool
-    {
-        RectTransform Rent();
-
-        void Return(RectTransform t);
-    }
-
-    public interface IScrollRect
-    {
-        Rect      ViewportRect   { get; }
-        Matrix4x4 ViewportMatrix { get; }
-
-        Vector2 NormalizedPosition { get; }
-    }
-    public interface IScrollRectItem
-    {
-        Vector2 PreferredSizeDelta { get; }
-
-        void Bind(RectTransform t);
     }
 }

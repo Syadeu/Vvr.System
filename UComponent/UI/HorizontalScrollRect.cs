@@ -17,11 +17,9 @@
 // File created : 2024, 06, 12 20:06
 #endregion
 
-using System;
 using System.Collections.Generic;
 using Sirenix.OdinInspector;
 using UnityEngine;
-using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using Vvr.UI;
 
