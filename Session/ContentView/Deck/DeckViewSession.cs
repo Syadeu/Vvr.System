@@ -81,7 +81,7 @@ namespace Vvr.Session.ContentView.Deck
                 return;
             }
 
-            IActorData actor = m_UserActorProvider.GetCurrentTeam()[idx];
+            IResolvedActorData actor = m_UserActorProvider.GetCurrentTeam()[idx];
             await EventHandlerProvider.Resolve<CardCollectionViewEvent>()
                 .ExecuteAsync(CardCollectionViewEvent.Open, actor)
                 .AttachExternalCancellation(ReserveToken)

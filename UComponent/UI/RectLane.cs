@@ -38,13 +38,17 @@ namespace Vvr.UComponent.UI
         private IRectTransformPool m_Pool;
         private IScrollRect        m_ScrollRect;
 
+        private Vector2 m_ItemSizeDelta;
+
         private readonly LinkedList<IScrollRectItem>                m_Items = new();
         private readonly Dictionary<IScrollRectItem, RectTransform> m_Proxy = new();
 
         private IRectTransformPool Pool => m_Pool ??= GetComponentInParent<IRectTransformPool>();
         private IScrollRect ScrollRect => m_ScrollRect ??= GetComponentInParent<IScrollRect>();
 
-        public int Count => m_Items.Count;
+        public int     Count         => m_Items.Count;
+        [ShowInInspector, ReadOnly]
+        public Vector2 ItemSizeDelta { get => m_ItemSizeDelta; set => m_ItemSizeDelta = value; }
 
         [PublicAPI]
         public void Add(IScrollRectItem item)
@@ -58,6 +62,12 @@ namespace Vvr.UComponent.UI
             if (!m_Items.Remove(item)) return false;
             UpdateProxy();
             return true;
+        }
+
+        public void Clear()
+        {
+            m_Items.Clear();
+            UpdateProxy();
         }
 
         public override void CalculateLayoutInputHorizontal()
@@ -82,24 +92,28 @@ namespace Vvr.UComponent.UI
                 {
                     if (count++ > 0) calculatedWidth += m_Spacing;
 
-                    calculatedWidth += item.PreferredSizeDelta.x;
+                    calculatedWidth += ItemSizeDelta.x;
                 }
             }
             SetLayoutInputForAxis(calculatedWidth, calculatedWidth, 0, 0);
         }
         public override void CalculateLayoutInputVertical()
         {
-            float calculatedHeight = 0;
-            foreach (var item in m_Items)
+            float calculatedHeight = ItemSizeDelta.y;
+            if (!Application.isPlaying)
             {
-                calculatedHeight = Mathf.Max(item.PreferredSizeDelta.y, calculatedHeight);
+                foreach (var child in rectChildren)
+                {
+                    calculatedHeight = Mathf.Max(calculatedHeight,
+                        LayoutUtility.GetPreferredSize(child, 1));
+                }
             }
-
-            foreach (var child in rectChildren)
-            {
-                calculatedHeight = Mathf.Max(calculatedHeight,
-                    LayoutUtility.GetPreferredSize(child, 1));
-            }
+            else calculatedHeight = ItemSizeDelta.y;
+            // foreach (var item in m_Items)
+            // {
+            //     calculatedHeight = Mathf.Max(item.PreferredSizeDelta.y, calculatedHeight);
+            // }
+            //
 
             SetLayoutInputForAxis(calculatedHeight, calculatedHeight, 0, 1);
         }
@@ -121,6 +135,7 @@ namespace Vvr.UComponent.UI
                 return;
             }
 
+            // m_ItemSizeDelta.x = 0;
             int i = 0;
             foreach (var pos in GetVisiblePositionWithAxis(0))
             {
@@ -129,6 +144,7 @@ namespace Vvr.UComponent.UI
                 var child = rectChildren[i++];
 
                 float preferred = LayoutUtility.GetPreferredSize(child, 0);
+                // m_ItemSizeDelta.x = Mathf.Max(m_ItemSizeDelta.x, preferred);
 
                 SetChildAlongAxisWithScale(child, 0, pos.pos, preferred, 1);
             }
@@ -137,9 +153,11 @@ namespace Vvr.UComponent.UI
         {
             float startOffset = GetStartOffset(1, GetTotalPreferredSize(1) - m_Padding.vertical);
 
+            // m_ItemSizeDelta.y = 0;
             foreach (var child in rectChildren)
             {
                 float preferred = LayoutUtility.GetPreferredSize(child, 1);
+                // m_ItemSizeDelta.y = Mathf.Max(m_ItemSizeDelta.y, preferred);
 
                 SetChildAlongAxisWithScale(child, 1, startOffset, preferred, 1);
             }
@@ -163,7 +181,7 @@ namespace Vvr.UComponent.UI
                  currentNode = currentNode.Next
                 )
             {
-                Vector2 sizeDelta = currentNode.Value.PreferredSizeDelta;
+                Vector2 sizeDelta = ItemSizeDelta;
 
                 float start = axis == 0 ? localStartPos.x : localStartPos.y;
                 float end   = axis == 0 ? localEndPos.x : localEndPos.y;
@@ -189,7 +207,16 @@ namespace Vvr.UComponent.UI
 
         public void UpdateProxy()
         {
-            if (m_Items.Count <= 0) return;
+            if (m_Items.Count <= 0)
+            {
+                foreach (var item in m_Proxy)
+                {
+                    item.Key.Unbind(item.Value);
+                    Pool.Return(item.Value);
+                }
+                m_Proxy.Clear();
+                return;
+            }
 
             int count = 0;
 
@@ -305,7 +332,7 @@ namespace Vvr.UComponent.UI
 
             LinkedListNode<IScrollRectItem> currentNode = m_Items.First;
 
-            Vector2 sizeDelta = currentNode.Value.PreferredSizeDelta;
+            Vector2 sizeDelta = ItemSizeDelta;
             sizeDelta = tr.TransformVector(sizeDelta);
 
             Rect currentRect = new Rect(

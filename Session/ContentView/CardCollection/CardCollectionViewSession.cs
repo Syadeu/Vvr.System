@@ -20,17 +20,21 @@
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using UnityEngine;
+using Vvr.Model;
 using Vvr.Provider;
 using Vvr.Session.AssetManagement;
 using Vvr.Session.ContentView.Core;
+using Vvr.Session.Provider;
 
 namespace Vvr.Session.ContentView.CardCollection
 {
     [UsedImplicitly]
     public sealed class CardCollectionViewSession
-        : ContentViewChildSession<CardCollectionViewEvent, ICardCollectionViewProvider>
+        : ContentViewChildSession<CardCollectionViewEvent, ICardCollectionViewProvider>,
+            IConnector<IUserActorProvider>
     {
-        private IAssetProvider m_AssetProvider;
+        private IAssetProvider     m_AssetProvider;
+        private IUserActorProvider m_UserActorProvider;
 
         public override string DisplayName => nameof(CardCollectionViewSession);
 
@@ -49,8 +53,16 @@ namespace Vvr.Session.ContentView.CardCollection
 
         private async UniTask OnOpen(CardCollectionViewEvent e, object ctx)
         {
+            IResolvedActorData data = ctx as IResolvedActorData;
+
+            CardCollectionViewOpenContext context = new CardCollectionViewOpenContext()
+            {
+                selected = data,
+                data     = m_UserActorProvider.PlayerActors
+            };
+
             GameObject ins = await ViewProvider
-                    .OpenAsync(CanvasViewProvider, m_AssetProvider, ctx)
+                    .OpenAsync(CanvasViewProvider, m_AssetProvider, context)
                     .AttachExternalCancellation(ReserveToken)
                 ;
             this.Inject(ins);
@@ -62,5 +74,8 @@ namespace Vvr.Session.ContentView.CardCollection
                     .AttachExternalCancellation(ReserveToken)
                 ;
         }
+
+        void IConnector<IUserActorProvider>.Connect(IUserActorProvider    t) => m_UserActorProvider = t;
+        void IConnector<IUserActorProvider>. Disconnect(IUserActorProvider t) => m_UserActorProvider = null;
     }
 }

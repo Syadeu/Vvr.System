@@ -19,9 +19,6 @@
 
 #endregion
 
-using System;
-using Vvr.Model;
-
 namespace Vvr.Session.ContentView.Core
 {
     public enum DeckViewEvent : short

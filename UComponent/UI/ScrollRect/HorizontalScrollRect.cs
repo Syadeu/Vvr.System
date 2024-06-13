@@ -83,6 +83,19 @@ namespace Vvr.UComponent.UI
 
         private void Awake()
         {
+            Vector2 itemSizeDelta;
+            // if (m_Prefab.TryGetComponent(out ILayoutElement layoutElement))
+            // {
+            //     itemSizeDelta = new Vector2(
+            //         layoutElement.preferredWidth,
+            //         layoutElement.flexibleHeight
+            //     );
+            // }
+            // else
+            {
+                itemSizeDelta = m_Prefab.rect.size;
+            }
+
             var            content = ScrollRect.content;
             List<RectLane> lanes   = new();
             for (int i = 0; i < content.childCount; i++)
@@ -90,6 +103,7 @@ namespace Vvr.UComponent.UI
                 var e = content.GetChild(i);
                 if (!e.TryGetComponent(out RectLane lane)) continue;
 
+                lane.ItemSizeDelta = itemSizeDelta;
                 lanes.Add(lane);
             }
 
@@ -122,7 +136,7 @@ namespace Vvr.UComponent.UI
         }
         public void Return(RectTransform t)
         {
-            t.SetParent(ReservedFolder);
+            t.SetParent(ReservedFolder, false);
         }
 
         private void OnScrollEvent(Vector2 normalizedPosition)

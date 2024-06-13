@@ -43,7 +43,6 @@ namespace Vvr.Session
             public static Func<ResolvedActorData, int> KeySelector { get; } = x => x.UniqueId;
 
             private readonly IActorData m_RawData;
-            private readonly int        m_UniqueId;
 
             // TODO: provides low security
             private CryptoInt   m_Level;
@@ -52,7 +51,7 @@ namespace Vvr.Session
             public int    Index => m_RawData.Index;
             public string Id    => m_RawData.Id;
 
-            public int UniqueId => m_UniqueId;
+            public int UniqueId { get; }
 
             public ActorSheet.ActorType Type       => m_RawData.Type;
             public int                  Grade      => m_RawData.Grade;
@@ -77,7 +76,7 @@ namespace Vvr.Session
             public ResolvedActorData(IActorData rawData, UserActorData data)
             {
                 m_RawData  = rawData;
-                m_UniqueId = data.uniqueId;
+                UniqueId = data.uniqueId;
 
                 m_Level = data.level ?? 0;
                 m_Exp   = data.exp   ?? 0;

@@ -19,6 +19,10 @@
 
 #endregion
 
+using System.Collections.Generic;
+using JetBrains.Annotations;
+using Vvr.Model;
+
 namespace Vvr.Session.ContentView.Core
 {
     public enum CardCollectionViewEvent : short
@@ -27,5 +31,13 @@ namespace Vvr.Session.ContentView.Core
         Close,
 
 
+    }
+
+    public struct CardCollectionViewOpenContext
+    {
+        [CanBeNull]
+        public IResolvedActorData selected;
+        [NotNull]
+        public IReadOnlyList<IResolvedActorData> data;
     }
 }
