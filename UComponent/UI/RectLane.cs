@@ -30,40 +30,18 @@ namespace Vvr.UComponent.UI
     [RequireComponent(typeof(RectTransform))]
     public class RectLane : LayoutGroup
     {
-        [SerializeField] private float m_Spacing;
+        [SerializeField] private float      m_Spacing;
 
         private IRectTransformPool m_Pool;
         private IScrollRect        m_ScrollRect;
 
-        private HorizontalOrVerticalLayoutGroup m_LayoutGroup;
-
         private readonly LinkedList<IScrollRectItem> m_Items = new();
 
-        private float m_CalculatedWidth;
-        private float m_CalculatedHeight;
-
         private IRectTransformPool Pool => m_Pool ??= GetComponentInParent<IRectTransformPool>();
-
         private IScrollRect ScrollRect => m_ScrollRect ??= GetComponentInParent<IScrollRect>();
 
-        private HorizontalOrVerticalLayoutGroup LayoutGroup
-        {
-            get
-            {
-                if (m_LayoutGroup is null) m_LayoutGroup = GetComponent<HorizontalOrVerticalLayoutGroup>();
-                return m_LayoutGroup;
-            }
-        }
-
-        public override float preferredWidth
-        {
-            get
-            {
-                if (!Application.isPlaying) return base.preferredWidth;
-
-                return m_CalculatedWidth;
-            }
-        }
+        // public override float preferredWidth => m_CalculatedWidth;
+        // public override float preferredHeight => m_CalculatedHeight;
 
         public void Add(IScrollRectItem item)
         {
@@ -74,38 +52,105 @@ namespace Vvr.UComponent.UI
 
         public override void CalculateLayoutInputHorizontal()
         {
+            base.CalculateLayoutInputHorizontal();
+
+            float calculatedWidth = 0;
+            int   count           = 0;
+
             if (!Application.isPlaying)
             {
-                base.CalculateLayoutInputHorizontal();
-                return;
-            }
+                foreach (var child in rectChildren)
+                {
+                    if (count++ > 0) calculatedWidth += m_Spacing;
 
-            int count = 0;
-            m_CalculatedWidth = 0;
-            foreach (var item in m_Items)
+                    calculatedWidth += Mathf.Max(calculatedWidth,
+                        LayoutUtility.GetPreferredSize(child, 0));
+                }
+            }
+            else
             {
-                if (count++ > 0) m_CalculatedWidth += m_Spacing;
+                foreach (var item in m_Items)
+                {
+                    if (count++ > 0) calculatedWidth += m_Spacing;
 
-                m_CalculatedWidth += item.PreferredSizeDelta.x;
+                    calculatedWidth += item.PreferredSizeDelta.x;
+                }
             }
-
-            SetLayoutInputForAxis(m_CalculatedWidth, m_CalculatedWidth, 0, 0);
+            SetLayoutInputForAxis(calculatedWidth, calculatedWidth, 0, 0);
         }
         public override void CalculateLayoutInputVertical()
         {
-            m_CalculatedHeight = 0;
+            float calculatedHeight = 0;
             foreach (var item in m_Items)
             {
-                m_CalculatedHeight = Mathf.Max(item.PreferredSizeDelta.y, m_CalculatedHeight);
+                calculatedHeight = Mathf.Max(item.PreferredSizeDelta.y, calculatedHeight);
             }
+
+            foreach (var child in rectChildren)
+            {
+                calculatedHeight = Mathf.Max(calculatedHeight,
+                    LayoutUtility.GetPreferredSize(child, 1));
+            }
+
+            SetLayoutInputForAxis(calculatedHeight, calculatedHeight, 0, 1);
         }
 
         public override void SetLayoutHorizontal()
         {
+            int i = 0;
+            foreach (var pos in GetVisiblePositionWithAxis(0))
+            {
+                if (rectChildren.Count <= i) break;
+
+                var child = rectChildren[i++];
+
+                float preferred = LayoutUtility.GetPreferredSize(child, 0);
+
+                SetChildAlongAxisWithScale(child, 0, pos, preferred, 1);
+            }
         }
+
+        private IEnumerable<float> GetVisiblePositionWithAxis(int axis)
+        {
+            float pos = GetStartOffset(axis, GetTotalPreferredSize(0) - m_Padding.horizontal);
+
+            var startRect = GetStartRect();
+
+            Vector3 scale    = rectTransform.lossyScale;
+            Vector3 startPos = ScrollRect.ViewportMatrix.MultiplyPoint(startRect.position);
+
+            float spacing = m_Spacing * (axis == 0 ? scale.x : scale.y);
+
+            for (var currentNode = m_Items.First;
+                 currentNode != null;
+                 currentNode = currentNode.Next
+                )
+            {
+                Vector2 sizeDelta = currentNode.Value.PreferredSizeDelta;
+
+                float start = axis == 0 ? startPos.x : startPos.y;
+                float v     = (axis == 0 ? sizeDelta.x : sizeDelta.y) + m_Spacing;
+
+                if (0 < start + v)
+                    yield return pos;
+
+                startPos.x += v;
+                pos        += v;
+            }
+        }
+
         public override void SetLayoutVertical()
         {
+            for (int i = 0; i < rectChildren.Count; i++)
+            {
+                var child = rectChildren[i];
 
+                float startOffset = GetStartOffset(1, GetTotalPreferredSize(1) - m_Padding.vertical);
+
+                float preferred = LayoutUtility.GetPreferredSize(child, 1);
+
+                SetChildAlongAxisWithScale(child, 1, startOffset, preferred, 1);
+            }
         }
 
         public void UpdateProxy(Rect viewportRect, Vector2 normalizedPosition)
@@ -116,43 +161,31 @@ namespace Vvr.UComponent.UI
             int           existingCount = tr.childCount;
             Rect          rect          = tr.GetWorldRect();
 
-            // Vector2 visibleSizeDelta   = viewportRect.size;
-            // Vector2 offset             = rect.size - visibleSizeDelta;
-            // if (offset.x < 0) offset.x = 0;
-            // if (offset.y < 0) offset.y = 0;
+            Vector3 scale   = rectTransform.lossyScale;
+            float   spacing = m_Spacing * scale.x;
 
             int  count       = 0;
-            Rect currentRect = GetStartRect();
-            // horizontal
-            for (var node = m_Items.First;
-                 node != null;
+            // Rect currentRect = GetStartRect();
 
-                 node = node.Next
-                 )
+            var node = m_Items.First;
+            foreach (var xPos in GetVisiblePositionWithAxis(0))
             {
-                // if (currentRect.x < visibleStart.x) continue;
-
-                if (viewportRect.Overlaps(currentRect))
+                RectTransform proxy;
+                if (existingCount <= count)
                 {
-                    RectTransform proxy;
-                    if (existingCount <= count)
-                    {
-                        proxy = Pool.Rent();
-                        proxy.SetParent(tr, false);
-                    }
-                    else
-                    {
-                        proxy = (RectTransform)tr.GetChild(count);
-                    }
-
-                    node.Value.Bind(proxy);
-                    count++;
+                    proxy = Pool.Rent();
+                    proxy.SetParent(tr, false);
+                }
+                else
+                {
+                    proxy = (RectTransform)tr.GetChild(count);
                 }
 
-                currentRect.x    += node.Value.PreferredSizeDelta.x + (LayoutGroup?.spacing ?? 0);
-                currentRect.size =  node.Value.PreferredSizeDelta;
+                node.Value.Bind(proxy);
+                node = node.Next;
+                count++;
+                if (node is null) break;
             }
-
             for (int i = existingCount - 1; i >= count; i--)
             {
                 Pool.Return((RectTransform)tr.GetChild(i));
@@ -164,8 +197,11 @@ namespace Vvr.UComponent.UI
         {
             if (ScrollRect is null) return;
 
-            RectTransform tr   = (RectTransform)transform;
-            Rect          rect = tr.GetWorldRect();
+            RectTransform tr    = (RectTransform)transform;
+            Rect          rect  = tr.GetWorldRect();
+            Vector3       scale = tr.lossyScale;
+
+            float xSpacing = m_Spacing * scale.x;
 
             Gizmos.color = Color.red;
             Gizmos.DrawWireCube(tr.GetWorldCenterPosition(), rect.size);
@@ -199,7 +235,6 @@ namespace Vvr.UComponent.UI
             Rect currentRect = GetStartRect();
             for (var currentNode = m_Items.First;
                  currentNode != null;
-
                  currentNode = currentNode.Next
                 )
             {
@@ -214,21 +249,29 @@ namespace Vvr.UComponent.UI
                 }
 
                 Gizmos.DrawWireCube(currentRect.position, currentRect.size);
-                currentRect.x    += currentNode.Value.PreferredSizeDelta.x + (LayoutGroup?.spacing ?? 0);
-                currentRect.size =  currentNode.Value.PreferredSizeDelta;
+                currentRect.x    += currentRect.size.x + xSpacing;
+                // currentRect.size =  currentNode.Value.PreferredSizeDelta;
             }
         }
 #endif
 
         private Rect GetStartRect()
         {
-            RectTransform tr   = (RectTransform)transform;
-            Rect          rect = tr.GetWorldRect();
+            if (m_Items.Count <= 0) return default;
+
+            RectTransform tr    = (RectTransform)transform;
+            Rect          rect  = tr.GetWorldRect();
 
             LinkedListNode<IScrollRectItem> currentNode = m_Items.First;
+
+            Vector2 sizeDelta = currentNode.Value.PreferredSizeDelta;
+            sizeDelta = tr.TransformVector(sizeDelta);
+
             Rect currentRect = new Rect(
                 tr.GetWorldCenterPosition() - new Vector3(rect.size.x * .5f, 0),
-                currentNode.Value.PreferredSizeDelta);
+                sizeDelta);
+
+            currentRect.x += padding.left;
             currentRect.x += currentRect.size.x * .5f;
 
             return currentRect;
@@ -245,7 +288,9 @@ namespace Vvr.UComponent.UI
 
     public interface IScrollRect
     {
-        Rect    ViewportRect       { get; }
+        Rect      ViewportRect   { get; }
+        Matrix4x4 ViewportMatrix { get; }
+
         Vector2 NormalizedPosition { get; }
     }
     public interface IScrollRectItem

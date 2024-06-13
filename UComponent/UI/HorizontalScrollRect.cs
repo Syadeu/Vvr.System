@@ -53,8 +53,9 @@ namespace Vvr.UComponent.UI
         }
 
         public RectLane this[int i] => m_Lanes[i];
-        public Rect    ViewportRect       => ScrollRect.viewport.GetWorldRect();
-        public Vector2 NormalizedPosition => ScrollRect.normalizedPosition;
+        public Rect      ViewportRect       => ScrollRect.viewport.GetWorldRect();
+        public Matrix4x4 ViewportMatrix     => ScrollRect.viewport.worldToLocalMatrix;
+        public Vector2   NormalizedPosition => ScrollRect.normalizedPosition;
 
         private Transform ReservedFolder
         {
