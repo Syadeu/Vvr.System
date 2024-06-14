@@ -61,9 +61,9 @@ namespace Vvr.Session
             public int                  Grade      => m_RawData.Grade;
             public int                  Population => m_RawData.Population;
 
-            public IReadOnlyStatValues             Stats   => m_RawData.Stats;
+            public IRawStatValues                  Stats   => m_RawData.Stats;
             public IReadOnlyList<PassiveSheet.Row> Passive => m_RawData.Passive;
-            public IReadOnlyList<ISkillData>   Skills  => m_RawData.Skills;
+            public IReadOnlyList<ISkillData>       Skills  => m_RawData.Skills;
             public Dictionary<AssetType, string>   Assets  => m_RawData.Assets;
 
             public int Level

@@ -29,10 +29,12 @@ namespace Vvr.Model
     [Preserve]
     public sealed class StatSheet : Sheet<StatSheet.Row>
     {
-        public sealed class Row : SheetRow
+        public sealed class Row : SheetRow, IStatData
         {
             [UsedImplicitly] public string Icon { get; private set; }
             // [UsedImplicitly] public Reference Child   { get; private set; }
+
+            object IStatData.IconAssetKey => Icon.IsNullOrEmpty() ? null : Icon;
         }
 
         public StatSheet()
@@ -52,5 +54,11 @@ namespace Vvr.Model
             int i = t.Index;
             return (StatType)(1L << i);
         }
+    }
+
+    [PublicAPI]
+    public interface IStatData : IRawData
+    {
+        object IconAssetKey { get; }
     }
 }

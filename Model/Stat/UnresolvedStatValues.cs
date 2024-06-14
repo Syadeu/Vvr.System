@@ -19,6 +19,7 @@
 
 #endregion
 
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using Cathei.BakingSheet;
@@ -34,22 +35,26 @@ namespace Vvr.Model.Stat
     /// This class designed for parsing sheet that should be indexed by system.
     /// </remarks>
     [JsonConverter(typeof(UnresolvedStatValuesJsonConverter))]
-    class UnresolvedStatValues : UnresolvedValues<StatValues>, IReadOnlyStatValues
+    class UnresolvedStatValues : UnresolvedValues<StatValues>, IRawStatValues
     {
+        private IStatData[] m_RawData;
+
         protected override StatValues Resolve(ISheet s)
         {
-            StatSheet sheet = s as StatSheet;
-            Assert.IsNotNull(sheet, "sheet != null");
+            if (s is not StatSheet sheet)
+                throw new InvalidOperationException();
 
             float[] v = new float[values.Length];
 
             int  i     = 0;
             long query = 0;
+
+            m_RawData = new IStatData[ids.Length];
             foreach (var item in ids)
             {
-                int index = sheet[item].Index;
+                m_RawData[i] = sheet[item];
 
-                long e = 1L << index;
+                long e = 1L << m_RawData[i].Index;
                 query |= e;
 
                 v[i] = values[i];
@@ -63,8 +68,9 @@ namespace Vvr.Model.Stat
         IEnumerator IEnumerable.                                                              GetEnumerator() => Value.GetEnumerator();
 
         float IReadOnlyStatValues.this[StatType t] => Value[t];
+        IReadOnlyList<IStatData> IRawStatValues.RawData => m_RawData;
 
-        StatType IReadOnlyStatValues.            Types  => Value.Types;
-        IReadOnlyList<float> IReadOnlyStatValues.Values => (IReadOnlyList<float>)Value.Values;
+        StatType IReadOnlyStatValues.            Types   => Value.Types;
+        IReadOnlyList<float> IReadOnlyStatValues.Values  => (IReadOnlyList<float>)Value.Values;
     }
 }

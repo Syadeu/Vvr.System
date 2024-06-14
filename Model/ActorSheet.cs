@@ -58,7 +58,7 @@ namespace Vvr.Model
 
             [SheetValueConverter(typeof(UnresolvedStatValuesConverter))]
             [UsedImplicitly]
-            public IReadOnlyStatValues Stats { get; private set; }
+            public IRawStatValues Stats { get; private set; }
 
             [UsedImplicitly] public List<PassiveSheet.Reference>    Passive { get; private set; }
             [UsedImplicitly] public List<SkillSheet.Reference> Skills  { get; private set; }

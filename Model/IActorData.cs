@@ -35,7 +35,7 @@ namespace Vvr.Model
         int                  Grade      { get; }
         int                  Population { get; }
 
-        IReadOnlyStatValues             Stats   { get; }
+        IRawStatValues                  Stats   { get; }
         IReadOnlyList<PassiveSheet.Row> Passive { get; }
         IReadOnlyList<ISkillData>       Skills  { get; }
         Dictionary<AssetType, string>   Assets  { get; }
