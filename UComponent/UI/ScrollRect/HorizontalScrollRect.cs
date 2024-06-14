@@ -150,7 +150,7 @@ namespace Vvr.UComponent.UI
         }
 
         IEnumerable<RectLane> IRectLaneContainer.GetEnumerable() => m_Lanes;
-        public IEnumerator<IScrollRectItem> GetEnumerator()
+        public IEnumerator<IRectItem> GetEnumerator()
         {
             foreach (var lane in m_Lanes)
             {

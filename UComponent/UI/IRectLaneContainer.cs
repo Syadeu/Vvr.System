@@ -25,7 +25,7 @@ using JetBrains.Annotations;
 namespace Vvr.UComponent.UI
 {
     [PublicAPI]
-    public interface IRectLaneContainer : IEnumerable<IScrollRectItem>
+    public interface IRectLaneContainer : IEnumerable<IRectItem>
     {
         RectLane this[int i] { get; }
         int Count { get; }

@@ -18,6 +18,7 @@
 #endregion
 
 using Cysharp.Threading.Tasks;
+using Sirenix.OdinInspector;
 using UnityEngine;
 using Vvr.Controller;
 using Vvr.Session.World;
@@ -27,6 +28,7 @@ namespace Vvr.System.SkillCreator
 {
     public sealed class SkillCreatorSystem : TestSystem<TestWorld>
     {
+        [ListDrawerSettings(AddCopiesLastElement = true)]
         [SerializeField] private string[]      m_Actors;
         [SerializeField] private string        m_CurrentStageId;
         [SerializeField] private TestStageData m_StageData;

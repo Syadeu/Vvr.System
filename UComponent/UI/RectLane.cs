@@ -32,7 +32,7 @@ namespace Vvr.UComponent.UI
     // TODO: currently, horizontal only
     [RequireComponent(typeof(RectTransform))]
     [HideMonoScript]
-    public class RectLane : LayoutGroup, IEnumerable<IScrollRectItem>
+    public class RectLane : LayoutGroup, IEnumerable<IRectItem>
     {
         [SerializeField] private float      m_Spacing;
 
@@ -41,8 +41,8 @@ namespace Vvr.UComponent.UI
 
         private Vector2 m_ItemSizeDelta;
 
-        private readonly LinkedList<IScrollRectItem>                m_Items = new();
-        private readonly Dictionary<IScrollRectItem, RectTransform> m_Proxy = new();
+        private readonly LinkedList<IRectItem>                m_Items = new();
+        private readonly Dictionary<IRectItem, RectTransform> m_Proxy = new();
 
         private IRectTransformPool Pool => m_Pool ??= GetComponentInParent<IRectTransformPool>();
         private IScrollRect ScrollRect => m_ScrollRect ??= GetComponentInParent<IScrollRect>();
@@ -52,13 +52,30 @@ namespace Vvr.UComponent.UI
         public Vector2 ItemSizeDelta { get => m_ItemSizeDelta; set => m_ItemSizeDelta = value; }
 
         [PublicAPI]
-        public void Add(IScrollRectItem item)
+        public void Insert(int index, IRectItem item)
+        {
+            int i = 0;
+            for (var node = m_Items.First;
+                 node != null;
+                 node = node.Next, i++)
+            {
+                if (index > i) continue;
+
+                m_Items.AddBefore(node, item);
+                UpdateProxy();
+                return;
+            }
+
+            Add(item);
+        }
+        [PublicAPI]
+        public void Add(IRectItem item)
         {
             m_Items.AddLast(item);
             UpdateProxy();
         }
         [PublicAPI]
-        public bool Remove(IScrollRectItem item)
+        public bool Remove(IRectItem item)
         {
             if (!m_Items.Remove(item)) return false;
             UpdateProxy();
@@ -219,7 +236,8 @@ namespace Vvr.UComponent.UI
                 return;
             }
 
-            int count = 0;
+            int count        = 0;
+            int visibleCount = 0;
 
             var node = m_Items.First;
             foreach (var xPos in GetVisiblePositionWithAxis(0, false))
@@ -227,11 +245,7 @@ namespace Vvr.UComponent.UI
                 RectTransform proxy;
                 if (xPos.visible)
                 {
-                    if (m_Proxy.TryGetValue(node.Value, out proxy))
-                    {
-                        proxy.SetSiblingIndex(count);
-                    }
-                    else
+                    if (!m_Proxy.TryGetValue(node.Value, out proxy))
                     {
                         proxy = Pool.Rent();
                         proxy.SetParent(rectTransform, false);
@@ -240,6 +254,9 @@ namespace Vvr.UComponent.UI
 
                         node.Value.Bind(proxy);
                     }
+
+                    proxy.SetSiblingIndex(visibleCount);
+                    visibleCount++;
                 }
                 else
                 {
@@ -331,7 +348,7 @@ namespace Vvr.UComponent.UI
             RectTransform tr    = (RectTransform)transform;
             Rect          rect  = tr.GetWorldRect();
 
-            LinkedListNode<IScrollRectItem> currentNode = m_Items.First;
+            LinkedListNode<IRectItem> currentNode = m_Items.First;
 
             Vector2 sizeDelta = ItemSizeDelta;
             sizeDelta = tr.TransformVector(sizeDelta);
@@ -346,9 +363,9 @@ namespace Vvr.UComponent.UI
             return currentRect;
         }
 
-        public IEnumerator<IScrollRectItem> GetEnumerator()
+        public IEnumerator<IRectItem> GetEnumerator()
         {
-            return ((IEnumerable<IScrollRectItem>)m_Items).GetEnumerator();
+            return ((IEnumerable<IRectItem>)m_Items).GetEnumerator();
         }
 
         IEnumerator IEnumerable.GetEnumerator()

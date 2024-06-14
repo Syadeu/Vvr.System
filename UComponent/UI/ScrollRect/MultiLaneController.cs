@@ -37,14 +37,21 @@ namespace Vvr.UComponent.UI
 
         public int ItemCount => LaneContainer.GetEnumerable().Sum(x => x.Count);
 
-        public virtual void Add(IScrollRectItem item)
+        public virtual void Insert(int index, IRectItem item)
+        {
+            int x = index % LaneContainer.Count;
+            int y = index / LaneContainer.Count;
+
+            LaneContainer[x].Insert(y, item);
+        }
+        public virtual void Add(IRectItem item)
         {
             int count = ItemCount;
             int x     = count % LaneContainer.Count;
 
             LaneContainer[x].Add(item);
         }
-        public virtual void Remove(IScrollRectItem item)
+        public virtual void Remove(IRectItem item)
         {
             foreach (var lane in LaneContainer.GetEnumerable())
             {
@@ -62,7 +69,7 @@ namespace Vvr.UComponent.UI
             }
         }
 
-        public IEnumerable<IScrollRectItem> GetEnumerable()
+        public IEnumerable<IRectItem> GetEnumerable()
         {
             return LaneContainer;
         }

@@ -15,15 +15,36 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// File created : 2024, 06, 13 15:06
+// File created : 2024, 06, 12 21:06
 
 #endregion
 
+using System;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace Vvr.UComponent.UI
 {
-    public interface IScrollRectItem : IProxy<RectTransform>
+    [Serializable]
+    class RectItem : IRectItem, ICloneable
     {
+        [SerializeField] private Vector2 m_PreferredSizeDelta;
+
+        public Vector2       PreferredSizeDelta => m_PreferredSizeDelta;
+        public RectTransform Transform             { get; private set; }
+
+        public void Bind(RectTransform t)
+        {
+            Transform = t;
+        }
+        public void Unbind(RectTransform t)
+        {
+            Transform = null;
+        }
+
+        public object Clone()
+        {
+            return MemberwiseClone();
+        }
     }
 }
