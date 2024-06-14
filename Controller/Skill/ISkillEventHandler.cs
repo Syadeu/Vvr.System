@@ -20,6 +20,7 @@
 #endregion
 
 using Cysharp.Threading.Tasks;
+using JetBrains.Annotations;
 using UnityEngine;
 using Vvr.Model;
 
@@ -29,7 +30,7 @@ namespace Vvr.Controller.Skill
     {
         UniTask OnSkillStart(ISkillData   skill,  ISkillEffectEmitter effectEmitter);
         UniTask OnSkillCasting(ISkillData skill,  ISkillEffectEmitter effectEmitter);
-        UniTask OnSkillEnd(ISkillData skill, Transform      target, ISkillEffectEmitter effectEmitter);
+        UniTask OnSkillEnd([NotNull] ISkillData skill, Transform      target, [CanBeNull] ISkillEffectEmitter effectEmitter);
         UniTask OnSkillCanceled(ISkillData skill);
     }
 }

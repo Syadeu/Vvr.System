@@ -104,8 +104,8 @@ namespace Vvr.Session.ContentView.Mainmenu
 
 
             var skillIcons = await UniTask.WhenAll(
-                m_AssetProvider.LoadAsync<Sprite>(data.Skills[0].Presentation.Icon),
-                m_AssetProvider.LoadAsync<Sprite>(data.Skills[1].Presentation.Icon)
+                m_AssetProvider.LoadAsync<Sprite>(data.Skills[0].IconAssetKey),
+                m_AssetProvider.LoadAsync<Sprite>(data.Skills[1].IconAssetKey)
                 );
 
             await UniTask.WhenAll(

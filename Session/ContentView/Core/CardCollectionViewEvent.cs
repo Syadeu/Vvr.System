@@ -30,7 +30,7 @@ namespace Vvr.Session.ContentView.Core
         Open,
         Close,
 
-
+        SelectCard = 10000,
     }
 
     public struct CardCollectionViewOpenContext

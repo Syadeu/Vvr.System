@@ -38,7 +38,7 @@ namespace Vvr.Controller.Skill
         void Clear();
 
         [PublicAPI]
-        float GetSkillCooltime(ISkillID skill);
+        float GetSkillCooltime([NotNull] ISkillID skill);
         [PublicAPI]
         int GetSkillCount();
 
@@ -48,11 +48,11 @@ namespace Vvr.Controller.Skill
         [PublicAPI]
         UniTask Queue(int index);
         [PublicAPI]
-        UniTask Queue(ISkillID skill);
+        UniTask Queue([NotNull] ISkillID skill);
 
         // [PublicAPI, Obsolete]
         // UniTask Queue(SkillSheet.Row data);
-        [PublicAPI, Obsolete]
-        UniTask Queue(ISkillID data, IActor specifiedTarget);
+        [PublicAPI]
+        UniTask Queue([NotNull] ISkillID data, [CanBeNull] IActor specifiedTarget);
     }
 }

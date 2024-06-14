@@ -15,7 +15,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// File created : 2024, 05, 17 00:05
+// File created : 2024, 06, 14 19:06
 
 #endregion
 
@@ -26,18 +26,27 @@ using Vvr.Model.Stat;
 namespace Vvr.Model
 {
     /// <summary>
-    /// Represents the interface for actor data.
+    /// Represents a skill data.
     /// </summary>
     [PublicAPI]
-    public interface IActorData : IRawData
+    public interface ISkillData : ISkillID, IRawData
     {
-        ActorSheet.ActorType Type       { get; }
-        int                  Grade      { get; }
-        int                  Population { get; }
+        float Cooltime { get; }
+        float Delay    { get; }
 
-        IReadOnlyStatValues             Stats   { get; }
-        IReadOnlyList<PassiveSheet.Row> Passive { get; }
-        IReadOnlyList<ISkillData>       Skills  { get; }
-        Dictionary<AssetType, string>   Assets  { get; }
+        int                 TargetCount { get; }
+        SkillSheet.Target   Target      { get; }
+        SkillSheet.Position Position    { get; }
+
+        SkillSheet.Method Method     { get; }
+        float             Multiplier { get; }
+        StatType          TargetStat { get; }
+
+        [CanBeNull] object IconAssetKey          { get; }
+        [CanBeNull] object SelfEffectAssetKey    { get; }
+        [CanBeNull] object CastingEffectAssetKey { get; }
+        [CanBeNull] object TargetEffectAssetKey  { get; }
+
+        [CanBeNull] IReadOnlyList<AbnormalSheet.Reference> Abnormal { get; }
     }
 }

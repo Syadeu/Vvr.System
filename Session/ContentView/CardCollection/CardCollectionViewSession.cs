@@ -38,6 +38,8 @@ namespace Vvr.Session.ContentView.CardCollection
 
         public override string DisplayName => nameof(CardCollectionViewSession);
 
+        private GameObject m_ViewInstance;
+
         protected override async UniTask OnInitialize(IParentSession session, ContentViewSessionData data)
         {
             await base.OnInitialize(session, data);
@@ -61,14 +63,21 @@ namespace Vvr.Session.ContentView.CardCollection
                 data     = m_UserActorProvider.PlayerActors
             };
 
-            GameObject ins = await ViewProvider
+            m_ViewInstance = await ViewProvider
                     .OpenAsync(CanvasViewProvider, m_AssetProvider, context)
                     .AttachExternalCancellation(ReserveToken)
                 ;
-            this.Inject(ins);
+            this.Inject(m_ViewInstance);
         }
         private async UniTask OnClose(CardCollectionViewEvent e, object ctx)
         {
+            if (m_ViewInstance is not null)
+            {
+                this.Detach(m_ViewInstance);
+            }
+
+            m_ViewInstance = null;
+
             await ViewProvider
                     .CloseAsync(ctx)
                     .AttachExternalCancellation(ReserveToken)

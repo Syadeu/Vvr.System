@@ -31,7 +31,8 @@ namespace Vvr.Model
     {
         public sealed class Row : SheetRow
         {
-            [UsedImplicitly] public Reference Child   { get; private set; }
+            [UsedImplicitly] public string Icon { get; private set; }
+            // [UsedImplicitly] public Reference Child   { get; private set; }
         }
 
         public StatSheet()

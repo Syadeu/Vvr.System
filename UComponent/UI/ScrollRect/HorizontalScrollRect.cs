@@ -17,6 +17,7 @@
 // File created : 2024, 06, 12 20:06
 #endregion
 
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using JetBrains.Annotations;
@@ -149,5 +150,20 @@ namespace Vvr.UComponent.UI
         }
 
         IEnumerable<RectLane> IRectLaneContainer.GetEnumerable() => m_Lanes;
+        public IEnumerator<IScrollRectItem> GetEnumerator()
+        {
+            foreach (var lane in m_Lanes)
+            {
+                foreach (var item in lane)
+                {
+                    yield return item;
+                }
+            }
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
+        }
     }
 }

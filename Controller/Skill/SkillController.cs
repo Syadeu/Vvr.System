@@ -45,23 +45,23 @@ namespace Vvr.Controller.Skill
     {
         struct Value : ITargetDefinition
         {
-            public readonly Hash           hash;
-            public readonly SkillSheet.Row skill;
+            public readonly Hash       hash;
+            public readonly ISkillData skill;
 
             public float delayedExecutionTime;
 
             public readonly IActor overrideTarget;
 
-            public Value(SkillSheet.Row d, IActor ta)
+            public Value(ISkillData d, IActor ta)
             {
                 hash                 = new Hash(d.Id);
                 skill                 = d;
-                delayedExecutionTime = d.Definition.Delay;
+                delayedExecutionTime = d.Delay;
                 overrideTarget       = ta;
             }
 
-            public SkillSheet.Target   Target   => skill.Definition.Target;
-            public SkillSheet.Position Position => skill.Definition.Position;
+            public SkillSheet.Target   Target   => skill.Target;
+            public SkillSheet.Position Position => skill.Position;
         }
 
         readonly struct SkillExecutionScope : IDisposable
@@ -173,28 +173,15 @@ namespace Vvr.Controller.Skill
         }
         public UniTask Queue(ISkillID skill)
         {
-            if (Disposed)
-                throw new ObjectDisposedException(nameof(SkillController));
-
-            SkillSheet.Row skillRow;
-            if (skill is SkillSheet.Row row) skillRow = row;
-            else
-            {
-                var skillData = m_DataProvider.Resolve(Owner.Id);
-                skillRow = skillData.Skills.FirstOrDefault(x => x.Id == skill.Id);
-            }
-
-            if (skillRow != null)
-            {
-                return Queue(skillRow, null);
-            }
-            return UniTask.CompletedTask;
+            return Queue(skill, null);
         }
 
         public async UniTask Queue(ISkillID data, IActor specifiedTarget)
         {
             if (Disposed)
                 throw new ObjectDisposedException(nameof(SkillController));
+            if (data is null)
+                throw new InvalidOperationException();
 
             Assert.IsNotNull(data);
             Assert.IsTrue(Owner.ConditionResolver[Model.Condition.IsActorTurn](null));
@@ -208,8 +195,8 @@ namespace Vvr.Controller.Skill
 
             using var skillExecutionScope = new SkillExecutionScope(this);
 
-            SkillSheet.Row skillRow;
-            if (data is SkillSheet.Row row) skillRow = row;
+            ISkillData skillRow;
+            if (data is ISkillData row) skillRow = row;
             else
             {
                 var skillData = m_DataProvider.Resolve(Owner.Id);
@@ -252,18 +239,18 @@ namespace Vvr.Controller.Skill
             var skillEventHandle = viewTarget.GetComponent<ISkillEventHandler>();
             if (skillEventHandle != null)
             {
-                SkillEffectEmitter emitter = new SkillEffectEmitter(value.skill.Presentation.SelfEffect, null);
+                SkillEffectEmitter emitter = new SkillEffectEmitter(value.skill.SelfEffectAssetKey, null);
                 await skillEventHandle
                     .OnSkillStart(value.skill, emitter)
                     .AttachExternalCancellation(CancellationToken)
                     .TimeoutWithoutException(TimeSpan.FromSeconds(5))
                     ;
             }
-            else if (value.skill.Presentation.SelfEffect.IsValid())
+            else if (value.skill.SelfEffectAssetKey is not null)
             {
                 Transform view = await m_ViewProvider.Resolve(Owner);
 
-                var effectPool = GameObjectPool.Get(value.skill.Presentation.SelfEffect);
+                var effectPool = GameObjectPool.GetWithRawKey(value.skill.SelfEffectAssetKey);
                 var effect = await effectPool
                     .SpawnEffect(view.position, Quaternion.identity)
                     .AttachExternalCancellation(CancellationToken)
@@ -287,9 +274,10 @@ namespace Vvr.Controller.Skill
                 return;
             }
 
-            if (skillEventHandle != null)
+            if (skillEventHandle != null &&
+                value.skill.CastingEffectAssetKey is not null)
             {
-                SkillEffectEmitter emitter = new SkillEffectEmitter(value.skill.Presentation.CastingEffect, null);
+                SkillEffectEmitter emitter = new SkillEffectEmitter(value.skill.CastingEffectAssetKey, null);
                 await skillEventHandle
                         .OnSkillCasting(value.skill, emitter)
                         .SuppressCancellationThrow()
@@ -328,7 +316,7 @@ namespace Vvr.Controller.Skill
                 foreach (var target in m_TargetProvider.FindTargets(Owner, value))
                 {
                     // If target count exceed its capability
-                    if (value.skill.Definition.TargetCount <= count++) break;
+                    if (value.skill.TargetCount <= count++) break;
 
                     await ExecuteSkillTarget(trigger, value, target)
                             .AttachExternalCancellation(CancellationToken)
@@ -370,19 +358,23 @@ namespace Vvr.Controller.Skill
             var skillEventHandle = view.GetComponent<ISkillEventHandler>();
             if (skillEventHandle != null)
             {
-                SkillEffectEmitter emitter;
+                SkillEffectEmitter emitter = null;
 
-                // If method is damage, should shake camera
-                if (value.skill.Execution.Method == SkillSheet.Method.Damage)
+                if (value.skill.TargetEffectAssetKey is not null)
                 {
-                    ICameraProvider camPrv = await Vvr.Provider.Provider.Static.GetAsync<ICameraProvider>()
-                            .AttachExternalCancellation(CancellationToken)
-                        ;
-                    emitter = new SkillEffectEmitter(
-                        value.skill.Presentation.TargetEffect,
-                        () => camPrv.Shake().Forget());
+                    // If method is damage, should shake camera
+                    if (value.skill.Method == SkillSheet.Method.Damage)
+                    {
+                        ICameraProvider camPrv = await Vvr.Provider.Provider.Static.GetAsync<ICameraProvider>()
+                                .AttachExternalCancellation(CancellationToken)
+                            ;
+
+                        emitter = new SkillEffectEmitter(
+                            value.skill.TargetEffectAssetKey,
+                            () => camPrv.Shake().Forget());
+                    }
+                    else emitter = new SkillEffectEmitter(value.skill.TargetEffectAssetKey, null);
                 }
-                else emitter = new SkillEffectEmitter(value.skill.Presentation.TargetEffect, null);
 
                 await skillEventHandle
                         .OnSkillEnd(value.skill, targetView, emitter)
@@ -391,11 +383,11 @@ namespace Vvr.Controller.Skill
                         .TimeoutWithoutException(TimeSpan.FromSeconds(5))
                     ;
 
-                emitter.Dispose();
+                emitter?.Dispose();
             }
-            else if (value.skill.Presentation.TargetEffect.IsValid())
+            else if (value.skill.TargetEffectAssetKey is not null)
             {
-                var effectPool = GameObjectPool.Get(value.skill.Presentation.TargetEffect);
+                var effectPool = GameObjectPool.GetWithRawKey(value.skill.TargetEffectAssetKey);
                 var effect = await effectPool
                         .SpawnEffect(targetView.position, Quaternion.identity)
                         .AttachExternalCancellation(CancellationToken)
@@ -420,12 +412,12 @@ namespace Vvr.Controller.Skill
                     await target.Abnormal.Add(e);
                 }
 
-                float dmg = Owner.Stats[StatType.ATT] * value.skill.Execution.Multiplier;
-                switch (value.skill.Execution.Method)
+                float dmg = Owner.Stats[StatType.ATT] * value.skill.Multiplier;
+                switch (value.skill.Method)
                 {
                     case SkillSheet.Method.Damage:
                         target.Stats.Push<DamageProcessor>(
-                            value.skill.Execution.TargetStat.Ref.ToStat(), dmg);
+                            value.skill.TargetStat, dmg);
                         await targetTrigger.Execute(Model.Condition.OnHit, null)
                                 .AttachExternalCancellation(CancellationToken)
                             ;
@@ -434,10 +426,9 @@ namespace Vvr.Controller.Skill
                     case SkillSheet.Method.Default:
                     default:
                         target.Stats.Push(
-                            value.skill.Execution.TargetStat.Ref.ToStat(), dmg);
+                            value.skill.TargetStat, dmg);
 
-                        await targetTrigger.Execute(Model.Condition.OnHit, null)
-                                .AttachExternalCancellation(CancellationToken)
+                        await targetTrigger.Execute(Model.Condition.OnHit, null, CancellationToken)
                             ;
                         break;
                 }
@@ -456,7 +447,7 @@ namespace Vvr.Controller.Skill
         {
             Assert.IsFalse(m_SkillCooltimes.ContainsKey(value.hash));
 
-            m_SkillCooltimes[value.hash] = value.skill.Definition.Cooltime;
+            m_SkillCooltimes[value.hash] = value.skill.Cooltime;
             m_SkillCooltimeKeys.Add(value.hash);
         }
 
@@ -519,9 +510,10 @@ namespace Vvr.Controller.Skill
                     .AttachExternalCancellation(CancellationToken);
                 var skillEventHandle = viewTarget.GetComponent<ISkillEventHandler>();
 
-                if (skillEventHandle != null)
+                if (skillEventHandle != null &&
+                    e.skill.CastingEffectAssetKey is not null)
                 {
-                    SkillEffectEmitter emitter = new SkillEffectEmitter(e.skill.Presentation.CastingEffect, null);
+                    SkillEffectEmitter emitter = new SkillEffectEmitter(e.skill.CastingEffectAssetKey, null);
                     await skillEventHandle
                             .OnSkillCasting(e.skill, emitter)
                             .SuppressCancellationThrow()

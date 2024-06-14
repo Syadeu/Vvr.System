@@ -37,5 +37,6 @@ namespace Vvr.Model
         // TODO: equipped items
 
         UniTask<IImmutableObject<Sprite>> LoadContextPortrait();
+        UniTask<IImmutableObject<Sprite>> LoadSkillIcon(int index);
     }
 }

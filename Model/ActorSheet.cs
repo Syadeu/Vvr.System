@@ -72,7 +72,7 @@ namespace Vvr.Model
             int IActorData.                            Grade      => Definition.Grade;
             int IActorData.                            Population => Definition.Population;
             IReadOnlyList<PassiveSheet.Row> IActorData.Passive    => m_Passive ?? Array.Empty<PassiveSheet.Row>();
-            IReadOnlyList<SkillSheet.Row> IActorData.  Skills     => m_Skills  ?? Array.Empty<SkillSheet.Row>();
+            IReadOnlyList<ISkillData> IActorData.      Skills     => m_Skills  ?? Array.Empty<SkillSheet.Row>();
 
             public override void PostLoad(SheetConvertingContext context)
             {

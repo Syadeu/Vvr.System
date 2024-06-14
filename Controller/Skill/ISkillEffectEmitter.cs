@@ -22,6 +22,7 @@
 using System;
 using Cathei.BakingSheet.Unity;
 using Cysharp.Threading.Tasks;
+using JetBrains.Annotations;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 
@@ -38,17 +39,26 @@ namespace Vvr.Controller.Skill
     [Obsolete("Because using outside of Session design")]
     internal sealed class SkillEffectEmitter : ISkillEffectEmitter, IDisposable
     {
-        private readonly AddressablePath m_Path;
+        [NotNull]
+        private readonly object m_Path;
 
         private Action        m_OnExecute;
         private IEffectObject m_CurrentEffect;
 
         private bool m_Disposed;
 
-        public SkillEffectEmitter(AddressablePath path, Action onExecute)
+        public SkillEffectEmitter([NotNull] object path, Action onExecute)
         {
-            m_Path      = path;
+            m_Path      = path ?? throw new InvalidOperationException();
             m_OnExecute = onExecute;
+        }
+
+        private bool IsPathValid()
+        {
+            if (m_Path is AddressablePath adPath  && adPath.FullPath.IsNullOrEmpty()) return false;
+            if (m_Path is AssetReference assetRef && !assetRef.RuntimeKeyIsValid()) return false;
+
+            return true;
         }
 
         public async UniTask Execute(Vector3 position, Quaternion rotation)
@@ -56,9 +66,9 @@ namespace Vvr.Controller.Skill
             if (m_Disposed)
                 throw new ObjectDisposedException(nameof(ISkillEffectEmitter));
 
-            if (m_Path == null || m_Path.FullPath.IsNullOrEmpty()) return;
+            if (!IsPathValid()) return;
 
-            var effectPool = GameObjectPool.Get(m_Path);
+            var effectPool = GameObjectPool.GetWithRawKey(m_Path);
             m_CurrentEffect = await effectPool.SpawnEffect(position, rotation);
             m_OnExecute?.Invoke();
 
@@ -72,9 +82,9 @@ namespace Vvr.Controller.Skill
             if (m_Disposed)
                 throw new ObjectDisposedException(nameof(ISkillEffectEmitter));
 
-            if (m_Path == null || m_Path.FullPath.IsNullOrEmpty()) return;
+            if (!IsPathValid()) return;
 
-            var effectPool = GameObjectPool.Get(m_Path);
+            var effectPool = GameObjectPool.GetWithRawKey(m_Path);
             m_CurrentEffect = await effectPool.SpawnEffect(position);
             m_OnExecute?.Invoke();
 

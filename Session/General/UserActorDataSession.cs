@@ -63,7 +63,7 @@ namespace Vvr.Session
 
             public IReadOnlyStatValues             Stats   => m_RawData.Stats;
             public IReadOnlyList<PassiveSheet.Row> Passive => m_RawData.Passive;
-            public IReadOnlyList<SkillSheet.Row>   Skills  => m_RawData.Skills;
+            public IReadOnlyList<ISkillData>   Skills  => m_RawData.Skills;
             public Dictionary<AssetType, string>   Assets  => m_RawData.Assets;
 
             public int Level
@@ -92,6 +92,11 @@ namespace Vvr.Session
             public UniTask<IImmutableObject<Sprite>> LoadContextPortrait()
             {
                 return m_AssetProvider.LoadAsync<Sprite>(Assets[AssetType.ContextPortrait]);
+            }
+
+            public UniTask<IImmutableObject<Sprite>> LoadSkillIcon(int index)
+            {
+                return m_AssetProvider.LoadAsync<Sprite>(Skills[index].IconAssetKey);
             }
 
             public UserActorData GetUserActorData()

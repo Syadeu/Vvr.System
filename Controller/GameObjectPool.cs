@@ -23,6 +23,7 @@ using System;
 using System.Collections.Generic;
 using Cathei.BakingSheet.Unity;
 using Cysharp.Threading.Tasks;
+using JetBrains.Annotations;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
@@ -90,11 +91,18 @@ namespace Vvr.Controller
 
             return pool;
         }
-        public static GameObjectPool GetWithRawKey(object key)
+        public static GameObjectPool GetWithRawKey([NotNull] object key)
         {
+            if (key is null)
+                throw new InvalidOperationException();
+
             Hash h;
 
             if (key is string strKey) h = new Hash(strKey);
+            else if (key is AddressablePath adPath)
+            {
+                h = new Hash(adPath.FullPath);
+            }
             else if (key is IResourceLocation loc)
             {
                 h = new Hash(
@@ -107,14 +115,14 @@ namespace Vvr.Controller
             {
                 h = new Hash(assetReference.RuntimeKey.ToString());
             }
-            else throw new NotImplementedException();
+            else throw new NotImplementedException(key.GetType().FullName);
 
             if (!s_ObjectPools.TryGetValue(h, out var pool))
             {
                 GameObject obj = new GameObject(((uint)h).ToString());
                 pool             = obj.AddComponent<GameObjectPool>();
 
-                pool.RawInitialize(h, key);
+                pool.Initialize(h, key);
 
                 s_ObjectPools[h] = pool;
             }
@@ -128,16 +136,13 @@ namespace Vvr.Controller
         private readonly List<AsyncOperationHandle> m_OperationHandles = new();
         private readonly Stack<GameObject>          m_Pool             = new();
 
-        private void Initialize(Hash h, AddressablePath path)
+        private void Initialize(Hash h, object path)
         {
             m_Hash = h;
-            m_Key = path.FullPath;
-        }
-
-        private void RawInitialize(Hash h, object key)
-        {
-            m_Hash = h;
-            m_Key  = key;
+            if (path is AddressablePath adPath)
+                m_Key = adPath.FullPath;
+            else
+                m_Key = path;
         }
 
         private AsyncOperationHandle<GameObject> CreateInstance(

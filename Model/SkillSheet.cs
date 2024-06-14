@@ -26,6 +26,7 @@ using Cathei.BakingSheet.Unity;
 using JetBrains.Annotations;
 using Unity.Mathematics;
 using UnityEngine.Scripting;
+using Vvr.Model.Stat;
 
 namespace Vvr.Model
 {
@@ -80,10 +81,10 @@ namespace Vvr.Model
 
         public struct Presentation
         {
-            [UsedImplicitly] public AddressablePath Icon          { get; private set; }
-            [UsedImplicitly] public AddressablePath SelfEffect    { get; private set; }
-            [UsedImplicitly] public AddressablePath CastingEffect { get; private set; }
-            [UsedImplicitly] public AddressablePath TargetEffect  { get; private set; }
+            [UsedImplicitly] public string Icon          { get; private set; }
+            [UsedImplicitly] public string SelfEffect    { get; private set; }
+            [UsedImplicitly] public string CastingEffect { get; private set; }
+            [UsedImplicitly] public string TargetEffect  { get; private set; }
         }
 
         public sealed class Row : SheetRow, ISkillData
@@ -96,23 +97,29 @@ namespace Vvr.Model
 
             [UsedImplicitly] public List<AbnormalSheet.Reference> Abnormal { get; private set; }
 
-            float ISkillData.Cooltime => Definition.Cooltime;
+            float ISkillData.Cooltime    => Definition.Cooltime;
+            public float     Delay       => Definition.Delay;
+
+            public int      TargetCount => Definition.TargetCount;
+            public Target   Target      => Definition.Target;
+            public Position Position    => Definition.Position;
+
+            public Method   Method     => Execution.Method;
+            public StatType TargetStat => Execution.TargetStat.Ref.ToStat();
+            public float    Multiplier => Execution.Multiplier;
+
+            object ISkillData.IconAssetKey          => Presentation.Icon.IsNullOrEmpty() ? null : Presentation.Icon;
+            object ISkillData.SelfEffectAssetKey    => Presentation.SelfEffect.IsNullOrEmpty() ? null : Presentation.SelfEffect;
+            object ISkillData.CastingEffectAssetKey => Presentation.CastingEffect.IsNullOrEmpty() ? null : Presentation.CastingEffect;
+            object ISkillData.TargetEffectAssetKey  => Presentation.TargetEffect.IsNullOrEmpty() ? null : Presentation.TargetEffect;
+
+            IReadOnlyList<AbnormalSheet.Reference> ISkillData.Abnormal => Abnormal;
         }
 
         public SkillSheet()
         {
             Name = "Skills";
         }
-    }
-
-    public interface ISkillID
-    {
-        string Id { get; }
-    }
-
-    public interface ISkillData : ISkillID
-    {
-        float Cooltime { get; }
     }
 
     public static class SkillSheetExtensions

@@ -19,6 +19,7 @@
 
 #endregion
 
+using System.Collections;
 using System.Collections.Generic;
 using JetBrains.Annotations;
 using Sirenix.OdinInspector;
@@ -31,7 +32,7 @@ namespace Vvr.UComponent.UI
     // TODO: currently, horizontal only
     [RequireComponent(typeof(RectTransform))]
     [HideMonoScript]
-    public class RectLane : LayoutGroup
+    public class RectLane : LayoutGroup, IEnumerable<IScrollRectItem>
     {
         [SerializeField] private float      m_Spacing;
 
@@ -343,6 +344,16 @@ namespace Vvr.UComponent.UI
             currentRect.x += currentRect.size.x * .5f;
 
             return currentRect;
+        }
+
+        public IEnumerator<IScrollRectItem> GetEnumerator()
+        {
+            return ((IEnumerable<IScrollRectItem>)m_Items).GetEnumerator();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
         }
     }
 }

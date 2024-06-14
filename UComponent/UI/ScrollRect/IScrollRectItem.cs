@@ -25,6 +25,5 @@ namespace Vvr.UComponent.UI
 {
     public interface IScrollRectItem : IProxy<RectTransform>
     {
-        // Vector2 PreferredSizeDelta { get; }
     }
 }

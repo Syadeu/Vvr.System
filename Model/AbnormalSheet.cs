@@ -72,7 +72,7 @@ namespace Vvr.Model
             [UsedImplicitly] public Update          Update        { get; private set; }
             [UsedImplicitly] public Cancellation    Cancellation  { get; private set; }
 
-            [UsedImplicitly] public List<AbnormalSheet.Reference> AbnormalChain { get; private set; }
+            [UsedImplicitly] public List<Reference> AbnormalChain { get; private set; }
         }
 
         public AbnormalSheet()
