@@ -19,11 +19,10 @@
 
 #endregion
 
-using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using UnityEngine;
 
-namespace Vvr.Provider
+namespace Vvr.Model
 {
     /// <summary>
     /// Represents an immutable object.

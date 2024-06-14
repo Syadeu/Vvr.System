@@ -21,6 +21,7 @@
 
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
+using Vvr.Model;
 
 namespace Vvr.Provider
 {

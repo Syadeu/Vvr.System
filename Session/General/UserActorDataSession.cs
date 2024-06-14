@@ -25,16 +25,19 @@ using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using UnityEngine;
+using UnityEngine.Assertions;
 using Vvr.Crypto;
 using Vvr.Model;
 using Vvr.Model.Stat;
 using Vvr.Provider;
+using Vvr.Session.AssetManagement;
 using Vvr.Session.Provider;
 
 namespace Vvr.Session
 {
     [UsedImplicitly]
-    public sealed class UserActorDataSession : ChildSession<UserActorDataSession.SessionData>,
+    public sealed class UserActorDataSession : ParentSession<UserActorDataSession.SessionData>,
         IUserActorProvider,
         IConnector<IActorDataProvider>
     {
@@ -42,7 +45,8 @@ namespace Vvr.Session
         {
             public static Func<ResolvedActorData, int> KeySelector { get; } = x => x.UniqueId;
 
-            private readonly IActorData m_RawData;
+            private readonly IAssetProvider m_AssetProvider;
+            private readonly IActorData     m_RawData;
 
             // TODO: provides low security
             private CryptoInt   m_Level;
@@ -73,13 +77,21 @@ namespace Vvr.Session
                 set => m_Exp = value;
             }
 
-            public ResolvedActorData(IActorData rawData, UserActorData data)
+            public ResolvedActorData(
+                IAssetProvider assetProvider,
+                IActorData rawData, UserActorData data)
             {
-                m_RawData  = rawData;
-                UniqueId = data.uniqueId;
+                m_AssetProvider = assetProvider;
+                m_RawData       = rawData;
+                UniqueId        = data.uniqueId;
 
                 m_Level = data.level ?? 0;
                 m_Exp   = data.exp   ?? 0;
+            }
+
+            public UniTask<IImmutableObject<Sprite>> LoadContextPortrait()
+            {
+                return m_AssetProvider.LoadAsync<Sprite>(Assets[AssetType.ContextPortrait]);
             }
 
             public UserActorData GetUserActorData()
@@ -108,6 +120,7 @@ namespace Vvr.Session
 
         public override string DisplayName => nameof(UserActorDataSession);
 
+        private IAssetProvider     m_AssetProvider;
         private IActorDataProvider m_ActorDataProvider;
 
         private readonly List<ResolvedActorData> m_ResolvedData = new();
@@ -117,11 +130,14 @@ namespace Vvr.Session
 
         public IReadOnlyList<IResolvedActorData> PlayerActors => m_ResolvedData;
 
-        protected override UniTask OnInitialize(IParentSession session, SessionData data)
+        protected override async UniTask OnInitialize(IParentSession session, SessionData data)
         {
-            SetupUserActors();
+            await base.OnInitialize(session, data);
 
-            return base.OnInitialize(session, data);
+            m_AssetProvider = await CreateSessionOnBackground<AssetSession>(default);
+
+
+            SetupUserActors();
         }
 
         public IReadOnlyList<IResolvedActorData> GetCurrentTeam()
@@ -176,6 +192,8 @@ namespace Vvr.Session
         {
             if (m_UserActorResolved) return;
 
+            Assert.IsNotNull(m_AssetProvider);
+
             var jr = Data.dataProvider.GetJson(UserDataKeyCollection.Actor.UserActors());
             if (jr is not null)
             {
@@ -184,7 +202,7 @@ namespace Vvr.Session
                     UserActorData d       = item.Value.ToObject<UserActorData>();
                     IActorData    rawData = m_ActorDataProvider.Resolve(d.id);
 
-                    var data = new ResolvedActorData(rawData, d);
+                    var data = new ResolvedActorData(m_AssetProvider, rawData, d);
                     m_ResolvedData.AddWithOrder(data);
                 }
             }

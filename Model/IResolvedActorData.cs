@@ -15,29 +15,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// File created : 2024, 05, 17 00:05
+// File created : 2024, 06, 13 23:06
 
 #endregion
 
-using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
-using Vvr.Model.Stat;
+using UnityEngine;
 
 namespace Vvr.Model
 {
     /// <summary>
-    /// Represents the interface for actor data.
+    /// Represents the resolved actor data that is retrieved from the server.
     /// </summary>
     [PublicAPI]
-    public interface IActorData : IRawData
+    public interface IResolvedActorData : IActorData
     {
-        ActorSheet.ActorType Type       { get; }
-        int                  Grade      { get; }
-        int                  Population { get; }
+        int   Level { get; }
+        float Exp   { get; }
 
-        IReadOnlyStatValues           Stats   { get; }
-        IReadOnlyList<PassiveSheet.Row> Passive { get; }
-        IReadOnlyList<SkillSheet.Row>    Skills { get; }
-        Dictionary<AssetType, string> Assets { get; }
+        // TODO: equipped items
+
+        UniTask<IImmutableObject<Sprite>> LoadContextPortrait();
     }
 }

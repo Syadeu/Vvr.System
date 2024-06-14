@@ -31,6 +31,7 @@ using UnityEngine.AddressableAssets;
 using UnityEngine.Assertions;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.ResourceManagement.ResourceLocations;
+using Vvr.Model;
 using Vvr.Provider;
 
 namespace Vvr.Session.AssetManagement
@@ -66,7 +67,7 @@ namespace Vvr.Session.AssetManagement
         /// Represents an immutable object that wraps a Unity Object.
         /// </summary>
         /// <remarks>
-        /// This class provides a wrapper for a Unity object to ensure that it cannot be modified once created. It implements the <see cref="Vvr.Provider.IImmutableObject"/> interface.
+        /// This class provides a wrapper for a Unity object to ensure that it cannot be modified once created. It implements the <see cref="IImmutableObject"/> interface.
         /// The object can be retrieved using the <see cref="Object"/> property. If an attempt is made to access the object after it has been disposed, an <see cref="ObjectDisposedException"/> will be thrown.
         /// </remarks>
         private abstract class ImmutableObject : IImmutableObject, IDisposable

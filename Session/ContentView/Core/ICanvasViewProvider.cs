@@ -20,6 +20,7 @@
 #endregion
 
 using JetBrains.Annotations;
+using Vvr.Model;
 using Vvr.Provider;
 
 namespace Vvr.Session.ContentView.Core

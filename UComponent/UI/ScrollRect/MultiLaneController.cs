@@ -52,5 +52,13 @@ namespace Vvr.UComponent.UI
                 break;
             }
         }
+
+        public void Clear()
+        {
+            foreach (var lane in LaneContainer.GetEnumerable())
+            {
+                lane.Clear();
+            }
+        }
     }
 }
