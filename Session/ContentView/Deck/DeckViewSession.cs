@@ -118,10 +118,8 @@ namespace Vvr.Session.ContentView.Deck
                         id = actor.Id,
 
                         portrait = portraitImg.Object,
-                        title    = actor.Id,
                         grade    = actor.Grade,
-                        // TODO: actor level
-                        level = 0
+                        level = actor.Level
                     };
                 }
 

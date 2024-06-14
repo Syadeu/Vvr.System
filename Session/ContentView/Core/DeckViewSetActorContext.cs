@@ -29,14 +29,13 @@ namespace Vvr.Session.ContentView.Core
         public string id;
 
         public Sprite portrait;
-        public string title;
         public int    grade;
         public int    level;
 
         public override int GetHashCode()
         {
             return
-                unchecked((int)FNV1a32.Calculate(title))
+                unchecked((int)FNV1a32.Calculate(id))
                 ^ index ^ grade ^ level ^ 367;
         }
     }
