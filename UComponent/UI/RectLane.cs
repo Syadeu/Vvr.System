@@ -345,13 +345,4 @@ namespace Vvr.UComponent.UI
             return currentRect;
         }
     }
-
-    [PublicAPI]
-    public interface IRectLaneContainer
-    {
-        RectLane this[int i] { get; }
-        int Count { get; }
-
-        IEnumerable<RectLane> GetEnumerable();
-    }
 }
