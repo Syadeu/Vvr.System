@@ -50,6 +50,16 @@ namespace Vvr.Session.ContentView.Core
         /// Represents a generic event handler that can be associated with multiple events and executed asynchronously.
         /// </summary>
         protected IContentViewEventHandler<TEvent> EventHandler => (IContentViewEventHandler<TEvent>)m_EventHandler;
+        protected ITypedContentViewEventHandler<TEvent> TypedEventHandler
+        {
+            get
+            {
+                if (m_EventHandler is not ITypedContentViewEventHandler<TEvent> handler)
+                    throw new InvalidOperationException();
+
+                return handler;
+            }
+        }
 
         /// <summary>
         /// Represents a provider for accessing event handlers in a content view.
@@ -80,7 +90,7 @@ namespace Vvr.Session.ContentView.Core
         /// <returns>An instance of the event handler.</returns>
         protected virtual IContentViewEventHandler<TEvent> CreateEventHandler()
         {
-            return new ContentViewEventHandler<TEvent>();
+            return new TypedContentViewEventHandler<TEvent>();
         }
 
         void IConnector<ICanvasViewProvider>.Connect(ICanvasViewProvider    t) => CanvasViewProvider = t;

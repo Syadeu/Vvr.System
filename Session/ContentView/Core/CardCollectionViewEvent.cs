@@ -30,6 +30,8 @@ namespace Vvr.Session.ContentView.Core
         Open,
         Close,
 
+        ConfirmButton = 9000,
+
         SelectCard = 10000,
     }
 

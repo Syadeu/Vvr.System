@@ -35,6 +35,7 @@ namespace Vvr.Session.ContentView.Core
     /// <param name="ctx">The context.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
     public delegate UniTask ContentViewEventDelegate<in TEvent>(TEvent e, [CanBeNull] object ctx) where TEvent : struct, IConvertible;
+    public delegate UniTask ContentViewEventDelegate<in TEvent, in TValue>(TEvent e, TValue ctx) where TEvent : struct, IConvertible;
 
     /// <summary>
     /// Event handler interface for ContentView events.
@@ -62,6 +63,18 @@ namespace Vvr.Session.ContentView.Core
         /// <returns>The updated instance of the <see cref="IContentViewEventHandler{TEvent}"/> interface.</returns>
         [NotNull]
         IContentViewEventHandler<TEvent> Unregister(TEvent e, [NotNull] ContentViewEventDelegate<TEvent> x);
+    }
+
+    [RequireImplementors]
+    [PublicAPI, AbstractProvider]
+    public interface ITypedContentViewEventHandler<TEvent> : IContentViewEventHandler<TEvent>
+        where TEvent : struct, IConvertible
+    {
+        [NotNull]
+        ITypedContentViewEventHandler<TEvent> Register<TValue>(TEvent e, [NotNull] ContentViewEventDelegate<TEvent, TValue> x);
+
+        [NotNull]
+        ITypedContentViewEventHandler<TEvent> Unregister<TValue>(TEvent e, [NotNull] ContentViewEventDelegate<TEvent, TValue> x);
     }
 
     [RequireImplementors]

@@ -38,7 +38,8 @@ namespace Vvr.Session.ContentView.CardCollection
 
         public override string DisplayName => nameof(CardCollectionViewSession);
 
-        private GameObject m_ViewInstance;
+        private GameObject         m_ViewInstance;
+        private IResolvedActorData m_SelectedActor;
 
         protected override async UniTask OnInitialize(IParentSession session, ContentViewSessionData data)
         {
@@ -50,7 +51,16 @@ namespace Vvr.Session.ContentView.CardCollection
             EventHandler
                 .Register(CardCollectionViewEvent.Open, OnOpen)
                 .Register(CardCollectionViewEvent.Close, OnClose)
+
+                .Register(CardCollectionViewEvent.SelectCard, OnSelected)
                 ;
+        }
+
+        private UniTask OnSelected(CardCollectionViewEvent e, object ctx)
+        {
+            m_SelectedActor = (IResolvedActorData)ctx;
+
+            return UniTask.CompletedTask;
         }
 
         private async UniTask OnOpen(CardCollectionViewEvent e, object ctx)
@@ -76,7 +86,8 @@ namespace Vvr.Session.ContentView.CardCollection
                 this.Detach(m_ViewInstance);
             }
 
-            m_ViewInstance = null;
+            m_SelectedActor = null;
+            m_ViewInstance  = null;
 
             await ViewProvider
                     .CloseAsync(ctx)

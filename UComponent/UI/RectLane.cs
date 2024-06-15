@@ -39,7 +39,7 @@ namespace Vvr.UComponent.UI
         private IRectTransformPool m_Pool;
         private IScrollRect        m_ScrollRect;
 
-        private Vector2 m_ItemSizeDelta;
+        private Vector2? m_ItemSizeDelta;
 
         private readonly LinkedList<IRectItem>                m_Items = new();
         private readonly Dictionary<IRectItem, RectTransform> m_Proxy = new();
@@ -49,7 +49,7 @@ namespace Vvr.UComponent.UI
 
         public int     Count         => m_Items.Count;
         [ShowInInspector, ReadOnly]
-        public Vector2 ItemSizeDelta { get => m_ItemSizeDelta; set => m_ItemSizeDelta = value; }
+        public Vector2 ItemSizeDelta { get => m_ItemSizeDelta ?? -Vector2.one; set => m_ItemSizeDelta = value; }
 
         [PublicAPI]
         public void Insert(int index, IRectItem item)
@@ -106,6 +106,14 @@ namespace Vvr.UComponent.UI
             }
             else
             {
+                if (ItemSizeDelta.x  < 0 &&
+                    rectChildren.Count > 0)
+                {
+                    m_ItemSizeDelta = new Vector2(
+                        LayoutUtility.GetPreferredWidth(rectChildren[0]),
+                        ItemSizeDelta.y);
+                }
+
                 foreach (var item in m_Items)
                 {
                     if (count++ > 0) calculatedWidth += m_Spacing;
@@ -126,7 +134,23 @@ namespace Vvr.UComponent.UI
                         LayoutUtility.GetPreferredSize(child, 1));
                 }
             }
-            else calculatedHeight = ItemSizeDelta.y;
+            else
+            {
+                if (ItemSizeDelta.y    < 0 &&
+                    rectChildren.Count > 0)
+                {
+                    float yy = -1;
+                    for (int i = 0; i < rectChildren.Count; i++)
+                    {
+                        yy = Mathf.Max(yy, LayoutUtility.GetPreferredHeight(rectChildren[i]));
+                    }
+
+                    m_ItemSizeDelta = new Vector2(
+                        ItemSizeDelta.x,
+                        yy);
+                }
+                calculatedHeight = ItemSizeDelta.y;
+            }
             // foreach (var item in m_Items)
             // {
             //     calculatedHeight = Mathf.Max(item.PreferredSizeDelta.y, calculatedHeight);

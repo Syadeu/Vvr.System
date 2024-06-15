@@ -39,10 +39,10 @@ namespace Vvr.Session.ContentView.Core
     /// Represents an event handler for ContentView events.
     /// </summary>
     /// <typeparam name="TEvent">The event type.</typeparam>
-    public sealed class ContentViewEventHandler<TEvent> : IContentViewEventHandler<TEvent>
+    public class ContentViewEventHandler<TEvent> : IContentViewEventHandler<TEvent>
         where TEvent : struct, IConvertible
     {
-        private struct WriteLock : IDisposable
+        protected struct WriteLock : IDisposable
         {
             private readonly ContentViewEventHandler<TEvent> m_Handler;
             private          bool                            m_Started;
@@ -61,7 +61,7 @@ namespace Vvr.Session.ContentView.Core
                     m_Handler.m_WriteLocked.Value = true;
                 }
             }
-            public void Wait()
+            public void Wait(CancellationToken cancellationToken = default)
             {
 #if THREAD_DEBUG
                 int threadId = Thread.CurrentThread.ManagedThreadId;
@@ -76,7 +76,7 @@ namespace Vvr.Session.ContentView.Core
 #endif
                 if (!m_Handler.m_WriteLocked.Value)
                 {
-                    m_Handler.m_WriteLock.Wait();
+                    m_Handler.m_WriteLock.Wait(cancellationToken);
                     m_Handler.m_WriteLocked.Value = true;
                 }
 #if THREAD_DEBUG
@@ -100,7 +100,8 @@ namespace Vvr.Session.ContentView.Core
                 }
             }
         }
-        private struct ExecutionLock : IDisposable
+
+        protected struct ExecutionLock : IDisposable
         {
             private readonly ContentViewEventHandler<TEvent> m_Handler;
 
@@ -112,14 +113,14 @@ namespace Vvr.Session.ContentView.Core
                 Started   = true;
             }
 
-            public async UniTask WaitAsync()
+            public async UniTask WaitAsync(CancellationToken cancellationToken = default)
             {
                 if (!m_Handler.m_ExecutionLocked.Value
                     && m_Handler.m_ExecutionDepth.Value == 0
                     )
                 {
                     // $"execution lock in {m_Handler.m_ExecutionDepth.Value}".ToLog();
-                    await m_Handler.m_ExecutionLock.WaitAsync();
+                    await m_Handler.m_ExecutionLock.WaitAsync(cancellationToken);
 
                     m_Handler.m_ExecutionLocked.Value = true;
                 }
@@ -156,7 +157,7 @@ namespace Vvr.Session.ContentView.Core
             }
         }
 
-        private readonly Dictionary<TEvent, List<uint>>                     m_Actions   = new();
+        private readonly Dictionary<TEvent, List<uint>> m_Actions = new();
         private readonly ConcurrentDictionary<uint, ContentViewEventDelegate<TEvent>> m_ActionMap = new();
 
 #if THREAD_DEBUG
@@ -173,7 +174,8 @@ namespace Vvr.Session.ContentView.Core
 
         private readonly CancellationTokenSource m_CancellationTokenSource = new();
 
-        public bool Disposed { get; private set; }
+        public bool              Disposed          { get; private set; }
+        public CancellationToken CancellationToken => m_CancellationTokenSource.Token;
 
         public bool ExecutionLocked => m_ExecutionLock.CurrentCount == 0;
         public bool WriteLocked => m_WriteLock.CurrentCount == 0;
@@ -192,13 +194,15 @@ namespace Vvr.Session.ContentView.Core
             return hash;
         }
 
-        public void Clear()
+        public virtual void Clear()
         {
             if (Disposed)
                 throw new ObjectDisposedException(nameof(ContentViewEventHandler<TEvent>));
 
             using var writeLock = new WriteLock(this);
-            writeLock.Wait();
+            writeLock.Wait(CancellationToken);
+
+            if (CancellationToken.IsCancellationRequested) return;
 
             foreach (var list in m_Actions.Values)
             {
@@ -209,13 +213,15 @@ namespace Vvr.Session.ContentView.Core
             m_ActionMap.Clear();
         }
 
-        public IContentViewEventHandler<TEvent> Register(TEvent e, ContentViewEventDelegate<TEvent> x)
+        public virtual IContentViewEventHandler<TEvent> Register(TEvent e, ContentViewEventDelegate<TEvent> x)
         {
             if (Disposed)
                 throw new ObjectDisposedException(nameof(ContentViewEventHandler<TEvent>));
 
             using var writeLock = new WriteLock(this);
-            writeLock.Wait();
+            writeLock.Wait(CancellationToken);
+
+            if (CancellationToken.IsCancellationRequested) return this;
 
             if (!m_Actions.TryGetValue(e, out var list))
             {
@@ -232,14 +238,15 @@ namespace Vvr.Session.ContentView.Core
 
             return this;
         }
-
-        public IContentViewEventHandler<TEvent> Unregister(TEvent e, ContentViewEventDelegate<TEvent> x)
+        public virtual IContentViewEventHandler<TEvent> Unregister(TEvent e, ContentViewEventDelegate<TEvent> x)
         {
             if (Disposed)
                 throw new ObjectDisposedException(nameof(ContentViewEventHandler<TEvent>));
 
             using var writeLock = new WriteLock(this);
-            writeLock.Wait();
+            writeLock.Wait(CancellationToken);
+
+            if (CancellationToken.IsCancellationRequested) return this;
 
             if (!m_Actions.TryGetValue(e, out var list)) return this;
 
@@ -252,14 +259,15 @@ namespace Vvr.Session.ContentView.Core
         }
 
         public async UniTask ExecuteAsync(TEvent e) => await ExecuteAsync(e, null);
-        public async UniTask ExecuteAsync(TEvent e, object ctx)
+        public virtual async UniTask ExecuteAsync(TEvent e, object ctx)
         {
             if (Disposed)
                 throw new ObjectDisposedException(nameof(ContentViewEventHandler<TEvent>));
 
             ExecutionLock executionLock = new ExecutionLock(this);
-            await executionLock.WaitAsync();
+            await executionLock.WaitAsync(CancellationToken);
 
+            if (CancellationToken.IsCancellationRequested) return;
             Assert.IsTrue(executionLock.Started);
 
             if (!m_Actions.TryGetValue(e, out var list)) return;
@@ -294,7 +302,8 @@ namespace Vvr.Session.ContentView.Core
                 // so make sure stacks after all execute has been queued.
                 executionLock.Dispose();
 
-                await UniTask.WhenAll(array);
+                await UniTask.WhenAll(array)
+                    .AttachExternalCancellation(m_CancellationTokenSource.Token);
             }
 
             ArrayPool<UniTask>.Shared.Return(array, true);
