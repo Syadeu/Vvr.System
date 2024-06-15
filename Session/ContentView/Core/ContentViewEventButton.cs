@@ -35,12 +35,11 @@ namespace Vvr.Session.ContentView.Core
     /// <typeparam name="TEvent">The type of ContentView event that the button handles.</typeparam>
     [HideMonoScript]
     [RequireComponent(typeof(Button))]
-    [DisallowMultipleComponent]
     public abstract class ContentViewEventButton<TEvent> : MonoBehaviour,
         IConnector<IContentViewEventHandler<TEvent>>
         where TEvent: struct, IConvertible
     {
-        [SerializeField] private TEvent m_Event;
+        [SerializeField] protected TEvent m_Event;
 
         private Button m_Button;
 

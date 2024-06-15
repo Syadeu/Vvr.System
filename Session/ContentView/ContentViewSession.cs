@@ -22,8 +22,10 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Threading;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
+using Vvr.Model;
 using Vvr.Provider;
 using Vvr.Session.ContentView.Canvas;
 using Vvr.Session.ContentView.CardCollection;
@@ -31,6 +33,7 @@ using Vvr.Session.ContentView.Core;
 using Vvr.Session.ContentView.Deck;
 using Vvr.Session.ContentView.Dialogue;
 using Vvr.Session.ContentView.Mainmenu;
+using Vvr.Session.ContentView.Modal;
 using Vvr.Session.ContentView.Research;
 using Vvr.Session.ContentView.WorldBackground;
 
@@ -51,6 +54,10 @@ namespace Vvr.Session.ContentView
         {
             private readonly Dictionary<Type, IContentViewEventHandler> m_ViewEventHandlers = new();
 
+            private readonly CancellationTokenSource m_CancellationTokenSource = new();
+
+            private readonly SemaphoreSlim m_Semaphore = new(1, 1);
+
             public IContentViewEventHandler this[Type t]
             {
                 get => Resolve(t);
@@ -59,6 +66,9 @@ namespace Vvr.Session.ContentView
 
             public void Register(IContentViewChildSession session)
             {
+                using var l = new SemaphoreSlimLock(m_Semaphore);
+                l.Wait(m_CancellationTokenSource.Token);
+
                 Type eType = session.EventType;
                 if (m_ViewEventHandlers.ContainsKey(eType))
                     throw new InvalidOperationException($"Already registered with same event: {eType.FullName}");
@@ -68,6 +78,9 @@ namespace Vvr.Session.ContentView
 
             public void Unregister(IContentViewChildSession session)
             {
+                using var l = new SemaphoreSlimLock(m_Semaphore);
+                l.Wait(m_CancellationTokenSource.Token);
+
                 session.ReserveEventHandler();
 
                 Type eType = session.EventType;
@@ -94,6 +107,10 @@ namespace Vvr.Session.ContentView
 
             public void Dispose()
             {
+                m_CancellationTokenSource.Cancel();
+                m_CancellationTokenSource.Dispose();
+                m_Semaphore.Dispose();
+
                 foreach (var v in m_ViewEventHandlers.Values)
                 {
                     v.Dispose();
@@ -125,7 +142,8 @@ namespace Vvr.Session.ContentView
                 CreateSession<MainmenuViewSession>(null),
                 CreateSession<WorldBackgroundViewSession>(null),
                 CreateSession<DeckViewSession>(null),
-                CreateSession<CardCollectionViewSession>(null)
+                CreateSession<CardCollectionViewSession>(null),
+                CreateSession<ModalViewSession>(null)
             );
             var dialogueViewSession = await CreateSession<DialogueViewSession>(null);
 

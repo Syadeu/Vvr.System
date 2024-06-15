@@ -19,7 +19,9 @@
 
 #endregion
 
+using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
+using UnityEngine;
 using Vvr.Provider;
 using Vvr.Session.ContentView.Core;
 
@@ -29,6 +31,7 @@ namespace Vvr.Session.ContentView.Modal
     [LocalProvider]
     public interface IModalViewProvider : IContentViewProvider<ModalViewEvent>
     {
-
+        bool    TryGetModal(int       modalType, out GameObject instance);
+        UniTask WaitForCloseAsync(int modalType);
     }
 }

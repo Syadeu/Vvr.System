@@ -36,6 +36,10 @@ namespace Vvr.Session
 
         private int m_QueryQueued;
 
+        private UniTaskCompletionSource m_QueryFlushSource;
+
+        public UniTask WaitForQueryFlush => m_QueryFlushSource?.Task ?? UniTask.CompletedTask;
+
         void IQueryCommandProvider<UserActorDataQuery>.Enqueue<TCommand>(TCommand command)
         {
             using (var l = new SemaphoreSlimLock(m_QueryExecutionSemaphore))
@@ -46,6 +50,7 @@ namespace Vvr.Session
 
             if (Interlocked.Exchange(ref m_QueryQueued, 1) == 1) return;
 
+            m_QueryFlushSource = new UniTaskCompletionSource();
             UniTask.Void(FlushQueryCommands, ReserveToken);
         }
 
@@ -73,6 +78,10 @@ namespace Vvr.Session
 
             var rdr = st.AsReader();
             ProcessCommandQuery(ref rdr);
+
+            Interlocked.Exchange(ref m_QueryQueued, 0);
+            m_QueryFlushSource.TrySetResult();
+            m_QueryFlushSource = null;
         }
 
         private partial void ProcessCommandQuery(ref NativeStream.Reader rdr)

@@ -114,6 +114,8 @@ namespace Vvr.Session.ContentView.CardCollection
                 actor = m_SelectedActor
             });
 
+            await m_UserActorProvider.WaitForQueryFlush;
+
             await EventHandlerProvider.Resolve<DeckViewEvent>()
                 .ExecuteAsync(DeckViewEvent.Open)
                 .AttachExternalCancellation(ReserveToken)

@@ -24,6 +24,7 @@ namespace Vvr.Session.ContentView.Core
     public struct ModalView00OpenContext : IModalViewContext
     {
         public int ModalType => 0;
+        public bool WaitForCompletion { get; }
 
         public readonly string title;
         public readonly string description;
@@ -31,12 +32,13 @@ namespace Vvr.Session.ContentView.Core
         public readonly bool   enableConfirm;
 
         public ModalView00OpenContext(
-            string title, string description, bool enableCancel, bool enableConfirm)
+            string title, string description, bool enableCancel, bool enableConfirm, bool waitForClose)
         {
             this.title         = title;
             this.description   = description;
             this.enableCancel  = enableCancel;
             this.enableConfirm = enableConfirm;
+            WaitForCompletion  = waitForClose;
         }
     }
 }

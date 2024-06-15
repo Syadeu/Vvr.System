@@ -25,6 +25,6 @@ namespace Vvr.Session.ContentView.Modal
 {
     class ModalViewEventButton : ContentViewEventButton<ModalViewEvent>
     {
-        
+       
     }
 }

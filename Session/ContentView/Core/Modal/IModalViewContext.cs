@@ -23,6 +23,7 @@ namespace Vvr.Session.ContentView.Core
 {
     public interface IModalViewContext
     {
-        int ModalType { get; }
+        int  ModalType    { get; }
+        bool WaitForCompletion { get; }
     }
 }

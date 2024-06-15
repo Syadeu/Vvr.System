@@ -19,6 +19,7 @@
 
 #endregion
 
+using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using UnityEngine.Scripting;
 
@@ -33,6 +34,8 @@ namespace Vvr.Provider.Command
     public interface IQueryCommandProvider<TQuery> : IProvider
         where TQuery : unmanaged
     {
+        UniTask WaitForQueryFlush { get; }
+
         /// <summary>
         /// Enqueues a query command for execution.
         /// </summary>

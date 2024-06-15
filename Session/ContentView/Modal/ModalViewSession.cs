@@ -17,6 +17,7 @@
 // File created : 2024, 06, 16 00:06
 #endregion
 
+using System;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using Vvr.Provider;
@@ -43,16 +44,40 @@ namespace Vvr.Session.ContentView.Modal
                 .Register(ModalViewEvent.Open, OnViewOpen)
                 ;
         }
-
-        private UniTask OnViewClose(ModalViewEvent e, ModalViewCloseContext ctx)
+        private async UniTask OnViewClose(ModalViewEvent e, ModalViewCloseContext ctx)
         {
-            return ViewProvider.CloseAsync(ctx, ReserveToken);
+            if (!ViewProvider.TryGetModal(ctx.ModalType, out var ins))
+                return;
+
+            this.Detach(ins);
+
+            var task = ViewProvider.CloseAsync(ctx, ReserveToken)
+                .AttachExternalCancellation(ReserveToken)
+                .SuppressCancellationThrow()
+                ;
+
+            if (ctx.WaitForCompletion)
+                await task;
+            else
+                task.Forget();
         }
 
-        private UniTask OnViewOpen(ModalViewEvent e, object ctx)
+        private async UniTask OnViewOpen(ModalViewEvent e, object ctx)
         {
-            return ViewProvider.OpenAsync(
+            if (ctx is not IModalViewContext context)
+            {
+                throw new InvalidOperationException();
+            }
+
+            var ins = await ViewProvider.OpenAsync(
                 CanvasViewProvider, m_AssetProvider, ctx, ReserveToken);
+            this.Inject(ins);
+
+            if (context.WaitForCompletion)
+                await ViewProvider.WaitForCloseAsync(context.ModalType)
+                    .AttachExternalCancellation(ReserveToken)
+                    .SuppressCancellationThrow()
+                    ;
         }
     }
 }

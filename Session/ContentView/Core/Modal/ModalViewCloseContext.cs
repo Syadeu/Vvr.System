@@ -23,11 +23,13 @@ namespace Vvr.Session.ContentView.Core
 {
     public struct ModalViewCloseContext : IModalViewContext
     {
-        public int ModalType { get; }
+        public int  ModalType    { get; }
+        public bool WaitForCompletion { get; }
 
-        public ModalViewCloseContext(int type)
+        public ModalViewCloseContext(int type, bool waitForCompletion)
         {
-            ModalType = type;
+            ModalType         = type;
+            WaitForCompletion = waitForCompletion;
         }
     }
 }

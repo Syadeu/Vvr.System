@@ -25,6 +25,7 @@ using System.Linq;
 using JetBrains.Annotations;
 using Sirenix.OdinInspector;
 using UnityEngine;
+using UnityEngine.Pool;
 using Vvr.Provider;
 
 namespace Vvr.Session
@@ -53,10 +54,17 @@ namespace Vvr.Session
 
             for (int i = 0; i < m_Objects.Length; i++)
             {
-                var e = m_Objects[i];
-                if (!e.TryGetComponent(connectorType, out var connector)) continue;
+                var             e          = m_Objects[i];
+                List<Component> components = ListPool<Component>.Get();
+                e.GetComponents(connectorType, components);
 
-                ConnectorReflectionUtils.Connect(connectorType, connector, provider);
+                foreach (var com in components)
+                {
+                    ConnectorReflectionUtils.Connect(connectorType, com, provider);
+                }
+
+                components.Clear();
+                ListPool<Component>.Release(components);
             }
         }
 
@@ -71,10 +79,17 @@ namespace Vvr.Session
 
             for (int i = 0; i < m_Objects.Length; i++)
             {
-                var e = m_Objects[i];
-                if (!e.TryGetComponent(connectorType, out var connector)) continue;
+                var             e          = m_Objects[i];
+                List<Component> components = ListPool<Component>.Get();
+                e.GetComponents(connectorType, components);
 
-                ConnectorReflectionUtils.Disconnect(connectorType, connector, provider);
+                foreach (var com in components)
+                {
+                    ConnectorReflectionUtils.Disconnect(connectorType, com, provider);
+                }
+
+                components.Clear();
+                ListPool<Component>.Release(components);
             }
         }
 

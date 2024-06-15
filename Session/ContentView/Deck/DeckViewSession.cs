@@ -19,7 +19,9 @@
 
 #endregion
 
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using UnityEngine;
@@ -98,6 +100,9 @@ namespace Vvr.Session.ContentView.Deck
                 ;
         }
 
+        private IReadOnlyList<IResolvedActorData> m_TargetDeck;
+        private IResolvedActorData[]              m_CachedTeamData;
+
         private async UniTask OnOpen(DeckViewEvent e, object ctx)
         {
             if (ctx is not DeckViewOpenContext openContext)
@@ -145,6 +150,11 @@ namespace Vvr.Session.ContentView.Deck
                         .AttachExternalCancellation(ReserveToken)
                     ;
                 this.Inject(m_ViewInstance);
+
+                // TODO:
+                m_CachedTeamData ??= new IResolvedActorData[UserActorDataSession.TEAM_COUNT];
+                m_TargetDeck     =   m_UserActorProvider.GetCurrentTeam();
+                m_TargetDeck.CopyTo(m_CachedTeamData);
             }
 
             foreach (var actorContext in openContext.actorContexts)
@@ -157,8 +167,11 @@ namespace Vvr.Session.ContentView.Deck
         }
         private async UniTask OnClose(DeckViewEvent e, object ctx)
         {
+            if (m_ViewInstance is null)
+                return;
+
             // TODO: if there is any changes, ask for permanent changes. if not, throw all changes
-            m_UserActorProvider.Enqueue(new ResetUserActorDeckChangeCommand());
+            await ResetDeckConfirmationAsync();
 
             this.Detach(m_ViewInstance);
             await ViewProvider.CloseAsync(ctx, ReserveToken)
@@ -167,6 +180,57 @@ namespace Vvr.Session.ContentView.Deck
                 ;
 
             m_ViewInstance = null;
+            m_TargetDeck   = null;
+            Array.Clear(m_CachedTeamData, 0, m_CachedTeamData.Length);
+        }
+
+        private async UniTask ResetDeckConfirmationAsync()
+        {
+            if (!IsDeckChanged()) return;
+
+            var evHandler = EventHandlerProvider.Resolve<ModalViewEvent>();
+            ContentViewEventDelegate<ModalViewEvent>
+                confirmAction = async (e, ctx) =>
+                {
+                    await evHandler.ExecuteAsync(ModalViewEvent.Close, new ModalViewCloseContext(0, false))
+                        .AttachExternalCancellation(ReserveToken)
+                        .SuppressCancellationThrow();
+
+                    "confirm".ToLog();
+                },
+                cancelAction = async (e, ctx) =>
+                {
+                    m_UserActorProvider.Enqueue(new ResetUserActorDeckChangeCommand());
+
+                    await evHandler.ExecuteAsync(ModalViewEvent.Close, new ModalViewCloseContext(0, false))
+                        .AttachExternalCancellation(ReserveToken)
+                        .SuppressCancellationThrow();
+
+                    "cancel".ToLog();
+                };
+            using var t0 = evHandler.Temp(ModalViewEvent.ConfirmButton, confirmAction);
+            using var t1 = evHandler.Temp(ModalViewEvent.CancelButton, cancelAction);
+
+            await evHandler.ExecuteAsync(ModalViewEvent.Open, new ModalView00OpenContext(
+                "Confirmation",
+                "Deck has been changed. Do you want to change it? This will reset current stage.",
+                true, true, true))
+                    .AttachExternalCancellation(ReserveToken)
+                    .SuppressCancellationThrow()
+                ;
+
+            "done".ToLog();
+        }
+
+        private bool IsDeckChanged()
+        {
+            for (int i = 0; i < m_TargetDeck.Count; i++)
+            {
+                if (m_CachedTeamData[i] != m_TargetDeck[i])
+                    return true;
+            }
+
+            return false;
         }
 
         void IConnector<IUserActorProvider>.Connect(IUserActorProvider    t) => m_UserActorProvider = t;

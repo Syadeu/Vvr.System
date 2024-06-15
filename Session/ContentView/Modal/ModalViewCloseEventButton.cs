@@ -15,7 +15,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // 
-// File created : 2024, 06, 16 00:06
+// File created : 2024, 06, 16 02:06
 
 #endregion
 
@@ -25,10 +25,18 @@ using Vvr.Session.ContentView.Core;
 
 namespace Vvr.Session.ContentView.Modal
 {
-    public abstract class ModalViewProviderComponent 
-        : ContentViewProviderComponent<ModalViewEvent>, IModalViewProvider
+    class ModalViewCloseEventButton : ModalViewEventButton
     {
-        public abstract bool TryGetModal(int modalType, out GameObject instance);
-        public abstract UniTask WaitForCloseAsync(int modalType);
+        [SerializeField] private int m_ModalType = 0;
+
+        protected override void OnClick()
+        {
+            if (EventHandler is null)
+                $"Event handle is null. Did you forgot bind?".ToLogError(this);
+
+            ModalViewCloseContext ctx = new ModalViewCloseContext(m_ModalType, false);
+            
+            EventHandler?.ExecuteAsync(m_Event, ctx).Forget();
+        }
     }
 }
