@@ -182,21 +182,20 @@ namespace Vvr.Controller
 
             UpdateCachedArray(ref s_CachedArray, s_TimeUpdaters.Values);
 
-            using (var taskArray = TempArray<UniTask>.Shared(count, true))
-            {
-                await ExecuteOnUpdateTime(
+            using var taskArray = TempArray<UniTask>.Shared(count, true);
+
+            await ExecuteOnUpdateTime(
                         taskArray.Value, currentTime, delta, s_CachedArray, count)
                     .SuppressCancellationThrow()
                     .AttachExternalCancellation(cancellationToken)
                     ;
 
-                count = UpdateCachedArray(ref s_CachedArray, s_TimeUpdaters.Values);
+            count = UpdateCachedArray(ref s_CachedArray, s_TimeUpdaters.Values);
 
-                await ExecuteOnEndUpdateTime(taskArray.Value, s_CachedArray, count)
+            await ExecuteOnEndUpdateTime(taskArray.Value, s_CachedArray, count)
                         .SuppressCancellationThrow()
                         .AttachExternalCancellation(cancellationToken)
                     ;
-            }
 
             Interlocked.Exchange(ref s_IsUpdating, 0);
         }

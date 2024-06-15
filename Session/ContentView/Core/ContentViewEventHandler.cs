@@ -65,8 +65,11 @@ namespace Vvr.Session.ContentView.Core
             {
 #if THREAD_DEBUG
                 int threadId = Thread.CurrentThread.ManagedThreadId;
+                bool isCurrentWriteThread
+                    = Interlocked.Exchange(ref m_Handler.m_CurrentWriteThreadId, threadId) == threadId;
+
                 if (m_Handler.m_WriteLock.CurrentCount == 0 &&
-                    threadId                           != m_Handler.m_CurrentWriteThreadId)
+                    !isCurrentWriteThread)
                 {
                     if (UnityEditorInternal.InternalEditorUtility.CurrentThreadIsMainThread())
                         throw new InvalidOperationException(
@@ -79,9 +82,6 @@ namespace Vvr.Session.ContentView.Core
                     m_Handler.m_WriteLock.Wait(cancellationToken);
                     m_Handler.m_WriteLocked.Value = true;
                 }
-#if THREAD_DEBUG
-                Interlocked.Exchange(ref m_Handler.m_CurrentWriteThreadId, threadId);
-#endif
             }
 
             public void Dispose()

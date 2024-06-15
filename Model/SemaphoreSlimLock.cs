@@ -19,47 +19,81 @@
 
 #endregion
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#define THREAD_DEBUG
+#endif
+
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 
 namespace Vvr.Model
 {
+    /// <summary>
+    /// Represents a lightweight mutual exclusion mechanism that limits the number of concurrent accesses to a resource.
+    /// </summary>
+    /// <remarks>
+    /// This lock has a limitation and should not be used when the method can be called recursively.
+    /// </remarks>
     [PublicAPI]
     public struct SemaphoreSlimLock : IDisposable
     {
         private readonly SemaphoreSlim m_SemaphoreSlim;
 
-        private bool m_Started;
+        private int m_CurrentThreadId;
+        private int m_Started;
 
         public SemaphoreSlimLock(SemaphoreSlim s)
         {
-            m_SemaphoreSlim = s;
-            m_Started       = false;
+            m_SemaphoreSlim   = s;
+            m_CurrentThreadId = 0;
+            m_Started         = 0;
         }
 
-        public Task WaitAsync(CancellationToken cancellationToken)
+        public UniTask WaitAsync(CancellationToken cancellationToken)
         {
-            if (m_Started)
+            if (Interlocked.Exchange(ref m_Started, 1) == 1)
                 throw new InvalidOperationException();
 
-            m_Started = true;
-            return m_SemaphoreSlim.WaitAsync(cancellationToken);
+            int threadId = Thread.CurrentThread.ManagedThreadId;
+            bool isCurrentWriteThread
+                = Interlocked.Exchange(ref m_CurrentThreadId, threadId) == threadId;
+
+            if (!isCurrentWriteThread)
+                return m_SemaphoreSlim.WaitAsync(cancellationToken).AsUniTask();
+
+            return UniTask.CompletedTask;
         }
 
         public void Wait(CancellationToken cancellationToken)
         {
-            if (m_Started)
+            if (Interlocked.Exchange(ref m_Started, 1) == 1)
                 throw new InvalidOperationException();
 
-            m_Started = true;
-            m_SemaphoreSlim.Wait(cancellationToken);
+            int threadId = Thread.CurrentThread.ManagedThreadId;
+            bool isCurrentWriteThread
+                = Interlocked.Exchange(ref m_CurrentThreadId, threadId) == threadId;
+
+#if THREAD_DEBUG
+            if (m_SemaphoreSlim.CurrentCount == 0 &&
+                !isCurrentWriteThread)
+            {
+                if (UnityEditorInternal.InternalEditorUtility.CurrentThreadIsMainThread())
+                    throw new InvalidOperationException(
+                        "Another thread currently writing but main thread trying to write." +
+                        "This is not allowed main thread should not be awaited.");
+            }
+#endif
+
+            if (!isCurrentWriteThread)
+                m_SemaphoreSlim.Wait(cancellationToken);
         }
 
         public void Dispose()
         {
-            if (!m_Started)
+            if (Interlocked.Exchange(ref m_Started, 0) != 1)
                 throw new InvalidOperationException();
 
             m_SemaphoreSlim?.Release();

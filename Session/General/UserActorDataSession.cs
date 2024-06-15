@@ -39,7 +39,7 @@ using Vvr.Session.Provider;
 namespace Vvr.Session
 {
     [UsedImplicitly]
-    public sealed class UserActorDataSession : ParentSession<UserActorDataSession.SessionData>,
+    public sealed partial class UserActorDataSession : ParentSession<UserActorDataSession.SessionData>,
         IUserActorProvider,
         IConnector<IActorDataProvider>
     {
@@ -164,67 +164,8 @@ namespace Vvr.Session
             await command.ExecuteAsync(target);
         }
 
-        public void Enqueue<TCommand>(TCommand command) where TCommand : IQueryCommand<UserActorDataQuery>
-        {
-            // TODO: cache the steam when multiple call
-            using NativeStream st = new NativeStream(4, AllocatorManager.Temp);
-
-            var query = new UserActorDataQuery(st);
-            {
-                command.Execute(ref query);
-            }
-
-            // TODO: Should separate execution?
-
-            var rdr   = st.AsReader();
-            int count = rdr.BeginForEachIndex(0);
-
-            for (int i = 0; i < count; i++)
-            {
-                UserActorDataQuery.CommandType t = (UserActorDataQuery.CommandType)rdr.Read<short>();
-
-                switch (t)
-                {
-                    case UserActorDataQuery.CommandType.SetTeamActor:
-                        ProcessCommandData(rdr.Read<UserActorDataQuery.SetTeamActorData>());
-                        i++;
-                        break;
-                    case UserActorDataQuery.CommandType.Flush:
-                        Flush();
-                        break;
-                    case UserActorDataQuery.CommandType.ResetData:
-                        LoadCurrentTeam();
-                        break;
-                    default:
-                        throw new InvalidOperationException("Invalid command type: " + t.ToString());
-                }
-            }
-
-            rdr.EndForEachIndex();
-        }
-
-        private void ProcessCommandData(UserActorDataQuery.SetTeamActorData data)
-        {
-            if (data.index is < 0 or >= TEAM_COUNT)
-                throw new InvalidOperationException($"{data.index}");
-
-            ResolvedActorData targetData
-                = m_ResolvedData.BinarySearch(ResolvedActorData.KeySelector, data.id);
-            Assert.IsNotNull(targetData);
-
-            // If target actor is in team
-            if (TryGetCurrentTeamIndex(targetData, out int targetTeamIndex))
-            {
-                // If trying to insert at same index
-                if (targetTeamIndex == data.index)
-                    // XXX: need to consideration that this operation might unintentional.
-                    return;
-
-                // Can be swap if both actors in the same team
-                m_CurrentTeam[targetTeamIndex] = m_CurrentTeam[data.index];
-            }
-            m_CurrentTeam[data.index] = targetData;
-        }
+        private partial void ProcessCommandQuery(ref NativeStream.Reader            rdr);
+        private partial void ProcessCommandData(UserActorDataQuery.SetTeamActorData data);
 
         private bool TryGetCurrentTeamIndex(ResolvedActorData d, out int index)
         {
