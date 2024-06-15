@@ -26,13 +26,19 @@ using Vvr.Model;
 
 namespace Vvr.Provider.Command
 {
-    public struct UserActorDataQuery : IDisposable
+    /// <summary>
+    /// Represents a query to retrieve user actor data.
+    /// </summary>
+    [PublicAPI]
+    public struct UserActorDataQuery
     {
         public enum CommandType : short
         {
             None = 0,
 
-            SetUserTeamActor,
+            Flush,
+            ResetData,
+            SetTeamActor,
         }
         public struct SetTeamActorData
         {
@@ -49,6 +55,14 @@ namespace Vvr.Provider.Command
             m_Count  = 0;
         }
 
+        /// <summary>
+        /// Sets the team actor for a given index.
+        /// </summary>
+        /// <remarks>
+        /// Need to call <seealso cref="Flush"/> to permanent change.
+        /// </remarks>
+        /// <param name="index">The index in the team.</param>
+        /// <param name="actor">The resolved actor data.</param>
         public void SetTeamActor(int index, [NotNull] IResolvedActorData actor)
         {
             if (index < 0)
@@ -59,7 +73,7 @@ namespace Vvr.Provider.Command
             var wr = m_Stream.AsWriter();
             wr.BeginForEachIndex(m_Count);
 
-            wr.Write((short)CommandType.SetUserTeamActor);
+            wr.Write((short)CommandType.SetTeamActor);
             wr.Write(new SetTeamActorData()
             {
                 index = index,
@@ -70,9 +84,26 @@ namespace Vvr.Provider.Command
             m_Count += 2;
         }
 
-        public void Dispose()
+        public void ResetData()
         {
-            m_Stream = default;
+            var wr = m_Stream.AsWriter();
+            wr.BeginForEachIndex(m_Count);
+
+            wr.Write((short)CommandType.ResetData);
+
+            wr.EndForEachIndex();
+            m_Count++;
+        }
+
+        public void Flush()
+        {
+            var wr = m_Stream.AsWriter();
+            wr.BeginForEachIndex(m_Count);
+
+            wr.Write((short)CommandType.Flush);
+
+            wr.EndForEachIndex();
+            m_Count++;
         }
     }
 }

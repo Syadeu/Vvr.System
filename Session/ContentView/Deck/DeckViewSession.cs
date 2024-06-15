@@ -25,6 +25,7 @@ using JetBrains.Annotations;
 using UnityEngine;
 using Vvr.Model;
 using Vvr.Provider;
+using Vvr.Provider.Command;
 using Vvr.Session.AssetManagement;
 using Vvr.Session.ContentView.Core;
 using Vvr.Session.Provider;
@@ -156,6 +157,9 @@ namespace Vvr.Session.ContentView.Deck
         }
         private async UniTask OnClose(DeckViewEvent e, object ctx)
         {
+            // TODO: if there is any changes, ask for permanent changes. if not, throw all changes
+            m_UserActorProvider.Enqueue(new ResetUserActorDeckChangeCommand());
+
             this.Detach(m_ViewInstance);
             await ViewProvider.CloseAsync(ctx)
                 .AttachExternalCancellation(ReserveToken)
@@ -167,5 +171,13 @@ namespace Vvr.Session.ContentView.Deck
 
         void IConnector<IUserActorProvider>.Connect(IUserActorProvider    t) => m_UserActorProvider = t;
         void IConnector<IUserActorProvider>. Disconnect(IUserActorProvider t) => m_UserActorProvider = null;
+    }
+
+    struct ResetUserActorDeckChangeCommand : IQueryCommand<UserActorDataQuery>
+    {
+        public void Execute(ref UserActorDataQuery query)
+        {
+            query.ResetData();
+        }
     }
 }

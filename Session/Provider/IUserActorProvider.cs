@@ -27,6 +27,9 @@ using Vvr.Provider.Command;
 
 namespace Vvr.Session.Provider
 {
+    /// <summary>
+    /// Represents a provider for user actor data.
+    /// </summary>
     [PublicAPI, LocalProvider]
     public interface IUserActorProvider : IProvider, ICommandProvider,
         IQueryCommandProvider<UserActorDataQuery>

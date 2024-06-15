@@ -147,7 +147,6 @@ namespace Vvr.Session
 
             m_AssetProvider = await CreateSessionOnBackground<AssetSession>(default);
 
-
             SetupUserActors();
         }
 
@@ -168,18 +167,17 @@ namespace Vvr.Session
         public void Enqueue<TCommand>(TCommand command) where TCommand : IQueryCommand<UserActorDataQuery>
         {
             // TODO: cache the steam when multiple call
-            using NativeStream st = new NativeStream(2, AllocatorManager.Temp);
+            using NativeStream st = new NativeStream(4, AllocatorManager.Temp);
 
             var query = new UserActorDataQuery(st);
             {
                 command.Execute(ref query);
             }
-            query.Dispose();
 
             // TODO: Should separate execution?
 
             var rdr   = st.AsReader();
-            int count = rdr.BeginForEachIndex(0) / 2;
+            int count = rdr.BeginForEachIndex(0);
 
             for (int i = 0; i < count; i++)
             {
@@ -187,8 +185,15 @@ namespace Vvr.Session
 
                 switch (t)
                 {
-                    case UserActorDataQuery.CommandType.SetUserTeamActor:
+                    case UserActorDataQuery.CommandType.SetTeamActor:
                         ProcessCommandData(rdr.Read<UserActorDataQuery.SetTeamActorData>());
+                        i++;
+                        break;
+                    case UserActorDataQuery.CommandType.Flush:
+                        Flush();
+                        break;
+                    case UserActorDataQuery.CommandType.ResetData:
+                        LoadCurrentTeam();
                         break;
                     default:
                         throw new InvalidOperationException("Invalid command type: " + t.ToString());
@@ -240,22 +245,7 @@ namespace Vvr.Session
         {
             if (m_CurrentTeam is null)
             {
-                m_CurrentTeam = new ResolvedActorData[TEAM_COUNT];
-
-                var jr = Data.dataProvider.GetJson(UserDataKeyCollection.Actor.CurrentTeam());
-                if (jr is not null)
-                {
-                    JArray arr = (JArray)jr;
-                    for (int i = 0; i < arr.Count && i < m_CurrentTeam.Length; i++)
-                    {
-                        int uniqueId = arr[i].Value<int>();
-                        if (uniqueId == 0) continue;
-
-                        ResolvedActorData d = m_ResolvedData
-                            .BinarySearch(ResolvedActorData.KeySelector, uniqueId);
-                        m_CurrentTeam[i] = d;
-                    }
-                }
+                LoadCurrentTeam();
             }
 
             return m_CurrentTeam;
@@ -283,6 +273,25 @@ namespace Vvr.Session
                 .SetJson(UserDataKeyCollection.Actor.CurrentTeam(), currentTeamArray);
         }
 
+        private void LoadCurrentTeam()
+        {
+            m_CurrentTeam ??= new ResolvedActorData[TEAM_COUNT];
+
+            var jr = Data.dataProvider.GetJson(UserDataKeyCollection.Actor.CurrentTeam());
+            if (jr is not null)
+            {
+                JArray arr = (JArray)jr;
+                for (int i = 0; i < arr.Count && i < m_CurrentTeam.Length; i++)
+                {
+                    int uniqueId = arr[i].Value<int>();
+                    if (uniqueId == 0) continue;
+
+                    ResolvedActorData d = m_ResolvedData
+                        .BinarySearch(ResolvedActorData.KeySelector, uniqueId);
+                    m_CurrentTeam[i] = d;
+                }
+            }
+        }
         private void SetupUserActors()
         {
             if (m_UserActorResolved) return;
