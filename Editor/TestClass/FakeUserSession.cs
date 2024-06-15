@@ -124,11 +124,7 @@ namespace Vvr.TestClass
             JArray  currentTeamArray = new();
             foreach (var actorId in Data.playerActorIds)
             {
-                UserActorData d = new UserActorData()
-                {
-                    uniqueId = unchecked((int)FNV1a32.Calculate(Guid.NewGuid())),
-                    id       = actorId
-                };
+                UserActorData d = new UserActorData(actorId);
                 userActorData.Add(d.uniqueId.ToString(), JObject.FromObject(d));
 
                 if (i++ < 5)

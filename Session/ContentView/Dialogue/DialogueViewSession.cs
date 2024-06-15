@@ -160,20 +160,25 @@ namespace Vvr.Session.ContentView.Dialogue
                     if (attribute is IDialogueSkipAttribute skipAttribute &&
                         skipAttribute.CanSkip)
                     {
-                        bool canceled = await task.AttachExternalCancellation(m_AttributeSkipToken.Token)
+                        bool canceled = await task
+                            .AttachExternalCancellation(m_AttributeSkipToken.Token)
                             .SuppressCancellationThrow();
 
                         if (canceled)
                         {
                             await skipAttribute.OnSkip(new DialogueAttributeContext(
                                 wrapper, m_AssetProvider, ViewProvider, resolveProvider,
-                                EventHandlerProvider, ReserveToken));
+                                EventHandlerProvider, ReserveToken))
+                                .AttachExternalCancellation(ReserveToken)
+                                .SuppressCancellationThrow();
 
                             m_AttributeSkipToken = new CancellationTokenSource();
-                            if (skipAttribute.ShouldWaitForInput)
+                            if (skipAttribute.ShouldWaitForInput &&
+                                !ReserveToken.IsCancellationRequested)
                             {
                                 "Wait for another skip event for proceed".ToLog();
-                                while (!m_AttributeSkipToken.IsCancellationRequested)
+                                while (!m_AttributeSkipToken.IsCancellationRequested &&
+                                       !ReserveToken.IsCancellationRequested)
                                 {
                                     await UniTask.Yield();
                                 }
@@ -186,7 +191,7 @@ namespace Vvr.Session.ContentView.Dialogue
                         await task;
                 }
 
-                while (!ViewProvider.IsFullyOpened)
+                while (!ViewProvider.IsFullyOpened && !ReserveToken.IsCancellationRequested)
                 {
                     await UniTask.Yield();
                 }
@@ -203,7 +208,10 @@ namespace Vvr.Session.ContentView.Dialogue
                 wrapper.Tasks.Clear();
                 wrapper.Data = wrapper.Data.NextDialogue;
             }
-            await lastCloseTask;
+            await lastCloseTask
+                .AttachExternalCancellation(ReserveToken)
+                .SuppressCancellationThrow()
+                ;
         }
     }
 }

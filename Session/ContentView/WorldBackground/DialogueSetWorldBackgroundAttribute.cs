@@ -24,6 +24,7 @@ using System.ComponentModel;
 using Cysharp.Threading.Tasks;
 using Sirenix.OdinInspector;
 using UnityEngine;
+using UnityEngine.Assertions;
 using Vvr.Session.ContentView.Core;
 using Vvr.Session.ContentView.Dialogue;
 using Vvr.Session.ContentView.Dialogue.Attributes;
@@ -63,6 +64,8 @@ namespace Vvr.Session.ContentView.WorldBackground
             if (view == null)
             {
                 var canvas = ctx.resolveProvider(VvrTypeHelper.TypeOf<ICanvasViewProvider>.Type) as ICanvasViewProvider;
+                Assert.IsNotNull(canvas, "canvas != null");
+
                 v.OpenAsync(canvas, ctx.assetProvider, m_BackgroundID, ctx.cancellationToken)
                     .Forget();
                 while ((view = v.GetView(m_BackgroundID)) == null)
@@ -72,7 +75,9 @@ namespace Vvr.Session.ContentView.WorldBackground
             }
 
             view.SetBackground(img.Object);
-            view.ZoomAsync(1, -1).Forget();
+            view.ZoomAsync(1, -1)
+                .AttachExternalCancellation(ctx.cancellationToken)
+                .Forget();
         }
 
         public override string ToString()

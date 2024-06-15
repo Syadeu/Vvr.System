@@ -103,17 +103,6 @@ namespace Vvr.Session
                 return m_AssetProvider.LoadAsync<Sprite>(Skills[index].IconAssetKey);
             }
 
-            public UserActorData GetUserActorData()
-            {
-                return new UserActorData()
-                {
-                    uniqueId = UniqueId,
-                    id       = Id,
-                    level    = Level,
-                    exp      = Exp
-                };
-            }
-
             public int CompareTo(ResolvedActorData other)
             {
                 if (ReferenceEquals(this, other)) return 0;
@@ -199,7 +188,7 @@ namespace Vvr.Session
                 var e = m_ResolvedData[i];
                 userActorArray.Add(
                     e.UniqueId.ToString(),
-                    JObject.FromObject(e.GetUserActorData()));
+                    JObject.FromObject(new UserActorData(e)));
             }
 
             JArray currentTeamArray = new();
@@ -232,6 +221,10 @@ namespace Vvr.Session
                     m_CurrentTeam[i] = d;
                 }
             }
+            else
+            {
+                m_CurrentTeam[0] = m_ResolvedData[0];
+            }
         }
         private void SetupUserActors()
         {
@@ -250,6 +243,17 @@ namespace Vvr.Session
                     var data = new ResolvedActorData(m_AssetProvider, rawData, d);
                     m_ResolvedData.AddWithOrder(data);
                 }
+            }
+            else
+            {
+                // initial actors
+                var d0 = m_ActorDataProvider.Resolve("CH000");
+                var defaultActor = new ResolvedActorData(
+                    m_AssetProvider,
+                    d0,
+                    new UserActorData(d0.Id));
+
+                m_ResolvedData.AddWithOrder(defaultActor);
             }
 
             m_UserActorResolved = true;

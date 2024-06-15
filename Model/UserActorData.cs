@@ -26,12 +26,29 @@ namespace Vvr.Model
     [Serializable]
     public struct UserActorData
     {
-        public int uniqueId;
+        public readonly int    uniqueId;
+        public readonly string id;
 
-        public string id;
         public int?   level;
         public float? exp;
 
         // TODO: equipped items
+
+        public UserActorData(IResolvedActorData d)
+        {
+            uniqueId = d.UniqueId;
+            id       = d.Id;
+
+            level = d.Level;
+            exp   = d.Exp;
+        }
+        public UserActorData(string id)
+        {
+            uniqueId = unchecked((int)FNV1a32.Calculate(Guid.NewGuid()));
+            this.id  = id;
+
+            level = null;
+            exp   = null;
+        }
     }
 }
