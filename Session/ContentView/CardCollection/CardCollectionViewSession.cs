@@ -65,18 +65,22 @@ namespace Vvr.Session.ContentView.CardCollection
 
         private async UniTask OnOpen(CardCollectionViewEvent e, object ctx)
         {
-            IResolvedActorData data = ctx as IResolvedActorData;
-
-            CardCollectionViewOpenContext context = new CardCollectionViewOpenContext()
+            object context = null;
+            if (ctx is IResolvedActorData data)
             {
-                selected = data,
-                data     = m_UserActorProvider.PlayerActors
-            };
+                context = new CardCollectionViewOpenContext()
+                {
+                    selected = data,
+                    data     = m_UserActorProvider.PlayerActors
+                };
+            }
+            else context = ctx;
 
             m_ViewInstance = await ViewProvider
                     .OpenAsync(CanvasViewProvider, m_AssetProvider, context)
                     .AttachExternalCancellation(ReserveToken)
                 ;
+
             this.Inject(m_ViewInstance);
         }
         private async UniTask OnClose(CardCollectionViewEvent e, object ctx)

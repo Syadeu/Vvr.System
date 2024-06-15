@@ -81,9 +81,16 @@ namespace Vvr.Session.ContentView.Deck
                 return;
             }
 
-            IResolvedActorData actor = m_UserActorProvider.GetCurrentTeam()[idx];
+            var team = m_UserActorProvider.GetCurrentTeam();
+            CardCollectionViewChangeDeckContext context = new CardCollectionViewChangeDeckContext()
+            {
+                selected = team[idx],
+                team = team,
+                data = m_UserActorProvider.PlayerActors
+            };
+
             await EventHandlerProvider.Resolve<CardCollectionViewEvent>()
-                .ExecuteAsync(CardCollectionViewEvent.Open, actor)
+                .ExecuteAsync(CardCollectionViewEvent.Open, context)
                 .AttachExternalCancellation(ReserveToken)
                 ;
         }

@@ -41,6 +41,8 @@ namespace Vvr.Session
         IUserActorProvider,
         IConnector<IActorDataProvider>
     {
+        public const int TEAM_COUNT = 3;
+
         sealed class ResolvedActorData : IResolvedActorData, IComparable<ResolvedActorData>
         {
             public static Func<ResolvedActorData, int> KeySelector { get; } = x => x.UniqueId;
@@ -149,7 +151,7 @@ namespace Vvr.Session
         {
             if (m_CurrentTeam is null)
             {
-                m_CurrentTeam = new ResolvedActorData[5];
+                m_CurrentTeam = new ResolvedActorData[TEAM_COUNT];
 
                 var jr = Data.dataProvider.GetJson(UserDataKeyCollection.Actor.CurrentTeam());
                 if (jr is not null)

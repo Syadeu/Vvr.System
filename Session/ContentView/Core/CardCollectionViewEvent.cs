@@ -42,4 +42,11 @@ namespace Vvr.Session.ContentView.Core
         [NotNull]
         public IReadOnlyList<IResolvedActorData> data;
     }
+
+    public struct CardCollectionViewChangeDeckContext
+    {
+        [CanBeNull] public IResolvedActorData                selected;
+        [NotNull]   public IReadOnlyList<IResolvedActorData> team;
+        [NotNull]   public IReadOnlyList<IResolvedActorData> data;
+    }
 }
