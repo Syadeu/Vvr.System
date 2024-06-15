@@ -22,6 +22,7 @@ using JetBrains.Annotations;
 using UnityEngine;
 using Vvr.Model;
 using Vvr.Provider;
+using Vvr.Provider.Command;
 using Vvr.Session.AssetManagement;
 using Vvr.Session.ContentView.Core;
 using Vvr.Session.Provider;
@@ -39,6 +40,8 @@ namespace Vvr.Session.ContentView.CardCollection
         public override string DisplayName => nameof(CardCollectionViewSession);
 
         private GameObject         m_ViewInstance;
+
+        private int                m_SelectedTeamIndex = -1;
         private IResolvedActorData m_SelectedActor;
 
         protected override async UniTask OnInitialize(IParentSession session, ContentViewSessionData data)
@@ -48,11 +51,78 @@ namespace Vvr.Session.ContentView.CardCollection
             m_AssetProvider = await CreateSession<AssetSession>(default);
             Register(m_AssetProvider);
 
+            TypedEventHandler
+                .Register<IResolvedActorData>(CardCollectionViewEvent.Open, OnOpenWithSelect)
+                .Register<CardCollectionViewOpenContext>(CardCollectionViewEvent.Open, OnOpenWithContext)
+                .Register<CardCollectionViewChangeDeckContext>(CardCollectionViewEvent.Open, OnOpenWithChangeDeck)
+                ;
+
             EventHandler
-                .Register(CardCollectionViewEvent.Open, OnOpen)
                 .Register(CardCollectionViewEvent.Close, OnClose)
 
                 .Register(CardCollectionViewEvent.SelectCard, OnSelected)
+                .Register(CardCollectionViewEvent.ConfirmButton, OnConfirmButton)
+                ;
+        }
+
+        #region Open Event
+
+        private async UniTask OnOpenWithContext(CardCollectionViewEvent e, CardCollectionViewOpenContext ctx)
+        {
+            m_ViewInstance = await ViewProvider
+                    .OpenAsync(CanvasViewProvider, m_AssetProvider, ctx)
+                    .AttachExternalCancellation(ReserveToken)
+                ;
+
+            this.Inject(m_ViewInstance);
+        }
+
+        private async UniTask OnOpenWithChangeDeck(CardCollectionViewEvent e, CardCollectionViewChangeDeckContext ctx)
+        {
+            m_SelectedTeamIndex = ctx.index;
+
+            m_ViewInstance = await ViewProvider
+                    .OpenAsync(CanvasViewProvider, m_AssetProvider, ctx)
+                    .AttachExternalCancellation(ReserveToken)
+                ;
+
+            this.Inject(m_ViewInstance);
+        }
+
+        private async UniTask OnOpenWithSelect(CardCollectionViewEvent e, IResolvedActorData ctx)
+        {
+            var context = new CardCollectionViewOpenContext()
+            {
+                selected = ctx,
+                data     = m_UserActorProvider.PlayerActors
+            };
+
+            m_ViewInstance = await ViewProvider
+                    .OpenAsync(CanvasViewProvider, m_AssetProvider, context)
+                    .AttachExternalCancellation(ReserveToken)
+                ;
+            this.Inject(m_ViewInstance);
+        }
+
+        #endregion
+
+        private async UniTask OnConfirmButton(CardCollectionViewEvent e, object ctx)
+        {
+            m_UserActorProvider.Enqueue(new SetActorCommand()
+            {
+                index = m_SelectedTeamIndex,
+                actor = m_SelectedActor
+            });
+
+            await EventHandlerProvider.Resolve<DeckViewEvent>()
+                .ExecuteAsync(DeckViewEvent.Open)
+                .AttachExternalCancellation(ReserveToken)
+                .SuppressCancellationThrow()
+                ;
+
+            await EventHandler.ExecuteAsync(CardCollectionViewEvent.Close)
+                    .AttachExternalCancellation(ReserveToken)
+                    .SuppressCancellationThrow()
                 ;
         }
 
@@ -63,26 +133,6 @@ namespace Vvr.Session.ContentView.CardCollection
             return UniTask.CompletedTask;
         }
 
-        private async UniTask OnOpen(CardCollectionViewEvent e, object ctx)
-        {
-            object context = null;
-            if (ctx is IResolvedActorData data)
-            {
-                context = new CardCollectionViewOpenContext()
-                {
-                    selected = data,
-                    data     = m_UserActorProvider.PlayerActors
-                };
-            }
-            else context = ctx;
-
-            m_ViewInstance = await ViewProvider
-                    .OpenAsync(CanvasViewProvider, m_AssetProvider, context)
-                    .AttachExternalCancellation(ReserveToken)
-                ;
-
-            this.Inject(m_ViewInstance);
-        }
         private async UniTask OnClose(CardCollectionViewEvent e, object ctx)
         {
             if (m_ViewInstance is not null)
@@ -90,8 +140,9 @@ namespace Vvr.Session.ContentView.CardCollection
                 this.Detach(m_ViewInstance);
             }
 
-            m_SelectedActor = null;
-            m_ViewInstance  = null;
+            m_SelectedActor     = null;
+            m_ViewInstance      = null;
+            m_SelectedTeamIndex = -1;
 
             await ViewProvider
                     .CloseAsync(ctx)
@@ -101,5 +152,16 @@ namespace Vvr.Session.ContentView.CardCollection
 
         void IConnector<IUserActorProvider>.Connect(IUserActorProvider    t) => m_UserActorProvider = t;
         void IConnector<IUserActorProvider>. Disconnect(IUserActorProvider t) => m_UserActorProvider = null;
+    }
+
+    struct SetActorCommand : IQueryCommand<UserActorDataQuery>
+    {
+        public int index;
+        public IResolvedActorData actor;
+
+        public void Execute(ref UserActorDataQuery query)
+        {
+            query.SetTeamActor(index, actor);
+        }
     }
 }

@@ -15,30 +15,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// File created : 2024, 06, 13 23:06
+// File created : 2024, 06, 15 19:06
 
 #endregion
 
-using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
-using UnityEngine;
+using UnityEngine.Scripting;
 
-namespace Vvr.Model
+namespace Vvr.Provider.Command
 {
-    /// <summary>
-    /// Represents the resolved actor data that is retrieved from the server.
-    /// </summary>
-    [PublicAPI]
-    public interface IResolvedActorData : IActorData
+    [PublicAPI, RequireImplementors]
+    public interface IUserDataCommand : ICommand
     {
-        int UniqueId { get; }
 
-        int   Level { get; }
-        float Exp   { get; }
-
-        // TODO: equipped items
-
-        UniTask<IImmutableObject<Sprite>> LoadContextPortrait();
-        UniTask<IImmutableObject<Sprite>> LoadSkillIcon(int index);
     }
 }

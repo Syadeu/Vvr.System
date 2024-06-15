@@ -23,12 +23,13 @@ using System.Collections.Generic;
 using JetBrains.Annotations;
 using Vvr.Model;
 using Vvr.Provider;
-using Vvr.Session.Actor;
+using Vvr.Provider.Command;
 
 namespace Vvr.Session.Provider
 {
     [PublicAPI, LocalProvider]
-    public interface IUserActorProvider : IProvider
+    public interface IUserActorProvider : IProvider, ICommandProvider,
+        IQueryCommandProvider<UserActorDataQuery>
     {
         IReadOnlyList<IResolvedActorData> PlayerActors { get; }
 

@@ -45,6 +45,7 @@ namespace Vvr.Session.ContentView.Core
 
     public struct CardCollectionViewChangeDeckContext
     {
+        public             int                               index;
         [CanBeNull] public IResolvedActorData                selected;
         [NotNull]   public IReadOnlyList<IResolvedActorData> team;
         [NotNull]   public IReadOnlyList<IResolvedActorData> data;

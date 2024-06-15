@@ -84,6 +84,7 @@ namespace Vvr.Session.ContentView.Deck
             var team = m_UserActorProvider.GetCurrentTeam();
             CardCollectionViewChangeDeckContext context = new CardCollectionViewChangeDeckContext()
             {
+                index = idx,
                 selected = team[idx],
                 team = team,
                 data = m_UserActorProvider.PlayerActors
@@ -92,6 +93,7 @@ namespace Vvr.Session.ContentView.Deck
             await EventHandlerProvider.Resolve<CardCollectionViewEvent>()
                 .ExecuteAsync(CardCollectionViewEvent.Open, context)
                 .AttachExternalCancellation(ReserveToken)
+                .SuppressCancellationThrow()
                 ;
         }
 
@@ -136,18 +138,29 @@ namespace Vvr.Session.ContentView.Deck
                 };
             }
 
-            m_ViewInstance = await ViewProvider.OpenAsync(CanvasViewProvider, m_AssetProvider, ctx);
-            this.Inject(m_ViewInstance);
+            if (m_ViewInstance is null)
+            {
+                m_ViewInstance = await ViewProvider.OpenAsync(CanvasViewProvider, m_AssetProvider, ctx)
+                        .AttachExternalCancellation(ReserveToken)
+                    ;
+                this.Inject(m_ViewInstance);
+            }
 
             foreach (var actorContext in openContext.actorContexts)
             {
-                await EventHandler.ExecuteAsync(DeckViewEvent.SetActor, actorContext);
+                await EventHandler.ExecuteAsync(DeckViewEvent.SetActor, actorContext)
+                        .AttachExternalCancellation(ReserveToken)
+                        .SuppressCancellationThrow()
+                    ;
             }
         }
         private async UniTask OnClose(DeckViewEvent e, object ctx)
         {
             this.Detach(m_ViewInstance);
-            await ViewProvider.CloseAsync(ctx);
+            await ViewProvider.CloseAsync(ctx)
+                .AttachExternalCancellation(ReserveToken)
+                .SuppressCancellationThrow()
+                ;
 
             m_ViewInstance = null;
         }

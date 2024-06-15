@@ -70,6 +70,9 @@ namespace Vvr.Session.ContentView.Core
         /// </summary>
         protected virtual void OnClick()
         {
+            if (EventHandler is null)
+                $"Event handle is null. Did you forgot bind?".ToLogError(this);
+
             EventHandler?.ExecuteAsync(m_Event).Forget();
         }
 

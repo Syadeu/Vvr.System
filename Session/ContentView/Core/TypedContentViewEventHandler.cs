@@ -115,7 +115,7 @@ namespace Vvr.Session.ContentView.Core
             // when this method calling from interfaces.
             Type valueType = typeof(TValue);
             uint keyHash   = CalculateKeyHash(e, valueType);
-            if (m_TypedActions.TryGetValue(keyHash, out var list))
+            if (!m_TypedActions.TryGetValue(keyHash, out var list))
             {
                 list                    = new(8);
                 m_TypedActions[keyHash] = list;

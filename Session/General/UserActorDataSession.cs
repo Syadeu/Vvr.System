@@ -25,12 +25,14 @@ using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Unity.Collections;
 using UnityEngine;
 using UnityEngine.Assertions;
 using Vvr.Crypto;
 using Vvr.Model;
 using Vvr.Model.Stat;
 using Vvr.Provider;
+using Vvr.Provider.Command;
 using Vvr.Session.AssetManagement;
 using Vvr.Session.Provider;
 
@@ -130,7 +132,9 @@ namespace Vvr.Session
         private IAssetProvider     m_AssetProvider;
         private IActorDataProvider m_ActorDataProvider;
 
+        // This list is ordered list by unique id
         private readonly List<ResolvedActorData> m_ResolvedData = new();
+        // This array length must TEAM_COUNT
         private          ResolvedActorData[]     m_CurrentTeam;
 
         private bool m_UserActorResolved;
@@ -147,6 +151,91 @@ namespace Vvr.Session
             SetupUserActors();
         }
 
+        UniTask ICommandProvider.EnqueueAsync<TCommand>(IEventTarget target)
+        {
+            TCommand cmd = Activator.CreateInstance<TCommand>();
+            return ((ICommandProvider)this).EnqueueAsync(target, cmd);
+        }
+        async UniTask ICommandProvider.EnqueueAsync(IEventTarget target, ICommand command)
+        {
+            if (command is not IUserDataCommand)
+                throw new InvalidOperationException("Command excepts only " + nameof(IUserDataCommand));
+
+            this.Inject(command);
+            await command.ExecuteAsync(target);
+        }
+
+        public void Enqueue<TCommand>(TCommand command) where TCommand : IQueryCommand<UserActorDataQuery>
+        {
+            // TODO: cache the steam when multiple call
+            using NativeStream st = new NativeStream(2, AllocatorManager.Temp);
+
+            var query = new UserActorDataQuery(st);
+            {
+                command.Execute(ref query);
+            }
+            query.Dispose();
+
+            // TODO: Should separate execution?
+
+            var rdr   = st.AsReader();
+            int count = rdr.BeginForEachIndex(0) / 2;
+
+            for (int i = 0; i < count; i++)
+            {
+                UserActorDataQuery.CommandType t = (UserActorDataQuery.CommandType)rdr.Read<short>();
+
+                switch (t)
+                {
+                    case UserActorDataQuery.CommandType.SetUserTeamActor:
+                        ProcessCommandData(rdr.Read<UserActorDataQuery.SetTeamActorData>());
+                        break;
+                    default:
+                        throw new InvalidOperationException("Invalid command type: " + t.ToString());
+                }
+            }
+
+            rdr.EndForEachIndex();
+        }
+
+        private void ProcessCommandData(UserActorDataQuery.SetTeamActorData data)
+        {
+            if (data.index is < 0 or >= TEAM_COUNT)
+                throw new InvalidOperationException($"{data.index}");
+
+            ResolvedActorData targetData
+                = m_ResolvedData.BinarySearch(ResolvedActorData.KeySelector, data.id);
+            Assert.IsNotNull(targetData);
+
+            // If target actor is in team
+            if (TryGetCurrentTeamIndex(targetData, out int targetTeamIndex))
+            {
+                // If trying to insert at same index
+                if (targetTeamIndex == data.index)
+                    // XXX: need to consideration that this operation might unintentional.
+                    return;
+
+                // Can be swap if both actors in the same team
+                m_CurrentTeam[targetTeamIndex] = m_CurrentTeam[data.index];
+            }
+            m_CurrentTeam[data.index] = targetData;
+        }
+
+        private bool TryGetCurrentTeamIndex(ResolvedActorData d, out int index)
+        {
+            for (int i = 0; i < m_CurrentTeam.Length; i++)
+            {
+                var e = m_CurrentTeam[i];
+                if (e == d)
+                {
+                    index = i;
+                    return true;
+                }
+            }
+
+            index = -1;
+            return false;
+        }
         public IReadOnlyList<IResolvedActorData> GetCurrentTeam()
         {
             if (m_CurrentTeam is null)
@@ -171,7 +260,6 @@ namespace Vvr.Session
 
             return m_CurrentTeam;
         }
-
         public void Flush()
         {
             JObject userActorArray = new();
@@ -224,7 +312,6 @@ namespace Vvr.Session
             if (Initialized)
                 SetupUserActors();
         }
-
         void IConnector<IActorDataProvider>.Disconnect(IActorDataProvider t) => m_ActorDataProvider = null;
     }
 }

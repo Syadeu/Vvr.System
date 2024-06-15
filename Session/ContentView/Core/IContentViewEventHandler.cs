@@ -35,6 +35,14 @@ namespace Vvr.Session.ContentView.Core
     /// <param name="ctx">The context.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
     public delegate UniTask ContentViewEventDelegate<in TEvent>(TEvent e, [CanBeNull] object ctx) where TEvent : struct, IConvertible;
+
+    /// <summary>
+    /// Delegate for ContentView events.
+    /// </summary>
+    /// <typeparam name="TEvent">The type of event.</typeparam>
+    /// <param name="e">The event.</param>
+    /// <param name="ctx">The context.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
     public delegate UniTask ContentViewEventDelegate<in TEvent, in TValue>(TEvent e, TValue ctx) where TEvent : struct, IConvertible;
 
     /// <summary>
@@ -65,18 +73,43 @@ namespace Vvr.Session.ContentView.Core
         IContentViewEventHandler<TEvent> Unregister(TEvent e, [NotNull] ContentViewEventDelegate<TEvent> x);
     }
 
+    /// <summary>
+    /// Event handler interface for ContentView events.
+    /// </summary>
+    /// <typeparam name="TEvent">The type of event.</typeparam>
     [RequireImplementors]
     [PublicAPI, AbstractProvider]
     public interface ITypedContentViewEventHandler<TEvent> : IContentViewEventHandler<TEvent>
         where TEvent : struct, IConvertible
     {
+        /// <summary>
+        /// Registers an event delegate for the specified event.
+        /// </summary>
+        /// <typeparam name="TEvent">The type of event to register.</typeparam>
+        /// <typeparam name="TValue">The type of the context value.</typeparam>
+        /// <param name="e">The event to register.</param>
+        /// <param name="x">The event delegate to be invoked when the event is triggered.</param>
+        /// <returns>The updated instance of the <see cref="ITypedContentViewEventHandler{TEvent}"/> interface.</returns>
         [NotNull]
-        ITypedContentViewEventHandler<TEvent> Register<TValue>(TEvent e, [NotNull] ContentViewEventDelegate<TEvent, TValue> x);
+        ITypedContentViewEventHandler<TEvent> Register<TValue>(TEvent e,
+            [NotNull] ContentViewEventDelegate<TEvent, TValue>        x);
 
+        /// <summary>
+        /// Removes the specified event delegate from the registry for the specified event.
+        /// </summary>
+        /// <typeparam name="TEvent">The type of event to unregister.</typeparam>
+        /// <typeparam name="TValue">The type of context value.</typeparam>
+        /// <param name="e">The event to unregister.</param>
+        /// <param name="x">The event delegate to be unregistered.</param>
+        /// <returns>The updated instance of the <see cref="ITypedContentViewEventHandler{TEvent}"/> interface.</returns>
         [NotNull]
         ITypedContentViewEventHandler<TEvent> Unregister<TValue>(TEvent e, [NotNull] ContentViewEventDelegate<TEvent, TValue> x);
     }
 
+    /// <summary>
+    /// An interface for emitting ContentView events.
+    /// </summary>
+    /// <typeparam name="TEvent">The type of event to emit.</typeparam>
     [RequireImplementors]
     [PublicAPI]
     public interface IContentViewEventEmitter<in TEvent>
@@ -109,6 +142,12 @@ namespace Vvr.Session.ContentView.Core
     [PublicAPI, AbstractProvider]
     public interface IContentViewEventHandler : IProvider, IDisposable
     {
+        /// <summary>
+        /// Gets a value indicating whether the object has been disposed.
+        /// </summary>
+        /// <value>
+        /// <c>true</c> if the object has been disposed; otherwise, <c>false</c>.
+        /// </value>
         bool Disposed { get; }
     }
 }
