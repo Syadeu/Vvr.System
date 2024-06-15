@@ -51,11 +51,11 @@ namespace Vvr.Session.ContentView.WorldBackground
 
         private async UniTask OnOpen(WorldBackgroundViewEvent e, object ctx)
         {
-            await m_ViewProvider.OpenAsync(CanvasViewProvider, m_AssetProvider, ctx);
+            await m_ViewProvider.OpenAsync(CanvasViewProvider, m_AssetProvider, ctx, ReserveToken);
         }
         private async UniTask OnClose(WorldBackgroundViewEvent e, object ctx)
         {
-            await m_ViewProvider.CloseAsync(ctx);
+            await m_ViewProvider.CloseAsync(ctx, ReserveToken);
         }
 
         void IConnector<IWorldBackgroundViewProvider>.Connect(IWorldBackgroundViewProvider    t) => m_ViewProvider = t;

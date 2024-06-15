@@ -70,7 +70,7 @@ namespace Vvr.Session.ContentView.CardCollection
         private async UniTask OnOpenWithContext(CardCollectionViewEvent e, CardCollectionViewOpenContext ctx)
         {
             m_ViewInstance = await ViewProvider
-                    .OpenAsync(CanvasViewProvider, m_AssetProvider, ctx)
+                    .OpenAsync(CanvasViewProvider, m_AssetProvider, ctx, ReserveToken)
                     .AttachExternalCancellation(ReserveToken)
                 ;
 
@@ -82,7 +82,7 @@ namespace Vvr.Session.ContentView.CardCollection
             m_SelectedTeamIndex = ctx.index;
 
             m_ViewInstance = await ViewProvider
-                    .OpenAsync(CanvasViewProvider, m_AssetProvider, ctx)
+                    .OpenAsync(CanvasViewProvider, m_AssetProvider, ctx, ReserveToken)
                     .AttachExternalCancellation(ReserveToken)
                 ;
 
@@ -98,7 +98,7 @@ namespace Vvr.Session.ContentView.CardCollection
             };
 
             m_ViewInstance = await ViewProvider
-                    .OpenAsync(CanvasViewProvider, m_AssetProvider, context)
+                    .OpenAsync(CanvasViewProvider, m_AssetProvider, context, ReserveToken)
                     .AttachExternalCancellation(ReserveToken)
                 ;
             this.Inject(m_ViewInstance);
@@ -145,7 +145,7 @@ namespace Vvr.Session.ContentView.CardCollection
             m_SelectedTeamIndex = -1;
 
             await ViewProvider
-                    .CloseAsync(ctx)
+                    .CloseAsync(ctx, ReserveToken)
                     .AttachExternalCancellation(ReserveToken)
                 ;
         }

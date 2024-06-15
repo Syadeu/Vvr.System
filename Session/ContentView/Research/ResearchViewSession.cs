@@ -84,7 +84,7 @@ namespace Vvr.Session.ContentView.Research
 
             m_ViewInstance = await ViewProvider.OpenAsync(
                 CanvasViewProvider,
-                m_AssetSession, ctx);
+                m_AssetSession, ctx, ReserveToken);
             this.Inject(m_ViewInstance);
 
             if (ctx is int groupIndex)
@@ -110,7 +110,7 @@ namespace Vvr.Session.ContentView.Research
                 return;
 
             this.Detach(m_ViewInstance);
-            await ViewProvider.CloseAsync(ctx);
+            await ViewProvider.CloseAsync(ctx, ReserveToken);
 
             foreach (var nodeGroup in m_ResearchDataProvider)
             {

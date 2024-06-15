@@ -45,11 +45,13 @@ namespace Vvr.Session.ContentView.BattleSign
             Assert.IsNotNull(provider, "provider != null");
 
             var canvas = ctx.resolveProvider(VvrTypeHelper.TypeOf<ICanvasViewProvider>.Type) as ICanvasViewProvider;
+            if (canvas is null)
+                throw new InvalidOperationException("canvas is null");
 
             if (m_WaitForClose)
-                await provider.OpenAsync(canvas, ctx.assetProvider, m_Text);
+                await provider.OpenAsync(canvas, ctx.assetProvider, m_Text, ctx.cancellationToken);
             else
-                provider.OpenAsync(canvas, ctx.assetProvider, m_Text).Forget();
+                provider.OpenAsync(canvas, ctx.assetProvider, m_Text, ctx.cancellationToken).Forget();
         }
 
         public override string ToString()

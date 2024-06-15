@@ -75,7 +75,7 @@ namespace Vvr.Session.ContentView.Dialogue
             if (ctx is not IDialogueData data)
                 throw new NotImplementedException();
 
-            await ViewProvider.CloseAsync(data);
+            await ViewProvider.CloseAsync(data, ReserveToken);
         }
 
         private  async UniTask OnSkip(DialogueViewEvent e, object ctx)
@@ -143,7 +143,7 @@ namespace Vvr.Session.ContentView.Dialogue
             while (wrapper.Data != null)
             {
                 var obj = await ViewProvider
-                    .OpenAsync(CanvasViewProvider, m_AssetProvider, wrapper.Data);
+                    .OpenAsync(CanvasViewProvider, m_AssetProvider, wrapper.Data, ReserveToken);
                 this.Inject(obj);
 
                 foreach (var attribute in wrapper.Attributes)
@@ -153,7 +153,8 @@ namespace Vvr.Session.ContentView.Dialogue
                     var task = attribute.ExecuteAsync(
                         new DialogueAttributeContext(
                             wrapper, m_AssetProvider, ViewProvider, resolveProvider,
-                            EventHandlerProvider));
+                            EventHandlerProvider,
+                            ReserveToken));
 
                     // Attributes can be skipped if attribute has SkipAttribute
                     if (attribute is IDialogueSkipAttribute skipAttribute &&
@@ -166,7 +167,7 @@ namespace Vvr.Session.ContentView.Dialogue
                         {
                             await skipAttribute.OnSkip(new DialogueAttributeContext(
                                 wrapper, m_AssetProvider, ViewProvider, resolveProvider,
-                                EventHandlerProvider));
+                                EventHandlerProvider, ReserveToken));
 
                             m_AttributeSkipToken = new CancellationTokenSource();
                             if (skipAttribute.ShouldWaitForInput)

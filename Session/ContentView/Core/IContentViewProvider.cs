@@ -20,6 +20,7 @@
 #endregion
 
 using System;
+using System.Threading;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using UnityEngine;
@@ -62,13 +63,14 @@ namespace Vvr.Session.ContentView.Core
         UniTask<GameObject> OpenAsync(
             [NotNull]   ICanvasViewProvider canvasProvider,
             [NotNull]   IAssetProvider      assetProvider,
-            [CanBeNull] object              ctx);
+            [CanBeNull] object              ctx,
+            CancellationToken cancellationToken);
 
         /// <summary>
         /// Closes the ContentViewProvider asynchronously with the given context.
         /// </summary>
         /// <param name="ctx">The context to close with.</param>
         /// <returns>A task representing the asynchronous operation.</returns>
-        UniTask CloseAsync([CanBeNull] object ctx);
+        UniTask CloseAsync([CanBeNull] object ctx, CancellationToken cancellationToken);
     }
 }

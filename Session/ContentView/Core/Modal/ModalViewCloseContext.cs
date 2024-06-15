@@ -15,17 +15,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // 
-// File created : 2024, 05, 30 12:05
+// File created : 2024, 06, 16 01:06
 
 #endregion
 
 namespace Vvr.Session.ContentView.Core
 {
-    /// <summary>
-    /// Represents the sort order of a canvas.
-    /// </summary>
-    public enum CanvasSortOrder : short
+    public struct ModalViewCloseContext : IModalViewContext
     {
-        Modal = 10000
+        public int ModalType { get; }
+
+        public ModalViewCloseContext(int type)
+        {
+            ModalType = type;
+        }
     }
 }

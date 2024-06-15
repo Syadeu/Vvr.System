@@ -63,7 +63,7 @@ namespace Vvr.Session.ContentView.WorldBackground
             if (view == null)
             {
                 var canvas = ctx.resolveProvider(VvrTypeHelper.TypeOf<ICanvasViewProvider>.Type) as ICanvasViewProvider;
-                v.OpenAsync(canvas, ctx.assetProvider, m_BackgroundID)
+                v.OpenAsync(canvas, ctx.assetProvider, m_BackgroundID, ctx.cancellationToken)
                     .Forget();
                 while ((view = v.GetView(m_BackgroundID)) == null)
                 {

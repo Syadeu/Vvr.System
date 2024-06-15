@@ -19,6 +19,7 @@
 
 #endregion
 
+using System.Threading;
 using JetBrains.Annotations;
 using Vvr.Provider;
 using Vvr.Session.ContentView.Core;
@@ -34,18 +35,24 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
         [NotNull] public readonly DialogueProviderResolveDelegate resolveProvider;
         [NotNull] public readonly IContentViewEventHandlerProvider       eventHandlerProvider;
 
+        public readonly CancellationToken cancellationToken;
+
         internal DialogueAttributeContext(
             [NotNull] IDialogue                       dialogue,
             [NotNull] IAssetProvider                  assetProvider,
             [NotNull] IDialogueViewProvider           viewProvider,
             [NotNull] DialogueProviderResolveDelegate resolveProvider,
-            [NotNull] IContentViewEventHandlerProvider       eventHandlerProvider)
+            [NotNull] IContentViewEventHandlerProvider       eventHandlerProvider,
+            CancellationToken cancellationToken
+            )
         {
             this.dialogue             = dialogue;
             this.assetProvider        = assetProvider;
             this.viewProvider         = viewProvider;
             this.resolveProvider      = resolveProvider;
             this.eventHandlerProvider = eventHandlerProvider;
+
+            this.cancellationToken = cancellationToken;
         }
     }
 }

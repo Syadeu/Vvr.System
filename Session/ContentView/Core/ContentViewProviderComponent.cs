@@ -20,6 +20,7 @@
 #endregion
 
 using System;
+using System.Threading;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using UnityEngine;
@@ -40,9 +41,10 @@ namespace Vvr.Session.ContentView.Core
         public abstract UniTask<GameObject> OpenAsync(
             ICanvasViewProvider canvasProvider,
             IAssetProvider      assetProvider,
-            object              ctx);
+            object              ctx,
+            CancellationToken cancellationToken);
 
-        public abstract UniTask CloseAsync(object ctx);
+        public abstract UniTask CloseAsync(object ctx, CancellationToken cancellationToken);
     }
 
     /// <summary>

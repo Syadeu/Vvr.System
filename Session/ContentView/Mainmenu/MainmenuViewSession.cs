@@ -139,7 +139,7 @@ namespace Vvr.Session.ContentView.Mainmenu
             // after world has been initialized
             await UniTask.WaitWhile(() => ViewProvider is null);
 
-            m_ViewInstance = await ViewProvider.OpenAsync(CanvasViewProvider, m_AssetProvider, null);
+            m_ViewInstance = await ViewProvider.OpenAsync(CanvasViewProvider, m_AssetProvider, null, ReserveToken);
             this.Inject(m_ViewInstance);
         }
 

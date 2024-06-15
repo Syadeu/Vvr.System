@@ -67,7 +67,7 @@ namespace Vvr.Session.ContentView.WorldBackground
 
             if (m_Delay > 0) await UniTask.WaitForSeconds(m_Delay);
 
-            await v.CloseAsync(m_BackgroundID);
+            await v.CloseAsync(m_BackgroundID, ctx.cancellationToken);
         }
 
         public override string ToString()

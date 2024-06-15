@@ -141,7 +141,7 @@ namespace Vvr.Session.ContentView.Deck
 
             if (m_ViewInstance is null)
             {
-                m_ViewInstance = await ViewProvider.OpenAsync(CanvasViewProvider, m_AssetProvider, ctx)
+                m_ViewInstance = await ViewProvider.OpenAsync(CanvasViewProvider, m_AssetProvider, ctx, ReserveToken)
                         .AttachExternalCancellation(ReserveToken)
                     ;
                 this.Inject(m_ViewInstance);
@@ -161,7 +161,7 @@ namespace Vvr.Session.ContentView.Deck
             m_UserActorProvider.Enqueue(new ResetUserActorDeckChangeCommand());
 
             this.Detach(m_ViewInstance);
-            await ViewProvider.CloseAsync(ctx)
+            await ViewProvider.CloseAsync(ctx, ReserveToken)
                 .AttachExternalCancellation(ReserveToken)
                 .SuppressCancellationThrow()
                 ;
