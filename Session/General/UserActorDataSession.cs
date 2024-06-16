@@ -139,20 +139,6 @@ namespace Vvr.Session
             SetupUserActors();
         }
 
-        UniTask ICommandProvider.EnqueueAsync<TCommand>(IEventTarget target)
-        {
-            TCommand cmd = Activator.CreateInstance<TCommand>();
-            return ((ICommandProvider)this).EnqueueAsync(target, cmd);
-        }
-        async UniTask ICommandProvider.EnqueueAsync(IEventTarget target, ICommand command)
-        {
-            if (command is not IUserDataCommand)
-                throw new InvalidOperationException("Command excepts only " + nameof(IUserDataCommand));
-
-            this.Inject(command);
-            await command.ExecuteAsync(target);
-        }
-
         private partial void ProcessCommandQuery(ref NativeStream.Reader            rdr);
         private partial void ProcessCommandData(UserActorDataQuery.SetTeamActorData data);
 

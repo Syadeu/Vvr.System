@@ -1,5 +1,4 @@
 #region Copyrights
-
 // Copyright 2024 Syadeu
 // Author : Seung Ha Kim
 //
@@ -15,28 +14,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// File created : 2024, 05, 17 00:05
-
+// File created : 2024, 06, 16 21:06
 #endregion
 
-using System.Collections.Generic;
-using JetBrains.Annotations;
-using Vvr.Model;
-using Vvr.Provider;
-using Vvr.Provider.Command;
-
-namespace Vvr.Session.Provider
+namespace Vvr.Session.World.Core
 {
-    /// <summary>
-    /// Represents a provider for user actor data.
-    /// </summary>
-    [PublicAPI, LocalProvider]
-    public interface IUserActorProvider : IProvider, IQueryCommandProvider<UserActorDataQuery>
+    public interface IFloor
     {
-        IReadOnlyList<IResolvedActorData> PlayerActors { get; }
-
-        IReadOnlyList<IResolvedActorData> GetCurrentTeam();
-
-        void Flush();
+        // void RestartStage();
     }
 }

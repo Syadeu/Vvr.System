@@ -35,7 +35,6 @@ namespace Vvr.Session.World
 {
     [UsedImplicitly, ParentSession(typeof(DefaultMap), true)]
     public class DefaultRegion : ParentSession<DefaultRegion.SessionData>,
-        IConnector<IUserActorProvider>,
         IConnector<IUserStageProvider>,
 
     // TODO: Temp
@@ -45,7 +44,6 @@ namespace Vvr.Session.World
         {
         }
 
-        private IUserActorProvider m_UserActorProvider;
         private IUserStageProvider m_UserStageProvider;
         private IStageDataProvider m_StageDataProvider;
 
@@ -68,13 +66,6 @@ namespace Vvr.Session.World
                 .Forget();
         }
 
-        protected override UniTask OnReserve()
-        {
-            // Vvr.Provider.Provider.Static.Disconnect<IManualInputProvider>(this);
-
-            return base.OnReserve();
-        }
-
         private async UniTask Start()
         {
             using var trigger = ConditionTrigger.Push(this, DisplayName);
@@ -93,7 +84,7 @@ namespace Vvr.Session.World
                 {
                     var floor = await CreateSession<DefaultFloor>(new DefaultFloor.SessionData(list, aliveActors));
 
-                    DefaultFloor.Result result = await floor.Start(m_UserActorProvider.GetCurrentTeam());
+                    DefaultFloor.Result result = await floor.Start();
                     aliveActors = result.alivePlayerActors;
 
                     await floor.Reserve();
@@ -131,9 +122,6 @@ namespace Vvr.Session.World
 
             return await CreateSession<PlayerControlSession>(default);
         }
-
-        void IConnector<IUserActorProvider>.Connect(IUserActorProvider    t) => m_UserActorProvider = t;
-        void IConnector<IUserActorProvider>.Disconnect(IUserActorProvider t) => m_UserActorProvider = null;
 
         void IConnector<IStageDataProvider>.Connect(IStageDataProvider t) => m_StageDataProvider = t;
         void IConnector<IStageDataProvider>.Disconnect(IStageDataProvider t) => m_StageDataProvider = null;

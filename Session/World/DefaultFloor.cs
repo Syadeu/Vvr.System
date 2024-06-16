@@ -34,11 +34,15 @@ using Vvr.Session.AssetManagement;
 using Vvr.Session.ContentView.Core;
 using Vvr.Session.EventView.Core;
 using Vvr.Session.Provider;
+using Vvr.Session.World.Core;
 
 namespace Vvr.Session.World
 {
  	// [ParentSession(typeof(DefaultRegion), true)]
     public partial class DefaultFloor : ParentSession<DefaultFloor.SessionData>,
+        IFloor,
+        IConnector<IUserActorProvider>,
+
         IConnector<IStageViewProvider>,
         IConnector<IEventTargetViewProvider>,
         IConnector<IContentViewEventHandlerProvider>
@@ -67,7 +71,9 @@ namespace Vvr.Session.World
 
         private DefaultStage          m_CurrentStage;
 
-        private IAssetProvider           m_AssetProvider;
+        private IAssetProvider     m_AssetProvider;
+        private IUserActorProvider m_UserActorProvider;
+
         private IStageViewProvider       m_StageViewProvider;
         private IEventTargetViewProvider m_EventTargetViewProvider;
 
@@ -122,7 +128,7 @@ namespace Vvr.Session.World
             await base.OnReserve();
         }
 
-        public async UniTask<Result> Start(IEnumerable<IActorData> playerData)
+        public async UniTask<Result> Start()
         {
             using var evMethod = ConditionTrigger.Scope(m_FloorConfigResolveSession.Resolve);
             using var trigger  = ConditionTrigger.Push(this, DisplayName);
@@ -155,39 +161,7 @@ namespace Vvr.Session.World
                 if (count++ > 0)
                     await BeforeStageStartAsync(stage, count - 1, stageCount);
 
-                DefaultStage.SessionData sessionData;
-                if (prevPlayers.Count == 0)
-                {
-                    sessionData = new DefaultStage.SessionData(stage,
-                        playerData);
-                }
-                else
-                {
-                    sessionData = new DefaultStage.SessionData(stage,
-                        prevPlayers);
-                }
-
-                using (ConditionTrigger.Scope(OnConditionTriggered))
-                using (ConditionTrigger.Scope(m_StageConfigResolveSession.Resolve))
-                {
-                    m_CurrentStage = await CreateSession<DefaultStage>(sessionData);
-                    {
-                        await trigger.Execute(Model.Condition.OnStageStarted, sessionData.stage.Id);
-                        stageResult = await m_CurrentStage.Start();
-                        await trigger.Execute(Model.Condition.OnStageEnded, sessionData.stage.Id);
-                        m_CurrentStageIndex++;
-
-                        foreach (var enemy in stageResult.enemyActors)
-                        {
-                            m_EventTargetViewProvider.Release(enemy.Owner);
-                            enemy.Owner.Release();
-                        }
-
-                        prevPlayers.Clear();
-                        prevPlayers.AddRange(stageResult.playerActors);
-                    }
-                    await m_CurrentStage.Reserve();
-                }
+                await StartStage(stage, prevPlayers);
 
                 "Stage cleared".ToLog();
                 await UniTask.Yield();
@@ -209,14 +183,44 @@ namespace Vvr.Session.World
 
             return floorResult;
         }
-        // protected override UniTask OnCreateSession(IChildSession session)
-        // {
-        //     Assert.IsNotNull(m_StageViewProvider);
-        //
-        //     session.Register<IEventTargetViewProvider>(m_StageViewProvider.CardViewProvider);
-        //
-        //     return base.OnCreateSession(session);
-        // }
+
+        private async UniTask StartStage(IStageData stage, List<IStageActor> prevPlayers)
+        {
+            DefaultStage.SessionData sessionData;
+            if (prevPlayers.Count == 0)
+            {
+                sessionData = new DefaultStage.SessionData(stage,
+                    m_UserActorProvider.GetCurrentTeam());
+            }
+            else
+            {
+                sessionData = new DefaultStage.SessionData(stage,
+                    prevPlayers);
+            }
+
+            using var trigger = ConditionTrigger.Push(this, DisplayName);
+            using (ConditionTrigger.Scope(OnConditionTriggered))
+            using (ConditionTrigger.Scope(m_StageConfigResolveSession.Resolve))
+            {
+                m_CurrentStage = await CreateSession<DefaultStage>(sessionData);
+                {
+                    await trigger.Execute(Model.Condition.OnStageStarted, sessionData.stage.Id);
+                    var stageResult = await m_CurrentStage.Start();
+                    await trigger.Execute(Model.Condition.OnStageEnded, sessionData.stage.Id);
+                    m_CurrentStageIndex++;
+
+                    foreach (var enemy in stageResult.enemyActors)
+                    {
+                        m_EventTargetViewProvider.Release(enemy.Owner);
+                        enemy.Owner.Release();
+                    }
+
+                    prevPlayers.Clear();
+                    prevPlayers.AddRange(stageResult.playerActors);
+                }
+                await m_CurrentStage.Reserve();
+            }
+        }
 
         private async UniTask BeforeStageStartAsync(IStageData stageData, int index, int count)
         {
@@ -263,6 +267,9 @@ namespace Vvr.Session.World
                 // await m_ViewRegistryProvider.StageViewProvider.CloseCornerIntersectionViewAsync();
             }
         }
+
+        void IConnector<IUserActorProvider>.Connect(IUserActorProvider    t) => m_UserActorProvider = t;
+        void IConnector<IUserActorProvider>.Disconnect(IUserActorProvider t) => m_UserActorProvider = null;
 
         void IConnector<IStageViewProvider>.      Connect(IStageViewProvider          t) => m_StageViewProvider = t;
         void IConnector<IStageViewProvider>.      Disconnect(IStageViewProvider       t) => m_StageViewProvider = null;
