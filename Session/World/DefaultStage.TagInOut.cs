@@ -70,7 +70,7 @@ namespace Vvr.Session.World
                 m_TimelineQueueProvider.SetEnable(currentFieldRuntimeActor, false);
                 RemoveFromTimeline(currentFieldRuntimeActor, 1);
 
-                await m_ViewProvider.CardViewProvider.Resolve(currentFieldRuntimeActor.Owner);
+                await m_ViewProvider.Resolve(currentFieldRuntimeActor.Owner);
             }
             else
             {
@@ -79,7 +79,7 @@ namespace Vvr.Session.World
 
             UpdateTimeline();
 
-            await m_ViewProvider.CardViewProvider.Resolve(temp.Owner);
+            await m_ViewProvider.Resolve(temp.Owner);
             using (var trigger = ConditionTrigger.Push(temp.Owner, ConditionTrigger.Game))
             {
                 await trigger.Execute(Model.Condition.OnTagIn, temp.Owner.Id);

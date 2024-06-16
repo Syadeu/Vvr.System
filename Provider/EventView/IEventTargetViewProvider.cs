@@ -19,23 +19,19 @@
 
 #endregion
 
-using Vvr.Controller.Actor;
-using Vvr.Controller.Provider;
-using Vvr.Model;
-using Vvr.Provider;
+using Cysharp.Threading.Tasks;
+using UnityEngine;
 
-namespace Vvr.Session.Actor
+namespace Vvr.Provider
 {
-    public interface IStageActor :
-        IConnector<IAssetProvider>,
-        IConnector<IEventTargetViewProvider>,
-        IConnector<ITargetProvider>,
-        IConnector<IActorDataProvider>,
-        IConnector<IEventConditionProvider>,
-        IConnector<IStateConditionProvider>
+    /// <summary>
+    /// View transform provider for all IEventTargets 
+    /// </summary>
+    [LocalProvider]
+    public interface IEventTargetViewProvider : IEventViewProvider
     {
-        IActor     Owner           { get; }
-        IActorData Data            { get; }
-        bool       TagOutRequested { get; set; }
+        bool               Has(IEventTarget     owner);
+        UniTask<Transform> Resolve(IEventTarget owner);
+        UniTask            Release(IEventTarget owner);
     }
 }

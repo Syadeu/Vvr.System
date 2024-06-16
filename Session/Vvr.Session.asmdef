@@ -8,6 +8,8 @@
     "GUID:60df735478b04dd3aa2c4819aa583f3c",
     "GUID:0bebf4b98a2c47cd93c8f4c2f5f17d2a",
 
+    "GUID:9d961b8c2f6843b8be5b4b8df3da8cb2",
+
     "Unity.Mathematics",
     "Unity.Collections",
     "Unity.Addressables",

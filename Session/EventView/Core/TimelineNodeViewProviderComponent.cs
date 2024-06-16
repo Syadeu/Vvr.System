@@ -15,27 +15,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// File created : 2024, 05, 10 20:05
+// File created : 2024, 05, 22 11:05
 
 #endregion
 
-using Vvr.Controller.Actor;
-using Vvr.Controller.Provider;
-using Vvr.Model;
+using System;
+using Cysharp.Threading.Tasks;
+using UnityEngine;
 using Vvr.Provider;
 
-namespace Vvr.Session.Actor
+namespace Vvr.Session.EventView.Core
 {
-    public interface IStageActor :
-        IConnector<IAssetProvider>,
-        IConnector<IEventTargetViewProvider>,
-        IConnector<ITargetProvider>,
-        IConnector<IActorDataProvider>,
-        IConnector<IEventConditionProvider>,
-        IConnector<IStateConditionProvider>
+    [Obsolete("Should move to ContentView")]
+    public abstract class TimelineNodeViewProviderComponent : EventViewProviderComponent, IEventTimelineNodeViewProvider
     {
-        IActor     Owner           { get; }
-        IActorData Data            { get; }
-        bool       TagOutRequested { get; set; }
+        public override Type ProviderType => typeof(IEventTimelineNodeViewProvider);
+
+        public abstract UniTask<Transform> Resolve(IEventTarget actor, int order);
+        public abstract UniTask            Release(IEventTarget actor);
     }
 }

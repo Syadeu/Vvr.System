@@ -21,10 +21,13 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine.Assertions;
+using Vvr.Model;
 
 namespace Vvr.Provider
 {
@@ -119,6 +122,8 @@ namespace Vvr.Provider
         private static readonly Dictionary<Type, IProvider>      s_Providers = new();
         private static readonly Dictionary<Type, List<Observer>> s_Observers = new();
 
+        private static readonly SemaphoreSlim s_ProviderSemaphore = new(1, 1);
+
         /// <summary>
         /// Extracts the base interface of a given type that inherits from <see cref="IProvider"/>.
         /// </summary>
@@ -169,8 +174,12 @@ namespace Vvr.Provider
 
         private static void Register(Type t, IProvider p)
         {
-            if (!s_Providers.TryAdd(t, p))
-                throw new InvalidOperationException("Multiple provider is not allowed");
+            using (var l = new SemaphoreSlimLock(s_ProviderSemaphore))
+            {
+                l.Wait(TimeSpan.FromSeconds(1));
+                if (!s_Providers.TryAdd(t, p))
+                    throw new InvalidOperationException("Multiple provider is not allowed");
+            }
 
             if (s_Observers.TryGetValue(t, out var list))
             {
@@ -197,7 +206,14 @@ namespace Vvr.Provider
 
             EvaluateType(t);
 
-            if (s_Providers.Remove(t))
+            bool removed;
+            using (var l = new SemaphoreSlimLock(s_ProviderSemaphore))
+            {
+                l.Wait(TimeSpan.FromSeconds(1));
+                removed = s_Providers.Remove(t);
+            }
+
+            if (removed)
             {
                 if (s_Observers.TryGetValue(t, out var list))
                 {
@@ -213,6 +229,8 @@ namespace Vvr.Provider
             return this;
         }
 
+        [Conditional("UNITY_EDITOR")]
+        [Conditional("DEVELOPMENT_BUILD")]
         private static void EvaluateType(Type providerType)
         {
             Assert.IsNotNull(providerType);
@@ -242,6 +260,9 @@ namespace Vvr.Provider
             {
                 await UniTask.Yield();
             }
+
+            using var l = new SemaphoreSlimLock(s_ProviderSemaphore);
+            l.Wait(TimeSpan.FromSeconds(1));
 
             return (T)s_Providers[t];
         }
@@ -275,7 +296,12 @@ namespace Vvr.Provider
                 await UniTask.Yield();
             }
 
-            T p = (T)s_Providers[t];
+            T p;
+            using (var l = new SemaphoreSlimLock(s_ProviderSemaphore))
+            {
+                await l.WaitAsync(TimeSpan.FromSeconds(1));
+                p = (T)s_Providers[t];
+            }
             c.Connect(p);
 
             if (!s_Observers.TryGetValue(t, out var list))
@@ -313,9 +339,13 @@ namespace Vvr.Provider
 
             EvaluateType(t);
 
-            if (s_Providers.TryGetValue(t, out var p))
+            using (var l = new SemaphoreSlimLock(s_ProviderSemaphore))
             {
-                c.Connect((T)p);
+                l.Wait(TimeSpan.FromSeconds(1));
+                if (s_Providers.TryGetValue(t, out IProvider p))
+                {
+                    c.Connect((T)p);
+                }
             }
 
             if (!s_Observers.TryGetValue(t, out var list))
@@ -352,8 +382,12 @@ namespace Vvr.Provider
 
             if (!s_Observers.TryGetValue(t, out var list)) return this;
 
-            if (s_Providers.TryGetValue(t, out var p))
-                c.Disconnect((T)p);
+            using (var l = new SemaphoreSlimLock(s_ProviderSemaphore))
+            {
+                l.Wait(TimeSpan.FromSeconds(1));
+                if (s_Providers.TryGetValue(t, out var p))
+                    c.Disconnect((T)p);
+            }
 
             uint hash = unchecked((uint)c.GetHashCode() ^ FNV1a32.Calculate(t.AssemblyQualifiedName));
             list.Remove(new Observer() { hash = hash });

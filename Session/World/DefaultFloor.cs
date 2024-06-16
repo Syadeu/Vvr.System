@@ -32,13 +32,15 @@ using Vvr.Provider;
 using Vvr.Session.Actor;
 using Vvr.Session.AssetManagement;
 using Vvr.Session.ContentView.Core;
+using Vvr.Session.EventView.Core;
 using Vvr.Session.Provider;
 
 namespace Vvr.Session.World
 {
  	// [ParentSession(typeof(DefaultRegion), true)]
     public partial class DefaultFloor : ParentSession<DefaultFloor.SessionData>,
-        IConnector<IViewRegistryProvider>,
+        IConnector<IStageViewProvider>,
+        IConnector<IEventTargetViewProvider>,
         IConnector<IContentViewEventHandlerProvider>
     {
         public struct SessionData : ISessionData
@@ -65,8 +67,10 @@ namespace Vvr.Session.World
 
         private DefaultStage          m_CurrentStage;
 
-        private IAssetProvider            m_AssetProvider;
-        private IViewRegistryProvider     m_ViewRegistryProvider;
+        private IAssetProvider           m_AssetProvider;
+        private IStageViewProvider       m_StageViewProvider;
+        private IEventTargetViewProvider m_EventTargetViewProvider;
+
         private IContentViewEventHandlerProvider m_ViewEventHandlerProvider;
 
         private int m_CurrentStageIndex;
@@ -140,10 +144,10 @@ namespace Vvr.Session.World
             await trigger.Execute(Model.Condition.OnFloorStarted, $"{cachedStartStage.Floor}");
 
             // TODO: test
-            await m_ViewRegistryProvider.StageViewProvider.OpenEntryViewAsync(
+            await m_StageViewProvider.OpenEntryViewAsync(
                 "테스트 필드", $"제 {cachedStartStage.Floor} 층");
             await UniTask.WaitForSeconds(2);
-            await m_ViewRegistryProvider.StageViewProvider.CloseEntryViewAsync();
+            await m_StageViewProvider.CloseEntryViewAsync();
 
             int count = 0;
             foreach (IStageData stage in Data.stages)
@@ -175,7 +179,7 @@ namespace Vvr.Session.World
 
                         foreach (var enemy in stageResult.enemyActors)
                         {
-                            m_ViewRegistryProvider.CardViewProvider.Release(enemy.Owner);
+                            m_EventTargetViewProvider.Release(enemy.Owner);
                             enemy.Owner.Release();
                         }
 
@@ -205,14 +209,14 @@ namespace Vvr.Session.World
 
             return floorResult;
         }
-        protected override UniTask OnCreateSession(IChildSession session)
-        {
-            Assert.IsNotNull(m_ViewRegistryProvider);
-
-            session.Register<IEventViewProvider>(m_ViewRegistryProvider.CardViewProvider);
-
-            return base.OnCreateSession(session);
-        }
+        // protected override UniTask OnCreateSession(IChildSession session)
+        // {
+        //     Assert.IsNotNull(m_StageViewProvider);
+        //
+        //     session.Register<IEventTargetViewProvider>(m_StageViewProvider.CardViewProvider);
+        //
+        //     return base.OnCreateSession(session);
+        // }
 
         private async UniTask BeforeStageStartAsync(IStageData stageData, int index, int count)
         {
@@ -260,8 +264,10 @@ namespace Vvr.Session.World
             }
         }
 
-        void IConnector<IViewRegistryProvider>.Connect(IViewRegistryProvider    t) => m_ViewRegistryProvider = t;
-        void IConnector<IViewRegistryProvider>.Disconnect(IViewRegistryProvider t) => m_ViewRegistryProvider = null;
+        void IConnector<IStageViewProvider>.      Connect(IStageViewProvider          t) => m_StageViewProvider = t;
+        void IConnector<IStageViewProvider>.      Disconnect(IStageViewProvider       t) => m_StageViewProvider = null;
+        void IConnector<IEventTargetViewProvider>.Connect(IEventTargetViewProvider    t) => m_EventTargetViewProvider = t;
+        void IConnector<IEventTargetViewProvider>.Disconnect(IEventTargetViewProvider t) => m_EventTargetViewProvider = null;
 
         void IConnector<IContentViewEventHandlerProvider>.Connect(IContentViewEventHandlerProvider t) => m_ViewEventHandlerProvider = t;
         void IConnector<IContentViewEventHandlerProvider>.Disconnect(IContentViewEventHandlerProvider t) => m_ViewEventHandlerProvider = null;

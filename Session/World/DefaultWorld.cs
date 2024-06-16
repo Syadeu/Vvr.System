@@ -27,7 +27,7 @@ using Vvr.Provider;
 using Vvr.Provider.Command;
 using Vvr.Session.AssetManagement;
 using Vvr.Session.ContentView;
-using Vvr.Session.Provider;
+using Vvr.Session.EventView;
 #if VVR_FIREBASE
 using Vvr.Session.Firebase;
 #endif
@@ -35,22 +35,12 @@ using Vvr.Session.Firebase;
 namespace Vvr.Session.World
 {
     [Preserve]
-    public partial class DefaultWorld : RootSession, IWorldSession,
-        IConnector<IViewRegistryProvider>
+    public partial class DefaultWorld : RootSession, IWorldSession
     {
-        private IViewRegistryProvider m_ViewRegistryProvider;
-
         public override string DisplayName => nameof(DefaultWorld);
 
         public DefaultMap      DefaultMap  { get; private set; }
         public GameDataSession DataSession { get; private set; }
-
-        protected override UniTask OnInitialize(IParentSession session, RootData data)
-        {
-            Vvr.Provider.Provider.Static.Connect<IViewRegistryProvider>(this);
-
-            return UniTask.CompletedTask;
-        }
 
         [PublicAPI]
         public async UniTask Booting()
@@ -59,15 +49,16 @@ namespace Vvr.Session.World
 
             var results = await UniTask.WhenAll(
                 CreateSession<CommandSession>(default),
-                CreateSession<GameMethodResolveSession>(default),
+                CreateSessionOnBackground<GameMethodResolveSession>(default),
 
+                CreateSession<EventViewSession>(default),
                 CreateSession<ContentViewSession>(default)
 #if VVR_FIREBASE
                 , CreateSession<FirebaseSession>(default)
 #endif
             );
 
-            await CreateSession<GameConfigResolveSession>(
+            await CreateSessionOnBackground<GameConfigResolveSession>(
                 new GameConfigResolveSession.SessionData(MapType.Global, true));
 
             Register<ICommandProvider>(results.Item1)
@@ -75,43 +66,6 @@ namespace Vvr.Session.World
                 ;
 
             DefaultMap = await CreateSession<DefaultMap>(default);
-        }
-
-        protected override UniTask OnReserve()
-        {
-            Vvr.Provider.Provider.Static.Disconnect<IViewRegistryProvider>(this);
-
-            return base.OnReserve();
-        }
-
-        protected override UniTask OnCreateSession(IChildSession session)
-        {
-            session.Register(m_ViewRegistryProvider);
-
-            return base.OnCreateSession(session);
-        }
-
-        void IConnector<IViewRegistryProvider>.Connect(IViewRegistryProvider    t)
-        {
-            m_ViewRegistryProvider = t;
-
-            // ReSharper disable RedundantTypeArgumentsOfMethod
-
-            Register<IEventViewProvider>(t.CardViewProvider)
-                .Register<IEventTimelineNodeViewProvider>(t.TimelineNodeViewViewProvider)
-                .Register<IStageViewProvider>(t.StageViewProvider)
-                ;
-
-            // ReSharper restore RedundantTypeArgumentsOfMethod
-        }
-
-        void IConnector<IViewRegistryProvider>.Disconnect(IViewRegistryProvider t)
-        {
-            Unregister<IEventViewProvider>()
-                .Unregister<IEventTimelineNodeViewProvider>()
-                .Unregister<IStageViewProvider>()
-                ;
-            m_ViewRegistryProvider = null;
         }
     }
 }

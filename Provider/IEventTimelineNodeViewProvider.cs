@@ -27,7 +27,7 @@ namespace Vvr.Provider
 {
     [LocalProvider]
     [Obsolete("Should move to ContentView")]
-    public interface IEventTimelineNodeViewProvider : IProvider
+    public interface IEventTimelineNodeViewProvider : IEventViewProvider
     {
         UniTask<Transform> Resolve(IEventTarget actor, int order);
         UniTask            Release(IEventTarget actor);

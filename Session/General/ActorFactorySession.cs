@@ -35,7 +35,7 @@ namespace Vvr.Session
     [UsedImplicitly]
     public sealed class ActorFactorySession : ChildSession<ActorFactorySession.SessionData>,
         IActorProvider,
-        IConnector<IEventViewProvider>,
+        IConnector<IEventTargetViewProvider>,
         IConnector<IStatConditionProvider>
     {
         public struct SessionData : ISessionData
@@ -61,7 +61,7 @@ namespace Vvr.Session
             }
         }
 
-        private IEventViewProvider     m_ViewProvider;
+        private IEventTargetViewProvider     m_ViewProvider;
         private IStatConditionProvider m_StatConditionProvider;
 
         private readonly List<CachedActor> m_ResolvedActors = new();
@@ -121,8 +121,8 @@ namespace Vvr.Session
             return result;
         }
 
-        void IConnector<IEventViewProvider>.Connect(IEventViewProvider    t) => m_ViewProvider = t;
-        void IConnector<IEventViewProvider>.Disconnect(IEventViewProvider t) => m_ViewProvider = null;
+        void IConnector<IEventTargetViewProvider>.Connect(IEventTargetViewProvider    t) => m_ViewProvider = t;
+        void IConnector<IEventTargetViewProvider>.Disconnect(IEventTargetViewProvider t) => m_ViewProvider = null;
 
         void IConnector<IStatConditionProvider>.Connect(IStatConditionProvider    t) => m_StatConditionProvider = t;
         void IConnector<IStatConditionProvider>.Disconnect(IStatConditionProvider t) => m_StatConditionProvider = null;

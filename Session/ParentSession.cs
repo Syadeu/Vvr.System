@@ -128,11 +128,10 @@ namespace Vvr.Session
                      m_CreateSessionLock.Exit();
              }
 
-
              var ctx = new SessionCreateContext(this, ins, childType, data);
 
-            await CreateSession(ctx)
-                .AttachExternalCancellation(ReserveToken);
+             await CreateSession(ctx)
+                 .AttachExternalCancellation(ReserveToken);
 
             return ins;
         }

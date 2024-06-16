@@ -34,6 +34,7 @@ using Vvr.Model;
 using Vvr.Model.Stat;
 using Vvr.Provider;
 using Vvr.Session.Actor;
+using Vvr.Session.EventView.Core;
 using Vvr.Session.Provider;
 using Vvr.UI.Observer;
 
@@ -42,7 +43,7 @@ namespace Vvr.Session.World
     [ParentSession(typeof(DefaultFloor), true), Preserve]
     public partial class DefaultStage : ChildSession<DefaultStage.SessionData>,
         IStageInfoProvider,
-        IConnector<IViewRegistryProvider>,
+        IConnector<IEventTargetViewProvider>,
         IConnector<IActorProvider>,
         IConnector<IStageActorProvider>,
         IConnector<IInputControlProvider>
@@ -160,7 +161,7 @@ namespace Vvr.Session.World
         private IActorProvider        m_ActorProvider;
         private IStageActorProvider   m_StageActorProvider;
         private IInputControlProvider m_InputControlProvider;
-        private IViewRegistryProvider m_ViewProvider;
+        private IEventTargetViewProvider m_ViewProvider;
 
         private Owner m_EnemyId;
 
@@ -232,7 +233,7 @@ namespace Vvr.Session.World
                         if (playerIndex != 0)
                         {
                             m_HandActors.Add(runtimeActor);
-                            await m_ViewProvider.CardViewProvider.Resolve(prevActor.Owner);
+                            await m_ViewProvider.Resolve(prevActor.Owner);
                         }
                         else
                         {
@@ -255,7 +256,7 @@ namespace Vvr.Session.World
                         if (playerIndex != 0)
                         {
                             m_HandActors.Add(runtimeActor);
-                            await m_ViewProvider.CardViewProvider.Resolve(target);
+                            await m_ViewProvider.Resolve(target);
                         }
                         else
                         {
@@ -350,10 +351,10 @@ namespace Vvr.Session.World
 
                             await trigger.Execute(Condition.OnTagOut, current.Owner.Id);
 
-                            await m_ViewProvider.CardViewProvider.Resolve(current.Owner);
+                            await m_ViewProvider.Resolve(current.Owner);
                             foreach (var actor in m_PlayerField)
                             {
-                                await m_ViewProvider.CardViewProvider.Resolve(actor.Owner);
+                                await m_ViewProvider.Resolve(actor.Owner);
                             }
                         }
                     }
@@ -522,9 +523,9 @@ namespace Vvr.Session.World
             m_InputControlProvider = null;
         }
 
-        void IConnector<IStageActorProvider>.  Connect(IStageActorProvider      t) => m_StageActorProvider = t;
-        void IConnector<IStageActorProvider>.  Disconnect(IStageActorProvider   t) => m_StageActorProvider = null;
-        void IConnector<IViewRegistryProvider>.Connect(IViewRegistryProvider    t) => m_ViewProvider = t;
-        void IConnector<IViewRegistryProvider>.Disconnect(IViewRegistryProvider t) => m_ViewProvider = null;
+        void IConnector<IStageActorProvider>.     Connect(IStageActorProvider         t) => m_StageActorProvider = t;
+        void IConnector<IStageActorProvider>.     Disconnect(IStageActorProvider      t) => m_StageActorProvider = null;
+        void IConnector<IEventTargetViewProvider>.Connect(IEventTargetViewProvider    t) => m_ViewProvider = t;
+        void IConnector<IEventTargetViewProvider>.Disconnect(IEventTargetViewProvider t) => m_ViewProvider = null;
     }
 }

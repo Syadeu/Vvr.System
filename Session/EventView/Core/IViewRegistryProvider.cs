@@ -19,14 +19,31 @@
 
 #endregion
 
-namespace Vvr.Provider
+using System;
+using System.Collections.Generic;
+using JetBrains.Annotations;
+using Vvr.Provider;
+
+namespace Vvr.Session.EventView.Core
 {
+    [PublicAPI]
     public interface IViewRegistryProvider : IProvider
     {
-        IEventViewProvider    CardViewProvider     { get; }
+        [Obsolete("Use " + nameof(Resolve))]
+        IEventTargetViewProvider    CardViewProvider     { get; }
 
+        [Obsolete("Use " + nameof(Resolve))]
         IEventTimelineNodeViewProvider TimelineNodeViewViewProvider { get; }
 
+        [Obsolete("Use " + nameof(Resolve))]
         IStageViewProvider    StageViewProvider    { get; }
+
+        IReadOnlyDictionary<Type, IEventViewProvider> Providers { get; }
+
+        [NotNull]
+        IProvider Resolve(Type providerType);
+
+        [NotNull]
+        TProvider Resolve<TProvider>();
     }
 }

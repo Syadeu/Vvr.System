@@ -25,14 +25,17 @@ using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
+using Vvr.Provider;
 
-namespace Vvr.Provider.Component
+namespace Vvr.Session.EventView.Core
 {
-    public abstract class EventViewProviderComponent : MonoBehaviour, IEventViewProvider
+    public abstract class EventTargetViewProviderComponent : EventViewProviderComponent, IEventTargetViewProvider
     {
         private readonly Dictionary<IEventTarget, AsyncOperationHandle<GameObject>> m_Handles = new();
 
-        bool IEventViewProvider.Has(IEventTarget owner) => m_Handles.ContainsKey(owner);
+        public override Type ProviderType => typeof(IEventTargetViewProvider);
+
+        bool IEventTargetViewProvider.Has(IEventTarget owner) => m_Handles.ContainsKey(owner);
 
         public async UniTask<Transform> Resolve(IEventTarget owner)
         {

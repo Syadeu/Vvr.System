@@ -251,6 +251,11 @@ namespace Vvr.Session
             if (Disposed)
                 throw new ObjectDisposedException(Type.Name);
 
+            if (pType is null)
+                throw new InvalidOperationException();
+            if (provider is null)
+                throw new InvalidOperationException();
+
             pType = Vvr.Provider.Provider.ExtractType(pType);
             // EvaluateProviderRegistration(pType, provider);
 
@@ -278,6 +283,9 @@ namespace Vvr.Session
         {
             if (Disposed)
                 throw new ObjectDisposedException(Type.Name);
+
+            if (pType is null)
+                throw new InvalidOperationException();
 
             if (m_ConnectedProviders == null) return this;
 
@@ -332,6 +340,9 @@ namespace Vvr.Session
         }
         public IDependencyContainer Register<TProvider>(TProvider provider) where TProvider : IProvider
         {
+            if (provider is null)
+                throw new InvalidOperationException();
+
             Type pType = typeof(TProvider);
             return Register(pType, provider);
         }

@@ -25,7 +25,7 @@ using UnityEngine;
 namespace Vvr.Provider
 {
     [LocalProvider]
-    public interface IStageViewProvider : IProvider
+    public interface IStageViewProvider : IEventViewProvider
     {
         UniTask OpenEntryViewAsync(string title, string subtitle);
         UniTask CloseEntryViewAsync();

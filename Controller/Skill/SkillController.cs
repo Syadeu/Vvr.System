@@ -80,7 +80,7 @@ namespace Vvr.Controller.Skill
             }
         }
 
-        private IEventViewProvider m_ViewProvider;
+        private IEventTargetViewProvider m_ViewProvider;
         private IActorDataProvider m_DataProvider;
         private ITargetProvider    m_TargetProvider;
 
@@ -571,13 +571,13 @@ namespace Vvr.Controller.Skill
             m_DataProvider = null;
         }
 
-        void IConnector<IEventViewProvider>.Connect(IEventViewProvider t)
+        void IConnector<IEventTargetViewProvider>.Connect(IEventTargetViewProvider t)
         {
             if (Disposed)
                 throw new ObjectDisposedException(nameof(SkillController));
             m_ViewProvider = t;
         }
-        void IConnector<IEventViewProvider>.Disconnect(IEventViewProvider t)
+        void IConnector<IEventTargetViewProvider>.Disconnect(IEventTargetViewProvider t)
         {
             if (Disposed)
                 throw new ObjectDisposedException(nameof(SkillController));

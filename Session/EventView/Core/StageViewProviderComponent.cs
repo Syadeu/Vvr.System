@@ -15,23 +15,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// File created : 2024, 05, 10 20:05
+// File created : 2024, 05, 22 12:05
 
 #endregion
 
+using System;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
+using Vvr.Provider;
 
-namespace Vvr.Provider
+namespace Vvr.Session.EventView.Core
 {
-    /// <summary>
-    /// View transform provider for all IEventTargets 
-    /// </summary>
-    [LocalProvider]
-    public interface IEventViewProvider : IProvider
+    [DisallowMultipleComponent]
+    public abstract class StageViewProviderComponent : EventViewProviderComponent, IStageViewProvider
     {
-        bool               Has(IEventTarget     owner);
-        UniTask<Transform> Resolve(IEventTarget owner);
-        UniTask            Release(IEventTarget owner);
+        public override Type ProviderType => typeof(IStageViewProvider);
+
+        public abstract UniTask OpenEntryViewAsync(string title, string subtitle);
+        public abstract UniTask CloseEntryViewAsync();
+        public abstract UniTask OpenCornerIntersectionViewAsync(Sprite portrait, string text);
+        public abstract UniTask CloseCornerIntersectionViewAsync();
     }
 }

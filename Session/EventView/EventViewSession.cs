@@ -17,12 +17,18 @@
 // File created : 2024, 06, 16 15:06
 #endregion
 
+using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
+using NUnit.Framework;
+using UnityEngine;
+using Vvr.Provider;
+using Vvr.Session.EventView.Core;
 
 namespace Vvr.Session.EventView
 {
     [UsedImplicitly]
-    public sealed class EventViewSession : ParentSession<EventViewSession.SessionData>
+    public sealed class EventViewSession : ParentSession<EventViewSession.SessionData>,
+        IConnector<IViewRegistryProvider>
     {
         public struct SessionData : ISessionData
         {
@@ -31,6 +37,40 @@ namespace Vvr.Session.EventView
 
         public override string DisplayName => nameof(EventViewSession);
 
+        private IViewRegistryProvider m_ViewRegistryProvider;
 
+        protected override UniTask OnInitialize(IParentSession session, SessionData data)
+        {
+            Vvr.Provider.Provider.Static.Connect<IViewRegistryProvider>(this);
+            return base.OnInitialize(session, data);
+        }
+
+        protected override UniTask OnReserve()
+        {
+            Vvr.Provider.Provider.Static.Disconnect<IViewRegistryProvider>(this);
+            return base.OnReserve();
+        }
+
+        void IConnector<IViewRegistryProvider>.Connect(IViewRegistryProvider t)
+        {
+            Assert.NotNull(t);
+            Assert.NotNull(t.Providers);
+
+            foreach (var item in t.Providers)
+            {
+                Parent.Register(item.Key, item.Value);
+            }
+            m_ViewRegistryProvider = t;
+        }
+
+        void IConnector<IViewRegistryProvider>.Disconnect(IViewRegistryProvider t)
+        {
+            foreach (var item in t.Providers)
+            {
+                Parent.Unregister(item.Key);
+            }
+
+            m_ViewRegistryProvider = null;
+        }
     }
 }

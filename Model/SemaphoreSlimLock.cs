@@ -66,6 +66,22 @@ namespace Vvr.Model
 
             return UniTask.CompletedTask;
         }
+        public UniTask WaitAsync(TimeSpan timeout)
+        {
+            if (Interlocked.Exchange(ref m_Started, 1) == 1)
+                throw new InvalidOperationException();
+
+            int threadId = Thread.CurrentThread.ManagedThreadId;
+            bool isCurrentWriteThread
+                = Interlocked.Exchange(ref m_CurrentThreadId, threadId) == threadId;
+
+            if (!isCurrentWriteThread)
+                return m_SemaphoreSlim.WaitAsync()
+                    .AsUniTask()
+                    .TimeoutWithoutException(timeout);
+
+            return UniTask.CompletedTask;
+        }
 
         public void Wait(CancellationToken cancellationToken)
         {
@@ -89,6 +105,31 @@ namespace Vvr.Model
 
             if (!isCurrentWriteThread)
                 m_SemaphoreSlim.Wait(cancellationToken);
+        }
+
+        public void Wait(TimeSpan timeout)
+        {
+            if (Interlocked.Exchange(ref m_Started, 1) == 1)
+                throw new InvalidOperationException();
+
+            int threadId = Thread.CurrentThread.ManagedThreadId;
+            bool isCurrentWriteThread
+                = Interlocked.Exchange(ref m_CurrentThreadId, threadId) == threadId;
+
+#if THREAD_DEBUG
+            if (m_SemaphoreSlim.CurrentCount == 0 &&
+                !isCurrentWriteThread)
+            {
+                if (UnityEditorInternal.InternalEditorUtility.CurrentThreadIsMainThread())
+                    throw new InvalidOperationException(
+                        "Another thread currently writing but main thread trying to write." +
+                        "This is not allowed main thread should not be awaited.");
+            }
+#endif
+
+            if (!isCurrentWriteThread)
+                if (!m_SemaphoreSlim.Wait(timeout))
+                    throw new TimeoutException();
         }
 
         public void Dispose()

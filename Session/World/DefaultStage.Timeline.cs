@@ -155,7 +155,7 @@ namespace Vvr.Session.World
 
             foreach (var e in field)
             {
-                await m_ViewProvider.CardViewProvider.Resolve(e.Owner);
+                await m_ViewProvider.Resolve(e.Owner);
             }
         }
 
@@ -177,7 +177,7 @@ namespace Vvr.Session.World
 
             foreach (var e in field)
             {
-                await m_ViewProvider.CardViewProvider.Resolve(e.Owner);
+                await m_ViewProvider.Resolve(e.Owner);
             }
         }
 
@@ -196,7 +196,7 @@ namespace Vvr.Session.World
             RemoveFromQueue(actor);
 
             await m_TimelineNodeViewProvider.Release(actor.Owner);
-            await m_ViewProvider.CardViewProvider.Release(actor.Owner);
+            await m_ViewProvider.Release(actor.Owner);
             // actor.Owner.Release();
             m_StageActorProvider.Reserve(actor);
             actor.Owner.Release();

@@ -31,12 +31,12 @@ namespace Vvr.Controller.BehaviorTree
     {
         private readonly IBehaviorTarget m_Owner;
 
-        private AsyncLazy<IEventViewProvider> m_ViewProvider;
+        private AsyncLazy<IEventTargetViewProvider> m_ViewProvider;
 
         public BehaviorTreeController(IBehaviorTarget owner)
         {
             m_Owner        = owner;
-            m_ViewProvider = Vvr.Provider.Provider.Static.GetLazyAsync<IEventViewProvider>();
+            m_ViewProvider = Vvr.Provider.Provider.Static.GetLazyAsync<IEventTargetViewProvider>();
         }
         public void Dispose()
         {
