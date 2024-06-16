@@ -19,6 +19,7 @@
 
 #endregion
 
+using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 
@@ -33,5 +34,12 @@ namespace Vvr.Provider
         bool               Has(IEventTarget     owner);
         UniTask<Transform> ResolveAsync(IEventTarget owner);
         UniTask            ReleaseAsync(IEventTarget owner);
+
+        UniTask ShowAsync();
+        UniTask ShowAsync(IEventTarget owner);
+        UniTask HideAsync();
+        UniTask HideAsync(IEventTarget owner);
+
+        IAsyncEnumerable<Transform> GetEnumerableAsync();
     }
 }

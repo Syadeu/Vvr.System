@@ -1,5 +1,5 @@
 {
-  "name": "Vvr.Session.EventView.EventTarget",
+  "name": "Vvr.Session.EventView.ActorView",
   "references": [
     "Vvr",
     "GUID:3957eefabf624d2485d569ea058bfc85",

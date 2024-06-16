@@ -36,7 +36,7 @@ namespace Vvr.Session.EventView.Core
 
         public override Type ProviderType => typeof(IActorViewProvider);
 
-        bool IActorViewProvider.Has(IEventTarget owner) => m_Handles.ContainsKey(owner);
+        public bool Has(IEventTarget owner) => m_Handles.ContainsKey(owner);
 
         public async UniTask<Transform> ResolveAsync(IEventTarget owner)
         {
@@ -72,6 +72,20 @@ namespace Vvr.Session.EventView.Core
             await OnRelease(owner, (await handle).transform);
 
             Addressables.Release(handle);
+        }
+
+        public abstract UniTask ShowAsync();
+        public abstract UniTask ShowAsync(IEventTarget owner);
+
+        public abstract UniTask HideAsync();
+        public abstract UniTask HideAsync(IEventTarget owner);
+        public async IAsyncEnumerable<Transform> GetEnumerableAsync()
+        {
+            foreach (var handle in m_Handles.Values)
+            {
+                var tr = await handle;
+                yield return tr.transform;
+            }
         }
 
         protected abstract AsyncOperationHandle<GameObject> Create(IEventTarget     owner);
