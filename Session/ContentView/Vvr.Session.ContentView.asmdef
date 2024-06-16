@@ -16,6 +16,7 @@
     "GUID:cba0f7dc06664df086cee89fd662d991",
     "GUID:e975f3c1b7544452aefe07d64510538f",
     "GUID:f70c60836b2443c4b78f0e2573857ef5",
+    "GUID:a4a8d67d3eea4d599b77d846b57f9865",
 
     "Unity.Mathematics",
     "Unity.Collections",
@@ -28,7 +29,6 @@
     "UniTask.Addressables",
 
     "BakingSheet",
-    "BakingSheet.ScriptableObject",
-    "GUID:a4a8d67d3eea4d599b77d846b57f9865"
+    "BakingSheet.ScriptableObject"
   ]
 }
