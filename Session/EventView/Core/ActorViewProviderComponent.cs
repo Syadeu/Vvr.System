@@ -25,22 +25,25 @@ using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
+using Vvr.Controller.Actor;
 using Vvr.Provider;
 
 namespace Vvr.Session.EventView.Core
 {
-    public abstract class EventTargetViewProviderComponent : EventViewProviderComponent, IEventTargetViewProvider
+    public abstract class ActorViewProviderComponent : EventViewProviderComponent, IActorViewProvider
     {
         private readonly Dictionary<IEventTarget, AsyncOperationHandle<GameObject>> m_Handles = new();
 
-        public override Type ProviderType => typeof(IEventTargetViewProvider);
+        public override Type ProviderType => typeof(IActorViewProvider);
 
-        bool IEventTargetViewProvider.Has(IEventTarget owner) => m_Handles.ContainsKey(owner);
+        bool IActorViewProvider.Has(IEventTarget owner) => m_Handles.ContainsKey(owner);
 
-        public async UniTask<Transform> Resolve(IEventTarget owner)
+        public async UniTask<Transform> ResolveAsync(IEventTarget owner)
         {
             if (owner.Disposed)
                 throw new ObjectDisposedException(owner.DisplayName);
+            if (owner is not IActor)
+                throw new InvalidOperationException("target is not actor");
 
             Transform result;
             if (m_Handles.TryGetValue(owner, out var t))
@@ -50,10 +53,7 @@ namespace Vvr.Session.EventView.Core
             }
             else
             {
-                if (!CanResolve(owner))
-                    throw new Exception($"Cant resolve target {owner.DisplayName} for this provider {GetType().FullName}");
-
-                t                = await Create(owner);
+                t                = Create(owner);
                 m_Handles[owner] = t;
 
                 result = (await t.ToUniTask()).transform;
@@ -62,8 +62,7 @@ namespace Vvr.Session.EventView.Core
             await OnResolved(owner, result);
             return result;
         }
-
-        public async UniTask Release(IEventTarget owner)
+        public async UniTask ReleaseAsync(IEventTarget owner)
         {
             if (owner.Disposed)
                 throw new ObjectDisposedException(owner.DisplayName);
@@ -75,9 +74,7 @@ namespace Vvr.Session.EventView.Core
             Addressables.Release(handle);
         }
 
-        protected virtual bool CanResolve(IEventTarget owner) => true;
-
-        protected abstract UniTask<AsyncOperationHandle<GameObject>> Create(IEventTarget     owner);
+        protected abstract AsyncOperationHandle<GameObject> Create(IEventTarget     owner);
 
         protected virtual UniTask OnResolved(IEventTarget owner, Transform view) => UniTask.CompletedTask;
         protected virtual UniTask OnRelease(IEventTarget  owner, Transform view) => UniTask.CompletedTask;

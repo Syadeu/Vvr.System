@@ -106,11 +106,11 @@ namespace Vvr.Session
                 Owner.ConditionResolver.Disconnect(t);
             }
 
-            void IConnector<IEventTargetViewProvider>.Connect(IEventTargetViewProvider t)
+            void IConnector<IActorViewProvider>.Connect(IActorViewProvider t)
             {
                 Owner.Skill.Connect(t);
             }
-            void IConnector<IEventTargetViewProvider>.Disconnect(IEventTargetViewProvider t)
+            void IConnector<IActorViewProvider>.Disconnect(IActorViewProvider t)
             {
                 Owner.Skill.Disconnect(t);
             }
@@ -144,7 +144,7 @@ namespace Vvr.Session
             IActor     item   = result.Owner;
             Connect<IAssetProvider>(result)
                 .Connect<ITargetProvider>(result)
-                .Connect<IEventTargetViewProvider>(result)
+                .Connect<IActorViewProvider>(result)
                 .Connect<IActorDataProvider>(result)
                 .Connect<IEventConditionProvider>(result)
                 .Connect<IStateConditionProvider>(result);
@@ -195,7 +195,7 @@ namespace Vvr.Session
 
             Disconnect<IAssetProvider>(item)
                 .Disconnect<ITargetProvider>(item)
-                .Disconnect<IEventTargetViewProvider>(item)
+                .Disconnect<IActorViewProvider>(item)
                 .Disconnect<IActorDataProvider>(item)
                 .Disconnect<IEventConditionProvider>(item)
                 .Disconnect<IStateConditionProvider>(item);

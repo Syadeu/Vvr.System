@@ -31,12 +31,12 @@ namespace Vvr.Controller.BehaviorTree
     {
         private readonly IBehaviorTarget m_Owner;
 
-        private AsyncLazy<IEventTargetViewProvider> m_ViewProvider;
+        private AsyncLazy<IActorViewProvider> m_ViewProvider;
 
         public BehaviorTreeController(IBehaviorTarget owner)
         {
             m_Owner        = owner;
-            m_ViewProvider = Vvr.Provider.Provider.Static.GetLazyAsync<IEventTargetViewProvider>();
+            m_ViewProvider = Vvr.Provider.Provider.Static.GetLazyAsync<IActorViewProvider>();
         }
         public void Dispose()
         {
@@ -47,7 +47,7 @@ namespace Vvr.Controller.BehaviorTree
         {
             var viewProvider = await m_ViewProvider;
 
-            var view = await viewProvider.Resolve(m_Owner);
+            var view = await viewProvider.ResolveAsync(m_Owner);
 
             var ctr = view.GetOrAddComponent<Behavior>();
             Assert.IsFalse(ctr.ExecutionStatus == TaskStatus.Running);

@@ -70,16 +70,16 @@ namespace Vvr.Session.World
                 m_TimelineQueueProvider.SetEnable(currentFieldRuntimeActor, false);
                 RemoveFromTimeline(currentFieldRuntimeActor, 1);
 
-                await m_ViewProvider.Resolve(currentFieldRuntimeActor.Owner);
+                await m_ViewProvider.ResolveAsync(currentFieldRuntimeActor.Owner);
             }
             else
             {
-                await JoinAsync(m_PlayerField, temp);
+                Join(m_PlayerField, temp);
             }
 
             UpdateTimeline();
 
-            await m_ViewProvider.Resolve(temp.Owner);
+            await m_ViewProvider.ResolveAsync(temp.Owner);
             using (var trigger = ConditionTrigger.Push(temp.Owner, ConditionTrigger.Game))
             {
                 await trigger.Execute(Model.Condition.OnTagIn, temp.Owner.Id);

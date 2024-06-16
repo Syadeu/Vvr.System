@@ -30,7 +30,7 @@ namespace Vvr.Session.EventView.Core
     public interface IViewRegistryProvider : IProvider
     {
         [Obsolete("Use " + nameof(Resolve))]
-        IEventTargetViewProvider    CardViewProvider     { get; }
+        IActorViewProvider    CardViewProvider     { get; }
 
         [Obsolete("Use " + nameof(Resolve))]
         IEventTimelineNodeViewProvider TimelineNodeViewViewProvider { get; }

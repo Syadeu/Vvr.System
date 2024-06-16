@@ -28,10 +28,10 @@ namespace Vvr.Provider
     /// View transform provider for all IEventTargets 
     /// </summary>
     [LocalProvider]
-    public interface IEventTargetViewProvider : IEventViewProvider
+    public interface IActorViewProvider : IEventViewProvider
     {
         bool               Has(IEventTarget     owner);
-        UniTask<Transform> Resolve(IEventTarget owner);
-        UniTask            Release(IEventTarget owner);
+        UniTask<Transform> ResolveAsync(IEventTarget owner);
+        UniTask            ReleaseAsync(IEventTarget owner);
     }
 }

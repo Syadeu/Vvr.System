@@ -145,8 +145,7 @@ namespace Vvr.Session.World
         /// </summary>
         /// <param name="field">The field in the stage where the actor will be joined.</param>
         /// <param name="actor">The actor to be joined.</param>
-        /// <returns>A UniTask representing the asynchronous operation.</returns>
-        private partial async UniTask JoinAsync(ActorList field, IStageActor actor)
+        private partial void Join(ActorList field, IStageActor actor)
         {
             Assert.IsFalse(field.Contains(actor));
             field.Add(actor, ActorPositionComparer.Static);
@@ -155,7 +154,11 @@ namespace Vvr.Session.World
 
             foreach (var e in field)
             {
-                await m_ViewProvider.Resolve(e.Owner);
+                m_ViewProvider.ResolveAsync(e.Owner)
+                    .AttachExternalCancellation(ReserveToken)
+                    .SuppressCancellationThrow()
+                    .Forget()
+                    ;
             }
         }
 
@@ -177,7 +180,7 @@ namespace Vvr.Session.World
 
             foreach (var e in field)
             {
-                await m_ViewProvider.Resolve(e.Owner);
+                await m_ViewProvider.ResolveAsync(e.Owner);
             }
         }
 
@@ -196,7 +199,7 @@ namespace Vvr.Session.World
             RemoveFromQueue(actor);
 
             await m_TimelineNodeViewProvider.Release(actor.Owner);
-            await m_ViewProvider.Release(actor.Owner);
+            await m_ViewProvider.ReleaseAsync(actor.Owner);
             // actor.Owner.Release();
             m_StageActorProvider.Reserve(actor);
             actor.Owner.Release();

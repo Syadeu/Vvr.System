@@ -43,7 +43,7 @@ namespace Vvr.Session.World
     [ParentSession(typeof(DefaultFloor), true), Preserve]
     public partial class DefaultStage : ChildSession<DefaultStage.SessionData>,
         IStageInfoProvider,
-        IConnector<IEventTargetViewProvider>,
+        IConnector<IActorViewProvider>,
         IConnector<IActorProvider>,
         IConnector<IStageActorProvider>,
         IConnector<IInputControlProvider>
@@ -161,7 +161,7 @@ namespace Vvr.Session.World
         private IActorProvider        m_ActorProvider;
         private IStageActorProvider   m_StageActorProvider;
         private IInputControlProvider m_InputControlProvider;
-        private IEventTargetViewProvider m_ViewProvider;
+        private IActorViewProvider m_ViewProvider;
 
         private Owner m_EnemyId;
 
@@ -216,65 +216,74 @@ namespace Vvr.Session.World
             return base.OnReserve();
         }
 
-        public async UniTask<Result> Start()
+        private void SetupField()
         {
-            $"Stage start: {Data.stage.Id}".ToLog();
-
-            // int time = 0;
+            int playerIndex = 0;
+            if (Data.players == null)
             {
-                int playerIndex = 0;
-                if (Data.players == null)
+                Assert.IsNotNull(Data.prevPlayers);
+                foreach (var prevActor in Data.prevPlayers)
                 {
-                    Assert.IsNotNull(Data.prevPlayers);
-                    foreach (var prevActor in Data.prevPlayers)
+                    IStageActor runtimeActor = m_StageActorProvider.Create(prevActor.Owner, prevActor.Data);
+
+                    if (playerIndex != 0)
                     {
-                        IStageActor runtimeActor = m_StageActorProvider.Create(prevActor.Owner, prevActor.Data);
-
-                        if (playerIndex != 0)
-                        {
-                            m_HandActors.Add(runtimeActor);
-                            await m_ViewProvider.Resolve(prevActor.Owner);
-                        }
-                        else
-                        {
-                            await JoinAsync(m_PlayerField, runtimeActor);
-                        }
-
-                        playerIndex++;
+                        m_HandActors.Add(runtimeActor);
+                        m_ViewProvider.ResolveAsync(prevActor.Owner)
+                            .AttachExternalCancellation(ReserveToken)
+                            .SuppressCancellationThrow()
+                            ;
                     }
-                }
-                else
-                {
-                    foreach (var data in Data.players)
+                    else
                     {
-                        if (data is null) continue;
-
-                        IActor target = m_ActorProvider.Create(Owner, data);
-
-                        IStageActor runtimeActor = m_StageActorProvider.Create(target, data);
-
-                        if (playerIndex != 0)
-                        {
-                            m_HandActors.Add(runtimeActor);
-                            await m_ViewProvider.Resolve(target);
-                        }
-                        else
-                        {
-                            await JoinAsync(m_PlayerField, runtimeActor);
-                        }
-
-                        playerIndex++;
+                        Join(m_PlayerField, runtimeActor);
                     }
+
+                    playerIndex++;
                 }
             }
+            else
+            {
+                foreach (var data in Data.players)
+                {
+                    if (data is null) continue;
+
+                    IActor target = m_ActorProvider.Create(Owner, data);
+
+                    IStageActor runtimeActor = m_StageActorProvider.Create(target, data);
+
+                    if (playerIndex != 0)
+                    {
+                        m_HandActors.Add(runtimeActor);
+                        m_ViewProvider.ResolveAsync(target)
+                            .AttachExternalCancellation(ReserveToken)
+                            .SuppressCancellationThrow()
+                            ;
+                    }
+                    else
+                    {
+                        Join(m_PlayerField, runtimeActor);
+                    }
+
+                    playerIndex++;
+                }
+            }
+
             foreach (var data in Data.actors)
             {
                 IActor target = m_ActorProvider.Create(m_EnemyId, data);
 
                 IStageActor runtimeActor = m_StageActorProvider.Create(target, data);
 
-                await JoinAsync(m_EnemyField, runtimeActor);
+                Join(m_EnemyField, runtimeActor);
             }
+        }
+
+        public async UniTask<Result> Start()
+        {
+            $"Stage start: {Data.stage.Id}".ToLog();
+
+            SetupField();
 
             TimeController.ResetTime();
 
@@ -351,10 +360,10 @@ namespace Vvr.Session.World
 
                             await trigger.Execute(Condition.OnTagOut, current.Owner.Id);
 
-                            await m_ViewProvider.Resolve(current.Owner);
+                            await m_ViewProvider.ResolveAsync(current.Owner);
                             foreach (var actor in m_PlayerField)
                             {
-                                await m_ViewProvider.Resolve(actor.Owner);
+                                await m_ViewProvider.ResolveAsync(actor.Owner);
                             }
                         }
                     }
@@ -419,9 +428,9 @@ namespace Vvr.Session.World
                 await DeleteAsync(m_EnemyField, sta);
         }
 
-        private partial UniTask JoinAsync(ActorList                 field,  IStageActor actor);
-        private partial UniTask JoinAfterAsync(IStageActor          target, ActorList   field, IStageActor actor);
-        private partial UniTask DeleteAsync(ActorList               field,  IStageActor actor);
+        private partial void    Join(ActorList                 field,  IStageActor actor);
+        private partial UniTask JoinAfterAsync(IStageActor     target, ActorList   field, IStageActor actor);
+        private partial UniTask DeleteAsync(ActorList          field,  IStageActor actor);
         private partial void    RemoveFromQueue(IStageActor    actor);
         private partial void    RemoveFromTimeline(IStageActor actor, int preserveCount = 0);
 
@@ -525,7 +534,7 @@ namespace Vvr.Session.World
 
         void IConnector<IStageActorProvider>.     Connect(IStageActorProvider         t) => m_StageActorProvider = t;
         void IConnector<IStageActorProvider>.     Disconnect(IStageActorProvider      t) => m_StageActorProvider = null;
-        void IConnector<IEventTargetViewProvider>.Connect(IEventTargetViewProvider    t) => m_ViewProvider = t;
-        void IConnector<IEventTargetViewProvider>.Disconnect(IEventTargetViewProvider t) => m_ViewProvider = null;
+        void IConnector<IActorViewProvider>.Connect(IActorViewProvider    t) => m_ViewProvider = t;
+        void IConnector<IActorViewProvider>.Disconnect(IActorViewProvider t) => m_ViewProvider = null;
     }
 }

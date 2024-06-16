@@ -22,6 +22,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Assertions;
@@ -44,7 +45,7 @@ namespace Vvr.Session.World
         IConnector<IUserActorProvider>,
 
         IConnector<IStageViewProvider>,
-        IConnector<IEventTargetViewProvider>,
+        IConnector<IActorViewProvider>,
         IConnector<IContentViewEventHandlerProvider>
     {
         public struct SessionData : ISessionData
@@ -75,11 +76,12 @@ namespace Vvr.Session.World
         private IUserActorProvider m_UserActorProvider;
 
         private IStageViewProvider       m_StageViewProvider;
-        private IEventTargetViewProvider m_EventTargetViewProvider;
+        private IActorViewProvider m_ActorViewProvider;
 
         private IContentViewEventHandlerProvider m_ViewEventHandlerProvider;
 
-        private int m_CurrentStageIndex;
+        private int                     m_CurrentStageIndex;
+        private CancellationTokenSource m_StageCancellationTokenSource;
 
         private GameConfigResolveSession
             m_FloorConfigResolveSession,
@@ -113,6 +115,9 @@ namespace Vvr.Session.World
 
         protected override async UniTask OnReserve()
         {
+            m_StageCancellationTokenSource?.Cancel();
+            m_StageCancellationTokenSource?.Dispose();
+
             Disconnect<IGameMethodProvider>(m_FloorConfigResolveSession)
                 .Disconnect<IGameMethodProvider>(m_StageConfigResolveSession);
 
@@ -137,11 +142,7 @@ namespace Vvr.Session.World
             WasStartedOnce      = true;
             m_CurrentStageIndex = 0;
 
-            Result              floorResult = default;
-            DefaultStage.Result stageResult = default;
-
-            // LinkedListNode<StageSheet.Row> startStage  = Data.stages.First;
-            List<IStageActor>              prevPlayers = new(Data.existingActors);
+            List<IStageActor> prevPlayers = new(Data.existingActors);
 
             int        stageCount            = Data.stages.Count();
             IStageData cachedStartStage = Data.stages.First();
@@ -151,17 +152,24 @@ namespace Vvr.Session.World
 
             // TODO: test
             await m_StageViewProvider.OpenEntryViewAsync(
-                "테스트 필드", $"제 {cachedStartStage.Floor} 층");
+                "테스트 필드", $"제 {cachedStartStage.Floor} 층")
+                    .AttachExternalCancellation(ReserveToken)
+                ;
             await UniTask.WaitForSeconds(2);
-            await m_StageViewProvider.CloseEntryViewAsync();
+            await m_StageViewProvider.CloseEntryViewAsync().AttachExternalCancellation(ReserveToken);
 
             int count = 0;
-            foreach (IStageData stage in Data.stages)
+            using var stageIterator = Data.stages.GetEnumerator();
+            while (stageIterator.MoveNext())
             {
+                IStageData stage = stageIterator.Current;
+
                 if (count++ > 0)
                     await BeforeStageStartAsync(stage, count - 1, stageCount);
 
-                await StartStage(stage, prevPlayers);
+                m_StageCancellationTokenSource = new();
+                await StartStage(stage, prevPlayers, m_StageCancellationTokenSource.Token)
+                    .AttachExternalCancellation(ReserveToken);
 
                 "Stage cleared".ToLog();
                 await UniTask.Yield();
@@ -173,7 +181,7 @@ namespace Vvr.Session.World
                 }
             }
 
-            floorResult = new Result(
+            var floorResult = new Result(
                 prevPlayers.Any() ? prevPlayers.ToArray() : Array.Empty<IStageActor>());
 
             m_CurrentStage = null;
@@ -184,7 +192,8 @@ namespace Vvr.Session.World
             return floorResult;
         }
 
-        private async UniTask StartStage(IStageData stage, List<IStageActor> prevPlayers)
+        private async UniTask StartStage(
+            IStageData stage, List<IStageActor> prevPlayers, CancellationToken cancellationToken)
         {
             DefaultStage.SessionData sessionData;
             if (prevPlayers.Count == 0)
@@ -204,14 +213,16 @@ namespace Vvr.Session.World
             {
                 m_CurrentStage = await CreateSession<DefaultStage>(sessionData);
                 {
-                    await trigger.Execute(Model.Condition.OnStageStarted, sessionData.stage.Id);
+                    await trigger.Execute(Model.Condition.OnStageStarted, sessionData.stage.Id, cancellationToken)
+                        .AttachExternalCancellation(ReserveToken);
                     var stageResult = await m_CurrentStage.Start();
-                    await trigger.Execute(Model.Condition.OnStageEnded, sessionData.stage.Id);
+                    await trigger.Execute(Model.Condition.OnStageEnded, sessionData.stage.Id, cancellationToken)
+                        .AttachExternalCancellation(ReserveToken);
                     m_CurrentStageIndex++;
 
                     foreach (var enemy in stageResult.enemyActors)
                     {
-                        m_EventTargetViewProvider.Release(enemy.Owner);
+                        m_ActorViewProvider.ReleaseAsync(enemy.Owner);
                         enemy.Owner.Release();
                     }
 
@@ -224,7 +235,9 @@ namespace Vvr.Session.World
 
         private async UniTask BeforeStageStartAsync(IStageData stageData, int index, int count)
         {
-            var backgroundImg = await m_AssetProvider.LoadAsync<Sprite>(stageData.Assets[AssetType.BackgroundImage]);
+            var backgroundImg
+                = await m_AssetProvider.LoadAsync<Sprite>(stageData.Assets[AssetType.BackgroundImage])
+                    .AttachExternalCancellation(ReserveToken);
 
             if (backgroundImg is not null)
             {
@@ -235,18 +248,18 @@ namespace Vvr.Session.World
                     .Forget();
             }
 
-            m_ViewEventHandlerProvider.Resolve<MainmenuViewEvent>()
-                .ExecuteAsync(MainmenuViewEvent.SetStageText,
+            var mainmenuViewHandler
+                = m_ViewEventHandlerProvider.Resolve<MainmenuViewEvent>();
+
+            mainmenuViewHandler.ExecuteAsync(MainmenuViewEvent.SetStageText,
                     // $"{stageData.Name} {stageData.Floor}-{index}"
                     $"{stageData.Name}"
                 )
                 .Forget();
-            m_ViewEventHandlerProvider.Resolve<MainmenuViewEvent>()
-                .ExecuteAsync(MainmenuViewEvent.SetStageProgress,
+            mainmenuViewHandler.ExecuteAsync(MainmenuViewEvent.SetStageProgress,
                     (float)index / count)
                 .Forget();
-            m_ViewEventHandlerProvider.Resolve<MainmenuViewEvent>()
-                .ExecuteAsync(MainmenuViewEvent.ShowStageInfo)
+            mainmenuViewHandler.ExecuteAsync(MainmenuViewEvent.ShowStageInfo)
                 .Forget();
         }
 
@@ -273,8 +286,8 @@ namespace Vvr.Session.World
 
         void IConnector<IStageViewProvider>.      Connect(IStageViewProvider          t) => m_StageViewProvider = t;
         void IConnector<IStageViewProvider>.      Disconnect(IStageViewProvider       t) => m_StageViewProvider = null;
-        void IConnector<IEventTargetViewProvider>.Connect(IEventTargetViewProvider    t) => m_EventTargetViewProvider = t;
-        void IConnector<IEventTargetViewProvider>.Disconnect(IEventTargetViewProvider t) => m_EventTargetViewProvider = null;
+        void IConnector<IActorViewProvider>.Connect(IActorViewProvider    t) => m_ActorViewProvider = t;
+        void IConnector<IActorViewProvider>.Disconnect(IActorViewProvider t) => m_ActorViewProvider = null;
 
         void IConnector<IContentViewEventHandlerProvider>.Connect(IContentViewEventHandlerProvider t) => m_ViewEventHandlerProvider = t;
         void IConnector<IContentViewEventHandlerProvider>.Disconnect(IContentViewEventHandlerProvider t) => m_ViewEventHandlerProvider = null;

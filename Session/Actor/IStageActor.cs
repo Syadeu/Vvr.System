@@ -28,7 +28,7 @@ namespace Vvr.Session.Actor
 {
     public interface IStageActor :
         IConnector<IAssetProvider>,
-        IConnector<IEventTargetViewProvider>,
+        IConnector<IActorViewProvider>,
         IConnector<ITargetProvider>,
         IConnector<IActorDataProvider>,
         IConnector<IEventConditionProvider>,

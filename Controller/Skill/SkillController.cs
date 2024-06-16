@@ -80,7 +80,7 @@ namespace Vvr.Controller.Skill
             }
         }
 
-        private IEventTargetViewProvider m_ViewProvider;
+        private IActorViewProvider m_ViewProvider;
         private IActorDataProvider m_DataProvider;
         private ITargetProvider    m_TargetProvider;
 
@@ -235,7 +235,7 @@ namespace Vvr.Controller.Skill
 
             #region Warmup
 
-            var viewTarget       = await m_ViewProvider.Resolve(Owner);
+            var viewTarget       = await m_ViewProvider.ResolveAsync(Owner);
             var skillEventHandle = viewTarget.GetComponent<ISkillEventHandler>();
             if (skillEventHandle != null)
             {
@@ -248,7 +248,7 @@ namespace Vvr.Controller.Skill
             }
             else if (value.skill.SelfEffectAssetKey is not null)
             {
-                Transform view = await m_ViewProvider.Resolve(Owner);
+                Transform view = await m_ViewProvider.ResolveAsync(Owner);
 
                 var effectPool = GameObjectPool.GetWithRawKey(value.skill.SelfEffectAssetKey);
                 var effect = await effectPool
@@ -328,7 +328,7 @@ namespace Vvr.Controller.Skill
             // Target not found
             if (!executed)
             {
-                Transform view = await m_ViewProvider.Resolve(Owner);
+                Transform view = await m_ViewProvider.ResolveAsync(Owner);
 
                 await view
                         .GetComponent<ISkillEventHandler>()
@@ -350,9 +350,9 @@ namespace Vvr.Controller.Skill
 
             #region Warmup
 
-            Transform targetView = await m_ViewProvider.Resolve(target)
+            Transform targetView = await m_ViewProvider.ResolveAsync(target)
                 .AttachExternalCancellation(CancellationToken);
-            Transform view       = await m_ViewProvider.Resolve(Owner)
+            Transform view       = await m_ViewProvider.ResolveAsync(Owner)
                 .AttachExternalCancellation(CancellationToken);
 
             var skillEventHandle = view.GetComponent<ISkillEventHandler>();
@@ -506,7 +506,7 @@ namespace Vvr.Controller.Skill
                 await trigger.Execute(Model.Condition.OnSkillCasting, e.skill.Id)
                     .AttachExternalCancellation(CancellationToken);
 
-                Transform viewTarget       = await m_ViewProvider.Resolve(Owner)
+                Transform viewTarget       = await m_ViewProvider.ResolveAsync(Owner)
                     .AttachExternalCancellation(CancellationToken);
                 var skillEventHandle = viewTarget.GetComponent<ISkillEventHandler>();
 
@@ -571,13 +571,13 @@ namespace Vvr.Controller.Skill
             m_DataProvider = null;
         }
 
-        void IConnector<IEventTargetViewProvider>.Connect(IEventTargetViewProvider t)
+        void IConnector<IActorViewProvider>.Connect(IActorViewProvider t)
         {
             if (Disposed)
                 throw new ObjectDisposedException(nameof(SkillController));
             m_ViewProvider = t;
         }
-        void IConnector<IEventTargetViewProvider>.Disconnect(IEventTargetViewProvider t)
+        void IConnector<IActorViewProvider>.Disconnect(IActorViewProvider t)
         {
             if (Disposed)
                 throw new ObjectDisposedException(nameof(SkillController));
