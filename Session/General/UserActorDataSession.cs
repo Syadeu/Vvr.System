@@ -192,7 +192,7 @@ namespace Vvr.Session
             }
 
             JArray currentTeamArray = new();
-            for (int i = 0; i < m_CurrentTeam.Length; i++)
+            for (int i = 0; i < m_CurrentTeam?.Length; i++)
             {
                 currentTeamArray.Add(m_CurrentTeam[i].UniqueId);
             }
@@ -235,28 +235,48 @@ namespace Vvr.Session
             var jr = Data.dataProvider.GetJson(UserDataKeyCollection.Actor.UserActors());
             if (jr is not null)
             {
+                bool corrpted = false;
                 foreach (var item in (JObject)jr)
                 {
                     UserActorData d       = item.Value.ToObject<UserActorData>();
+                    if (d.id.IsNullOrEmpty())
+                    {
+                        "data corrupted".ToLog();
+                        corrpted = true;
+                        continue;
+                    }
                     IActorData    rawData = m_ActorDataProvider.Resolve(d.id);
 
                     var data = new ResolvedActorData(m_AssetProvider, rawData, d);
                     m_ResolvedData.AddWithOrder(data);
                 }
+
+                if (m_ResolvedData.Count <= 0)
+                    SetupInitialActors();
+
+                if (corrpted)
+                {
+                    Flush();
+                }
             }
             else
             {
                 // initial actors
-                var d0 = m_ActorDataProvider.Resolve("CH000");
-                var defaultActor = new ResolvedActorData(
-                    m_AssetProvider,
-                    d0,
-                    new UserActorData(d0.Id));
-
-                m_ResolvedData.AddWithOrder(defaultActor);
+                SetupInitialActors();
             }
 
             m_UserActorResolved = true;
+        }
+
+        private void SetupInitialActors()
+        {
+            var d0 = m_ActorDataProvider.Resolve("CH000");
+            var defaultActor = new ResolvedActorData(
+                m_AssetProvider,
+                d0,
+                new UserActorData(d0.Id));
+
+            m_ResolvedData.AddWithOrder(defaultActor);
         }
 
         void IConnector<IActorDataProvider>.Connect(IActorDataProvider    t)

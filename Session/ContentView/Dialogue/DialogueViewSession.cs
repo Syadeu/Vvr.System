@@ -188,7 +188,8 @@ namespace Vvr.Session.ContentView.Dialogue
                         m_AttributeSkipToken = new();
                     }
                     else
-                        await task;
+                        await task.AttachExternalCancellation(ReserveToken)
+                            .SuppressCancellationThrow();
                 }
 
                 while (!ViewProvider.IsFullyOpened && !ReserveToken.IsCancellationRequested)

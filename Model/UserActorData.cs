@@ -26,8 +26,8 @@ namespace Vvr.Model
     [Serializable]
     public struct UserActorData
     {
-        public readonly int    uniqueId;
-        public readonly string id;
+        public int    uniqueId;
+        public string id;
 
         public int?   level;
         public float? exp;
