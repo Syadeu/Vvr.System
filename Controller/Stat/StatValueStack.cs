@@ -60,7 +60,8 @@ namespace Vvr.Controller.Stat
             get
             {
                 Update();
-                return ((IReadOnlyStatValues)m_ResultStats).Values;
+                return (IReadOnlyList<float>)m_ResultStats.Values;
+                // return ((IReadOnlyStatValues)m_ResultStats).Values;
             }
         }
 
@@ -72,7 +73,8 @@ namespace Vvr.Controller.Stat
             m_OriginalStats =  originalStats;
             m_ModifiedStats |= m_OriginalStats.Types;
             m_PushStats     |= m_OriginalStats.Types;
-            m_ResultStats   |= m_OriginalStats.Types;
+
+            m_ResultStats =  StatValues.Copy(m_OriginalStats);
         }
 
         public void Push(StatType t, float v)
@@ -178,6 +180,7 @@ namespace Vvr.Controller.Stat
 
             Assert.IsFalse(m_Modifiers.Contains(modifier));
             m_Modifiers.Add(modifier);
+            m_IsDirty = true;
             return this;
         }
         public IStatValueStack RemoveModifier(IStatModifier modifier)
@@ -186,6 +189,7 @@ namespace Vvr.Controller.Stat
             using var    debugTimer = DebugTimer.StartWithCustomName(debugName);
 
             m_Modifiers.Remove(modifier);
+            m_IsDirty = true;
             return this;
         }
 

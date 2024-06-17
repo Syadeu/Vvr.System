@@ -17,7 +17,7 @@
 // File created : 2024, 06, 17 21:06
 #endregion
 
-using JetBrains.Annotations;
+using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEngine;
 using Vvr.Model.Stat;
@@ -25,7 +25,7 @@ using Vvr.TestClass;
 
 namespace Vvr.Controller.Stat.Tests
 {
-    [PublicAPI]
+    [TestFixture]
     public class StatValueStackTests
     {
         #region Initialize
@@ -57,11 +57,33 @@ namespace Vvr.Controller.Stat.Tests
 
         protected virtual StatValues GetOriginalStatValues()
         {
-            StatValues v = StatValues.Create(StatType.HP | StatType.ARM);
+            StatValues v = StatValues.Create(StatType.HP | StatType.ARM | StatType.ATT);
             v[StatType.HP]  = 10;
+            v[StatType.ATT] = 1;
             v[StatType.ARM] = 5;
 
             return v;
+        }
+
+        private static StatValues CreateRandomStatValues()
+        {
+            long        t = 0b1111_1111 ^ (long)StatType.SHD;
+            StatValues v = StatValues.Create((StatType)t);
+
+            for (int i = 0; i < v.Values.Count; i++)
+            {
+                v.Values[i] = UnityEngine.Random.Range(short.MinValue, short.MaxValue);
+            }
+
+            return v;
+        }
+
+        protected static IEnumerable<StatValues> GetTestStatValues(int count)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                yield return CreateRandomStatValues();
+            }
         }
 
         #endregion
@@ -73,7 +95,8 @@ namespace Vvr.Controller.Stat.Tests
         protected void AreSame(StatType type, float v)
         {
             Assert.IsTrue(
-                Mathf.Approximately(StatValueStack[type], v));
+                Mathf.Approximately(StatValueStack[type], v),
+                $"Expected: {v} but {StatValueStack[type]}");
         }
 
         [Test]
@@ -88,9 +111,34 @@ namespace Vvr.Controller.Stat.Tests
         {
             DamageProcessor processor = new DamageProcessor();
 
-            StatValueStack.Push(StatType.HP, 10);
+            float v = processor.Process(OriginalStats, 10);
 
-            AreSame(StatType.HP, OriginalStats[StatType.HP] + 10);
+            StatValueStack.Push<DamageProcessor>(StatType.HP, 10);
+
+            Debug.Log($"{OriginalStats[StatType.HP]} + {v}");
+            Debug.Log(StatValueStack[StatType.HP]);
+
+            AreSame(StatType.HP, OriginalStats[StatType.HP] + v);
+        }
+
+        [Test, TestCaseSource(typeof(StatValueStackTests), nameof(GetTestStatValues), new object[1]{ 5 })]
+        public void ModifierTest_0(StatValues n)
+        {
+            TestStatModifier m = new TestStatModifier(n);
+
+            StatValueStack.AddModifier(m);
+            StatValueStack.Update();
+
+            var expected = OriginalStats + n;
+            Assert.AreEqual(expected.Values.Count, StatValueStack.Values.Count);
+            Assert.AreEqual(expected.Types, StatValueStack.Types);
+
+            for (int i = 0; i < StatValueStack.Values.Count; i++)
+            {
+                Assert.IsTrue(
+                    Mathf.Approximately(expected.Values[i], StatValueStack.Values[i]),
+                    $"{expected.Values[i]} == {StatValueStack.Values[i]}");
+            }
         }
     }
 }
