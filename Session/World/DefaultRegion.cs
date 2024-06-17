@@ -24,6 +24,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
+using Vvr.Controller.Actor;
 using Vvr.Controller.Condition;
 using Vvr.Model;
 using Vvr.Provider;
@@ -74,7 +75,7 @@ namespace Vvr.Session.World
             var             currentStage = startStage;
             LinkedList<IStageData> list         = new();
 
-            IStageActor[] aliveActors = Array.Empty<IStageActor>();
+            IActor[] aliveActors = Array.Empty<IActor>();
             do
             {
                 list.AddLast(currentStage);

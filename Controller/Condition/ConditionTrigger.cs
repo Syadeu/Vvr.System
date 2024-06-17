@@ -300,6 +300,9 @@ namespace Vvr.Controller.Condition
             Vvr.Model.Condition condition, string value, CancellationToken cancellationToken = default)
         {
             Assert.IsFalse(m_Target.Disposed);
+            if (cancellationToken.CanBeCanceled &&
+                cancellationToken.IsCancellationRequested)
+                return;
 
             $"[Condition:{m_Target.Owner}:{m_Target.GetHashCode()}({m_Path})] Execute condition({condition}) with {value}"
                 .ToLog();

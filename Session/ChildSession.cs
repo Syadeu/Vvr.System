@@ -460,6 +460,8 @@ namespace Vvr.Session
             if (Disposed)
                 throw new ObjectDisposedException(Type.Name);
 
+            Assert.IsNotNull(c);
+
             const string debugName  = "ChildSession.Disconnect<TProvider>";
             using var    debugTimer = DebugTimer.StartWithCustomName(debugName);
 

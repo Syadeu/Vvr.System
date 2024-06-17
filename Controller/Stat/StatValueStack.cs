@@ -23,6 +23,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using JetBrains.Annotations;
 using UnityEngine.Assertions;
 using Vvr.Controller.Actor;
 using Vvr.Model.Stat;
@@ -30,6 +31,7 @@ using Vvr.UI.Observer;
 
 namespace Vvr.Controller.Stat
 {
+    [PublicAPI]
     public sealed class StatValueStack : IStatValueStack, IDisposable
     {
         private readonly IActor m_Owner;
@@ -71,8 +73,6 @@ namespace Vvr.Controller.Stat
             m_ModifiedStats |= m_OriginalStats.Types;
             m_PushStats     |= m_OriginalStats.Types;
             m_ResultStats   |= m_OriginalStats.Types;
-
-            ObjectObserver<StatValueStack>.Get(this).EnsureContainer();
         }
 
         public void Push(StatType t, float v)
@@ -84,7 +84,6 @@ namespace Vvr.Controller.Stat
 
             Update();
             $"[Stats:{m_Owner.Owner}:{m_Owner.GetInstanceID()}] Stat({t}) changed to {m_ResultStats[t]}".ToLog();
-            ObjectObserver<StatValueStack>.ChangedEvent(this);
         }
         public void Push<TProcessor>(StatType t, float v) where TProcessor : struct, IStatValueProcessor
         {
@@ -92,14 +91,13 @@ namespace Vvr.Controller.Stat
             m_PushStats |= t;
 
             TProcessor processor = Activator.CreateInstance<TProcessor>();
-            float processedV = processor.Process(m_PushStats, v);
+            float processedV = processor.Process(m_ResultStats, v);
 
             m_PushStats[t] += processedV;
             m_IsDirty = true;
 
             Update();
-            $"[Stats:{m_Owner.Owner}:{m_Owner.GetInstanceID()}] Stat({t}) changed to {m_ResultStats[t]} with {VvrTypeHelper.TypeOf<TProcessor>.ToString()}".ToLog();
-            ObjectObserver<StatValueStack>.ChangedEvent(this);
+            $"[Stats:{m_Owner.Owner}:{m_Owner.GetInstanceID()}] Stat({t}) changed to {m_ResultStats[t]}(processed: {processedV}) with {VvrTypeHelper.TypeOf<TProcessor>.ToString()}".ToLog();
         }
 
         public void Update()
@@ -194,7 +192,6 @@ namespace Vvr.Controller.Stat
         public void Dispose()
         {
             m_Modifiers.Clear();
-            ObjectObserver<StatValueStack>.Remove(this);
         }
 
         public IEnumerator<KeyValuePair<StatType, float>> GetEnumerator()

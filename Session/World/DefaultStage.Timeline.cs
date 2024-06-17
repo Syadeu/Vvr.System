@@ -22,6 +22,7 @@
 using System.Buffers;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using UnityEngine;
@@ -101,7 +102,7 @@ namespace Vvr.Session.World
 
             return -1;
         }
-        private partial async UniTask UpdateTimelineNodeViewAsync()
+        private partial async UniTask UpdateTimelineNodeViewAsync(CancellationToken cancellationToken)
         {
             int       count = m_PlayerField.Count + m_EnemyField.Count;
             UniTask[] tasks = ArrayPool<UniTask>.Shared.Rent(count);
@@ -110,33 +111,39 @@ namespace Vvr.Session.World
             {
                 var e     = m_PlayerField[i];
                 int index = FindTimelineIndex(e);
-                tasks[i] = m_TimelineNodeViewProvider.Resolve(e.Owner, index);
+                tasks[i] = m_TimelineNodeViewProvider.ResolveAsync(e.Owner, index)
+                    .AttachExternalCancellation(cancellationToken);
             }
             for (int j = 0; j < m_EnemyField.Count; j++, i++)
             {
                 var e     = m_EnemyField[j];
                 int index = FindTimelineIndex(e);
-                tasks[i] = m_TimelineNodeViewProvider.Resolve(e.Owner, index);
+                tasks[i] = m_TimelineNodeViewProvider.ResolveAsync(e.Owner, index)
+                    .AttachExternalCancellation(cancellationToken);
             }
 
-            await UniTask.WhenAll(tasks);
+            await UniTask.WhenAll(tasks)
+                .AttachExternalCancellation(cancellationToken);
             ArrayPool<UniTask>.Shared.Return(tasks, true);
         }
-        private partial async UniTask CloseTimelineNodeViewAsync()
+        private partial async UniTask CloseTimelineNodeViewAsync(CancellationToken cancellationToken = default)
         {
             int       count = m_PlayerField.Count + m_EnemyField.Count;
             UniTask[] tasks = ArrayPool<UniTask>.Shared.Rent(count);
             int       i     = 0;
             for (; i < m_PlayerField.Count; i++)
             {
-                tasks[i] = m_TimelineNodeViewProvider.Release(m_PlayerField[i].Owner);
+                tasks[i] = m_TimelineNodeViewProvider.Release(m_PlayerField[i].Owner)
+                    .AttachExternalCancellation(cancellationToken);
             }
             for (int j = 0; j < m_EnemyField.Count; j++, i++)
             {
-                tasks[i] = m_TimelineNodeViewProvider.Release(m_EnemyField[j].Owner);
+                tasks[i] = m_TimelineNodeViewProvider.Release(m_EnemyField[j].Owner)
+                    .AttachExternalCancellation(cancellationToken);
             }
 
-            await UniTask.WhenAll(tasks);
+            await UniTask.WhenAll(tasks)
+                .AttachExternalCancellation(cancellationToken);
             ArrayPool<UniTask>.Shared.Return(tasks, true);
         }
 
@@ -169,7 +176,9 @@ namespace Vvr.Session.World
         /// <param name="field">The field to which the actor should be added.</param>
         /// <param name="actor">The actor to be added.</param>
         /// <returns>A <see cref="UniTask"/> representing the asynchronous operation.</returns>
-        private partial async UniTask JoinAfterAsync(IStageActor target, ActorList field, IStageActor actor)
+        private partial async UniTask JoinAfterAsync(
+            IStageActor target, ActorList field, IStageActor actor,
+            CancellationToken cancellationToken)
         {
             Assert.IsFalse(field.Contains(actor));
             field.Add(actor, ActorPositionComparer.Static);
@@ -180,7 +189,10 @@ namespace Vvr.Session.World
 
             foreach (var e in field)
             {
-                await m_ViewProvider.ResolveAsync(e.Owner);
+                await m_ViewProvider.ResolveAsync(e.Owner)
+                    .AttachExternalCancellation(cancellationToken);
+
+                if (cancellationToken.IsCancellationRequested) break;
             }
         }
 
@@ -188,21 +200,23 @@ namespace Vvr.Session.World
         /// Deletes an actor from the actor list and performs necessary cleanup operations.
         /// </summary>
         /// <param name="field">The actor list from which to delete the actor.</param>
-        /// <param name="actor">The actor to delete.</param>
+        /// <param name="stageActor">The actor to delete.</param>
         /// <returns>A <see cref="UniTask"/> representing the asynchronous operation.</returns>
-        private partial async UniTask DeleteAsync(ActorList field, IStageActor actor)
+        private partial async UniTask DeleteAsync(ActorList field, IStageActor stageActor)
         {
-            bool result = field.Remove(actor);
+            bool result = field.Remove(stageActor);
             Assert.IsTrue(result);
 
-            RemoveFromTimeline(actor);
-            RemoveFromQueue(actor);
+            RemoveFromTimeline(stageActor);
+            RemoveFromQueue(stageActor);
 
-            await m_TimelineNodeViewProvider.Release(actor.Owner);
-            await m_ViewProvider.ReleaseAsync(actor.Owner);
+            await m_TimelineNodeViewProvider.Release(stageActor.Owner);
+            await m_ViewProvider.ReleaseAsync(stageActor.Owner);
             // actor.Owner.Release();
-            m_StageActorProvider.Reserve(actor);
-            actor.Owner.Release();
+
+            var actor = stageActor.Owner;
+            m_StageActorProvider.Reserve(stageActor);
+            actor.Release();
             // DelayedDelete(actor).Forget();
 
             UpdateTimeline();

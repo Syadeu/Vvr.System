@@ -33,13 +33,6 @@ namespace Vvr.Session.EventView.Core
     {
         [SerializeField, Required] private EventViewProviderComponent[] m_ProviderComponents;
 
-        IActorViewProvider IViewRegistryProvider.CardViewProvider => Resolve<IActorViewProvider>();
-
-        IEventTimelineNodeViewProvider IViewRegistryProvider.TimelineNodeViewViewProvider =>
-            Resolve<IEventTimelineNodeViewProvider>();
-        IStageViewProvider IViewRegistryProvider.            StageViewProvider            =>
-            Resolve<IStageViewProvider>();
-
         private readonly Dictionary<Type, IEventViewProvider> m_Providers = new();
 
         IReadOnlyDictionary<Type, IEventViewProvider> IViewRegistryProvider.Providers => m_Providers;

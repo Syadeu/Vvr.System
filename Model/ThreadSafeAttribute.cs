@@ -15,30 +15,38 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// File created : 2024, 05, 10 20:05
+// File created : 2024, 06, 17 20:06
 
 #endregion
 
 using System;
-using Vvr.Controller.Actor;
-using Vvr.Controller.Provider;
-using Vvr.Model;
-using Vvr.Provider;
+using System.Diagnostics;
+using JetBrains.Annotations;
 
-namespace Vvr.Session.Actor
+namespace Vvr.Model
 {
-    public interface IStageActor : IDisposable,
-        IConnector<IAssetProvider>,
-        IConnector<IActorViewProvider>,
-        IConnector<ITargetProvider>,
-        IConnector<IActorDataProvider>,
-        IConnector<IEventConditionProvider>,
-        IConnector<IStateConditionProvider>
+    /// <summary>
+    /// Attribute used to indicate that a method is thread-safe.
+    /// </summary>
+    [Conditional("UNITY_EDITOR"), PublicAPI]
+    [AttributeUsage(AttributeTargets.Method)]
+    public sealed class ThreadSafeAttribute : Attribute
     {
-        IActor     Owner           { get; }
-        IActorData Data            { get; }
-        bool       TagOutRequested { get; set; }
+        public enum SafeType
+        {
+            SpinLock,
+            Semaphore
+        }
 
-        bool Disposed { get; }
+        public SafeType Type { get; set; }
+
+        public ThreadSafeAttribute()
+        {
+        }
+
+        public ThreadSafeAttribute(SafeType type)
+        {
+            Type = type;
+        }
     }
 }

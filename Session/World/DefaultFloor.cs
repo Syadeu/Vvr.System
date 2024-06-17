@@ -51,9 +51,9 @@ namespace Vvr.Session.World
         public struct SessionData : ISessionData
         {
             public readonly IEnumerable<IStageData> stages;
-            public readonly IStageActor[]              existingActors;
+            public readonly IActor[]              existingActors;
 
-            public SessionData(IEnumerable<IStageData> s, IStageActor[] existingActors)
+            public SessionData(IEnumerable<IStageData> s, IActor[] existingActors)
             {
                 stages              = s;
                 this.existingActors = existingActors;
@@ -62,9 +62,9 @@ namespace Vvr.Session.World
 
         public struct Result
         {
-            public readonly IStageActor[] alivePlayerActors;
+            public readonly IActor[] alivePlayerActors;
 
-            public Result(IStageActor[] x)
+            public Result(IActor[] x)
             {
                 alivePlayerActors = x;
             }
@@ -142,7 +142,7 @@ namespace Vvr.Session.World
             WasStartedOnce      = true;
             m_CurrentStageIndex = 0;
 
-            List<IStageActor> prevPlayers = new(Data.existingActors);
+            List<IActor> prevPlayers = new(Data.existingActors);
 
             int        stageCount            = Data.stages.Count();
             IStageData cachedStartStage = Data.stages.First();
@@ -158,9 +158,10 @@ namespace Vvr.Session.World
             await UniTask.WaitForSeconds(2);
             await m_StageViewProvider.CloseEntryViewAsync().AttachExternalCancellation(ReserveToken);
 
-            int count = 0;
+            int       count         = 0;
             using var stageIterator = Data.stages.GetEnumerator();
-            while (stageIterator.MoveNext())
+            bool      hasNext       = stageIterator.MoveNext();
+            while (hasNext)
             {
                 IStageData stage = stageIterator.Current;
 
@@ -170,6 +171,12 @@ namespace Vvr.Session.World
                 m_StageCancellationTokenSource = new();
                 await StartStage(stage, prevPlayers, m_StageCancellationTokenSource.Token)
                     .AttachExternalCancellation(ReserveToken);
+                if (m_StageCancellationTokenSource.IsCancellationRequested)
+                {
+                    // Means restart stage request has been raised.
+
+                    continue;
+                }
 
                 "Stage cleared".ToLog();
                 await UniTask.Yield();
@@ -179,10 +186,12 @@ namespace Vvr.Session.World
                     "all players dead".ToLog();
                     break;
                 }
+
+                hasNext = stageIterator.MoveNext();
             }
 
             var floorResult = new Result(
-                prevPlayers.Any() ? prevPlayers.ToArray() : Array.Empty<IStageActor>());
+                prevPlayers.Any() ? prevPlayers.ToArray() : Array.Empty<IActor>());
 
             m_CurrentStage = null;
             Started        = false;
@@ -192,8 +201,12 @@ namespace Vvr.Session.World
             return floorResult;
         }
 
+        public void RestartCurrentStage()
+        {
+        }
+
         private async UniTask StartStage(
-            IStageData stage, List<IStageActor> prevPlayers, CancellationToken cancellationToken)
+            IStageData stage, List<IActor> prevPlayers, CancellationToken cancellationToken)
         {
             DefaultStage.SessionData sessionData;
             if (prevPlayers.Count == 0)
@@ -215,15 +228,18 @@ namespace Vvr.Session.World
                 {
                     await trigger.Execute(Model.Condition.OnStageStarted, sessionData.stage.Id, cancellationToken)
                         .AttachExternalCancellation(ReserveToken);
-                    var stageResult = await m_CurrentStage.Start();
+                    var stageResult = await m_CurrentStage.Start(cancellationToken)
+                        .AttachExternalCancellation(ReserveToken);
                     await trigger.Execute(Model.Condition.OnStageEnded, sessionData.stage.Id, cancellationToken)
                         .AttachExternalCancellation(ReserveToken);
                     m_CurrentStageIndex++;
 
                     foreach (var enemy in stageResult.enemyActors)
                     {
-                        m_ActorViewProvider.ReleaseAsync(enemy.Owner);
-                        enemy.Owner.Release();
+                        await m_ActorViewProvider.ReleaseAsync(enemy)
+                                .AttachExternalCancellation(ReserveToken)
+                            ;
+                        enemy.Release();
                     }
 
                     prevPlayers.Clear();

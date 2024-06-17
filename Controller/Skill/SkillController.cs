@@ -418,9 +418,7 @@ namespace Vvr.Controller.Skill
                     case SkillSheet.Method.Damage:
                         target.Stats.Push<DamageProcessor>(
                             value.skill.TargetStat, dmg);
-                        await targetTrigger.Execute(Model.Condition.OnHit, null)
-                                .AttachExternalCancellation(CancellationToken)
-                            ;
+                        await targetTrigger.Execute(Model.Condition.OnHit, null, CancellationToken);
 
                         break;
                     case SkillSheet.Method.Default:
@@ -432,12 +430,13 @@ namespace Vvr.Controller.Skill
                             ;
                         break;
                 }
+
+                $"skill dmg with: {Owner.Stats[StatType.ATT]} * {value.skill.Multiplier}".ToLog();
             }
 
             #endregion
 
-            await trigger.Execute(Model.Condition.OnSkillEnd, value.skill.Id)
-                    .AttachExternalCancellation(CancellationToken)
+            await trigger.Execute(Model.Condition.OnSkillEnd, value.skill.Id, CancellationToken)
                 ;
 
             $"[Skill:{Owner.Owner}:{Owner.GetInstanceID()}] Skill({value.skill.Id}) executed to {target.GetInstanceID()}({target.Owner})".ToLog();

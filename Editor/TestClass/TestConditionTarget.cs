@@ -15,30 +15,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// File created : 2024, 05, 10 20:05
+// File created : 2024, 06, 17 21:06
 
 #endregion
 
-using System;
-using Vvr.Controller.Actor;
-using Vvr.Controller.Provider;
-using Vvr.Model;
+using JetBrains.Annotations;
+using Vvr.Controller.Condition;
 using Vvr.Provider;
 
-namespace Vvr.Session.Actor
+namespace Vvr.TestClass
 {
-    public interface IStageActor : IDisposable,
-        IConnector<IAssetProvider>,
-        IConnector<IActorViewProvider>,
-        IConnector<ITargetProvider>,
-        IConnector<IActorDataProvider>,
-        IConnector<IEventConditionProvider>,
-        IConnector<IStateConditionProvider>
+    [PublicAPI]
+    public class TestConditionTarget : TestEventTarget, IConditionTarget
     {
-        IActor     Owner           { get; }
-        IActorData Data            { get; }
-        bool       TagOutRequested { get; set; }
+        public IReadOnlyConditionResolver ConditionResolver { get; set; }
 
-        bool Disposed { get; }
+        public TestConditionTarget(string displayName) : base(displayName)
+        {
+        }
+        public TestConditionTarget(Owner owner, string displayName) : base(owner, displayName)
+        {
+        }
     }
 }

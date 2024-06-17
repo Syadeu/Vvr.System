@@ -25,6 +25,7 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using UnityEngine.Assertions;
+using Vvr.Model;
 using Vvr.Provider;
 
 namespace Vvr.Session
@@ -77,6 +78,7 @@ namespace Vvr.Session
             await CloseAllSessions();
         }
 
+        [ThreadSafe(ThreadSafeAttribute.SafeType.SpinLock)]
         public async UniTask<TChildSession> CreateSessionOnBackground<TChildSession>(ISessionData data)
             where TChildSession : IChildSession, new()
         {
@@ -105,6 +107,8 @@ namespace Vvr.Session
             await UniTask.RunOnThreadPool(CreateSession, ctx, cancellationToken: ReserveToken);
             return ins;
         }
+
+        [ThreadSafe(Type = ThreadSafeAttribute.SafeType.SpinLock)]
         public async UniTask<TChildSession> CreateSession<TChildSession>(ISessionData data)
             where TChildSession : IChildSession, new()
         {
@@ -222,6 +226,7 @@ namespace Vvr.Session
             IChildSession found = await WaitUntilSessionAvailableAsync(typeof(TChildSession), timeout);
             return found as TChildSession;
         }
+        [ThreadSafe(ThreadSafeAttribute.SafeType.SpinLock)]
         public IChildSession GetSession(Type sessionType)
         {
             if (Disposed)
@@ -254,11 +259,13 @@ namespace Vvr.Session
 
             return null;
         }
-        public TChildSession GetSession<TChildSession>() where TChildSession : class, IChildSession
+        [ThreadSafe(ThreadSafeAttribute.SafeType.SpinLock)]
+        public TChildSession GetSession<TChildSession>()
         {
-            return GetSession(typeof(TChildSession)) as TChildSession;
+            return (TChildSession)GetSession(typeof(TChildSession));
         }
 
+        [ThreadSafe(ThreadSafeAttribute.SafeType.SpinLock)]
         protected sealed override void OnProviderRegistered(Type providerType, IProvider provider)
         {
             bool lt = false;
@@ -279,6 +286,7 @@ namespace Vvr.Session
                 if (lt) m_CreateSessionLock.Exit();
             }
         }
+        [ThreadSafe(ThreadSafeAttribute.SafeType.SpinLock)]
         protected sealed override void OnProviderUnregistered(Type providerType)
         {
             bool lt = false;

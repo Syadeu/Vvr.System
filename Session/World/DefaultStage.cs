@@ -22,6 +22,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Assertions;
@@ -34,7 +35,6 @@ using Vvr.Model;
 using Vvr.Model.Stat;
 using Vvr.Provider;
 using Vvr.Session.Actor;
-using Vvr.Session.EventView.Core;
 using Vvr.Session.Provider;
 using Vvr.UI.Observer;
 
@@ -45,6 +45,7 @@ namespace Vvr.Session.World
         IStageInfoProvider,
         IConnector<IActorViewProvider>,
         IConnector<IActorProvider>,
+        IConnector<IActorDataProvider>,
         IConnector<IStageActorProvider>,
         IConnector<IInputControlProvider>
     {
@@ -106,10 +107,10 @@ namespace Vvr.Session.World
             public readonly IStageData              stage;
             public readonly IEnumerable<IActorData> actors;
 
-            public readonly IEnumerable<IStageActor> prevPlayers;
-            public readonly IEnumerable<IActorData>  players;
+            public readonly IEnumerable<IActor>     prevPlayers;
+            public readonly IEnumerable<IActorData> players;
 
-            public SessionData(IStageData data, IEnumerable<IStageActor> p)
+            public SessionData(IStageData data, IEnumerable<IActor> p)
             {
                 stage  = data;
                 actors = data.Actors;
@@ -148,10 +149,10 @@ namespace Vvr.Session.World
 
         public struct Result
         {
-            public readonly IEnumerable<IStageActor> playerActors;
-            public readonly IEnumerable<IStageActor> enemyActors;
+            public readonly IEnumerable<IActor> playerActors;
+            public readonly IEnumerable<IActor> enemyActors;
 
-            public Result(IEnumerable<IStageActor> p, IEnumerable<IStageActor> e)
+            public Result(IEnumerable<IActor> p, IEnumerable<IActor> e)
             {
                 playerActors = p;
                 enemyActors  = e;
@@ -159,9 +160,10 @@ namespace Vvr.Session.World
         }
 
         private IActorProvider        m_ActorProvider;
+        private IActorDataProvider    m_ActorDataProvider;
         private IStageActorProvider   m_StageActorProvider;
         private IInputControlProvider m_InputControlProvider;
-        private IActorViewProvider m_ViewProvider;
+        private IActorViewProvider    m_ViewProvider;
 
         private Owner m_EnemyId;
 
@@ -224,12 +226,12 @@ namespace Vvr.Session.World
                 Assert.IsNotNull(Data.prevPlayers);
                 foreach (var prevActor in Data.prevPlayers)
                 {
-                    IStageActor runtimeActor = m_StageActorProvider.Create(prevActor.Owner, prevActor.Data);
+                    IStageActor runtimeActor = m_StageActorProvider.Create(prevActor, m_ActorDataProvider.Resolve(prevActor.Id));
 
                     if (playerIndex != 0)
                     {
                         m_HandActors.Add(runtimeActor);
-                        m_ViewProvider.ResolveAsync(prevActor.Owner)
+                        m_ViewProvider.ResolveAsync(prevActor)
                             .AttachExternalCancellation(ReserveToken)
                             .SuppressCancellationThrow()
                             ;
@@ -279,9 +281,11 @@ namespace Vvr.Session.World
             }
         }
 
-        public async UniTask<Result> Start()
+        public async UniTask<Result> Start(CancellationToken cancellationToken)
         {
             $"Stage start: {Data.stage.Id}".ToLog();
+            using var cancelTokenSource
+                = CancellationTokenSource.CreateLinkedTokenSource(ReserveToken, cancellationToken);
 
             SetupField();
 
@@ -289,34 +293,20 @@ namespace Vvr.Session.World
 
             UpdateTimeline();
 
-            foreach (var item in m_PlayerField
-                         .Concat<IStageActor>(m_HandActors)
-                         .Concat(m_EnemyField)
-                     )
-            {
-                using var trigger = ConditionTrigger.Push(item.Owner, ConditionTrigger.Game);
-                await trigger.Execute(Model.Condition.OnBattleStart, Data.stage.Id);
-            }
+            await StartupStage(cancelTokenSource.Token);
 
             float previousTime = 0;
-            while (m_Timeline.Count > 0 && m_PlayerField.Count > 0 && m_EnemyField.Count > 0)
+            while (m_Timeline.Count > 0 && m_PlayerField.Count > 0 && m_EnemyField.Count > 0 &&
+                   !cancelTokenSource.Token.IsCancellationRequested)
             {
                 $"Timeline count {m_Timeline.Count}".ToLog();
-                await UpdateTimelineNodeViewAsync();
+                await UpdateTimelineNodeViewAsync(cancelTokenSource.Token);
 
                 m_ResetEvent = new();
                 IStageActor current = m_Timeline[0];
                 Assert.IsFalse(current.Owner.Disposed);
 
-                {
-                    float sub = m_Times[0] - previousTime;
-                    float p   = Mathf.FloorToInt(sub / 5 * 100) * 0.01f;
-                    for (int i = 0; i < 4; i++)
-                    {
-                        await TimeController.Next(p);
-                    }
-                    await TimeController.Next(sub - (p * 4));
-                }
+                await ProceedTimeController(previousTime, cancelTokenSource.Token);
 
                 bool isPlayerActor = current.Owner.ConditionResolver[Condition.IsPlayerActor](null);
                 if (isPlayerActor)
@@ -325,46 +315,47 @@ namespace Vvr.Session.World
                     {
                         using var trigger = ConditionTrigger.Push(handActor.Owner, ConditionTrigger.Game);
 
-                        await trigger.Execute(Condition.OnActorTurn, null);
+                        await trigger.Execute(Condition.OnActorTurn, null, cancelTokenSource.Token);
+                        if (cancelTokenSource.IsCancellationRequested) break;
                     }
                 }
 
-                // Because field can be cleared by delayed skills
-                if (m_PlayerField.Count > 0 && m_EnemyField.Count > 0)
+                // Because field can be cleared by delayed skills while time controller.
+                if (m_PlayerField.Count > 0 && m_EnemyField.Count > 0 &&
+                    !cancelTokenSource.IsCancellationRequested)
                 {
-                    using (var trigger = ConditionTrigger.Push(current.Owner, ConditionTrigger.Game))
+                    using var trigger = ConditionTrigger.Push(current.Owner, ConditionTrigger.Game);
+                    await trigger.Execute(Model.Condition.OnActorTurn, null, cancelTokenSource.Token);
+                    await UniTask.WaitForSeconds(1f, cancellationToken: cancelTokenSource.Token);
+
+                    ExecuteTurn(current, cancelTokenSource.Token)
+                        .Forget(UnityEngine.Debug.LogError);
+
+                    await m_ResetEvent.Task.AttachExternalCancellation(cancelTokenSource.Token);
+
+                    await trigger.Execute(Model.Condition.OnActorTurnEnd, null, cancelTokenSource.Token);
+
+                    // Tag out check
+                    if (current.TagOutRequested)
                     {
-                        await trigger.Execute(Model.Condition.OnActorTurn, null);
-                        await UniTask.WaitForSeconds(1f);
-                        // await TimeController.Next(1);
+                        Assert.IsTrue(current.Owner.ConditionResolver[Model.Condition.IsPlayerActor](null));
 
-                        ExecuteTurn(current)
-                            .SuppressCancellationThrow()
-                            .AttachExternalCancellation(ReserveToken)
-                            .Forget(UnityEngine.Debug.LogError);
+                        m_PlayerField.Remove(current);
+                        m_HandActors.Add(current);
 
-                        await m_ResetEvent.Task;
+                        current.TagOutRequested = false;
+                        RemoveFromQueue(current);
 
-                        await trigger.Execute(Model.Condition.OnActorTurnEnd, null);
+                        await trigger.Execute(Condition.OnTagOut, current.Owner.Id, cancelTokenSource.Token);
 
-                        // Tag out check
-                        if (current.TagOutRequested)
+                        await m_ViewProvider.ResolveAsync(current.Owner)
+                            .AttachExternalCancellation(cancelTokenSource.Token);
+                        foreach (var actor in m_PlayerField)
                         {
-                            Assert.IsTrue(current.Owner.ConditionResolver[Model.Condition.IsPlayerActor](null));
+                            await m_ViewProvider.ResolveAsync(actor.Owner)
+                                .AttachExternalCancellation(cancelTokenSource.Token);
 
-                            m_PlayerField.Remove(current);
-                            m_HandActors.Add(current);
-
-                            current.TagOutRequested = false;
-                            RemoveFromQueue(current);
-
-                            await trigger.Execute(Condition.OnTagOut, current.Owner.Id);
-
-                            await m_ViewProvider.ResolveAsync(current.Owner);
-                            foreach (var actor in m_PlayerField)
-                            {
-                                await m_ViewProvider.ResolveAsync(actor.Owner);
-                            }
+                            if (cancelTokenSource.IsCancellationRequested) break;
                         }
                     }
                 }
@@ -375,7 +366,8 @@ namespace Vvr.Session.World
                     {
                         using var trigger = ConditionTrigger.Push(handActor.Owner, ConditionTrigger.Game);
 
-                        await trigger.Execute(Condition.OnActorTurnEnd, null);
+                        await trigger.Execute(Condition.OnActorTurnEnd, null, cancelTokenSource.Token);
+                        if (cancelTokenSource.IsCancellationRequested) break;
                     }
                 }
 
@@ -389,11 +381,11 @@ namespace Vvr.Session.World
                     if (actor.Any())
                     {
                         var idx = m_HandActors.IndexOf(actor.First());
-                        await TagIn(idx);
+                        await TagIn(idx, cancelTokenSource.Token);
 
                         "add actor from hand".ToLog();
                         Assert.IsTrue(m_PlayerField.Count > 0);
-                        await UniTask.WaitForSeconds(1);
+                        await UniTask.WaitForSeconds(1, cancellationToken: cancelTokenSource.Token);
                     }
                 }
 
@@ -401,20 +393,54 @@ namespace Vvr.Session.World
                 // ObjectObserver<ActorList>.ChangedEvent(m_Timeline);
             }
 
+            IActor[] playerActors = GetCurrentPlayerActors().Select(x => x.Owner).ToArray();
+            IActor[] enemyActors  = GetCurrentEnemyActors().Select(x => x.Owner).ToArray();
+
             foreach (var item in m_PlayerField
                          .Concat<IStageActor>(m_HandActors)
                          .Concat(m_EnemyField))
             {
                 using var trigger = ConditionTrigger.Push(item.Owner, ConditionTrigger.Game);
-                await trigger.Execute(Model.Condition.OnBattleEnd, Data.stage.Id);
+                await trigger.Execute(Model.Condition.OnBattleEnd, Data.stage.Id, cancelTokenSource.Token);
 
                 m_StageActorProvider.Reserve(item);
             }
 
             m_Timeline.Clear();
             m_TimelineQueueProvider.Clear();
+
+            m_HandActors.Clear();
+            m_PlayerField.Clear();
+            m_EnemyField.Clear();
+
             "Stage end".ToLog();
-            return new Result(GetCurrentPlayerActors(), GetCurrentEnemyActors());
+            return new Result(playerActors, enemyActors);
+        }
+
+        private async UniTask ProceedTimeController(float previousTime, CancellationToken cancellationToken)
+        {
+            float sub = m_Times[0] - previousTime;
+            float p   = Mathf.FloorToInt(sub / 5 * 100) * 0.01f;
+            for (int i = 0; i < 4; i++)
+            {
+                await TimeController.Next(p, cancellationToken);
+            }
+
+            await TimeController.Next(sub - (p * 4), cancellationToken);
+        }
+        private async UniTask StartupStage(CancellationToken cancellationToken)
+        {
+            foreach (var item in m_PlayerField
+                         .Concat<IStageActor>(m_HandActors)
+                         .Concat(m_EnemyField)
+                    )
+            {
+                using var trigger = ConditionTrigger.Push(item.Owner, ConditionTrigger.Game);
+                await trigger.Execute(Model.Condition.OnBattleStart, Data.stage.Id, cancellationToken);
+
+                if (cancellationToken.IsCancellationRequested)
+                    return;
+            }
         }
 
         async UniTask IStageInfoProvider.Delete(IActor actor)
@@ -429,30 +455,36 @@ namespace Vvr.Session.World
         }
 
         private partial void    Join(ActorList                 field,  IStageActor actor);
-        private partial UniTask JoinAfterAsync(IStageActor     target, ActorList   field, IStageActor actor);
-        private partial UniTask DeleteAsync(ActorList          field,  IStageActor actor);
+        private partial UniTask JoinAfterAsync(
+            IStageActor     target, ActorList   field, IStageActor actor,
+            CancellationToken cancellationToken);
+        private partial UniTask DeleteAsync(ActorList          field,  IStageActor stageActor);
         private partial void    RemoveFromQueue(IStageActor    actor);
         private partial void    RemoveFromTimeline(IStageActor actor, int preserveCount = 0);
 
         private partial float   DequeueTimeline();
         private partial void    UpdateTimeline();
-        private partial UniTask UpdateTimelineNodeViewAsync();
-        private partial UniTask CloseTimelineNodeViewAsync();
+        private partial UniTask UpdateTimelineNodeViewAsync(CancellationToken cancellationToken);
+        private partial UniTask CloseTimelineNodeViewAsync(CancellationToken cancellationToken = default);
 
-        private partial UniTask TagIn(int index);
+        private partial UniTask TagIn(int index, CancellationToken cancellationToken);
 
-        private async UniTask ExecuteTurn(IStageActor runtimeActor)
+        private async UniTask ExecuteTurn(IStageActor runtimeActor, CancellationToken cancellationToken)
         {
             using var triggerEvent = ConditionTrigger.Scope(OnActorAction);
 
             if (m_InputControlProvider == null)
             {
                 "[Stage] Waiting input controller".ToLog();
-                while (m_InputControlProvider == null)
+                while (m_InputControlProvider == null &&
+                       !cancellationToken.IsCancellationRequested)
                 {
                     await UniTask.Yield();
                 }
             }
+
+            if (cancellationToken.IsCancellationRequested) return;
+            Assert.IsNotNull(m_InputControlProvider);
 
             // AI
             if (!m_InputControlProvider.CanControl(runtimeActor.Owner))
@@ -461,12 +493,14 @@ namespace Vvr.Session.World
                 int count = runtimeActor.Data.Skills.Count;
                 var skill = runtimeActor.Data.Skills[UnityEngine.Random.Range(0, count)];
 
-                await runtimeActor.Owner.Skill.Queue(skill);
+                await runtimeActor.Owner.Skill.Queue(skill)
+                    .AttachExternalCancellation(cancellationToken);
             }
             else
             {
                 "[Stage] player control".ToLog();
-                await m_InputControlProvider.TransferControl(runtimeActor.Owner);
+                await m_InputControlProvider.TransferControl(runtimeActor.Owner)
+                    .AttachExternalCancellation(cancellationToken);
             }
 
             m_ResetEvent.TrySetResult();
@@ -476,14 +510,14 @@ namespace Vvr.Session.World
         {
             if (e is not IActor) return;
 
-            await CloseTimelineNodeViewAsync();
+            await CloseTimelineNodeViewAsync(ReserveToken);
 
             await UniTask.WaitForSeconds(0.1f);
 
             if (condition == Condition.OnTagIn ||
                 condition == Condition.OnTagOut)
             {
-                await UpdateTimelineNodeViewAsync();
+                await UpdateTimelineNodeViewAsync(ReserveToken);
             }
         }
 
@@ -532,9 +566,11 @@ namespace Vvr.Session.World
             m_InputControlProvider = null;
         }
 
-        void IConnector<IStageActorProvider>.     Connect(IStageActorProvider         t) => m_StageActorProvider = t;
-        void IConnector<IStageActorProvider>.     Disconnect(IStageActorProvider      t) => m_StageActorProvider = null;
-        void IConnector<IActorViewProvider>.Connect(IActorViewProvider    t) => m_ViewProvider = t;
-        void IConnector<IActorViewProvider>.Disconnect(IActorViewProvider t) => m_ViewProvider = null;
+        void IConnector<IStageActorProvider>.Connect(IStageActorProvider    t) => m_StageActorProvider = t;
+        void IConnector<IStageActorProvider>.Disconnect(IStageActorProvider t) => m_StageActorProvider = null;
+        void IConnector<IActorViewProvider>. Connect(IActorViewProvider     t) => m_ViewProvider = t;
+        void IConnector<IActorViewProvider>. Disconnect(IActorViewProvider  t) => m_ViewProvider = null;
+        void IConnector<IActorDataProvider>. Connect(IActorDataProvider     t) => m_ActorDataProvider = t;
+        void IConnector<IActorDataProvider>.Disconnect(IActorDataProvider t) => m_ActorDataProvider = null;
     }
 }

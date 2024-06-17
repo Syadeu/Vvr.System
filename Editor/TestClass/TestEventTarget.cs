@@ -15,26 +15,37 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// File created : 2024, 05, 17 23:05
+// File created : 2024, 06, 17 21:06
 
 #endregion
 
 using System;
-using System.Collections.Generic;
 using JetBrains.Annotations;
 using Vvr.Provider;
 
-namespace Vvr.Session.EventView.Core
+namespace Vvr.TestClass
 {
     [PublicAPI]
-    public interface IViewRegistryProvider : IProvider
+    public class TestEventTarget : IEventTarget, IDisposable
     {
-        IReadOnlyDictionary<Type, IEventViewProvider> Providers { get; }
+        public Owner  Owner       { get; }
+        public string DisplayName { get; }
+        public bool   Disposed    { get; private set; }
 
-        [NotNull]
-        IProvider Resolve(Type providerType);
+        public TestEventTarget(string displayName)
+        {
+            Owner       = OwnerHelper.Player;
+            DisplayName = displayName;
+        }
+        public TestEventTarget(Owner owner, string displayName)
+        {
+            Owner       = owner;
+            DisplayName = displayName;
+        }
 
-        [NotNull]
-        TProvider Resolve<TProvider>();
+        public virtual void Dispose()
+        {
+            Disposed = true;
+        }
     }
 }

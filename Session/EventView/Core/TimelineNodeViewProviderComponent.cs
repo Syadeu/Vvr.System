@@ -31,7 +31,7 @@ namespace Vvr.Session.EventView.Core
     {
         public override Type ProviderType => typeof(IEventTimelineNodeViewProvider);
 
-        public abstract UniTask<Transform> Resolve(IEventTarget actor, int order);
+        public abstract UniTask<Transform> ResolveAsync(IEventTarget actor, int order);
         public abstract UniTask            Release(IEventTarget actor);
     }
 }

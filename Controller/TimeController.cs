@@ -110,27 +110,42 @@ namespace Vvr.Controller
         public static CryptoFloat CurrentTime => CryptoFloat.Raw(s_CurrentTime);
         public static bool        IsUpdating  => s_IsUpdating == 1;
 
+        [ThreadSafe]
         public static void Register(ITimeUpdate t, bool background = false, CancellationToken externalToken = default)
         {
+            using var l = new SemaphoreSlimLock(s_Slim);
+            l.Wait(TimeSpan.FromSeconds(1));
+
             if (s_TimeUpdaters.TryGetValue(t, out var e))
                 throw new InvalidOperationException();
 
             s_TimeUpdaters[t] = new(t, background, externalToken);
         }
-
+        [ThreadSafe]
         public static void Unregister(ITimeUpdate t)
         {
+            using var l = new SemaphoreSlimLock(s_Slim);
+            l.Wait(TimeSpan.FromSeconds(1));
+
             if (!s_TimeUpdaters.Remove(t, out var v)) return;
 
             v.Dispose();
         }
 
+        [ThreadSafe]
         public static void ResetTime()
         {
+            using var l = new SemaphoreSlimLock(s_Slim);
+            l.Wait(TimeSpan.FromSeconds(1));
+
+            s_CancellationTokenSource.Cancel();
+
             if (IsUpdating)
                 throw new InvalidOperationException();
 
+            s_CancellationTokenSource = new();
             Interlocked.Exchange(ref s_CurrentTime, 0);
+            Array.Clear(s_CachedArray, 0, s_CachedArray.Length);
         }
 
         public static async UniTask WaitForUpdateCompleted()
@@ -143,6 +158,7 @@ namespace Vvr.Controller
 
         private static Entry[] s_CachedArray = new Entry[8];
 
+        [ThreadSafe]
         public static async UniTask Next(float time, CancellationToken cancellationToken = default)
         {
             if (!cancellationToken.CanBeCanceled)
@@ -151,6 +167,8 @@ namespace Vvr.Controller
             }
             else
             {
+                if (cancellationToken.IsCancellationRequested) return;
+
                 using var cancelTokenSource = CancellationTokenSource.CreateLinkedTokenSource(
                     s_CancellationTokenSource.Token, cancellationToken);
 
@@ -160,12 +178,14 @@ namespace Vvr.Controller
             Array.Clear(s_CachedArray, 0, s_CachedArray.Length);
         }
 
+        [ThreadSafe]
         private static async UniTask InternalNext(float delta, CancellationToken cancellationToken)
         {
-            using var sps = new SemaphoreSlimLock(s_Slim);
-            await sps.WaitAsync(cancellationToken);
             if (cancellationToken.IsCancellationRequested)
                 return;
+
+            using var sps = new SemaphoreSlimLock(s_Slim);
+            await sps.WaitAsync(cancellationToken);
 
             CryptoFloat f           = CurrentTime + delta;
             float       currentTime = f;

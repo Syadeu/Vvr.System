@@ -44,14 +44,57 @@ namespace Vvr.Session
 
         private sealed class StageActor : IStageActor
         {
-            public IActor     Owner           { get; }
-            public IActorData Data            { get; }
-            public bool       TagOutRequested { get; set; }
+            private readonly IActor     m_Owner;
+            private readonly IActorData m_Data;
+            private          bool       m_TagOutRequested;
+
+            public IActor Owner
+            {
+                get
+                {
+                    if (Disposed)
+                        throw new ObjectDisposedException(nameof(StageActor));
+                    return m_Owner;
+                }
+            }
+
+            public IActorData Data
+            {
+                get
+                {
+                    if (Disposed)
+                        throw new ObjectDisposedException(nameof(StageActor));
+                    return m_Data;
+                }
+            }
+
+            public bool TagOutRequested
+            {
+                get
+                {
+                    if (Disposed)
+                        throw new ObjectDisposedException(nameof(StageActor));
+                    return m_TagOutRequested;
+                }
+                set
+                {
+                    if (Disposed)
+                        throw new ObjectDisposedException(nameof(StageActor));
+                    m_TagOutRequested = value;
+                }
+            }
+
+            public bool Disposed { get; private set; }
 
             public StageActor(IActor o, IActorData d)
             {
-                Owner = o;
-                Data  = d;
+                m_Owner = o;
+                m_Data  = d;
+            }
+
+            public void Dispose()
+            {
+                Disposed = true;
             }
 
             void IConnector<IAssetProvider>.Connect(IAssetProvider t)
@@ -175,6 +218,7 @@ namespace Vvr.Session
                 throw new InvalidOperationException();
 
             DisconnectActor(actor);
+            item.Dispose();
         }
 
         private void DisconnectActor(StageActor item)

@@ -39,7 +39,7 @@ namespace Vvr.Model
 
         [UsedImplicitly] public ActorSheet Actors { get; private set; }
         [UsedImplicitly] public StageSheet Stages { get; private set; }
-        [UsedImplicitly] public LevelSheet LevelTable { get; private set; }
+        // [UsedImplicitly] public LevelSheet LevelTable { get; private set; }
 
         [UsedImplicitly] public SkillSheet Skills    { get; private set; }
 

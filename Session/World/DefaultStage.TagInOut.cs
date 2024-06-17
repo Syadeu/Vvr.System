@@ -20,6 +20,7 @@
 #endregion
 
 using System;
+using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine.Assertions;
 using Vvr.Controller.Actor;
@@ -31,7 +32,7 @@ namespace Vvr.Session.World
 {
     partial class DefaultStage : IStageActorTagInOutProvider
     {
-        async UniTask IStageActorTagInOutProvider.TagIn(IActor actor)
+        UniTask IStageActorTagInOutProvider.TagIn(IActor actor)
         {
             Assert.IsNotNull(actor);
 
@@ -39,13 +40,13 @@ namespace Vvr.Session.World
             if (index < 0)
             {
                 "This actor is not in hand".ToLogError();
-                return;
+                return UniTask.CompletedTask;
             }
 
-            await TagIn(index);
+            return TagIn(index, ReserveToken);
         }
 
-        private partial async UniTask TagIn(int index)
+        private partial async UniTask TagIn(int index, CancellationToken cancellationToken)
         {
             // Assert.IsTrue(m_Timeline.First.Value.actor.ConditionResolver[Model.Condition.IsPlayerActor](null));
             if (m_PlayerField.Count > 1)
@@ -65,12 +66,13 @@ namespace Vvr.Session.World
                 IStageActor currentFieldRuntimeActor = m_PlayerField[0];
                 currentFieldRuntimeActor.TagOutRequested = true;
 
-                await JoinAfterAsync(currentFieldRuntimeActor, m_PlayerField, temp);
+                await JoinAfterAsync(currentFieldRuntimeActor, m_PlayerField, temp, cancellationToken);
 
                 m_TimelineQueueProvider.SetEnable(currentFieldRuntimeActor, false);
                 RemoveFromTimeline(currentFieldRuntimeActor, 1);
 
-                await m_ViewProvider.ResolveAsync(currentFieldRuntimeActor.Owner);
+                await m_ViewProvider.ResolveAsync(currentFieldRuntimeActor.Owner)
+                    .AttachExternalCancellation(cancellationToken);
             }
             else
             {
@@ -79,10 +81,10 @@ namespace Vvr.Session.World
 
             UpdateTimeline();
 
-            await m_ViewProvider.ResolveAsync(temp.Owner);
+            await m_ViewProvider.ResolveAsync(temp.Owner).AttachExternalCancellation(cancellationToken);
             using (var trigger = ConditionTrigger.Push(temp.Owner, ConditionTrigger.Game))
             {
-                await trigger.Execute(Model.Condition.OnTagIn, temp.Owner.Id);
+                await trigger.Execute(Model.Condition.OnTagIn, temp.Owner.Id, cancellationToken);
             }
         }
     }

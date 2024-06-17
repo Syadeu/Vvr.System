@@ -23,6 +23,7 @@ using System;
 using System.Collections.Generic;
 using JetBrains.Annotations;
 using UnityEngine;
+using Vvr.Model;
 using Vvr.Provider;
 
 namespace Vvr.Session
@@ -42,7 +43,7 @@ namespace Vvr.Session
         /// This method connects the specified provider interface to the session for internal use within the ChildSession class.
         /// It is used to establish communication between the session and the provider.
         /// </remarks>
-        [NotNull]
+        [NotNull, ThreadSafe]
         IDependencyContainer Register([NotNull] Type pType, [NotNull] IProvider provider);
 
         /// <summary>
@@ -56,7 +57,7 @@ namespace Vvr.Session
         /// This method connects the provider interface to the session.
         /// It is used to establish communication between the session and the provider.
         /// </remarks>
-        [NotNull]
+        [NotNull, ThreadSafe]
         IDependencyContainer Register<TProvider>([NotNull] TProvider provider) where TProvider : IProvider;
 
         /// <summary>
@@ -66,7 +67,7 @@ namespace Vvr.Session
         /// <remarks>
         /// This method disconnects the specified provider interface from the session. It is used to terminate communication between the session and the provider.
         /// </remarks>
-        [NotNull]
+        [NotNull, ThreadSafe]
         IDependencyContainer Unregister([NotNull] Type pType);
 
         /// <summary>
@@ -74,7 +75,7 @@ namespace Vvr.Session
         /// </summary>
         /// <typeparam name="TProvider">The type of the provider to unregister.</typeparam>
         /// <returns>The dependency container instance after unregistering the provider.</returns>
-        [NotNull]
+        [NotNull, ThreadSafe]
         IDependencyContainer Unregister<TProvider>() where TProvider : IProvider;
 
         /// <summary>
@@ -86,7 +87,7 @@ namespace Vvr.Session
         /// <typeparam name="TProvider">The type of the provider.</typeparam>
         /// <param name="c">The connector to connect.</param>
         /// <returns>void</returns>
-        [NotNull]
+        [NotNull, ThreadSafe]
         [ContractAnnotation("c:null => halt")]
         IDependencyContainer Connect<TProvider>([NotNull] IConnector<TProvider> c) where TProvider : IProvider;
 
@@ -95,13 +96,14 @@ namespace Vvr.Session
         /// </summary>
         /// <typeparam name="TProvider">The type of provider to disconnect.</typeparam>
         /// <param name="c">The connector of the provider.</param>
-        [NotNull]
+        [NotNull, ThreadSafe]
         [ContractAnnotation("c:null => halt")]
         IDependencyContainer Disconnect<TProvider>([NotNull] IConnector<TProvider> c) where TProvider : IProvider;
 
         /// <summary>
         /// Unregisters all connected providers from the child session.
         /// </summary>
+        [ThreadSafe]
         void UnregisterAll();
 
         /// <summary>

@@ -23,6 +23,7 @@ using System;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
+using Vvr.Model;
 
 namespace Vvr.Session
 {
@@ -51,7 +52,7 @@ namespace Vvr.Session
         /// <remarks>
         /// The method creates the child session of type TChildSession by invoking the <see cref="CreateSession{TChildSession}"/> method in a background thread.
         /// </remarks>
-        [PublicAPI]
+        [PublicAPI, ThreadSafe]
         UniTask<TChildSession> CreateSessionOnBackground<TChildSession>([CanBeNull] ISessionData data)
             where TChildSession : IChildSession, new();
 
@@ -61,7 +62,7 @@ namespace Vvr.Session
         /// <typeparam name="TChildSession">The type of the child session to create.</typeparam>
         /// <param name="data">The session data for initializing the child session.</param>
         /// <returns>The created child session of type TChildSession.</returns>
-        [PublicAPI]
+        [PublicAPI, ThreadSafe]
         UniTask<TChildSession> CreateSession<TChildSession>([CanBeNull] ISessionData data)
             where TChildSession : IChildSession, new();
 
@@ -100,6 +101,7 @@ namespace Vvr.Session
         /// <returns>The child session of the specified session type, or null if not found.</returns>
         [PublicAPI, MustUseReturnValue]
         [ContractAnnotation("sessionType:null => halt")]
+        [ThreadSafe]
         IChildSession GetSession([NotNull] Type sessionType);
 
         /// <summary>
@@ -108,7 +110,8 @@ namespace Vvr.Session
         /// <typeparam name="TChildSession">The type of the child session to get.</typeparam>
         /// <returns>The child session of type TChildSession, or null if not found.</returns>
         [PublicAPI, MustUseReturnValue]
-        TChildSession GetSession<TChildSession>() where TChildSession : class, IChildSession;
+        [ThreadSafe]
+        TChildSession GetSession<TChildSession>();
 
         /// <summary>
         /// Closes all child sessions and clears the list of child sessions.

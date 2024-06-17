@@ -1,6 +1,5 @@
 {
-    "name": "Vvr.Stat.Tests",
-    "rootNamespace": "Vvr.Stat.Tests",
+    "name": "Vvr.Model.Stat.Tests",
     "references": [
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",
