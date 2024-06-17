@@ -1,0 +1,13 @@
+{
+  "name": "Vvr.UComponent.Camera",
+  "references": [
+    "GUID:12885ca8baec4272b040170f769f92b9",
+    "GUID:0bebf4b98a2c47cd93c8f4c2f5f17d2a",
+
+    "Unity.Collections",
+    "Unity.Mathematics",
+    "Cinemachine",
+
+    "UniTask"
+  ]
+}

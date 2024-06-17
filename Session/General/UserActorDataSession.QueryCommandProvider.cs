@@ -21,8 +21,8 @@ using System;
 using System.Collections.Concurrent;
 using System.Threading;
 using Cysharp.Threading.Tasks;
-using NUnit.Framework;
 using Unity.Collections;
+using UnityEngine.Assertions;
 using Vvr.Model;
 using Vvr.Provider.Command;
 
@@ -75,6 +75,7 @@ namespace Vvr.Session
                     command.Execute(ref query);
                 }
             }
+            query.Dispose();
 
             var rdr = st.AsReader();
             ProcessCommandQuery(ref rdr);
@@ -104,12 +105,40 @@ namespace Vvr.Session
                     case UserActorDataQuery.CommandType.ResetData:
                         LoadCurrentTeam();
                         break;
+                    case UserActorDataQuery.CommandType.AddActor:
+                        ProcessAddActorData(rdr.Read<UserActorDataQuery.AddActorData>());
+                        i++;
+                        break;
+                    case UserActorDataQuery.CommandType.AddActorRange:
+                        ProcessAddActorRange(ref i, ref rdr);
+                        break;
                     default:
                         throw new InvalidOperationException("Invalid command type: " + t.ToString());
                 }
             }
 
             rdr.EndForEachIndex();
+        }
+
+        private void ProcessAddActorRange(ref int i, ref NativeStream.Reader rdr)
+        {
+            var meta = rdr.Read<UserActorDataQuery.AddActorRangeData>();
+            i++;
+            for (int j = 0; j < meta.count; j++, i++)
+            {
+                int index = rdr.Read<int>();
+                Assert.IsFalse(index < 0, "index < 0");
+                Assert.IsTrue(index < m_ActorDataProvider.Count, "index < m_ActorDataProvider.Count");
+
+                var actorData = m_ActorDataProvider[index];
+                AddActor(actorData);
+            }
+        }
+        private void ProcessAddActorData(UserActorDataQuery.AddActorData data)
+        {
+            var actorData = m_ActorDataProvider[data.index];
+
+            AddActor(actorData);
         }
 
         private partial void ProcessCommandData(UserActorDataQuery.SetTeamActorData data)

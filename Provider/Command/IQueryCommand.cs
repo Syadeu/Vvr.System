@@ -33,7 +33,7 @@ namespace Vvr.Provider.Command
     /// The queries must be of type <typeparamref name="TQuery"/>.
     /// </remarks>
     [PublicAPI, RequireImplementors]
-    public interface IQueryCommand<TQuery> where TQuery : unmanaged
+    public interface IQueryCommand<TQuery>
     {
         /// <summary>
         /// Executes a query command on a specific type of query.

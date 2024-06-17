@@ -82,9 +82,12 @@ namespace Vvr.Session
             }
 
             public ResolvedActorData(
-                IAssetProvider assetProvider,
-                IActorData rawData, UserActorData data)
+                [NotNull] IAssetProvider assetProvider,
+                [NotNull] IActorData rawData, UserActorData data)
             {
+                Assert.IsNotNull(assetProvider);
+                Assert.IsNotNull(rawData);
+
                 m_AssetProvider = assetProvider;
                 m_RawData       = rawData;
                 UniqueId        = data.uniqueId;
@@ -95,11 +98,25 @@ namespace Vvr.Session
 
             public UniTask<IImmutableObject<Sprite>> LoadContextPortrait()
             {
+                Assert.IsNotNull(m_AssetProvider);
+
+                // This should be error or debug actor.
+                if (Assets is null)
+                    return new UniTask<IImmutableObject<Sprite>>(null);
+
                 return m_AssetProvider.LoadAsync<Sprite>(Assets[AssetType.ContextPortrait]);
             }
 
             public UniTask<IImmutableObject<Sprite>> LoadSkillIcon(int index)
             {
+                Assert.IsNotNull(m_AssetProvider);
+
+                // This should be error or debug actor.
+                if (Skills is null ||
+                    Skills.Count <= index ||
+                    Skills[index].IconAssetKey is null)
+                    return new UniTask<IImmutableObject<Sprite>>(null);
+
                 return m_AssetProvider.LoadAsync<Sprite>(Skills[index].IconAssetKey);
             }
 
@@ -257,12 +274,20 @@ namespace Vvr.Session
         private void SetupInitialActors()
         {
             var d0 = m_ActorDataProvider.Resolve("CH000");
-            var defaultActor = new ResolvedActorData(
-                m_AssetProvider,
-                d0,
-                new UserActorData(d0.Id));
+            AddActor(d0);
+        }
 
-            m_ResolvedData.AddWithOrder(defaultActor);
+        private void AddActor([NotNull] IActorData data)
+        {
+            Assert.IsNotNull(data);
+            Assert.IsNotNull(m_AssetProvider);
+
+            var resolvedActorData = new ResolvedActorData(
+                m_AssetProvider,
+                data,
+                new UserActorData(data.Id));
+
+            m_ResolvedData.AddWithOrder(resolvedActorData);
         }
 
         void IConnector<IActorDataProvider>.Connect(IActorDataProvider    t)

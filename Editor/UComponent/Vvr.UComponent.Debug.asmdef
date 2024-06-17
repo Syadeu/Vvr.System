@@ -1,0 +1,27 @@
+{
+    "name": "Vvr.UComponent.Debug",
+    "rootNamespace": "",
+    "references": [
+        "Vvr",
+        "Vvr.UI",
+        "Vvr.TestClass",
+        "Vvr.Provider",
+        "Vvr.Controller",
+        "Vvr.Session",
+        "Vvr.Session.World",
+        "Vvr.Session.World.Core",
+        "UniTask",
+        "Unity.Addressables"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [
+        "UNITY_EDITOR"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

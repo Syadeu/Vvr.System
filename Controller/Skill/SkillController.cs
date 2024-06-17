@@ -365,7 +365,7 @@ namespace Vvr.Controller.Skill
                     // If method is damage, should shake camera
                     if (value.skill.Method == SkillSheet.Method.Damage)
                     {
-                        ICameraProvider camPrv = await Vvr.Provider.Provider.Static.GetAsync<ICameraProvider>()
+                        ICameraShakeProvider camPrv = await Vvr.Provider.Provider.Static.GetAsync<ICameraShakeProvider>()
                                 .AttachExternalCancellation(CancellationToken)
                             ;
 

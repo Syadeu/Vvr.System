@@ -1,0 +1,16 @@
+{
+  "name": "Vvr.Session.EventView.Camera",
+  "references": [
+    "Vvr",
+    "GUID:3957eefabf624d2485d569ea058bfc85",
+    "GUID:0bebf4b98a2c47cd93c8f4c2f5f17d2a",
+    "GUID:9d961b8c2f6843b8be5b4b8df3da8cb2",
+    "GUID:530f3d2cd2284054a85c3e2de9be9798",
+
+    "Unity.Mathematics",
+    "Unity.Collections",
+
+    "UniTask",
+    "UniTask.Addressables"
+  ]
+}

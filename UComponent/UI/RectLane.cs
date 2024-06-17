@@ -24,6 +24,7 @@ using System.Collections.Generic;
 using JetBrains.Annotations;
 using Sirenix.OdinInspector;
 using UnityEngine;
+using UnityEngine.Assertions;
 using UnityEngine.UI;
 using Vvr.UI;
 
@@ -52,8 +53,10 @@ namespace Vvr.UComponent.UI
         public Vector2 ItemSizeDelta { get => m_ItemSizeDelta ?? -Vector2.one; set => m_ItemSizeDelta = value; }
 
         [PublicAPI]
-        public void Insert(int index, IRectItem item)
+        public void Insert(int index, [NotNull] IRectItem item)
         {
+            Assert.IsNotNull(item);
+
             int i = 0;
             for (var node = m_Items.First;
                  node != null;
@@ -69,14 +72,18 @@ namespace Vvr.UComponent.UI
             Add(item);
         }
         [PublicAPI]
-        public void Add(IRectItem item)
+        public void Add([NotNull] IRectItem item)
         {
+            Assert.IsNotNull(item);
+
             m_Items.AddLast(item);
             UpdateProxy();
         }
         [PublicAPI]
-        public bool Remove(IRectItem item)
+        public bool Remove([NotNull] IRectItem item)
         {
+            Assert.IsNotNull(item);
+
             if (!m_Items.Remove(item)) return false;
             UpdateProxy();
             return true;
@@ -266,6 +273,9 @@ namespace Vvr.UComponent.UI
             var node = m_Items.First;
             foreach (var xPos in GetVisiblePositionWithAxis(0, false))
             {
+                Assert.IsNotNull(node);
+                Assert.IsNotNull(node.Value);
+
                 RectTransform proxy;
                 if (xPos.visible)
                 {

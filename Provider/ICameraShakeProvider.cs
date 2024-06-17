@@ -23,7 +23,7 @@ using Cysharp.Threading.Tasks;
 
 namespace Vvr.Provider
 {
-    public interface ICameraProvider : IProvider
+    public interface ICameraShakeProvider : IProvider
     {
         UniTask Shake();
     }
