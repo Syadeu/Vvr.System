@@ -123,10 +123,11 @@ namespace Vvr.Session.ContentView.Canvas
             return result;
         }
         public IImmutableObject<UnityEngine.Canvas> ResolveCamera(
-            CanvasCameraType cameraType,
+            CanvasCameraType cameraType, RenderMode renderMode,
             CanvasLayerName sortingLayerName, CanvasSortOrder sortOrder, bool raycaster)
         {
-            int h = (short)sortingLayerName ^ (short)sortOrder ^ raycaster.ToByte() ^ 37 ^ 267;
+            int h = (short)sortingLayerName ^ (short)sortOrder ^ raycaster.ToByte() ^ 37 ^ 267
+                ^ (int)renderMode;
 
             if (m_CanvasMap.TryGetValue(h, out var v)) return v;
 
@@ -134,7 +135,7 @@ namespace Vvr.Session.ContentView.Canvas
             if (raycaster) nameFormat += " Raycast";
 
             CreateCanvas(nameFormat, sortOrder, raycaster, out var canvas);
-            canvas.renderMode = RenderMode.ScreenSpaceCamera;
+            canvas.renderMode = renderMode;
             if (cameraType == CanvasCameraType.UICamera)
                 canvas.worldCamera = m_CameraProvider.UICamera;
             else
@@ -142,6 +143,13 @@ namespace Vvr.Session.ContentView.Canvas
 
             canvas.sortingLayerName
                 = VvrTypeHelper.Enum<CanvasLayerName>.ToString(sortingLayerName);
+
+            if (renderMode == RenderMode.WorldSpace)
+            {
+                RectTransform rectTr = (RectTransform)canvas.transform;
+                rectTr.localPosition = new Vector3(0, 0, 100);
+                rectTr.localScale    = Vector3.one * .17f;
+            }
 
             var result = new ImmutableCanvas(canvas);
             m_CanvasMap[h] = result;

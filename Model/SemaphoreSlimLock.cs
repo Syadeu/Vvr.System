@@ -74,6 +74,20 @@ namespace Vvr.Model
 
             return Task.CompletedTask;
         }
+        public Task WaitAsync(TimeSpan timeout, CancellationToken cancellationToken)
+        {
+            if (Interlocked.Exchange(ref m_Started, 1) == 1)
+                throw new InvalidOperationException();
+
+            int threadId = Thread.CurrentThread.ManagedThreadId;
+            bool isCurrentWriteThread
+                = Interlocked.Exchange(ref m_CurrentThreadId, threadId) == threadId;
+
+            if (!isCurrentWriteThread)
+                return m_SemaphoreSlim.WaitAsync(timeout, cancellationToken);
+
+            return Task.CompletedTask;
+        }
 
         /// <summary>
         /// Asynchronously waits for the lock to be released.
@@ -176,6 +190,42 @@ namespace Vvr.Model
                 UnityEditorInternal.InternalEditorUtility.CurrentThreadIsMainThread())
             {
                 $"Main thread has been awaited({t.ElapsedTime.TotalSeconds}s) with {nameof(SemaphoreSlimLock)}".ToLog();
+            }
+#endif
+        }
+        public void Wait(TimeSpan timeout, CancellationToken cancellationToken)
+        {
+            if (Interlocked.Exchange(ref m_Started, 1) == 1)
+                throw new InvalidOperationException();
+
+            int threadId = Thread.CurrentThread.ManagedThreadId;
+            bool isCurrentWriteThread
+                = Interlocked.Exchange(ref m_CurrentThreadId, threadId) == threadId;
+
+#if THREAD_DEBUG
+            if (!m_AllowMainThread && m_SemaphoreSlim.CurrentCount == 0 &&
+                !isCurrentWriteThread)
+            {
+                if (UnityEditorInternal.InternalEditorUtility.CurrentThreadIsMainThread())
+                    throw new InvalidOperationException(
+                        "Another thread currently writing but main thread trying to write." +
+                        "This is not allowed main thread should not be awaited.");
+            }
+
+            RealtimeTimer t = RealtimeTimer.Start();
+#endif
+
+            if (!isCurrentWriteThread)
+                if (!m_SemaphoreSlim.Wait(timeout, cancellationToken))
+                    throw new TimeoutException();
+
+#if UNITY_EDITOR
+            if (m_AllowMainThread     &&
+                !isCurrentWriteThread &&
+                UnityEditorInternal.InternalEditorUtility.CurrentThreadIsMainThread())
+            {
+                if (.1f <= t.ElapsedTime.TotalSeconds)
+                    $"Main thread has been awaited({t.ElapsedTime.TotalSeconds}s) with {nameof(SemaphoreSlimLock)}".ToLog();
             }
 #endif
         }

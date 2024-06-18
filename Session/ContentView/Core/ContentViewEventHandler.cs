@@ -47,23 +47,17 @@ namespace Vvr.Session.ContentView.Core
         private readonly Dictionary<TEvent, List<uint>> m_Actions = new();
         private readonly ConcurrentDictionary<uint, ContentViewEventDelegate<TEvent>> m_ActionMap = new();
 
-#if THREAD_DEBUG
-        private int m_CurrentWriteThreadId;
-#endif
-        private readonly AsyncLocal<int>  m_ExecutionDepth  = new();
-
         private readonly CancellationTokenSource m_CancellationTokenSource = new();
 
-        public bool              Disposed          { get; private set; }
+        private int m_Disposed;
+
+        public bool              Disposed          => m_Disposed == 1;
         public CancellationToken CancellationToken => m_CancellationTokenSource.Token;
 
-        public bool ExecutionLocked => ExecutionLock.CurrentCount == 0;
         public bool WriteLocked => WriteLock.CurrentCount == 0;
 
-        protected SemaphoreSlim ExecutionLock { get; } = new(1, 1);
-        protected SemaphoreSlim WriteLock       { get; } = new(1, 1);
-
-        protected AsyncLocal<int> ExecutionDepth    => m_ExecutionDepth;
+        protected SemaphoreSlim    WriteLock       { get; } = new(1, 1);
+        protected AsyncLocal<bool> TaskWriteLocked { get; } = new();
 
         [Pure]
         private static uint CalculateHash(ContentViewEventDelegate<TEvent> x)
@@ -85,10 +79,13 @@ namespace Vvr.Session.ContentView.Core
             if (Disposed)
                 throw new ObjectDisposedException(nameof(ContentViewEventHandler<TEvent>));
 
-            using var writeLock = new SemaphoreSlimLock(WriteLock);
-            writeLock.Wait(CancellationToken);
-
-            if (CancellationToken.IsCancellationRequested) return;
+            var  writeLock = new SemaphoreSlimLock(WriteLock);
+            bool wasLocked = TaskWriteLocked.Value;
+            if (!wasLocked)
+            {
+                TaskWriteLocked.Value = true;
+                writeLock.Wait(CancellationToken);
+            }
 
             foreach (var list in m_Actions.Values)
             {
@@ -97,18 +94,17 @@ namespace Vvr.Session.ContentView.Core
 
             m_Actions.Clear();
             m_ActionMap.Clear();
+
+            if (!wasLocked)
+            {
+                writeLock.Dispose();
+                TaskWriteLocked.Value = false;
+            }
         }
 
-        [ThreadSafe(ThreadSafeAttribute.SafeType.Semaphore)]
-        public virtual IContentViewEventHandler<TEvent> Register(TEvent e, ContentViewEventDelegate<TEvent> x)
+        private void InternalRegister(TEvent e, ContentViewEventDelegate<TEvent> x)
         {
-            if (Disposed)
-                throw new ObjectDisposedException(nameof(ContentViewEventHandler<TEvent>));
-
-            using var writeLock = new SemaphoreSlimLock(WriteLock, true);
-            writeLock.Wait(CancellationToken);
-
-            if (CancellationToken.IsCancellationRequested) return this;
+            if (CancellationToken.IsCancellationRequested) return;
 
             if (!m_Actions.TryGetValue(e, out var list))
             {
@@ -118,10 +114,53 @@ namespace Vvr.Session.ContentView.Core
 
             uint hash = CalculateHash(x);
             if (list.Contains(hash))
+            {
                 throw new InvalidOperationException("hash conflict possibly registering same method");
+            }
 
             m_ActionMap[hash] = x;
             list.Add(hash);
+        }
+        private void InternalUnregister(TEvent e, ContentViewEventDelegate<TEvent> x)
+        {
+            if (CancellationToken.IsCancellationRequested) return;
+
+            if (!m_Actions.TryGetValue(e, out var list)) return;
+
+            uint hash = CalculateHash(x);
+            if (!m_ActionMap.TryRemove(hash, out _)) return;
+
+            list.Remove(hash);
+        }
+
+        [ThreadSafe(ThreadSafeAttribute.SafeType.Semaphore)]
+        public virtual IContentViewEventHandler<TEvent> Register(TEvent e, ContentViewEventDelegate<TEvent> x)
+        {
+            if (Disposed)
+                throw new ObjectDisposedException(nameof(ContentViewEventHandler<TEvent>));
+            // if (m_ExecuteEntered == 1)
+            //     throw new InvalidOperationException("Cannot register while executing");
+
+            var  writeLock   = new SemaphoreSlimLock(WriteLock, true);
+            bool writeLocked = TaskWriteLocked.Value;
+            if (!writeLocked)
+            {
+                TaskWriteLocked.Value = true;
+                writeLock.Wait(TimeSpan.FromSeconds(1), CancellationToken);
+            }
+
+            try
+            {
+                InternalRegister(e, x);
+            }
+            finally
+            {
+                if (!writeLocked)
+                {
+                    TaskWriteLocked.Value = false;
+                    writeLock.Dispose();
+                }
+            }
 
             return this;
         }
@@ -130,20 +169,51 @@ namespace Vvr.Session.ContentView.Core
         {
             if (Disposed)
                 throw new ObjectDisposedException(nameof(ContentViewEventHandler<TEvent>));
+            // if (m_ExecuteEntered == 1)
+            //     throw new InvalidOperationException("Cannot unregister while executing");
 
-            using var writeLock = new SemaphoreSlimLock(WriteLock, true);
-            writeLock.Wait(CancellationToken);
+            var  writeLock   = new SemaphoreSlimLock(WriteLock, true);
+            bool writeLocked = TaskWriteLocked.Value;
+            if (!writeLocked)
+            {
+                TaskWriteLocked.Value = true;
+                writeLock.Wait(TimeSpan.FromSeconds(1), CancellationToken);
+            }
 
-            if (CancellationToken.IsCancellationRequested) return this;
-
-            if (!m_Actions.TryGetValue(e, out var list)) return this;
-
-            uint hash = CalculateHash(x);
-            if (!m_ActionMap.TryRemove(hash, out _)) return this;
-
-            list.Remove(hash);
+            try
+            {
+                InternalUnregister(e, x);
+            }
+            finally
+            {
+                if (!writeLocked)
+                {
+                    TaskWriteLocked.Value = false;
+                    writeLock.Dispose();
+                }
+            }
 
             return this;
+        }
+
+        struct ActionContext
+        {
+            public ContentViewEventDelegate<TEvent> action;
+            public TEvent                          e;
+            public object                          ctx;
+
+            public ActionContext(
+                ContentViewEventDelegate<TEvent> action, TEvent e, object c)
+            {
+                this.action = action;
+                this.e      = e;
+                this.ctx    = c;
+            }
+
+            public async UniTask Execute(CancellationToken cancellationToken)
+            {
+                await action(e, ctx).AttachExternalCancellation(cancellationToken);
+            }
         }
 
         public async UniTask ExecuteAsync(TEvent e) => await ExecuteAsync(e, null);
@@ -153,17 +223,15 @@ namespace Vvr.Session.ContentView.Core
                 throw new ObjectDisposedException(nameof(ContentViewEventHandler<TEvent>));
 
             SemaphoreSlimLock wl = new SemaphoreSlimLock(WriteLock);
-            SemaphoreSlimLock l  = new SemaphoreSlimLock(ExecutionLock);
-            if (m_ExecutionDepth.Value++ == 0)
+
+            bool writeLocked  = TaskWriteLocked.Value;
+            if (!writeLocked)
             {
+                TaskWriteLocked.Value = true;
                 await wl.WaitAsync(CancellationToken);
-                await l.WaitAsync(CancellationToken);
             }
-            // ExecutionLock executionLock = new ExecutionLock(this);
-            // await executionLock.WaitAsync(CancellationToken);
 
             if (CancellationToken.IsCancellationRequested) return;
-            // Assert.IsTrue(executionLock.Started);
 
             if (!m_Actions.TryGetValue(e, out var list)) return;
             int count = list.Count;
@@ -176,8 +244,10 @@ namespace Vvr.Session.ContentView.Core
                 if (!m_ActionMap.TryGetValue(list[i], out var target))
                     continue;
 
-                array[i] = target(e, ctx)
-                    .AttachExternalCancellation(m_CancellationTokenSource.Token);
+                ActionContext a = new ActionContext(target, e, ctx);
+                array[i] = UniTask.Create(a.Execute, m_CancellationTokenSource.Token);
+                // array[i] = target(e, ctx)
+                //     .AttachExternalCancellation(m_CancellationTokenSource.Token);
             }
 
             for (; i < array.Length; i++)
@@ -188,16 +258,11 @@ namespace Vvr.Session.ContentView.Core
             // Because thread can be changed after yield.
             // Executions are protected by TLS,
             // so make sure stacks after all execute has been queued.
-            // executionLock.Dispose();
-            if (--m_ExecutionDepth.Value == 0)
+            if (!writeLocked)
             {
+                TaskWriteLocked.Value = false;
                 wl.Dispose();
-                l.Dispose();
             }
-            else if (m_ExecutionDepth.Value < 0)
-                throw new InvalidOperationException();
-
-            $"{m_ExecutionDepth.Value}".ToLog();
 
             await UniTask.WhenAll(array)
                 .AttachExternalCancellation(m_CancellationTokenSource.Token);
@@ -207,13 +272,11 @@ namespace Vvr.Session.ContentView.Core
 
         public void Dispose()
         {
-            if (Disposed)
+            if (Interlocked.Exchange(ref m_Disposed, 1) == 1)
                 throw new ObjectDisposedException(nameof(ContentViewEventHandler<TEvent>));
 
             m_CancellationTokenSource.Cancel();
             Clear();
-
-            Disposed = true;
         }
     }
 }

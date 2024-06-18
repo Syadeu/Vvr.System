@@ -20,6 +20,7 @@
 #endregion
 
 using JetBrains.Annotations;
+using UnityEngine;
 using Vvr.Model;
 using Vvr.Provider;
 
@@ -43,12 +44,13 @@ namespace Vvr.Session.ContentView.Core
         /// Resolves the camera canvas view.
         /// </summary>
         /// <param name="cameraType">The type of camera to be used.</param>
+        /// <param name="renderMode">The render mode of the canvas.</param>
         /// <param name="sortingLayerName">The name of the sorting layer for the canvas.</param>
         /// <param name="sortOrder">The sort order of the canvas.</param>
         /// <param name="raycaster">Indicates whether a raycaster should be attached to the canvas.</param>
         /// <returns>The resolved camera canvas view.</returns>
         IImmutableObject<UnityEngine.Canvas> ResolveCamera(
-            CanvasCameraType cameraType,
+            CanvasCameraType cameraType,       RenderMode      renderMode,
             CanvasLayerName  sortingLayerName, CanvasSortOrder sortOrder,
             bool             raycaster);
     }

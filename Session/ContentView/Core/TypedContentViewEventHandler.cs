@@ -107,8 +107,13 @@ namespace Vvr.Session.ContentView.Core
             if (Disposed)
                 throw new ObjectDisposedException(nameof(TypedContentViewEventHandler<TEvent>));
 
-            using var writeLock = new SemaphoreSlimLock(WriteLock);
-            writeLock.Wait(CancellationToken);
+            var  writeLock   = new SemaphoreSlimLock(WriteLock, true);
+            bool writeLocked = TaskWriteLocked.Value;
+            if (!writeLocked)
+            {
+                TaskWriteLocked.Value = true;
+                writeLock.Wait(TimeSpan.FromSeconds(1), CancellationToken);
+            }
 
             if (CancellationToken.IsCancellationRequested) return this;
 
@@ -132,6 +137,12 @@ namespace Vvr.Session.ContentView.Core
             m_TypedActionMap[hash] = new TypedExecutionBody<TValue>(x);
             list.Add(hash);
 
+            if (!writeLocked)
+            {
+                TaskWriteLocked.Value = false;
+                writeLock.Dispose();
+            }
+
             return this;
         }
 
@@ -141,8 +152,13 @@ namespace Vvr.Session.ContentView.Core
             if (Disposed)
                 throw new ObjectDisposedException(nameof(TypedContentViewEventHandler<TEvent>));
 
-            using var writeLock = new SemaphoreSlimLock(WriteLock);
-            writeLock.Wait(CancellationToken);
+            var  writeLock   = new SemaphoreSlimLock(WriteLock, true);
+            bool writeLocked = TaskWriteLocked.Value;
+            if (!writeLocked)
+            {
+                TaskWriteLocked.Value = true;
+                writeLock.Wait(TimeSpan.FromSeconds(1), CancellationToken);
+            }
 
             if (CancellationToken.IsCancellationRequested) return this;
 
@@ -161,6 +177,12 @@ namespace Vvr.Session.ContentView.Core
             list.Remove(hash);
             item.Dispose();
 
+            if (!writeLocked)
+            {
+                TaskWriteLocked.Value = false;
+                writeLock.Dispose();
+            }
+
             return this;
         }
 
@@ -173,9 +195,14 @@ namespace Vvr.Session.ContentView.Core
                 return;
             }
 
-            SemaphoreSlimLock l = new SemaphoreSlimLock(ExecutionLock);
-            if (ExecutionDepth.Value++ == 0)
-                await l.WaitAsync(CancellationToken);
+            SemaphoreSlimLock wl = new SemaphoreSlimLock(WriteLock);
+
+            bool writeLocked = TaskWriteLocked.Value;
+            if (!writeLocked)
+            {
+                TaskWriteLocked.Value = true;
+                await wl.WaitAsync(CancellationToken);
+            }
 
             if (CancellationToken.IsCancellationRequested) return;
 
@@ -203,10 +230,11 @@ namespace Vvr.Session.ContentView.Core
                 array[i] = UniTask.CompletedTask;
             }
 
-            if (--ExecutionDepth.Value == 0)
-                l.Dispose();
-            else if (ExecutionDepth.Value < 0)
-                throw new InvalidOperationException();
+            if (!writeLocked)
+            {
+                TaskWriteLocked.Value = false;
+                wl.Dispose();
+            }
 
             await UniTask.WhenAll(array)
                     .AttachExternalCancellation(CancellationToken)

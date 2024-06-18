@@ -53,6 +53,8 @@ namespace Vvr.Session.ContentView.Core
     public interface IContentViewEventHandler<TEvent> : IContentViewEventHandler, IContentViewEventEmitter<TEvent>
         where TEvent : struct, IConvertible
     {
+        bool WriteLocked { get; }
+
         /// <summary>
         /// Registers an event delegate for the specified event.
         /// </summary>

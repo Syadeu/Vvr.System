@@ -138,8 +138,12 @@ namespace Vvr.Session.ContentView.Mainmenu
             // Because main menu view should be provided right away
             // after world has been initialized
             await UniTask.WaitWhile(() => ViewProvider is null);
-
+            
             m_ViewInstance = await ViewProvider.OpenAsync(CanvasViewProvider, m_AssetProvider, null, ReserveToken);
+            // while (EventHandler.WriteLocked)
+            // {
+            //     await UniTask.Yield();
+            // }
             this.Inject(m_ViewInstance);
         }
 

@@ -261,6 +261,7 @@ namespace Vvr.Session.World
                     .ExecuteAsync(
                         WorldBackgroundViewEvent.Open,
                         new WorldBackgroundViewEventContext(DisplayName, backgroundImg.Object))
+                    .AttachExternalCancellation(ReserveToken)
                     .Forget();
             }
 
@@ -271,11 +272,14 @@ namespace Vvr.Session.World
                     // $"{stageData.Name} {stageData.Floor}-{index}"
                     $"{stageData.Name}"
                 )
+                .AttachExternalCancellation(ReserveToken)
                 .Forget();
             mainmenuViewHandler.ExecuteAsync(MainmenuViewEvent.SetStageProgress,
                     (float)index / count)
+                .AttachExternalCancellation(ReserveToken)
                 .Forget();
             mainmenuViewHandler.ExecuteAsync(MainmenuViewEvent.ShowStageInfo)
+                .AttachExternalCancellation(ReserveToken)
                 .Forget();
         }
 

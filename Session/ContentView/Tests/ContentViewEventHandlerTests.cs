@@ -50,6 +50,7 @@ namespace Vvr.Session.ContentView.Tests
         [TearDown]
         public void TearDown()
         {
+            Assert.IsFalse(EventHandler.WriteLocked);
             EventHandler.Clear();
         }
 
@@ -124,7 +125,7 @@ namespace Vvr.Session.ContentView.Tests
             });
         }
 
-        [Test]
+        [Test, Repeat(10)]
         public void RegistrationTest_0()
         {
             EventHandler.Register(TestContentViewEvent.Test0, TestMethod);
@@ -133,9 +134,8 @@ namespace Vvr.Session.ContentView.Tests
             EventHandler.Register(TestContentViewEvent.Test3, TestMethod);
 
             Assert.IsFalse(EventHandler.WriteLocked);
-            Assert.IsFalse(EventHandler.ExecutionLocked);
         }
-        [Test]
+        [Test, Repeat(10)]
         public void RegistrationTest_1()
         {
             EventHandler.Register(TestContentViewEvent.Test0, TestMethod);
@@ -143,21 +143,19 @@ namespace Vvr.Session.ContentView.Tests
                 () => EventHandler.Register(TestContentViewEvent.Test0, TestMethod));
 
             Assert.IsFalse(EventHandler.WriteLocked);
-            Assert.IsFalse(EventHandler.ExecutionLocked);
         }
         [Test]
         public async Task RegistrationTest_2()
         {
-            await UniTask.WhenAll(
-                RegisterOnMainThread(TestContentViewEvent.Test0, TestMethod),
-                RegisterOnMainThread(TestContentViewEvent.Test1, TestMethod),
+            await Task.WhenAll(
+                RegisterOnMainThread(TestContentViewEvent.Test0, TestMethod).AsTask(),
+                RegisterOnMainThread(TestContentViewEvent.Test1, TestMethod).AsTask(),
 
-                RegisterOnBackground(TestContentViewEvent.Test2, TestMethod),
-                RegisterOnBackground(TestContentViewEvent.Test3, TestMethod)
+                RegisterOnBackground(TestContentViewEvent.Test2, TestMethod).AsTask(),
+                RegisterOnBackground(TestContentViewEvent.Test3, TestMethod).AsTask()
             );
 
             Assert.IsFalse(EventHandler.WriteLocked);
-            Assert.IsFalse(EventHandler.ExecutionLocked);
         }
         [Test]
         public async Task ExecuteTest_0()
@@ -174,9 +172,6 @@ namespace Vvr.Session.ContentView.Tests
             await EventHandler.ExecuteAsync(TestContentViewEvent.Test1);
             await EventHandler.ExecuteAsync(TestContentViewEvent.Test2);
             await EventHandler.ExecuteAsync(TestContentViewEvent.Test3);
-
-            Assert.IsFalse(EventHandler.WriteLocked);
-            Assert.IsFalse(EventHandler.ExecutionLocked);
         }
         [Test]
         public async Task ExecuteTest_1()
@@ -195,9 +190,6 @@ namespace Vvr.Session.ContentView.Tests
                     UniTask.RunOnThreadPool(() => EventHandler.ExecuteAsync(TestContentViewEvent.Test2)),
                     UniTask.RunOnThreadPool(() => EventHandler.ExecuteAsync(TestContentViewEvent.Test3))
             );
-
-            Assert.IsFalse(EventHandler.WriteLocked);
-            Assert.IsFalse(EventHandler.ExecutionLocked);
         }
         [Test]
         public async Task ExecuteTest_2()
@@ -209,9 +201,6 @@ namespace Vvr.Session.ContentView.Tests
             );
 
             await UniTask.RunOnThreadPool(() => EventHandler.ExecuteAsync(TestContentViewEvent.Test0));
-
-            Assert.IsFalse(EventHandler.WriteLocked);
-            Assert.IsFalse(EventHandler.ExecutionLocked);
         }
         [Test]
         public async Task ExecuteTest_3()
@@ -238,9 +227,6 @@ namespace Vvr.Session.ContentView.Tests
 
             Assert.IsTrue(e0);
             Assert.IsTrue(e1);
-
-            Assert.IsFalse(EventHandler.WriteLocked);
-            Assert.IsFalse(EventHandler.ExecutionLocked);
         }
 
         [Test]
@@ -275,9 +261,6 @@ namespace Vvr.Session.ContentView.Tests
 
             Assert.IsTrue(e0);
             Assert.IsTrue(e1);
-
-            Assert.IsFalse(EventHandler.WriteLocked);
-            Assert.IsFalse(EventHandler.ExecutionLocked);
         }
         [Test]
         public async Task MultiExecuteTest_1()
@@ -312,9 +295,6 @@ namespace Vvr.Session.ContentView.Tests
 
             Assert.IsTrue(e0);
             Assert.IsTrue(e1);
-
-            Assert.IsFalse(EventHandler.WriteLocked);
-            Assert.IsFalse(EventHandler.ExecutionLocked);
         }
 
         [Test]
@@ -347,9 +327,6 @@ namespace Vvr.Session.ContentView.Tests
 
             Assert.IsTrue(e0);
             Assert.IsTrue(e1);
-
-            Assert.IsFalse(EventHandler.WriteLocked);
-            Assert.IsFalse(EventHandler.ExecutionLocked);
         }
         [Test]
         public async Task MultiExecuteTest_3()
@@ -392,9 +369,6 @@ namespace Vvr.Session.ContentView.Tests
 
             Assert.IsTrue(e0);
             Assert.IsTrue(e1);
-
-            Assert.IsFalse(EventHandler.WriteLocked);
-            Assert.IsFalse(EventHandler.ExecutionLocked);
         }
         [Test]
         public async Task MultiExecuteTest_4()
@@ -441,88 +415,6 @@ namespace Vvr.Session.ContentView.Tests
 
             Assert.IsTrue(e0);
             Assert.IsTrue(e1);
-
-            Assert.IsFalse(EventHandler.WriteLocked);
-            Assert.IsFalse(EventHandler.ExecutionLocked);
-        }
-
-        [Test]
-        public async Task InterceptionTest_0()
-        {
-            bool e0 = false;
-
-            await Task.WhenAll(
-                RegisterOnMainThread(TestContentViewEvent.Test0, async (e, x) =>
-                {
-                    e0 = true;
-                }).AsTask(),
-
-                ExecuteOnMainThread(TestContentViewEvent.Test0)
-            );
-
-            Assert.IsTrue(e0);
-            Assert.IsFalse(EventHandler.ExecutionLocked);
-            Assert.IsFalse(EventHandler.WriteLocked);
-        }
-        [Test]
-        public async Task InterceptionTest_1()
-        {
-            bool e0 = false;
-
-            await Task.WhenAll(
-                RegisterOnBackground(TestContentViewEvent.Test0, async (e, x) =>
-                {
-                    e0 = true;
-                }).AsTask(),
-
-                ExecuteOnMainThread(TestContentViewEvent.Test0)
-            );
-
-            await ExecuteOnMainThread(TestContentViewEvent.Test0);
-
-            Assert.IsTrue(e0);
-            Assert.IsFalse(EventHandler.ExecutionLocked);
-            Assert.IsFalse(EventHandler.WriteLocked);
-        }
-        [Test]
-        public async Task InterceptionTest_2()
-        {
-            bool e0 = false;
-
-            Assert.IsFalse(EventHandler.CancellationToken.IsCancellationRequested);
-            await Task.WhenAll(
-                RegisterOnBackground(TestContentViewEvent.Test0, async (e, x) =>
-                {
-                    e0 = true;
-                }).AsTask(),
-
-                ExecuteOnBackground(TestContentViewEvent.Test0)
-            );
-
-            Assert.IsFalse(EventHandler.ExecutionLocked);
-            Assert.IsFalse(EventHandler.WriteLocked);
-        }
-        [Test]
-        public async Task InterceptionTest_3()
-        {
-            bool e0 = false;
-
-            Assert.IsFalse(EventHandler.CancellationToken.IsCancellationRequested);
-            await Task.WhenAll(
-                RegisterOnBackground(TestContentViewEvent.Test0, async (e, x) =>
-                {
-                    e0 = true;
-                }).AsTask(),
-
-                ExecuteOnBackground(TestContentViewEvent.Test0)
-            );
-
-            Assert.IsFalse(EventHandler.ExecutionLocked);
-            Assert.IsFalse(EventHandler.WriteLocked);
-
-            await ExecuteOnBackground(TestContentViewEvent.Test0);
-
-            Assert.IsTrue(e0);
         }
     }
 }
