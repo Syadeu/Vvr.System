@@ -25,6 +25,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
+using Vvr.Model;
 
 namespace Vvr.Session.ContentView.Core
 {
@@ -82,7 +83,7 @@ namespace Vvr.Session.ContentView.Core
         {
             base.Clear();
 
-            using var writeLock = new WriteLock(this);
+            using var writeLock = new SemaphoreSlimLock(WriteLock);
             writeLock.Wait(CancellationToken);
 
             if (CancellationToken.IsCancellationRequested) return;
@@ -100,12 +101,13 @@ namespace Vvr.Session.ContentView.Core
             m_TypedActionMap.Clear();
         }
 
+        [ThreadSafe(ThreadSafeAttribute.SafeType.Semaphore)]
         public ITypedContentViewEventHandler<TEvent> Register<TValue>(TEvent e, ContentViewEventDelegate<TEvent, TValue> x)
         {
             if (Disposed)
                 throw new ObjectDisposedException(nameof(TypedContentViewEventHandler<TEvent>));
 
-            using var writeLock = new WriteLock(this);
+            using var writeLock = new SemaphoreSlimLock(WriteLock);
             writeLock.Wait(CancellationToken);
 
             if (CancellationToken.IsCancellationRequested) return this;
@@ -133,12 +135,13 @@ namespace Vvr.Session.ContentView.Core
             return this;
         }
 
+        [ThreadSafe(ThreadSafeAttribute.SafeType.Semaphore)]
         public ITypedContentViewEventHandler<TEvent> Unregister<TValue>(TEvent e, ContentViewEventDelegate<TEvent, TValue> x)
         {
             if (Disposed)
                 throw new ObjectDisposedException(nameof(TypedContentViewEventHandler<TEvent>));
 
-            using var writeLock = new WriteLock(this);
+            using var writeLock = new SemaphoreSlimLock(WriteLock);
             writeLock.Wait(CancellationToken);
 
             if (CancellationToken.IsCancellationRequested) return this;
@@ -170,8 +173,9 @@ namespace Vvr.Session.ContentView.Core
                 return;
             }
 
-            ExecutionLock executionLock = new ExecutionLock(this);
-            await executionLock.WaitAsync(CancellationToken);
+            SemaphoreSlimLock l = new SemaphoreSlimLock(ExecutionLock);
+            if (ExecutionDepth.Value++ == 0)
+                await l.WaitAsync(CancellationToken);
 
             if (CancellationToken.IsCancellationRequested) return;
 
@@ -199,7 +203,10 @@ namespace Vvr.Session.ContentView.Core
                 array[i] = UniTask.CompletedTask;
             }
 
-            executionLock.Dispose();
+            if (--ExecutionDepth.Value == 0)
+                l.Dispose();
+            else if (ExecutionDepth.Value < 0)
+                throw new InvalidOperationException();
 
             await UniTask.WhenAll(array)
                     .AttachExternalCancellation(CancellationToken)

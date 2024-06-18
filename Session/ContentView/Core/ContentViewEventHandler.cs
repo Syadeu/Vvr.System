@@ -29,9 +29,11 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
+using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using UnityEngine.Assertions;
+using Vvr.Model;
 
 namespace Vvr.Session.ContentView.Core
 {
@@ -42,121 +44,6 @@ namespace Vvr.Session.ContentView.Core
     public class ContentViewEventHandler<TEvent> : IContentViewEventHandler<TEvent>
         where TEvent : struct, IConvertible
     {
-        protected struct WriteLock : IDisposable
-        {
-            private readonly ContentViewEventHandler<TEvent> m_Handler;
-            private          bool                            m_Started;
-
-            public WriteLock(ContentViewEventHandler<TEvent> h)
-            {
-                m_Handler = h;
-                m_Started = true;
-            }
-
-            public async UniTask WaitAsync()
-            {
-                if (!m_Handler.m_WriteLocked.Value)
-                {
-                    await m_Handler.m_WriteLock.WaitAsync();
-                    m_Handler.m_WriteLocked.Value = true;
-                }
-            }
-            public void Wait(CancellationToken cancellationToken = default)
-            {
-#if THREAD_DEBUG
-                int threadId = Thread.CurrentThread.ManagedThreadId;
-                bool isCurrentWriteThread
-                    = Interlocked.Exchange(ref m_Handler.m_CurrentWriteThreadId, threadId) == threadId;
-
-                if (m_Handler.m_WriteLock.CurrentCount == 0 &&
-                    !isCurrentWriteThread)
-                {
-                    if (UnityEditorInternal.InternalEditorUtility.CurrentThreadIsMainThread())
-                        throw new InvalidOperationException(
-                            "Another thread currently writing but main thread trying to write." +
-                            "This is not allowed main thread should not be awaited.");
-                }
-#endif
-                if (!m_Handler.m_WriteLocked.Value)
-                {
-                    m_Handler.m_WriteLock.Wait(cancellationToken);
-                    m_Handler.m_WriteLocked.Value = true;
-                }
-            }
-
-            public void Dispose()
-            {
-                if (!m_Started)
-                {
-                    return;
-                }
-
-                if (m_Handler.m_WriteLocked.Value)
-                {
-                    m_Handler.m_WriteLock.Release();
-                    m_Handler.m_WriteLocked.Value = false;
-
-                    // $"write lock out".ToLog();
-                }
-            }
-        }
-
-        protected struct ExecutionLock : IDisposable
-        {
-            private readonly ContentViewEventHandler<TEvent> m_Handler;
-
-            public bool Started { get; private set; }
-
-            public ExecutionLock(ContentViewEventHandler<TEvent> h)
-            {
-                m_Handler = h;
-                Started   = true;
-            }
-
-            public async UniTask WaitAsync(CancellationToken cancellationToken = default)
-            {
-                if (!m_Handler.m_ExecutionLocked.Value
-                    && m_Handler.m_ExecutionDepth.Value == 0
-                    )
-                {
-                    // $"execution lock in {m_Handler.m_ExecutionDepth.Value}".ToLog();
-                    await m_Handler.m_ExecutionLock.WaitAsync(cancellationToken);
-
-                    m_Handler.m_ExecutionLocked.Value = true;
-                }
-
-                m_Handler.m_ExecutionDepth.Value += 1;
-                // $"in {m_Handler.m_ExecutionDepth.Value}, {m_Handler.m_ExecutionLocked.Value}".ToLog();
-
-                Started = true;
-            }
-
-            public void Dispose()
-            {
-                if (!Started)
-                {
-                    return;
-                }
-
-                // $"depth: {m_Handler.m_ExecutionDepth.Value}".ToLog();
-                m_Handler.m_ExecutionDepth.Value -= 1;
-                if (m_Handler.m_ExecutionDepth.Value < 0)
-                    throw new InvalidOperationException($"{m_Handler.m_ExecutionDepth.Value}");
-
-                if (
-                    m_Handler.m_ExecutionDepth.Value == 0 &&
-                    m_Handler.m_ExecutionLocked.Value)
-                {
-                    m_Handler.m_ExecutionLock.Release();
-                    m_Handler.m_ExecutionLocked.Value = false;
-
-                    // $"execution lock out {m_Handler.m_ExecutionDepth.Value}".ToLog();
-                }
-                // else $"depth: {m_Handler.m_ExecutionDepth} exit, {m_Handler.m_ExecutionLocked == 1}".ToLog();
-                // else $"depth: {m_Handler.m_ExecutionDepth.Value} exit, {m_Handler.m_ExecutionLocked.Value}".ToLog();
-            }
-        }
-
         private readonly Dictionary<TEvent, List<uint>> m_Actions = new();
         private readonly ConcurrentDictionary<uint, ContentViewEventDelegate<TEvent>> m_ActionMap = new();
 
@@ -164,21 +51,19 @@ namespace Vvr.Session.ContentView.Core
         private int m_CurrentWriteThreadId;
 #endif
         private readonly AsyncLocal<int>  m_ExecutionDepth  = new();
-        private readonly AsyncLocal<bool>
-            m_WriteLocked = new(),
-            m_ExecutionLocked = new();
-
-        private readonly SemaphoreSlim
-            m_ExecutionLock = new(1, 1),
-            m_WriteLock     = new(1, 1);
 
         private readonly CancellationTokenSource m_CancellationTokenSource = new();
 
         public bool              Disposed          { get; private set; }
         public CancellationToken CancellationToken => m_CancellationTokenSource.Token;
 
-        public bool ExecutionLocked => m_ExecutionLock.CurrentCount == 0;
-        public bool WriteLocked => m_WriteLock.CurrentCount == 0;
+        public bool ExecutionLocked => ExecutionLock.CurrentCount == 0;
+        public bool WriteLocked => WriteLock.CurrentCount == 0;
+
+        protected SemaphoreSlim ExecutionLock { get; } = new(1, 1);
+        protected SemaphoreSlim WriteLock       { get; } = new(1, 1);
+
+        protected AsyncLocal<int> ExecutionDepth    => m_ExecutionDepth;
 
         [Pure]
         private static uint CalculateHash(ContentViewEventDelegate<TEvent> x)
@@ -194,12 +79,13 @@ namespace Vvr.Session.ContentView.Core
             return hash;
         }
 
+        [ThreadSafe(ThreadSafeAttribute.SafeType.Semaphore)]
         public virtual void Clear()
         {
             if (Disposed)
                 throw new ObjectDisposedException(nameof(ContentViewEventHandler<TEvent>));
 
-            using var writeLock = new WriteLock(this);
+            using var writeLock = new SemaphoreSlimLock(WriteLock);
             writeLock.Wait(CancellationToken);
 
             if (CancellationToken.IsCancellationRequested) return;
@@ -213,12 +99,13 @@ namespace Vvr.Session.ContentView.Core
             m_ActionMap.Clear();
         }
 
+        [ThreadSafe(ThreadSafeAttribute.SafeType.Semaphore)]
         public virtual IContentViewEventHandler<TEvent> Register(TEvent e, ContentViewEventDelegate<TEvent> x)
         {
             if (Disposed)
                 throw new ObjectDisposedException(nameof(ContentViewEventHandler<TEvent>));
 
-            using var writeLock = new WriteLock(this);
+            using var writeLock = new SemaphoreSlimLock(WriteLock, true);
             writeLock.Wait(CancellationToken);
 
             if (CancellationToken.IsCancellationRequested) return this;
@@ -238,12 +125,13 @@ namespace Vvr.Session.ContentView.Core
 
             return this;
         }
+        [ThreadSafe(ThreadSafeAttribute.SafeType.Semaphore)]
         public virtual IContentViewEventHandler<TEvent> Unregister(TEvent e, ContentViewEventDelegate<TEvent> x)
         {
             if (Disposed)
                 throw new ObjectDisposedException(nameof(ContentViewEventHandler<TEvent>));
 
-            using var writeLock = new WriteLock(this);
+            using var writeLock = new SemaphoreSlimLock(WriteLock, true);
             writeLock.Wait(CancellationToken);
 
             if (CancellationToken.IsCancellationRequested) return this;
@@ -264,47 +152,55 @@ namespace Vvr.Session.ContentView.Core
             if (Disposed)
                 throw new ObjectDisposedException(nameof(ContentViewEventHandler<TEvent>));
 
-            ExecutionLock executionLock = new ExecutionLock(this);
-            await executionLock.WaitAsync(CancellationToken);
+            SemaphoreSlimLock wl = new SemaphoreSlimLock(WriteLock);
+            SemaphoreSlimLock l  = new SemaphoreSlimLock(ExecutionLock);
+            if (m_ExecutionDepth.Value++ == 0)
+            {
+                await wl.WaitAsync(CancellationToken);
+                await l.WaitAsync(CancellationToken);
+            }
+            // ExecutionLock executionLock = new ExecutionLock(this);
+            // await executionLock.WaitAsync(CancellationToken);
 
             if (CancellationToken.IsCancellationRequested) return;
-            Assert.IsTrue(executionLock.Started);
+            // Assert.IsTrue(executionLock.Started);
 
             if (!m_Actions.TryGetValue(e, out var list)) return;
             int count = list.Count;
             var array = ArrayPool<UniTask>.Shared.Rent(count);
 
-            // using (new EventStack(m_EventStack, e))
+            int i = 0;
+            for (; i < count; i++)
             {
-                int i = 0;
-                // using (var writeLock = new WriteLock(this))
-                {
-                    // writeLock.Wait();
+                // This operation can be recursively calling this method.
+                if (!m_ActionMap.TryGetValue(list[i], out var target))
+                    continue;
 
-                    for (; i < count; i++)
-                    {
-                        // This operation can be recursively calling this method.
-                        if (!m_ActionMap.TryGetValue(list[i], out var target))
-                            continue;
-
-                        array[i] = target(e, ctx)
-                            .AttachExternalCancellation(m_CancellationTokenSource.Token);
-                    }
-                }
-
-                for (; i < array.Length; i++)
-                {
-                    array[i] = UniTask.CompletedTask;
-                }
-
-                // Because thread can be changed after yield.
-                // Executions are protected by TLS,
-                // so make sure stacks after all execute has been queued.
-                executionLock.Dispose();
-
-                await UniTask.WhenAll(array)
+                array[i] = target(e, ctx)
                     .AttachExternalCancellation(m_CancellationTokenSource.Token);
             }
+
+            for (; i < array.Length; i++)
+            {
+                array[i] = UniTask.CompletedTask;
+            }
+
+            // Because thread can be changed after yield.
+            // Executions are protected by TLS,
+            // so make sure stacks after all execute has been queued.
+            // executionLock.Dispose();
+            if (--m_ExecutionDepth.Value == 0)
+            {
+                wl.Dispose();
+                l.Dispose();
+            }
+            else if (m_ExecutionDepth.Value < 0)
+                throw new InvalidOperationException();
+
+            $"{m_ExecutionDepth.Value}".ToLog();
+
+            await UniTask.WhenAll(array)
+                .AttachExternalCancellation(m_CancellationTokenSource.Token);
 
             ArrayPool<UniTask>.Shared.Return(array, true);
         }

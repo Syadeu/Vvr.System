@@ -72,16 +72,17 @@ namespace Vvr.Session.ContentView.Tests
         private UniTask RegisterOnMainThread(TestContentViewEvent e, ContentViewEventDelegate<TestContentViewEvent> x)
         {
             return UniTask.Create(
-                async () =>
+                () =>
                 {
                     Debug.Log($"{e} registered");
-                    return EventHandler.Register(e, x);
+                    EventHandler.Register(e, x);
+                    return UniTask.CompletedTask;
                 });
         }
         private UniTask RegisterOnBackground(TestContentViewEvent e, ContentViewEventDelegate<TestContentViewEvent> x)
         {
             return UniTask.RunOnThreadPool(
-                async () =>
+                () =>
                 {
                     Debug.Log($"{e} registered");
                     return EventHandler.Register(e, x);
@@ -90,30 +91,32 @@ namespace Vvr.Session.ContentView.Tests
         private UniTask UnregisterOnMainThread(TestContentViewEvent e, ContentViewEventDelegate<TestContentViewEvent> x)
         {
             return UniTask.Create(
-                async () =>
+                () =>
                 {
                     Debug.Log($"{e} unregistered");
-                    return EventHandler.Unregister(e, x);
+                    EventHandler.Unregister(e, x);
+
+                    return UniTask.CompletedTask;
                 });
         }
-        private UniTask UnregisterOnBackground(TestContentViewEvent e, ContentViewEventDelegate<TestContentViewEvent> x)
+        private Task UnregisterOnBackground(TestContentViewEvent e, ContentViewEventDelegate<TestContentViewEvent> x)
         {
-            return UniTask.RunOnThreadPool(
-                async () =>
+            return Task.Run(
+                () =>
                 {
                     Debug.Log($"{e} unregistered");
                     return EventHandler.Unregister(e, x);
                 });
         }
 
-        private UniTask ExecuteOnMainThread(TestContentViewEvent e, object ctx = null)
+        private async Task ExecuteOnMainThread(TestContentViewEvent e, object ctx = null)
         {
             Debug.Log($"{e} execute with ctx");
-            return EventHandler.ExecuteAsync(e, ctx);
+            await EventHandler.ExecuteAsync(e, ctx);
         }
-        private UniTask ExecuteOnBackground(TestContentViewEvent e, object ctx = null)
+        private Task ExecuteOnBackground(TestContentViewEvent e, object ctx = null)
         {
-            return UniTask.RunOnThreadPool(() =>
+            return Task.Run(() =>
             {
                 Debug.Log($"{e} execute with ctx");
                 return EventHandler.ExecuteAsync(e, ctx);
@@ -301,7 +304,7 @@ namespace Vvr.Session.ContentView.Tests
                 Debug.Log($"{e} end");
             });
 
-            await UniTask.WhenAll(
+            await Task.WhenAll(
                 ExecuteOnBackground(TestContentViewEvent.Test0),
                 ExecuteOnBackground(TestContentViewEvent.Test2)
             );
@@ -381,7 +384,7 @@ namespace Vvr.Session.ContentView.Tests
                 Debug.Log($"{e} end");
             });
 
-            await UniTask.WhenAll(
+            await Task.WhenAll(
                 ExecuteOnMainThread(TestContentViewEvent.Test0),
                 ExecuteOnBackground(TestContentViewEvent.Test2)
                 );
@@ -426,7 +429,7 @@ namespace Vvr.Session.ContentView.Tests
                 Debug.Log($"{e} end");
             });
 
-            await UniTask.WhenAll(
+            await Task.WhenAll(
                 ExecuteOnMainThread(TestContentViewEvent.Test0)
                 ,
                 // ExecuteOnMainThread(TestContentViewEvent.Test0),
@@ -447,27 +450,29 @@ namespace Vvr.Session.ContentView.Tests
         {
             bool e0 = false;
 
-            await UniTask.WhenAll(
+            await Task.WhenAll(
                 RegisterOnMainThread(TestContentViewEvent.Test0, async (e, x) =>
                 {
                     e0 = true;
-                }),
+                }).AsTask(),
 
                 ExecuteOnMainThread(TestContentViewEvent.Test0)
             );
 
             Assert.IsTrue(e0);
+            Assert.IsFalse(EventHandler.ExecutionLocked);
+            Assert.IsFalse(EventHandler.WriteLocked);
         }
         [Test]
         public async Task InterceptionTest_1()
         {
             bool e0 = false;
 
-            await UniTask.WhenAll(
+            await Task.WhenAll(
                 RegisterOnBackground(TestContentViewEvent.Test0, async (e, x) =>
                 {
                     e0 = true;
-                }),
+                }).AsTask(),
 
                 ExecuteOnMainThread(TestContentViewEvent.Test0)
             );
@@ -475,17 +480,20 @@ namespace Vvr.Session.ContentView.Tests
             await ExecuteOnMainThread(TestContentViewEvent.Test0);
 
             Assert.IsTrue(e0);
+            Assert.IsFalse(EventHandler.ExecutionLocked);
+            Assert.IsFalse(EventHandler.WriteLocked);
         }
         [Test]
         public async Task InterceptionTest_2()
         {
             bool e0 = false;
 
-            await UniTask.WhenAll(
+            Assert.IsFalse(EventHandler.CancellationToken.IsCancellationRequested);
+            await Task.WhenAll(
                 RegisterOnBackground(TestContentViewEvent.Test0, async (e, x) =>
                 {
                     e0 = true;
-                }),
+                }).AsTask(),
 
                 ExecuteOnBackground(TestContentViewEvent.Test0)
             );
@@ -498,11 +506,12 @@ namespace Vvr.Session.ContentView.Tests
         {
             bool e0 = false;
 
-            await UniTask.WhenAll(
+            Assert.IsFalse(EventHandler.CancellationToken.IsCancellationRequested);
+            await Task.WhenAll(
                 RegisterOnBackground(TestContentViewEvent.Test0, async (e, x) =>
                 {
                     e0 = true;
-                }),
+                }).AsTask(),
 
                 ExecuteOnBackground(TestContentViewEvent.Test0)
             );
