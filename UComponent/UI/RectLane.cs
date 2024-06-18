@@ -35,7 +35,14 @@ namespace Vvr.UComponent.UI
     [HideMonoScript]
     public class RectLane : LayoutGroup, IEnumerable<IRectItem>
     {
-        [SerializeField] private float      m_Spacing;
+        private enum Direction : short
+        {
+            Horizontal,
+            Vertical
+        }
+
+        [SerializeField] private Direction m_Direction = Direction.Horizontal;
+        [SerializeField] private float     m_Spacing;
 
         private IRectTransformPool m_Pool;
         private IScrollRect        m_ScrollRect;
@@ -95,74 +102,86 @@ namespace Vvr.UComponent.UI
             UpdateProxy();
         }
 
-        public override void CalculateLayoutInputHorizontal()
+        private float CalculateSize(int axis)
         {
-            base.CalculateLayoutInputHorizontal();
-
-            float calculatedWidth = 0;
-            int   count           = 0;
-
-            if (!Application.isPlaying)
+            float calculated = 0;
+            if (((int)m_Direction ^ axis) == 0)
             {
-                foreach (var child in rectChildren)
+#if UNITY_EDITOR
+                if (!Application.isPlaying)
                 {
-                    if (count++ > 0) calculatedWidth += m_Spacing;
+                    int count = 0;
+                    foreach (var child in rectChildren)
+                    {
+                        if (count++ > 0) calculated += m_Spacing;
 
-                    calculatedWidth += LayoutUtility.GetPreferredSize(child, 0);
+                        calculated += LayoutUtility.GetPreferredSize(child, axis);
+                    }
+
+                    return calculated;
                 }
-            }
-            else
-            {
-                if (ItemSizeDelta.x  < 0 &&
+#endif
+                if (ItemSizeDelta[axis]    < 0 &&
                     rectChildren.Count > 0)
                 {
                     m_ItemSizeDelta = new Vector2(
-                        LayoutUtility.GetPreferredWidth(rectChildren[0]),
-                        ItemSizeDelta.y);
+                        LayoutUtility.GetPreferredSize(rectChildren[0], axis),
+                        ItemSizeDelta[axis ^ 1]);
                 }
 
-                foreach (var item in m_Items)
-                {
-                    if (count++ > 0) calculatedWidth += m_Spacing;
-
-                    calculatedWidth += ItemSizeDelta.x;
-                }
-            }
-            SetLayoutInputForAxis(calculatedWidth, calculatedWidth, 0, 0);
-        }
-        public override void CalculateLayoutInputVertical()
-        {
-            float calculatedHeight = ItemSizeDelta.y;
-            if (!Application.isPlaying)
-            {
-                foreach (var child in rectChildren)
-                {
-                    calculatedHeight = Mathf.Max(calculatedHeight,
-                        LayoutUtility.GetPreferredSize(child, 1));
-                }
+                calculated += m_Spacing       * (m_Items.Count - 1);
+                calculated += ItemSizeDelta[axis] * m_Items.Count;
             }
             else
             {
-                if (ItemSizeDelta.y    < 0 &&
+#if UNITY_EDITOR
+                if (!Application.isPlaying)
+                {
+                    foreach (var child in rectChildren)
+                    {
+                        calculated = Mathf.Max(calculated,
+                            LayoutUtility.GetPreferredSize(child, axis));
+                    }
+
+                    return calculated;
+                }
+#endif
+                if (ItemSizeDelta[axis]    < 0 &&
                     rectChildren.Count > 0)
                 {
                     float yy = -1;
                     for (int i = 0; i < rectChildren.Count; i++)
                     {
-                        yy = Mathf.Max(yy, LayoutUtility.GetPreferredHeight(rectChildren[i]));
+                        yy = Mathf.Max(yy, LayoutUtility.GetPreferredSize(rectChildren[i], axis));
                     }
 
                     m_ItemSizeDelta = new Vector2(
-                        ItemSizeDelta.x,
+                        ItemSizeDelta[axis ^ 1],
                         yy);
                 }
-                calculatedHeight = ItemSizeDelta.y;
+
+                calculated = ItemSizeDelta[axis];
             }
-            // foreach (var item in m_Items)
-            // {
-            //     calculatedHeight = Mathf.Max(item.PreferredSizeDelta.y, calculatedHeight);
-            // }
-            //
+
+            return calculated;
+        }
+
+        private void SetEditorLayout()
+        {
+
+        }
+
+        public override void CalculateLayoutInputHorizontal()
+        {
+            base.CalculateLayoutInputHorizontal();
+
+            float calculatedWidth = CalculateSize(0);
+
+            SetLayoutInputForAxis(calculatedWidth, calculatedWidth, 0, 0);
+        }
+        public override void CalculateLayoutInputVertical()
+        {
+            float calculatedHeight = CalculateSize(1);
 
             SetLayoutInputForAxis(calculatedHeight, calculatedHeight, 0, 1);
         }
@@ -214,6 +233,8 @@ namespace Vvr.UComponent.UI
 
         private IEnumerable<(bool visible, float pos)> GetVisiblePositionWithAxis(int axis, bool visibleOnly = true)
         {
+            if (ScrollRect is null) yield break;
+
             float pos = GetStartOffset(axis, GetTotalPreferredSize(0) - m_Padding.horizontal);
 
             Rect rect = rectTransform.GetWorldRect();
