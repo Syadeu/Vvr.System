@@ -31,6 +31,7 @@ using Assert = NUnit.Framework.Assert;
 
 namespace Vvr.Session.ContentView.Tests
 {
+    [TestFixture]
     public sealed class ContentViewEventHandlerTests
     {
         private ContentViewEventHandler<TestContentViewEvent> EventHandler { get; set; }

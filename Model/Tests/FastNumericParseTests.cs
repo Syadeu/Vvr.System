@@ -24,7 +24,8 @@ using UnityEngine;
 
 namespace Vvr.Model.Tests
 {
-    public class FastNumericParseTests
+    [TestFixture]
+    public sealed class FastNumericParseTests
     {
         [Test]
         [TestCase("123", 123)]

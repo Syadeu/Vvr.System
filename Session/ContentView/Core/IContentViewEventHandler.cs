@@ -23,6 +23,7 @@ using System;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using UnityEngine.Scripting;
+using Vvr.Model;
 using Vvr.Provider;
 
 namespace Vvr.Session.ContentView.Core
@@ -59,7 +60,7 @@ namespace Vvr.Session.ContentView.Core
         /// <param name="e">The event to register.</param>
         /// <param name="x">The event delegate to be invoked when the event is triggered.</param>
         /// <returns>The updated instance of the <see cref="IContentViewEventHandler{TEvent}"/> interface.</returns>
-        [NotNull]
+        [NotNull, ThreadSafe]
         IContentViewEventHandler<TEvent> Register(TEvent   e, [NotNull] ContentViewEventDelegate<TEvent> x);
 
         /// <summary>
@@ -69,7 +70,7 @@ namespace Vvr.Session.ContentView.Core
         /// <param name="e">The event to unregister.</param>
         /// <param name="x">The event delegate to be unregistered.</param>
         /// <returns>The updated instance of the <see cref="IContentViewEventHandler{TEvent}"/> interface.</returns>
-        [NotNull]
+        [NotNull, ThreadSafe]
         IContentViewEventHandler<TEvent> Unregister(TEvent e, [NotNull] ContentViewEventDelegate<TEvent> x);
     }
 
@@ -90,7 +91,7 @@ namespace Vvr.Session.ContentView.Core
         /// <param name="e">The event to register.</param>
         /// <param name="x">The event delegate to be invoked when the event is triggered.</param>
         /// <returns>The updated instance of the <see cref="ITypedContentViewEventHandler{TEvent}"/> interface.</returns>
-        [NotNull]
+        [NotNull, ThreadSafe]
         ITypedContentViewEventHandler<TEvent> Register<TValue>(TEvent e,
             [NotNull] ContentViewEventDelegate<TEvent, TValue>        x);
 
@@ -102,7 +103,7 @@ namespace Vvr.Session.ContentView.Core
         /// <param name="e">The event to unregister.</param>
         /// <param name="x">The event delegate to be unregistered.</param>
         /// <returns>The updated instance of the <see cref="ITypedContentViewEventHandler{TEvent}"/> interface.</returns>
-        [NotNull]
+        [NotNull, ThreadSafe]
         ITypedContentViewEventHandler<TEvent> Unregister<TValue>(TEvent e, [NotNull] ContentViewEventDelegate<TEvent, TValue> x);
     }
 
@@ -121,7 +122,7 @@ namespace Vvr.Session.ContentView.Core
         /// <typeparam name="TEvent">The type of event to execute.</typeparam>
         /// <param name="e">The event to execute.</param>
         /// <returns>A <see cref="UniTask"/> representing the asynchronous operation.</returns>
-        UniTask ExecuteAsync(TEvent e);
+        [ThreadSafe] UniTask ExecuteAsync(TEvent e);
 
         /// <summary>
         /// Executes the specified event asynchronously.
@@ -129,7 +130,7 @@ namespace Vvr.Session.ContentView.Core
         /// <param name="e">The event to execute.</param>
         /// <param name="ctx">The context object to pass to the event handler. Can be null.</param>
         /// <returns>A <see cref="UniTask"/> representing the asynchronous execution of the event.</returns>
-        UniTask ExecuteAsync(TEvent e, [CanBeNull] object ctx);
+        [ThreadSafe] UniTask ExecuteAsync(TEvent e, [CanBeNull] object ctx);
     }
 
     /// <summary>
