@@ -68,7 +68,7 @@ namespace Vvr.Model
 
             return Task.CompletedTask;
         }
-        public UniTask WaitAsync(TimeSpan timeout)
+        public async Task WaitAsync(TimeSpan timeout)
         {
             if (Interlocked.Exchange(ref m_Started, 1) == 1)
                 throw new InvalidOperationException();
@@ -78,11 +78,13 @@ namespace Vvr.Model
                 = Interlocked.Exchange(ref m_CurrentThreadId, threadId) == threadId;
 
             if (!isCurrentWriteThread)
-                return m_SemaphoreSlim.WaitAsync()
-                    .AsUniTask()
-                    .TimeoutWithoutException(timeout);
+            {
+                bool success = await m_SemaphoreSlim.WaitAsync(timeout)
+                    .ConfigureAwait(true);
 
-            return UniTask.CompletedTask;
+                if (!success)
+                    throw new TimeoutException();
+            }
         }
 
         public void Wait(CancellationToken cancellationToken)
