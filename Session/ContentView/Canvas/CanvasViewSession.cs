@@ -131,7 +131,7 @@ namespace Vvr.Session.ContentView.Canvas
 
             if (m_CanvasMap.TryGetValue(h, out var v)) return v;
 
-            string nameFormat         = $"Camera {(short)sortOrder}";
+            string nameFormat         = $"Camera {renderMode} {(short)sortOrder}";
             if (raycaster) nameFormat += " Raycast";
 
             CreateCanvas(nameFormat, sortOrder, raycaster, out var canvas);
@@ -148,6 +148,8 @@ namespace Vvr.Session.ContentView.Canvas
             {
                 RectTransform rectTr = (RectTransform)canvas.transform;
                 rectTr.localPosition = new Vector3(0, 0, 100);
+                rectTr.sizeDelta =
+                    new Vector2(Screen.width, Screen.height);
                 rectTr.localScale    = Vector3.one * .17f;
             }
 
