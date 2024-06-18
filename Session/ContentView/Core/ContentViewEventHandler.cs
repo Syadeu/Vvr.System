@@ -196,26 +196,6 @@ namespace Vvr.Session.ContentView.Core
             return this;
         }
 
-        struct ActionContext
-        {
-            public ContentViewEventDelegate<TEvent> action;
-            public TEvent                          e;
-            public object                          ctx;
-
-            public ActionContext(
-                ContentViewEventDelegate<TEvent> action, TEvent e, object c)
-            {
-                this.action = action;
-                this.e      = e;
-                this.ctx    = c;
-            }
-
-            public async UniTask Execute(CancellationToken cancellationToken)
-            {
-                await action(e, ctx).AttachExternalCancellation(cancellationToken);
-            }
-        }
-
         public async UniTask ExecuteAsync(TEvent e) => await ExecuteAsync(e, null);
         public virtual async UniTask ExecuteAsync(TEvent e, object ctx)
         {
@@ -244,10 +224,8 @@ namespace Vvr.Session.ContentView.Core
                 if (!m_ActionMap.TryGetValue(list[i], out var target))
                     continue;
 
-                ActionContext a = new ActionContext(target, e, ctx);
-                array[i] = UniTask.Create(a.Execute, m_CancellationTokenSource.Token);
-                // array[i] = target(e, ctx)
-                //     .AttachExternalCancellation(m_CancellationTokenSource.Token);
+                array[i] = target(e, ctx)
+                    .AttachExternalCancellation(m_CancellationTokenSource.Token);
             }
 
             for (; i < array.Length; i++)
