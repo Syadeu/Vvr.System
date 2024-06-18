@@ -54,6 +54,12 @@ namespace Vvr.Model
             m_Started         = 0;
         }
 
+        /// <summary>
+        /// Asynchronously waits for the lock to be released.
+        /// </summary>
+        /// <param name="cancellationToken">The cancellation token to observe.</param>
+        /// <returns>A task that represents the asynchronous wait operation.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when the lock has already been acquired.</exception>
         public Task WaitAsync(CancellationToken cancellationToken)
         {
             if (Interlocked.Exchange(ref m_Started, 1) == 1)
@@ -68,7 +74,14 @@ namespace Vvr.Model
 
             return Task.CompletedTask;
         }
-        public async Task WaitAsync(TimeSpan timeout)
+
+        /// <summary>
+        /// Asynchronously waits for the lock to be released.
+        /// </summary>
+        /// <param name="timeout">The amount of time to wait for the lock to be released.</param>
+        /// <returns>A task that represents the asynchronous wait operation.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when the lock has already been acquired.</exception>
+        public Task<bool> WaitAsync(TimeSpan timeout)
         {
             if (Interlocked.Exchange(ref m_Started, 1) == 1)
                 throw new InvalidOperationException();
@@ -79,14 +92,17 @@ namespace Vvr.Model
 
             if (!isCurrentWriteThread)
             {
-                bool success = await m_SemaphoreSlim.WaitAsync(timeout)
-                    .ConfigureAwait(true);
-
-                if (!success)
-                    throw new TimeoutException();
+                return m_SemaphoreSlim.WaitAsync(timeout);
             }
+
+            return Task.FromResult(true);
         }
 
+        /// <summary>
+        /// Waits for the lock to be released.
+        /// </summary>
+        /// <param name="cancellationToken">The cancellation token to observe.</param>
+        /// <exception cref="InvalidOperationException">Thrown when the lock has already been acquired.</exception>
         public void Wait(CancellationToken cancellationToken)
         {
             if (Interlocked.Exchange(ref m_Started, 1) == 1)
@@ -122,6 +138,12 @@ namespace Vvr.Model
 #endif
         }
 
+        /// <summary>
+        /// Waits for the lock to be released.
+        /// </summary>
+        /// <param name="timeout">The time span to wait before timing out.</param>
+        /// <exception cref="InvalidOperationException">Thrown when the lock has already been acquired.</exception>
+        /// <exception cref="TimeoutException">Thrown when the timeout period has elapsed before the lock is acquired.</exception>
         public void Wait(TimeSpan timeout)
         {
             if (Interlocked.Exchange(ref m_Started, 1) == 1)

@@ -299,7 +299,10 @@ namespace Vvr.Provider
             T p;
             using (var l = new SemaphoreSlimLock(s_ProviderSemaphore))
             {
-                await l.WaitAsync(TimeSpan.FromSeconds(1));
+                if (!await l.WaitAsync(TimeSpan.FromSeconds(1)))
+                {
+                    throw new TimeoutException();
+                };
                 p = (T)s_Providers[t];
             }
             c.Connect(p);
