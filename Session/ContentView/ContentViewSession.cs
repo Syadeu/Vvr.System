@@ -43,6 +43,10 @@ namespace Vvr.Session.ContentView
     /// Represents a session for content view functionality.
     /// </summary>
     [UsedImplicitly]
+    [ProviderSession(
+        typeof(IContentViewEventHandlerProvider),
+        typeof(IDialoguePlayProvider)
+        )]
     public sealed class ContentViewSession : ParentSession<ContentViewSession.SessionData>,
         IConnector<IContentViewRegistryProvider>
     {

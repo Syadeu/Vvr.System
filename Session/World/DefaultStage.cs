@@ -179,6 +179,8 @@ namespace Vvr.Session.World
         public IReadOnlyActorList PlayerField => m_PlayerField;
         public IReadOnlyActorList EnemyField  => m_EnemyField;
 
+        public IStageActor CurrentEventActor { get; private set; }
+
         protected override UniTask OnInitialize(IParentSession session, SessionData data)
         {
             EvaluateSessionData(data);
@@ -332,18 +334,17 @@ namespace Vvr.Session.World
 
             float previousTime = 0;
             while (m_Timeline.Count > 0 && m_PlayerField.Count > 0 && m_EnemyField.Count > 0 &&
-                   !cancelTokenSource.Token.IsCancellationRequested)
+                   !cancelTokenSource.IsCancellationRequested)
             {
                 $"Timeline count {m_Timeline.Count}".ToLog();
                 await UpdateTimelineNodeViewAsync(cancelTokenSource.Token);
 
-                // m_ResetEvent = new();
-                IStageActor current = m_Timeline[0];
-                Assert.IsFalse(current.Owner.Disposed);
+                CurrentEventActor = m_Timeline[0];
+                Assert.IsFalse(CurrentEventActor.Owner.Disposed);
 
                 await ProceedTimeController(previousTime, cancelTokenSource.Token);
 
-                bool isPlayerActor = current.Owner.ConditionResolver[Condition.IsPlayerActor](null);
+                bool isPlayerActor = CurrentEventActor.Owner.ConditionResolver[Condition.IsPlayerActor](null);
                 if (isPlayerActor)
                 {
                     foreach (var handActor in m_HandActors)
@@ -359,30 +360,30 @@ namespace Vvr.Session.World
                 if (m_PlayerField.Count > 0 && m_EnemyField.Count > 0 &&
                     !cancelTokenSource.IsCancellationRequested)
                 {
-                    using var trigger = ConditionTrigger.Push(current.Owner, ConditionTrigger.Game);
+                    using var trigger = ConditionTrigger.Push(CurrentEventActor.Owner, ConditionTrigger.Game);
                     await trigger.Execute(Model.Condition.OnActorTurn, null, cancelTokenSource.Token);
                     await UniTask.WaitForSeconds(1f, cancellationToken: cancelTokenSource.Token);
 
-                    await ExecuteTurn(current, cancelTokenSource.Token);
+                    await ExecuteTurn(CurrentEventActor, cancelTokenSource.Token);
 
                     // await m_ResetEvent.Task.AttachExternalCancellation(cancelTokenSource.Token);
 
                     await trigger.Execute(Model.Condition.OnActorTurnEnd, null, cancelTokenSource.Token);
 
                     // Tag out check
-                    if (current.TagOutRequested)
+                    if (CurrentEventActor.TagOutRequested)
                     {
-                        Assert.IsTrue(current.Owner.ConditionResolver[Model.Condition.IsPlayerActor](null));
+                        Assert.IsTrue(CurrentEventActor.Owner.ConditionResolver[Model.Condition.IsPlayerActor](null));
 
-                        m_PlayerField.Remove(current);
-                        m_HandActors.Add(current);
+                        m_PlayerField.Remove(CurrentEventActor);
+                        m_HandActors.Add(CurrentEventActor);
 
-                        current.TagOutRequested = false;
-                        RemoveFromQueue(current);
+                        CurrentEventActor.TagOutRequested = false;
+                        RemoveFromQueue(CurrentEventActor);
 
-                        await trigger.Execute(Condition.OnTagOut, current.Owner.Id, cancelTokenSource.Token);
+                        await trigger.Execute(Condition.OnTagOut, CurrentEventActor.Owner.Id, cancelTokenSource.Token);
 
-                        await m_ViewProvider.ResolveAsync(current.Owner)
+                        await m_ViewProvider.ResolveAsync(CurrentEventActor.Owner)
                             .AttachExternalCancellation(cancelTokenSource.Token);
                         foreach (var actor in m_PlayerField)
                         {
@@ -392,6 +393,8 @@ namespace Vvr.Session.World
                             if (cancelTokenSource.IsCancellationRequested) break;
                         }
                     }
+
+                    CurrentEventActor = null;
                 }
 
                 if (isPlayerActor)
@@ -524,6 +527,8 @@ namespace Vvr.Session.World
             if (!m_InputControlProvider.CanControl(runtimeActor.Owner))
             {
                 "[Stage] AI control".ToLog();
+                using var scope = ConditionTrigger.Scope(EnemyActionScope, nameof(EnemyActionScope));
+
                 int count = runtimeActor.Data.Skills.Count;
                 var skill = runtimeActor.Data.Skills[UnityEngine.Random.Range(0, count)];
 
@@ -538,6 +543,21 @@ namespace Vvr.Session.World
 
             "[Stage] control done".ToLog();
             // m_ResetEvent.TrySetResult();
+        }
+
+        private RealtimeTimer m_EnemySkillStartedTime;
+
+        private async UniTask EnemyActionScope(IEventTarget e, Condition condition, string value)
+        {
+            if (ReferenceEquals(CurrentEventActor.Owner, e)) return;
+
+            // Since ConditionTrigger always executed from main thread,
+            // we don't need to think about memory barrier
+
+            if (condition == Condition.OnSkillStart)
+            {
+                m_EnemySkillStartedTime = RealtimeTimer.Start();
+            }
         }
 
         private async UniTask OnActorAction(IEventTarget e, Model.Condition condition, string value)

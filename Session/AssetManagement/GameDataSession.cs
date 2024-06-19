@@ -32,6 +32,14 @@ namespace Vvr.Session.AssetManagement
     /// Represents a session used for managing game data.
     /// </summary>
     [UsedImplicitly]
+    [ProviderSession(
+        typeof(IStatConditionProvider),
+        typeof(IGameConfigProvider),
+        typeof(IActorDataProvider),
+        typeof(ICustomMethodProvider),
+        typeof(IStageDataProvider),
+        typeof(IResearchDataProvider)
+        )]
     public sealed class GameDataSession : ParentSession<GameDataSession.SessionData>
     {
         public struct SessionData : ISessionData
@@ -82,6 +90,8 @@ namespace Vvr.Session.AssetManagement
         protected override UniTask OnReserve()
         {
             Parent
+                .Unregister<IStatConditionProvider>()
+
                 .Unregister<IGameConfigProvider>()
                 .Unregister<IActorDataProvider>()
                 .Unregister<ICustomMethodProvider>()

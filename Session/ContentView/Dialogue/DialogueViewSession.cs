@@ -138,8 +138,6 @@ namespace Vvr.Session.ContentView.Dialogue
             DialogueWrapper wrapper = new DialogueWrapper();
             wrapper.Data = dialogue;
 
-            m_AttributeSkipToken = new CancellationTokenSource();
-
             while (wrapper.Data != null)
             {
                 var obj = await ViewProvider
@@ -149,6 +147,8 @@ namespace Vvr.Session.ContentView.Dialogue
                 foreach (var attribute in wrapper.Attributes)
                 {
                     if (attribute is null) continue;
+
+                    m_AttributeSkipToken = new CancellationTokenSource();
 
                     var task = attribute.ExecuteAsync(
                         new DialogueAttributeContext(
@@ -184,13 +184,15 @@ namespace Vvr.Session.ContentView.Dialogue
                                 }
                             }
                         }
-
-                        m_AttributeSkipToken = new();
                     }
                     else
                         await task.AttachExternalCancellation(ReserveToken)
                             .SuppressCancellationThrow();
+
+                    m_AttributeSkipToken.Dispose();
                 }
+
+                m_AttributeSkipToken = null;
 
                 while (!ViewProvider.IsFullyOpened && !ReserveToken.IsCancellationRequested)
                 {

@@ -52,7 +52,11 @@ namespace Vvr.Session.World
                 CreateSessionOnBackground<GameMethodResolveSession>(default),
 
                 CreateSession<EventViewSession>(default),
-                CreateSession<ContentViewSession>(default)
+                CreateSession<ContentViewSession>(default),
+                CreateSession<GameTimeSession>(new GameTimeSession.SessionData()
+                {
+                    animateDuration = .25f
+                })
 #if VVR_FIREBASE
                 , CreateSession<FirebaseSession>(default)
 #endif

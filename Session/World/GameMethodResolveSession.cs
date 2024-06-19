@@ -46,6 +46,8 @@ namespace Vvr.Session
 
         public override string DisplayName => nameof(GameMethodResolveSession);
 
+        private IDialoguePlayProvider m_DialoguePlayProvider;
+
         GameMethodImplDelegate IGameMethodProvider.Resolve(Model.GameMethod method)
         {
             using var timer = DebugTimer.Start();
@@ -71,19 +73,6 @@ namespace Vvr.Session
         private async UniTask GameMethod_ExecuteDialogue(IEventTarget e, IReadOnlyList<string> parameters)
         {
             await m_DialoguePlayProvider.Play(parameters[0]);
-
-            // var assetSession = await CreateSession<AssetSession>(default);
-            // Register<IAssetProvider>(assetSession);
-            //
-            // var data = await assetSession.LoadAsync<DialogueData>(parameters[0]);
-            // var dialogue = await CreateSession<DialogueSession>(
-            //     new DialogueSession.SessionData(data.Object)
-            //     );
-            //
-            // await dialogue.Reserve();
-            //
-            // Unregister<IAssetProvider>();
-            // await assetSession.Reserve();
         }
 
         private async UniTask GameMethod_Destroy(IEventTarget e, IReadOnlyList<string> parameters)
@@ -119,8 +108,6 @@ namespace Vvr.Session
 
             await b.Execute(parameters);
         }
-
-        private IDialoguePlayProvider m_DialoguePlayProvider;
 
         void IConnector<IDialoguePlayProvider>.Connect(IDialoguePlayProvider    t) => m_DialoguePlayProvider = t;
         void IConnector<IDialoguePlayProvider>.Disconnect(IDialoguePlayProvider t) => m_DialoguePlayProvider = null;

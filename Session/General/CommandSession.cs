@@ -24,6 +24,7 @@ using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using Vvr.Provider;
 using Vvr.Provider.Command;
+using Vvr.Session;
 
 namespace Vvr.Session
 {

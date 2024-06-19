@@ -27,6 +27,7 @@ using UnityEngine.UI;
 
 namespace Vvr.Session.World
 {
+    [Obsolete("This is test component.")]
     [DisallowMultipleComponent]
     public class DataDownloadPopup : MonoBehaviour, IProgress<float>
     {
