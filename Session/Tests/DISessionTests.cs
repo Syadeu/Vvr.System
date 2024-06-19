@@ -23,6 +23,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
 using NUnit.Framework;
+using Vvr.Provider;
 using Vvr.TestClass;
 using Assert = NUnit.Framework.Assert;
 
@@ -194,6 +195,31 @@ namespace Vvr.Session.Tests
             Assert.AreSame(p0, t0.Provider);
             Assert.AreSame(p0, results.Item1.Provider);
             Assert.AreSame(p0, results.Item2.Provider);
+        }
+
+        [Test]
+        public async Task HeavyInjectionTest()
+        {
+            TestLocalProviderBase
+                p0 = new TestLocalProvider(),
+                p1 = new TestLocalProvider01(),
+                p2 = new TestLocalProvider02(),
+                p3 = new TestLocalProvider03(),
+                p4 = new TestLocalProvider04();
+
+            Root.Register(typeof(ITestLocalProvider), p0);
+            Root.Register(typeof(ITestLocalProvider01), p1);
+            Root.Register(typeof(ITestLocalProvider02), p2);
+            Root.Register(typeof(ITestLocalProvider03), p3);
+            Root.Register(typeof(ITestLocalProvider04), p4);
+
+            var t0 = await Root.CreateSession<HeavyDITestSession>(null);
+
+            Assert.IsNotNull(t0.Provider00);
+            Assert.IsNotNull(t0.Provider01);
+            Assert.IsNotNull(t0.Provider02);
+            Assert.IsNotNull(t0.Provider03);
+            Assert.IsNotNull(t0.Provider04);
         }
     }
 }

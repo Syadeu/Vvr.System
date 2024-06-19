@@ -21,9 +21,11 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using JetBrains.Annotations;
 using UnityEngine;
 using UnityEngine.Assertions;
 using UnityEngine.Scripting;
@@ -104,27 +106,24 @@ namespace Vvr.Session.World
         }
         public struct SessionData : ISessionData
         {
-            public readonly IStageData              stage;
-            public readonly IEnumerable<IActorData> actors;
+            [NotNull] public readonly IStageData              stage;
 
-            public readonly IEnumerable<IActor>     prevPlayers;
-            public readonly IEnumerable<IActorData> players;
+            public readonly IEnumerable<IActor>     prevUserActors;
+            public readonly IEnumerable<IActorData> userActors;
 
             public SessionData(IStageData data, IEnumerable<IActor> p)
             {
                 stage  = data;
-                actors = data.Actors;
 
-                prevPlayers = p;
-                players     = null;
+                prevUserActors = p;
+                userActors     = null;
             }
             public SessionData(IStageData data, IEnumerable<IActorData> p)
             {
                 stage  = data;
-                actors = data.Actors;
 
-                prevPlayers = null;
-                players     = p;
+                prevUserActors = null;
+                userActors     = p;
             }
         }
 
@@ -182,6 +181,8 @@ namespace Vvr.Session.World
 
         protected override UniTask OnInitialize(IParentSession session, SessionData data)
         {
+            EvaluateSessionData(data);
+
             // This is required for injecting actors
             Parent.Register<ITargetProvider>(this)
                 .Register<IStateConditionProvider>(this)
@@ -225,13 +226,40 @@ namespace Vvr.Session.World
             return base.OnReserve();
         }
 
+        [Conditional("UNITY_EDITOR")]
+        private static void EvaluateSessionData(SessionData data)
+        {
+            if (data.stage is null)
+                throw new InvalidOperationException("Stage data cannot be null");
+
+            if (data.userActors is null)
+            {
+                if (data.prevUserActors is null)
+                    throw new InvalidOperationException("Requires previous actors");
+                foreach (var actor in data.prevUserActors)
+                {
+                    if (actor.Disposed)
+                        throw new InvalidOperationException("One of previous user actor has been disposed");
+                }
+            }
+
+            if (data.prevUserActors is null)
+            {
+                if (data.userActors is null)
+                    throw new InvalidOperationException("Requires user actors");
+
+                if (data.userActors.All(x => x is null))
+                    throw new InvalidOperationException("Provided user actor is empty");
+            }
+        }
+
         private void SetupField()
         {
             int playerIndex = 0;
-            if (Data.players == null)
+            if (Data.userActors == null)
             {
-                Assert.IsNotNull(Data.prevPlayers);
-                foreach (var prevActor in Data.prevPlayers)
+                Assert.IsNotNull(Data.prevUserActors);
+                foreach (var prevActor in Data.prevUserActors)
                 {
                     IStageActor runtimeActor = m_StageActorProvider.Create(prevActor, m_ActorDataProvider.Resolve(prevActor.Id));
 
@@ -253,7 +281,7 @@ namespace Vvr.Session.World
             }
             else
             {
-                foreach (var data in Data.players)
+                foreach (var data in Data.userActors)
                 {
                     if (data is null) continue;
 
@@ -278,7 +306,7 @@ namespace Vvr.Session.World
                 }
             }
 
-            foreach (var data in Data.actors)
+            foreach (var data in Data.stage.Actors)
             {
                 IActor target = m_ActorProvider.Create(m_EnemyId, data);
 

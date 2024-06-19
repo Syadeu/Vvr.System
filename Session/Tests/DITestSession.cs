@@ -19,22 +19,27 @@
 
 #endregion
 
+using JetBrains.Annotations;
 using NUnit.Framework;
 using Vvr.Provider;
 using Vvr.TestClass;
 
 namespace Vvr.Session.Tests
 {
+    [UsedImplicitly]
     class DITestSession : TestParentSession,
         IConnector<ITestLocalProvider>
     {
         public ITestLocalProvider Provider { get; private set; }
-        
-        public void Connect(ITestLocalProvider t)
+
+        public override string DisplayName => nameof(DITestSession);
+
+        void IConnector<ITestLocalProvider>.Connect(ITestLocalProvider t)
         {
             Provider = t;
         }
-        public void Disconnect(ITestLocalProvider t)
+
+        void IConnector<ITestLocalProvider>.Disconnect(ITestLocalProvider t)
         {
             Assert.AreSame(t, Provider);
             

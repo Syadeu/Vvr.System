@@ -58,6 +58,12 @@ namespace Vvr.Session
                 data          = taaa;
             }
         }
+        private class ProviderRegistrationContext
+        {
+            public IDependencyContainer container;
+            public Type                 providerType;
+            public IProvider            provider;
+        }
 
         private readonly List<IChildSession> m_ChildSessions  = new();
 
@@ -151,18 +157,38 @@ namespace Vvr.Session
             {
                 // $"[Session: {ctx.parentSession.Type.FullName}] Chain connector to {ctx.sessionType.FullName}".ToLog();
                 using var debugTimer = DebugTimer.Start();
+
+                using var tempArray = TempArray<UniTask>.Shared(ctx.parentSession.ConnectedProviders.Count, true);
+
+                int i = 0;
                 foreach (var item in ctx.parentSession.ConnectedProviders)
                 {
                     if (!item.Value.TryPeek(out var v)) continue;
 
                     var pType = item.Key;
-                    sessionConnector.Register(pType, v);
+                    // sessionConnector.Register(pType, v);
+
+                    tempArray.Value[i++] = UniTask.RunOnThreadPool(RegisterProvider, new ProviderRegistrationContext()
+                    {
+                        container = sessionConnector,
+                        providerType = pType,
+                        provider  = v
+                    });
                 }
+
+                await UniTask.WhenAll(tempArray.Value);
             }
             // else $"[Session: {Type.FullName}] No connector for {childType.FullName}".ToLog();
 
             await session.Initialize(ctx.parentSession.Owner, ctx.parentSession, ctx.data);
             // $"[Session: {ctx.parentSession.Type.FullName}] created {ctx.sessionType.FullName}".ToLog();
+        }
+
+        private static void RegisterProvider(object ctx)
+        {
+            ProviderRegistrationContext context = (ProviderRegistrationContext)ctx;
+
+            context.container.Register(context.providerType, context.provider);
         }
 
         async UniTask IGameSessionCallback.OnSessionClose(IGameSessionBase child)

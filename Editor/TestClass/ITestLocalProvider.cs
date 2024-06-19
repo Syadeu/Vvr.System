@@ -27,4 +27,20 @@ namespace Vvr.TestClass
     public interface ITestLocalProvider : IProvider
     {
     }
+    [LocalProvider]
+    public interface ITestLocalProvider01 : IProvider
+    {
+    }
+    [LocalProvider]
+    public interface ITestLocalProvider02 : IProvider
+    {
+    }
+    [LocalProvider]
+    public interface ITestLocalProvider03 : IProvider
+    {
+    }
+    [LocalProvider]
+    public interface ITestLocalProvider04 : IProvider
+    {
+    }
 }

@@ -19,10 +19,33 @@
 
 #endregion
 
+using Vvr.Provider;
+
 namespace Vvr.TestClass
 {
-    public class TestLocalProvider : ITestLocalProvider
+    public class TestLocalProvider : TestLocalProviderBase, ITestLocalProvider
     {
         
+    }
+    public class TestLocalProvider01 : TestLocalProviderBase, ITestLocalProvider01
+    {
+
+    }
+    public class TestLocalProvider02 : TestLocalProviderBase, ITestLocalProvider02
+    {
+
+    }
+    public class TestLocalProvider03 : TestLocalProviderBase, ITestLocalProvider03
+    {
+
+    }
+    public class TestLocalProvider04 : TestLocalProviderBase, ITestLocalProvider04
+    {
+
+    }
+
+    public abstract class TestLocalProviderBase : IProvider
+    {
+
     }
 }

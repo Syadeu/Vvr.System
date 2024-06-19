@@ -176,6 +176,7 @@ namespace Vvr.Session.World
                         .AttachExternalCancellation(ReserveToken);
 
                     "end stage".ToLog();
+                    // Yield for prevent infinite loop
                     await UniTask.Yield();
 
                     if (m_StageCancellationTokenSource.IsCancellationRequested ||
@@ -240,6 +241,8 @@ namespace Vvr.Session.World
             {
                 m_CurrentStage = await CreateSession<DefaultStage>(sessionData);
                 {
+                    // Cancel only stage operation.
+                    // Events should always execute whether stage need to be canceled.
                     await trigger.Execute(Model.Condition.OnStageStarted, sessionData.stage.Id, ReserveToken);
                     DefaultStage.Result stageResult = await m_CurrentStage.Start(cancellationToken)
                         .AttachExternalCancellation(ReserveToken);
