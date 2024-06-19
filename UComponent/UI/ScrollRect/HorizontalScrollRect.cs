@@ -105,6 +105,8 @@ namespace Vvr.UComponent.UI
                 if (!e.TryGetComponent(out RectLane lane)) continue;
 
                 // lane.ItemSizeDelta = itemSizeDelta;
+
+                lane.Viewport = ScrollRect.viewport;
                 lanes.Add(lane);
             }
 

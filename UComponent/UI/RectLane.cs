@@ -44,8 +44,9 @@ namespace Vvr.UComponent.UI
         [SerializeField] private Direction m_Direction = Direction.Horizontal;
         [SerializeField] private float     m_Spacing;
 
+        [Space] [SerializeField] private RectTransform m_Viewport;
+
         private IRectTransformPool m_Pool;
-        private IScrollRect        m_ScrollRect;
 
         private Vector2? m_ItemSizeDelta;
 
@@ -53,11 +54,22 @@ namespace Vvr.UComponent.UI
         private readonly Dictionary<IRectItem, RectTransform> m_Proxy = new();
 
         private IRectTransformPool Pool => m_Pool ??= GetComponentInParent<IRectTransformPool>();
-        private IScrollRect ScrollRect => m_ScrollRect ??= GetComponentInParent<IScrollRect>();
 
         public int     Count         => m_Items.Count;
         [ShowInInspector, ReadOnly]
         public Vector2 ItemSizeDelta { get => m_ItemSizeDelta ?? -Vector2.one; set => m_ItemSizeDelta = value; }
+        public RectTransform Viewport
+        {
+            get => m_Viewport;
+            set => m_Viewport = value;
+        }
+
+        protected override void Awake()
+        {
+            base.Awake();
+
+            if (m_Viewport == null) m_Viewport = rectTransform;
+        }
 
         [PublicAPI]
         public void Insert(int index, [NotNull] IRectItem item)
@@ -102,7 +114,7 @@ namespace Vvr.UComponent.UI
             UpdateProxy();
         }
 
-        private float CalculateSize(int axis)
+        private float CalculateSizeForAxis(int axis)
         {
             float calculated = 0;
             if (((int)m_Direction ^ axis) == 0)
@@ -166,22 +178,17 @@ namespace Vvr.UComponent.UI
             return calculated;
         }
 
-        private void SetEditorLayout()
-        {
-
-        }
-
         public override void CalculateLayoutInputHorizontal()
         {
             base.CalculateLayoutInputHorizontal();
 
-            float calculatedWidth = CalculateSize(0);
+            float calculatedWidth = CalculateSizeForAxis(0);
 
             SetLayoutInputForAxis(calculatedWidth, calculatedWidth, 0, 0);
         }
         public override void CalculateLayoutInputVertical()
         {
-            float calculatedHeight = CalculateSize(1);
+            float calculatedHeight = CalculateSizeForAxis(1);
 
             SetLayoutInputForAxis(calculatedHeight, calculatedHeight, 0, 1);
         }
@@ -233,17 +240,20 @@ namespace Vvr.UComponent.UI
 
         private IEnumerable<(bool visible, float pos)> GetVisiblePositionWithAxis(int axis, bool visibleOnly = true)
         {
-            if (ScrollRect is null) yield break;
+            float pos = GetStartOffset(
+                axis,
+                GetTotalPreferredSize(axis)
+                - (axis == 0 ? m_Padding.horizontal : m_Padding.vertical));
+            float nPos = GetStartOffset(
+                axis ^ 1,
+                GetTotalPreferredSize(axis ^ 1)
+                - ((axis ^ 1) == 0 ? m_Padding.horizontal : m_Padding.vertical));
+            Vector2 localPos = axis == 0 ? new Vector2(pos, nPos) : new Vector2(nPos, pos);
 
-            float pos = GetStartOffset(axis, GetTotalPreferredSize(0) - m_Padding.horizontal);
-
-            Rect rect = rectTransform.GetWorldRect();
-
-            Matrix4x4 viewMatrix    = ScrollRect.ViewportMatrix;
-            Vector3   worldStartPos = rectTransform.GetWorldCenterPosition() - new Vector3(rect.size.x * .5f, 0);
+            Matrix4x4 viewMatrix    = m_Viewport.worldToLocalMatrix;
             Vector3
-                localStartPos = viewMatrix.MultiplyPoint(worldStartPos),
-                localEndPos   = ScrollRect.ViewportRect.size
+                localStartPos = viewMatrix.MultiplyPoint(transform.TransformPoint(localPos)) - transform.localPosition,
+                localEndPos   = m_Viewport.GetActualSizeDelta()
                 ;
 
             for (var currentNode = m_Items.First;
@@ -253,9 +263,9 @@ namespace Vvr.UComponent.UI
             {
                 Vector2 sizeDelta = ItemSizeDelta;
 
-                float start = axis == 0 ? localStartPos.x : localStartPos.y;
-                float end   = axis == 0 ? localEndPos.x : localEndPos.y;
-                float v     = (axis == 0 ? sizeDelta.x : sizeDelta.y) + m_Spacing;
+                float start = localStartPos[axis];
+                float end   = localEndPos[axis];
+                float v     = sizeDelta[axis] + m_Spacing;
 
                 bool isVisible = 0 < start + v && start + v < end + v * 2;
 
@@ -268,10 +278,7 @@ namespace Vvr.UComponent.UI
                     yield return (isVisible, pos);
 
                 pos += v;
-                if (axis == 0)
-                    localStartPos.x += v;
-                else
-                    localStartPos.y += v;
+                localStartPos[axis] += v;
             }
         }
 
@@ -331,8 +338,6 @@ namespace Vvr.UComponent.UI
 #if UNITY_EDITOR
         private void OnDrawGizmosSelected()
         {
-            if (ScrollRect is null) return;
-
             RectTransform tr    = (RectTransform)transform;
             Rect          rect  = tr.GetWorldRect();
             Vector3       scale = tr.lossyScale;
@@ -342,51 +347,51 @@ namespace Vvr.UComponent.UI
             Gizmos.color = Color.red;
             Gizmos.DrawWireCube(tr.GetWorldCenterPosition(), rect.size);
 
-            if (!Application.isPlaying)
-            {
-                var xx = transform.childCount;
-                for (int x = 0; x < xx; x++)
-                {
-                    var e = (RectTransform)transform.GetChild(x);
-
-                    Rect itemRect = e.GetWorldRect();
-
-                    bool overlap = itemRect.Overlaps(ScrollRect.ViewportRect, false);
-                    if (!overlap)
-                    {
-                        Gizmos.color = Color.red;
-                    }
-                    else
-                    {
-                        Gizmos.color = Color.yellow;
-                    }
-
-                    Gizmos.DrawWireCube(e.position, itemRect.size);
-                }
-                return;
-            }
-
-            if (m_Items.Count <= 0) return;
-
-            Rect currentRect = GetStartRect();
-            for (var currentNode = m_Items.First;
-                 currentNode != null;
-                 currentNode = currentNode.Next
-                )
-            {
-                bool overlap = currentRect.Overlaps(ScrollRect.ViewportRect, false);
-                if (!overlap)
-                {
-                    Gizmos.color = Color.red;
-                }
-                else
-                {
-                    Gizmos.color = Color.yellow;
-                }
-
-                Gizmos.DrawWireCube(currentRect.position, currentRect.size);
-                currentRect.x    += currentRect.size.x + xSpacing;
-            }
+            // if (!Application.isPlaying)
+            // {
+            //     var xx = transform.childCount;
+            //     for (int x = 0; x < xx; x++)
+            //     {
+            //         var e = (RectTransform)transform.GetChild(x);
+            //
+            //         Rect itemRect = e.GetWorldRect();
+            //
+            //         bool overlap = itemRect.Overlaps(ScrollRect.ViewportRect, false);
+            //         if (!overlap)
+            //         {
+            //             Gizmos.color = Color.red;
+            //         }
+            //         else
+            //         {
+            //             Gizmos.color = Color.yellow;
+            //         }
+            //
+            //         Gizmos.DrawWireCube(e.position, itemRect.size);
+            //     }
+            //     return;
+            // }
+            //
+            // if (m_Items.Count <= 0) return;
+            //
+            // Rect currentRect = GetStartRect();
+            // for (var currentNode = m_Items.First;
+            //      currentNode != null;
+            //      currentNode = currentNode.Next
+            //     )
+            // {
+            //     bool overlap = currentRect.Overlaps(ScrollRect.ViewportRect, false);
+            //     if (!overlap)
+            //     {
+            //         Gizmos.color = Color.red;
+            //     }
+            //     else
+            //     {
+            //         Gizmos.color = Color.yellow;
+            //     }
+            //
+            //     Gizmos.DrawWireCube(currentRect.position, currentRect.size);
+            //     currentRect.x    += currentRect.size.x + xSpacing;
+            // }
         }
 #endif
 
