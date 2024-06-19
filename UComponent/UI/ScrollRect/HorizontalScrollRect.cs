@@ -44,7 +44,7 @@ namespace Vvr.UComponent.UI
         [SerializeField] private int m_MaxPoolCount = 16;
 
         private ScrollRect m_ScrollRect;
-        private RectLane[] m_Lanes;
+        private RectProxyLayoutGroup[] m_Lanes;
         private Transform  m_ReservedFolder;
 
         public ScrollRect ScrollRect
@@ -57,7 +57,7 @@ namespace Vvr.UComponent.UI
             }
         }
 
-        public RectLane this[int i] => m_Lanes[i];
+        public RectProxyLayoutGroup this[int i] => m_Lanes[i];
         public int             Count => m_Lanes.Sum(x => x.Count);
 
         int IRectLaneContainer.Count => m_Lanes.Length;
@@ -98,11 +98,11 @@ namespace Vvr.UComponent.UI
             // }
 
             var            content = ScrollRect.content;
-            List<RectLane> lanes   = new();
+            List<RectProxyLayoutGroup> lanes   = new();
             for (int i = 0; i < content.childCount; i++)
             {
                 var e = content.GetChild(i);
-                if (!e.TryGetComponent(out RectLane lane)) continue;
+                if (!e.TryGetComponent(out RectProxyLayoutGroup lane)) continue;
 
                 // lane.ItemSizeDelta = itemSizeDelta;
 
@@ -111,7 +111,7 @@ namespace Vvr.UComponent.UI
             }
 
             if (lanes.Count == 0)
-                lanes.Add(content.GetOrAddComponent<RectLane>());
+                lanes.Add(content.GetOrAddComponent<RectProxyLayoutGroup>());
             m_Lanes = lanes.ToArray();
             if (m_ClearOnAwake)
             {
@@ -151,7 +151,7 @@ namespace Vvr.UComponent.UI
             }
         }
 
-        IEnumerable<RectLane> IRectLaneContainer.GetEnumerable() => m_Lanes;
+        IEnumerable<RectProxyLayoutGroup> IRectLaneContainer.GetEnumerable() => m_Lanes;
         public IEnumerator<IRectItem> GetEnumerator()
         {
             foreach (var lane in m_Lanes)

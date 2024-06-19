@@ -30,10 +30,14 @@ using Vvr.UI;
 
 namespace Vvr.UComponent.UI
 {
-    // TODO: currently, horizontal only
     [RequireComponent(typeof(RectTransform))]
     [HideMonoScript]
-    public class RectLane : LayoutGroup, IEnumerable<IRectItem>
+    [TypeInfoBox(
+        "Horizontal / Vertical layout group that uses virtual items to recycle layout elements.")]
+    [InfoBox(
+        "This component requires IRectTransformPool in parent.",
+        VisibleIf = "@Pool == null", InfoMessageType = InfoMessageType.Error)]
+    public class RectProxyLayoutGroup : LayoutGroup, IEnumerable<IRectItem>
     {
         private enum Direction : short
         {

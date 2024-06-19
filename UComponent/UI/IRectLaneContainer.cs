@@ -27,9 +27,9 @@ namespace Vvr.UComponent.UI
     [PublicAPI]
     public interface IRectLaneContainer : IEnumerable<IRectItem>
     {
-        RectLane this[int i] { get; }
+        RectProxyLayoutGroup this[int i] { get; }
         int Count { get; }
 
-        IEnumerable<RectLane> GetEnumerable();
+        IEnumerable<RectProxyLayoutGroup> GetEnumerable();
     }
 }
