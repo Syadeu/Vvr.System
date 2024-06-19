@@ -151,7 +151,7 @@ namespace Vvr.Controller.Condition
         /// <param name="condition">The condition to check</param>
         /// <param name="value">The value to check (optional)</param>
         /// <returns>True if the trigger is found, otherwise false</returns>
-        public static bool Last(IEventTarget target, Model.Condition condition, string value)
+        public static bool Last(IEventTarget target, Model.Condition condition, string value = null)
         {
             CheckThreadAndThrow(nameof(Last));
 
@@ -296,9 +296,13 @@ namespace Vvr.Controller.Condition
         /// </remarks>
         /// <param name="condition">The condition to execute</param>
         /// <param name="value">The value to use in the execution</param>
+        /// <param name="cancellationToken">The cancellation token to cancel the execution (optional)</param>
+        /// <returns>A UniTask representing the asynchronous execution of the condition</returns>
         public async UniTask Execute(
             Vvr.Model.Condition condition, string value, CancellationToken cancellationToken = default)
         {
+            CheckThreadAndThrow(nameof(Execute));
+
             Assert.IsFalse(m_Target.Disposed);
             if (cancellationToken.CanBeCanceled &&
                 cancellationToken.IsCancellationRequested)
@@ -350,6 +354,8 @@ namespace Vvr.Controller.Condition
 
         public void Dispose()
         {
+            CheckThreadAndThrow(nameof(Dispose));
+
             m_CancellationTokenSource?.Cancel();
             m_CancellationTokenSource?.Dispose();
 

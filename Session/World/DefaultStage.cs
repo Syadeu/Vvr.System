@@ -198,6 +198,13 @@ namespace Vvr.Session.World
 
         protected override UniTask OnReserve()
         {
+            foreach (var item in m_PlayerField
+                         .Concat<IStageActor>(m_HandActors)
+                         .Concat(m_EnemyField))
+            {
+                m_StageActorProvider.Reserve(item);
+            }
+
             Vvr.Provider.Provider.Static.Unregister<IStageActorTagInOutProvider>(this);
 
             // While this session feeds multiple providers to parent session

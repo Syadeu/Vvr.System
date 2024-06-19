@@ -211,41 +211,48 @@ namespace Vvr.Session.ContentView.Core
                 await wl.WaitAsync(CancellationToken);
             }
 
-            if (CancellationToken.IsCancellationRequested) return;
-
-            if (!m_Actions.TryGetValue(e, out var list)) return;
-            int count = list.Count;
-            var array = ArrayPool<UniTask>.Shared.Rent(count);
-
-            int i = 0;
-            for (; i < count; i++)
+            if (!CancellationToken.IsCancellationRequested &&
+                m_Actions.TryGetValue(e, out var list))
             {
-                // This operation can be recursively calling this method.
-                if (!m_ActionMap.TryGetValue(list[i], out var target))
-                    continue;
+                int       count     = list.Count;
+                using var tempArray = TempArray<UniTask>.Shared(count, true);
 
-                array[i] = target(e, ctx)
+                int i = 0;
+                for (; i < count; i++)
+                {
+                    // This operation can be recursively calling this method.
+                    if (!m_ActionMap.TryGetValue(list[i], out var target))
+                        continue;
+
+                    tempArray.Value[i] = target(e, ctx)
+                        .AttachExternalCancellation(m_CancellationTokenSource.Token);
+                }
+
+                for (; i < tempArray.Value.Length; i++)
+                {
+                    tempArray.Value[i] = UniTask.CompletedTask;
+                }
+
+                // Because thread can be changed after yield.
+                // Executions are protected by TLS,
+                // so make sure stacks after all execute has been queued.
+                if (!writeLocked)
+                {
+                    TaskWriteLocked.Value = false;
+                    wl.Dispose();
+                }
+
+                await UniTask.WhenAll(tempArray.Value)
                     .AttachExternalCancellation(m_CancellationTokenSource.Token);
             }
-
-            for (; i < array.Length; i++)
+            else
             {
-                array[i] = UniTask.CompletedTask;
+                if (!writeLocked)
+                {
+                    TaskWriteLocked.Value = false;
+                    wl.Dispose();
+                }
             }
-
-            // Because thread can be changed after yield.
-            // Executions are protected by TLS,
-            // so make sure stacks after all execute has been queued.
-            if (!writeLocked)
-            {
-                TaskWriteLocked.Value = false;
-                wl.Dispose();
-            }
-
-            await UniTask.WhenAll(array)
-                .AttachExternalCancellation(m_CancellationTokenSource.Token);
-
-            ArrayPool<UniTask>.Shared.Return(array, true);
         }
 
         public void Dispose()

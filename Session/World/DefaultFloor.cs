@@ -226,12 +226,9 @@ namespace Vvr.Session.World
             {
                 m_CurrentStage = await CreateSession<DefaultStage>(sessionData);
                 {
-                    await trigger.Execute(Model.Condition.OnStageStarted, sessionData.stage.Id, cancellationToken)
-                        .AttachExternalCancellation(ReserveToken);
-                    var stageResult = await m_CurrentStage.Start(cancellationToken)
-                        .AttachExternalCancellation(ReserveToken);
-                    await trigger.Execute(Model.Condition.OnStageEnded, sessionData.stage.Id, cancellationToken)
-                        .AttachExternalCancellation(ReserveToken);
+                    await trigger.Execute(Model.Condition.OnStageStarted, sessionData.stage.Id, ReserveToken);
+                    var stageResult = await m_CurrentStage.Start(ReserveToken);
+                    await trigger.Execute(Model.Condition.OnStageEnded, sessionData.stage.Id, ReserveToken);
                     m_CurrentStageIndex++;
 
                     foreach (var enemy in stageResult.enemyActors)
