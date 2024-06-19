@@ -9,6 +9,8 @@
     "GUID:2e8ae50eb7a84c648fafc8f4961e3b58",
     "GUID:a4a8d67d3eea4d599b77d846b57f9865",
 
+    "GUID:d224445efc01499980cb76b5979d9678",
+
     "Unity.Mathematics",
     "Unity.Collections",
     "Unity.Addressables",

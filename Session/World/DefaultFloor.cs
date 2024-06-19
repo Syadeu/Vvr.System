@@ -25,15 +25,12 @@ using System.Linq;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
-using UnityEngine.Assertions;
 using Vvr.Controller.Actor;
 using Vvr.Controller.Condition;
 using Vvr.Model;
 using Vvr.Provider;
-using Vvr.Session.Actor;
 using Vvr.Session.AssetManagement;
 using Vvr.Session.ContentView.Core;
-using Vvr.Session.EventView.Core;
 using Vvr.Session.Provider;
 using Vvr.Session.World.Core;
 
@@ -108,7 +105,9 @@ namespace Vvr.Session.World
             // Register providers to inject child sessions.
             Register<ITimelineQueueProvider>(timelineSession)
                 .Register<IAssetProvider>(m_AssetProvider)
-                .Register<IStageActorProvider>(stageActorCreateSession);
+                .Register<IStageActorProvider>(stageActorCreateSession)
+                ;
+            Vvr.Provider.Provider.Static.Register<IFloor>(this);
 
             await base.OnInitialize(session, data);
         }
@@ -125,6 +124,7 @@ namespace Vvr.Session.World
                 .Unregister<IAssetProvider>()
                 .Unregister<IStageActorProvider>()
                 ;
+            Vvr.Provider.Provider.Static.Unregister<IFloor>(this);
 
             m_AssetProvider              = null;
             m_FloorConfigResolveSession = null;
@@ -135,7 +135,7 @@ namespace Vvr.Session.World
 
         public async UniTask<Result> Start()
         {
-            using var evMethod = ConditionTrigger.Scope(m_FloorConfigResolveSession.Resolve);
+            using var evMethod = ConditionTrigger.Scope(m_FloorConfigResolveSession.Resolve, nameof(m_FloorConfigResolveSession));
             using var trigger  = ConditionTrigger.Push(this, DisplayName);
 
             Started             = true;
@@ -168,24 +168,35 @@ namespace Vvr.Session.World
                 if (count++ > 0)
                     await BeforeStageStartAsync(stage, count - 1, stageCount);
 
-                m_StageCancellationTokenSource = new();
-                await StartStage(stage, prevPlayers, m_StageCancellationTokenSource.Token)
-                    .AttachExternalCancellation(ReserveToken);
-                if (m_StageCancellationTokenSource.IsCancellationRequested)
+                using (var stageCancellationTokenSource = new CancellationTokenSource())
                 {
-                    // Means restart stage request has been raised.
+                    m_StageCancellationTokenSource = stageCancellationTokenSource;
 
-                    continue;
+                    await StartStage(stage, prevPlayers, m_StageCancellationTokenSource.Token)
+                        .AttachExternalCancellation(ReserveToken);
+
+                    "end stage".ToLog();
+                    await UniTask.Yield();
+
+                    if (m_StageCancellationTokenSource.IsCancellationRequested ||
+                        !prevPlayers.Any())
+                    {
+                        foreach (var actor in prevPlayers)
+                        {
+                            await m_ActorViewProvider.ReleaseAsync(actor)
+                                    .AttachExternalCancellation(ReserveToken)
+                                ;
+                            actor.Release();
+                        }
+
+                        prevPlayers.Clear();
+                        "restart stage".ToLog();
+                        continue;
+                    }
+                    "2 end Stage".ToLog();
                 }
 
                 "Stage cleared".ToLog();
-                await UniTask.Yield();
-
-                if (!prevPlayers.Any())
-                {
-                    "all players dead".ToLog();
-                    break;
-                }
 
                 hasNext = stageIterator.MoveNext();
             }
@@ -201,13 +212,16 @@ namespace Vvr.Session.World
             return floorResult;
         }
 
-        public void RestartCurrentStage()
+        public void RestartStage()
         {
+            m_StageCancellationTokenSource?.Cancel();
         }
 
         private async UniTask StartStage(
             IStageData stage, List<IActor> prevPlayers, CancellationToken cancellationToken)
         {
+            "start stage".ToLog();
+
             DefaultStage.SessionData sessionData;
             if (prevPlayers.Count == 0)
             {
@@ -221,13 +235,14 @@ namespace Vvr.Session.World
             }
 
             using var trigger = ConditionTrigger.Push(this, DisplayName);
-            using (ConditionTrigger.Scope(OnConditionTriggered))
-            using (ConditionTrigger.Scope(m_StageConfigResolveSession.Resolve))
+            using (ConditionTrigger.Scope(OnConditionTriggered, nameof(OnConditionTriggered)))
+            using (ConditionTrigger.Scope(m_StageConfigResolveSession.Resolve, nameof(m_StageConfigResolveSession)))
             {
                 m_CurrentStage = await CreateSession<DefaultStage>(sessionData);
                 {
                     await trigger.Execute(Model.Condition.OnStageStarted, sessionData.stage.Id, ReserveToken);
-                    var stageResult = await m_CurrentStage.Start(ReserveToken);
+                    DefaultStage.Result stageResult = await m_CurrentStage.Start(cancellationToken)
+                        .AttachExternalCancellation(ReserveToken);
                     await trigger.Execute(Model.Condition.OnStageEnded, sessionData.stage.Id, ReserveToken);
                     m_CurrentStageIndex++;
 

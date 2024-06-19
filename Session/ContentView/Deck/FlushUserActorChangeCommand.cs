@@ -15,20 +15,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// File created : 2024, 05, 30 00:05
+// File created : 2024, 06, 20 01:06
 
 #endregion
 
-using Cysharp.Threading.Tasks;
-using JetBrains.Annotations;
+using Vvr.Provider.Command;
 
-namespace Vvr.Provider.Command
+namespace Vvr.Session.ContentView.Deck
 {
-    [PublicAPI]
-    [LocalProvider]
-    public interface ICommandProvider : IProvider
+    struct FlushUserActorChangeCommand : IQueryCommand<UserActorDataQuery>
     {
-        UniTask EnqueueAsync<TCommand>(IEventTarget target) where TCommand : ICommand;
-        UniTask EnqueueAsync(IEventTarget           target, [NotNull] ICommand command);
+        void IQueryCommand<UserActorDataQuery>.Execute(ref UserActorDataQuery query)
+        {
+            query.Flush();
+        }
     }
 }

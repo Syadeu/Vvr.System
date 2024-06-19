@@ -171,7 +171,7 @@ namespace Vvr.Session.World
             m_HandActors  = new(),
             m_PlayerField = new(), m_EnemyField = new();
 
-        private UniTaskCompletionSource m_ResetEvent;
+        // private UniTaskCompletionSource m_ResetEvent;
 
         public override string DisplayName => nameof(DefaultStage);
 
@@ -309,7 +309,7 @@ namespace Vvr.Session.World
                 $"Timeline count {m_Timeline.Count}".ToLog();
                 await UpdateTimelineNodeViewAsync(cancelTokenSource.Token);
 
-                m_ResetEvent = new();
+                // m_ResetEvent = new();
                 IStageActor current = m_Timeline[0];
                 Assert.IsFalse(current.Owner.Disposed);
 
@@ -335,10 +335,9 @@ namespace Vvr.Session.World
                     await trigger.Execute(Model.Condition.OnActorTurn, null, cancelTokenSource.Token);
                     await UniTask.WaitForSeconds(1f, cancellationToken: cancelTokenSource.Token);
 
-                    ExecuteTurn(current, cancelTokenSource.Token)
-                        .Forget(UnityEngine.Debug.LogError);
+                    await ExecuteTurn(current, cancelTokenSource.Token);
 
-                    await m_ResetEvent.Task.AttachExternalCancellation(cancelTokenSource.Token);
+                    // await m_ResetEvent.Task.AttachExternalCancellation(cancelTokenSource.Token);
 
                     await trigger.Execute(Model.Condition.OnActorTurnEnd, null, cancelTokenSource.Token);
 
@@ -478,7 +477,7 @@ namespace Vvr.Session.World
 
         private async UniTask ExecuteTurn(IStageActor runtimeActor, CancellationToken cancellationToken)
         {
-            using var triggerEvent = ConditionTrigger.Scope(OnActorAction);
+            using var triggerEvent = ConditionTrigger.Scope(OnActorAction, nameof(OnActorAction));
 
             if (m_InputControlProvider == null)
             {
@@ -506,11 +505,11 @@ namespace Vvr.Session.World
             else
             {
                 "[Stage] player control".ToLog();
-                await m_InputControlProvider.TransferControl(runtimeActor.Owner)
-                    .AttachExternalCancellation(cancellationToken);
+                await m_InputControlProvider.TransferControl(runtimeActor.Owner, cancellationToken);
             }
 
-            m_ResetEvent.TrySetResult();
+            "[Stage] control done".ToLog();
+            // m_ResetEvent.TrySetResult();
         }
 
         private async UniTask OnActorAction(IEventTarget e, Model.Condition condition, string value)

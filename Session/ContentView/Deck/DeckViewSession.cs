@@ -31,17 +31,23 @@ using Vvr.Provider.Command;
 using Vvr.Session.AssetManagement;
 using Vvr.Session.ContentView.Core;
 using Vvr.Session.Provider;
+using Vvr.Session.World.Core;
 
 namespace Vvr.Session.ContentView.Deck
 {
     [UsedImplicitly]
     public sealed class DeckViewSession : ContentViewChildSession<DeckViewEvent, IDeckViewProvider>,
-        IConnector<IUserActorProvider>
+        IConnector<IUserActorProvider>,
+        IConnector<ICommandProvider>
     {
         private IAssetProvider     m_AssetProvider;
+        private ICommandProvider   m_CommandProvider;
         private IUserActorProvider m_UserActorProvider;
 
         private GameObject m_ViewInstance;
+
+        private IReadOnlyList<IResolvedActorData> m_TargetDeck;
+        private IResolvedActorData[]              m_CachedTeamData;
 
         public override string DisplayName => nameof(DeckViewSession);
 
@@ -99,9 +105,6 @@ namespace Vvr.Session.ContentView.Deck
                 .SuppressCancellationThrow()
                 ;
         }
-
-        private IReadOnlyList<IResolvedActorData> m_TargetDeck;
-        private IResolvedActorData[]              m_CachedTeamData;
 
         private async UniTask OnOpen(DeckViewEvent e, object ctx)
         {
@@ -192,6 +195,9 @@ namespace Vvr.Session.ContentView.Deck
             ContentViewEventDelegate<ModalViewEvent>
                 confirmAction = async (e, ctx) =>
                 {
+                    m_UserActorProvider.Enqueue(new FlushUserActorChangeCommand());
+                    await m_CommandProvider.EnqueueAsync<RestartStageCommand>(this);
+
                     await evHandler.ExecuteAsync(ModalViewEvent.Close, new ModalViewCloseContext(0, false))
                         .AttachExternalCancellation(ReserveToken)
                         .SuppressCancellationThrow();
@@ -234,7 +240,9 @@ namespace Vvr.Session.ContentView.Deck
         }
 
         void IConnector<IUserActorProvider>.Connect(IUserActorProvider    t) => m_UserActorProvider = t;
-        void IConnector<IUserActorProvider>. Disconnect(IUserActorProvider t) => m_UserActorProvider = null;
+        void IConnector<IUserActorProvider>.Disconnect(IUserActorProvider t) => m_UserActorProvider = null;
+        void IConnector<ICommandProvider>.  Connect(ICommandProvider      t) => m_CommandProvider = t;
+        void IConnector<ICommandProvider>.  Disconnect(ICommandProvider   t) => m_CommandProvider = null;
     }
 
     struct ResetUserActorDeckChangeCommand : IQueryCommand<UserActorDataQuery>

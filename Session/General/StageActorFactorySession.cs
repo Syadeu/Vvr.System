@@ -246,6 +246,7 @@ namespace Vvr.Session
 
             item.Owner.DisconnectTime();
             item.Owner.Skill.Clear();
+            // item.Owner.Passive.cle
             item.Owner.Abnormal.Clear();
         }
 

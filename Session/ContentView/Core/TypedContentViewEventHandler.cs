@@ -198,10 +198,10 @@ namespace Vvr.Session.ContentView.Core
             SemaphoreSlimLock wl = new SemaphoreSlimLock(WriteLock);
 
             bool writeLocked = TaskWriteLocked.Value;
-            $"in {writeLocked}".ToLog();
+            // $"in {writeLocked}".ToLog();
             if (!writeLocked)
             {
-                "Lock".ToLog();
+                // "Lock".ToLog();
                 TaskWriteLocked.Value = true;
                 await wl.WaitAsync(CancellationToken);
             }
@@ -234,7 +234,7 @@ namespace Vvr.Session.ContentView.Core
 
             if (!writeLocked)
             {
-                "Unlock".ToLog();
+                // "Unlock".ToLog();
                 TaskWriteLocked.Value = false;
                 wl.Dispose();
             }

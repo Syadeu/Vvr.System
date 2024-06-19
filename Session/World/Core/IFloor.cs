@@ -17,10 +17,14 @@
 // File created : 2024, 06, 16 21:06
 #endregion
 
+using JetBrains.Annotations;
+using Vvr.Provider;
+
 namespace Vvr.Session.World.Core
 {
-    public interface IFloor
+    [PublicAPI]
+    public interface IFloor : IProvider
     {
-        // void RestartStage();
+        void RestartStage();
     }
 }

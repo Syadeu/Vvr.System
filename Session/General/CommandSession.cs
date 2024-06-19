@@ -44,8 +44,11 @@ namespace Vvr.Session
         }
         public async UniTask EnqueueAsync(IEventTarget target, ICommand command)
         {
+            this.Inject(command);
+
             // TODO: maybe record?
 
+            $"[{target.DisplayName}] Execute command {command.GetType().Name}".ToLog();
             await command.ExecuteAsync(target);
         }
     }

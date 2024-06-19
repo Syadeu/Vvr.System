@@ -19,6 +19,7 @@
 
 #endregion
 
+using System.Threading;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 
@@ -30,6 +31,6 @@ namespace Vvr.Provider
         [PublicAPI]
         bool    CanControl(IEventTarget      target);
         [PublicAPI]
-        UniTask TransferControl(IEventTarget target);
+        UniTask TransferControl(IEventTarget target, CancellationToken cancellationToken);
     }
 }

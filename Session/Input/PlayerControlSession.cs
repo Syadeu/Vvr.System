@@ -20,6 +20,7 @@
 #endregion
 
 using System;
+using System.Threading;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using Vvr.Controller.Actor;
@@ -49,22 +50,31 @@ namespace Vvr.Session.Input
             return target is IActor;
         }
 
-        protected override async UniTask OnControl(IEventTarget  target)
+        protected override async UniTask OnControl(IEventTarget  target, CancellationToken cancellationToken)
         {
             // TODO: testing
             if (Owner != target.Owner || target is not IActor actor)
             {
                 // AI
-                await base.OnControl(target);
+                await base.OnControl(target, cancellationToken);
                 return;
             }
 
             m_CurrentControl = actor;
 
             m_ActionCompletionSource = new();
-            await RegisterInput(actor);
+            await RegisterInput(actor, cancellationToken);
 
-            await m_ActionCompletionSource.Task;
+            while (!cancellationToken.IsCancellationRequested &&
+                   m_ActionCompletionSource.Task.Status == UniTaskStatus.Pending)
+            {
+                await UniTask.Yield();
+            }
+
+            if (cancellationToken.IsCancellationRequested)
+                m_ActionCompletionSource.TrySetCanceled();
+            else
+                m_ActionCompletionSource.TrySetResult();
 
             UnregisterInput();
             m_CurrentControl = null;
@@ -72,7 +82,7 @@ namespace Vvr.Session.Input
 
         private bool m_InputRegistered;
 
-        private async UniTask RegisterInput(IActor actor)
+        private async UniTask RegisterInput(IActor actor, CancellationToken cancellationToken)
         {
             if (m_InputRegistered) return;
 
@@ -82,10 +92,13 @@ namespace Vvr.Session.Input
                 ;
 
             await m_ContentViewEventHandlerProvider.Resolve<MainmenuViewEvent>()
-                .ExecuteAsync(MainmenuViewEvent.SetupActorInputs, actor);
+                .ExecuteAsync(MainmenuViewEvent.SetupActorInputs, actor)
+                .AttachExternalCancellation(cancellationToken)
+                ;
 
             m_ContentViewEventHandlerProvider.Resolve<MainmenuViewEvent>()
                 .ExecuteAsync(MainmenuViewEvent.ShowActorInputs, actor)
+                .AttachExternalCancellation(cancellationToken)
                 .Forget();
 
             m_InputRegistered = true;

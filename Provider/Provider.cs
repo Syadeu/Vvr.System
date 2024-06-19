@@ -20,12 +20,14 @@
 #endregion
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using JetBrains.Annotations;
 using UnityEngine.Assertions;
 using Vvr.Model;
 
@@ -65,6 +67,7 @@ namespace Vvr.Provider
                 }
             }
         }
+        [PublicAPI]
         public struct Registry
         {
             abstract class Template
@@ -85,8 +88,9 @@ namespace Vvr.Provider
 
             public static Registry Static => default;
 
-            private static readonly Dictionary<Type, Template> m_Map = new();
+            private static readonly ConcurrentDictionary<Type, Template> m_Map = new();
 
+            [ThreadSafe]
             public Registry Lazy<TProvider>(ProviderFactoryDelegate<TProvider> factory = null)
                 where TProvider : IProvider
             {
@@ -98,19 +102,26 @@ namespace Vvr.Provider
                 return this;
             }
 
+            [ThreadSafe]
             public static TProvider Resolve<TProvider>() where TProvider : IProvider
             {
                 Type t = typeof(TProvider);
-                if (s_Providers.TryGetValue(t, out var existingProvider))
+
+                using (var l = new SemaphoreSlimLock(s_ProviderSemaphore))
                 {
-                    return (TProvider)existingProvider;
+                    l.Wait(TimeSpan.FromSeconds(1));
+
+                    if (s_Providers.TryGetValue(t, out var existingProvider))
+                    {
+                        return (TProvider)existingProvider;
+                    }
                 }
 
                 if (m_Map.TryGetValue(t, out var template))
                 {
-                    existingProvider = template.Create();
-                    Register(t, existingProvider);
-                    return (TProvider)existingProvider;
+                    var provider = template.Create();
+                    Register(t, provider);
+                    return (TProvider)provider;
                 }
 
                 throw new InvalidOperationException($"Provider of type {t.FullName} is not registered");
@@ -129,6 +140,7 @@ namespace Vvr.Provider
         /// </summary>
         /// <param name="t">The type to extract the base interface from.</param>
         /// <returns>The base interface of the given type.</returns>
+        [Pure]
         public static Type ExtractType(Type t)
         {
             const string debugName  = "Provider.ExtractType";
@@ -160,6 +172,7 @@ namespace Vvr.Provider
         /// <typeparam name="TProvider">The type of the provider to register.</typeparam>
         /// <param name="p">The instance of the provider to register.</param>
         /// <returns>The current instance of the <see cref="Provider"/> struct.</returns>
+        [ThreadSafe]
         public Provider Register<TProvider>(TProvider p) where TProvider : IProvider
         {
             Type t = typeof(TProvider);
@@ -172,6 +185,7 @@ namespace Vvr.Provider
             return this;
         }
 
+        [ThreadSafe]
         private static void Register(Type t, IProvider p)
         {
             using (var l = new SemaphoreSlimLock(s_ProviderSemaphore))
@@ -179,14 +193,14 @@ namespace Vvr.Provider
                 l.Wait(TimeSpan.FromSeconds(1));
                 if (!s_Providers.TryAdd(t, p))
                     throw new InvalidOperationException("Multiple provider is not allowed");
-            }
 
-            if (s_Observers.TryGetValue(t, out var list))
-            {
-                for (var i = 0; i < list.Count; i++)
+                if (s_Observers.TryGetValue(t, out var list))
                 {
-                    var item = list[i];
-                    item.connect.Invoke(p);
+                    for (var i = 0; i < list.Count; i++)
+                    {
+                        var item = list[i];
+                        item.connect.Invoke(p);
+                    }
                 }
             }
 
@@ -199,6 +213,7 @@ namespace Vvr.Provider
         /// <param name="p">The provider to unregister.</param>
         /// <typeparam name="TProvider">Type of the provider.</typeparam>
         /// <returns>The updated <see cref="Provider"/> instance.</returns>
+        [ThreadSafe]
         public Provider Unregister<TProvider>(TProvider p) where TProvider : IProvider
         {
             Type t = typeof(TProvider);
@@ -206,16 +221,11 @@ namespace Vvr.Provider
 
             EvaluateType(t);
 
-            bool removed;
             using (var l = new SemaphoreSlimLock(s_ProviderSemaphore))
             {
                 l.Wait(TimeSpan.FromSeconds(1));
-                removed = s_Providers.Remove(t);
-            }
-
-            if (removed)
-            {
-                if (s_Observers.TryGetValue(t, out var list))
+                if (s_Providers.Remove(t) &&
+                    s_Observers.TryGetValue(t, out var list))
                 {
                     for (var i = 0; i < list.Count; i++)
                     {
@@ -244,11 +254,27 @@ namespace Vvr.Provider
                     $"Local provider should not interact with global provider. {providerType.FullName}");
         }
 
+        [ThreadSafe]
+        public TProvider Get<TProvider>() where TProvider : IProvider
+        {
+            Type t = typeof(TProvider);
+            t = ExtractType(t);
+
+            EvaluateType(t);
+
+            using var l = new SemaphoreSlimLock(s_ProviderSemaphore);
+            l.Wait(TimeSpan.FromSeconds(1));
+
+            s_Providers.TryGetValue(t, out var p);
+            return (TProvider)p;
+        }
+
         /// <summary>
         /// Async operation that waits until target provider has resolved.
         /// </summary>
         /// <typeparam name="T">The type of the provider.</typeparam>
         /// <returns>A <see cref="UniTask{T}"/> representing the asynchronous operation.</returns>
+        [ThreadSafe]
         public async UniTask<T> GetAsync<T>() where T : IProvider
         {
             Type t = typeof(T);
@@ -256,15 +282,28 @@ namespace Vvr.Provider
 
             EvaluateType(t);
 
-            while (!s_Providers.ContainsKey(t))
+            while (true)
             {
-                await UniTask.Yield();
+                using var l = new SemaphoreSlimLock(s_ProviderSemaphore);
+                if (!await l.WaitAsync(TimeSpan.FromSeconds(1)))
+                    throw new TimeoutException();
+
+                if (!s_Providers.TryGetValue(t, out var p))
+                {
+                    continue;
+                }
+
+                return (T)p;
             }
-
-            using var l = new SemaphoreSlimLock(s_ProviderSemaphore);
-            l.Wait(TimeSpan.FromSeconds(1));
-
-            return (T)s_Providers[t];
+            // while (!s_Providers.ContainsKey(t))
+            // {
+            //     await UniTask.Yield();
+            // }
+            //
+            // using var l = new SemaphoreSlimLock(s_ProviderSemaphore);
+            // l.Wait(TimeSpan.FromSeconds(1));
+            //
+            // return (T)s_Providers[t];
         }
 
         /// <summary>
@@ -272,6 +311,7 @@ namespace Vvr.Provider
         /// </summary>
         /// <typeparam name="T">The type of the container.</typeparam>
         /// <returns>The async lazy container of type <typeparamref name="T"/>.</returns>
+        [ThreadSafe]
         public AsyncLazy<T> GetLazyAsync<T>() where T : IProvider
         {
             Func<UniTask<T>> p = GetAsync<T>;
@@ -300,9 +340,8 @@ namespace Vvr.Provider
             using (var l = new SemaphoreSlimLock(s_ProviderSemaphore))
             {
                 if (!await l.WaitAsync(TimeSpan.FromSeconds(1)))
-                {
                     throw new TimeoutException();
-                };
+
                 p = (T)s_Providers[t];
             }
             c.Connect(p);
@@ -335,6 +374,7 @@ namespace Vvr.Provider
         /// <param name="c">The connector to be connected.</param>
         /// <typeparam name="T">The type of the provider to connect to.</typeparam>
         /// <returns>The current instance of the <see cref="Provider"/> struct.</returns>
+        [ThreadSafe]
         public Provider Connect<T>(IConnector<T> c) where T : IProvider
         {
             Type t = typeof(T);
@@ -349,23 +389,23 @@ namespace Vvr.Provider
                 {
                     c.Connect((T)p);
                 }
+
+                if (!s_Observers.TryGetValue(t, out var list))
+                {
+                    list           = new();
+                    s_Observers[t] = list;
+                }
+
+                uint hash = unchecked((uint)c.GetHashCode() ^ FNV1a32.Calculate(t.AssemblyQualifiedName));
+                Assert.IsFalse(list.Contains(new Observer() { hash = hash }));
+
+                list.Add(new Observer
+                {
+                    hash       = hash,
+                    disconnect = x => c.Disconnect((T)x),
+                    connect    = x => c.Connect((T)x)
+                });
             }
-
-            if (!s_Observers.TryGetValue(t, out var list))
-            {
-                list           = new();
-                s_Observers[t] = list;
-            }
-
-            uint hash = unchecked((uint)c.GetHashCode() ^ FNV1a32.Calculate(t.AssemblyQualifiedName));
-            Assert.IsFalse(list.Contains(new Observer(){hash = hash}));
-
-            list.Add(new Observer
-            {
-                hash       = hash,
-                disconnect = x => c.Disconnect((T)x),
-                connect    = x => c.Connect((T)x)
-            });
 
             return this;
         }
@@ -376,6 +416,7 @@ namespace Vvr.Provider
         /// <param name="c">The connector to disconnect.</param>
         /// <typeparam name="T">The type of IProvider.</typeparam>
         /// <returns>The updated Provider.</returns>
+        [ThreadSafe]
         public Provider Disconnect<T>(IConnector<T> c) where T : IProvider
         {
             Type t = typeof(T);
@@ -383,17 +424,18 @@ namespace Vvr.Provider
 
             EvaluateType(t);
 
-            if (!s_Observers.TryGetValue(t, out var list)) return this;
-
             using (var l = new SemaphoreSlimLock(s_ProviderSemaphore))
             {
                 l.Wait(TimeSpan.FromSeconds(1));
+
+                if (!s_Observers.TryGetValue(t, out var list)) return this;
+
                 if (s_Providers.TryGetValue(t, out var p))
                     c.Disconnect((T)p);
-            }
 
-            uint hash = unchecked((uint)c.GetHashCode() ^ FNV1a32.Calculate(t.AssemblyQualifiedName));
-            list.Remove(new Observer() { hash = hash });
+                uint hash = unchecked((uint)c.GetHashCode() ^ FNV1a32.Calculate(t.AssemblyQualifiedName));
+                list.Remove(new Observer() { hash = hash });
+            }
 
             return this;
         }

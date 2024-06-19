@@ -15,20 +15,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// File created : 2024, 05, 30 00:05
+// File created : 2024, 06, 19 23:06
 
 #endregion
 
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
+using UnityEngine.Assertions;
+using Vvr.Provider;
+using Vvr.Provider.Command;
 
-namespace Vvr.Provider.Command
+namespace Vvr.Session.World.Core
 {
-    [PublicAPI]
-    [LocalProvider]
-    public interface ICommandProvider : IProvider
+    [UsedImplicitly]
+    public class RestartStageCommand : ICommand
     {
-        UniTask EnqueueAsync<TCommand>(IEventTarget target) where TCommand : ICommand;
-        UniTask EnqueueAsync(IEventTarget           target, [NotNull] ICommand command);
+        UniTask ICommand.ExecuteAsync(IEventTarget target)
+        {
+            var floor = Provider.Provider.Static.Get<IFloor>();
+            Assert.IsNotNull(floor);
+
+            floor.RestartStage();
+
+            return UniTask.CompletedTask;
+        }
     }
 }

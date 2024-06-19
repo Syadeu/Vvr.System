@@ -49,11 +49,17 @@ namespace Vvr.Session.Input
 
         public abstract bool CanControl(IEventTarget target);
 
-        async UniTask IInputControlProvider.TransferControl(IEventTarget target)
+        async UniTask IInputControlProvider.TransferControl(IEventTarget target, CancellationToken cancellationToken)
         {
-            await OnControl(target);
+            using var sts = CancellationTokenSource.CreateLinkedTokenSource(ReserveToken, cancellationToken);
+
+            await OnControl(target, sts.Token)
+                .AttachExternalCancellation(ReserveToken);
+
+            if (sts.Token.IsCancellationRequested)
+                "Canceled input control".ToLog();
         }
 
-        protected abstract UniTask OnControl(IEventTarget target);
+        protected abstract UniTask OnControl(IEventTarget target, CancellationToken cancellationToken);
     }
 }

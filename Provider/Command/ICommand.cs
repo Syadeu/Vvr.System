@@ -26,6 +26,6 @@ namespace Vvr.Provider.Command
     [PublicAPI, RequireImplementors]
     public interface ICommand
     {
-        UniTask ExecuteAsync(IEventTarget target);
+        UniTask ExecuteAsync([NotNull] IEventTarget target);
     }
 }

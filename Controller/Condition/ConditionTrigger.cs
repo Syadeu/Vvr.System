@@ -51,18 +51,21 @@ namespace Vvr.Controller.Condition
             private readonly int         m_Index;
             private readonly EventMethod m_Method;
 
+
             internal EventScope(int index, EventMethod m)
             {
-                m_Index  = index;
-                m_Method = m;
+                m_Index       = index;
+                m_Method      = m;
             }
 
             public void Dispose()
             {
-                Assert.AreEqual(s_MethodStack.Last.Value, m_Method);
+                Assert.AreEqual(s_MethodStack.Last.Value, m_Method,
+                    $"Expected {s_MethodStack.Last.Value.displayName} but {m_Method.displayName}");
 
                 s_MethodStack.RemoveLast();
-                m_Method.action = null;
+                m_Method.action      = null;
+                m_Method.displayName = null;
                 ObjectPool<EventMethod>.Shared.Reserve(m_Method);
             }
         }
@@ -70,7 +73,8 @@ namespace Vvr.Controller.Condition
         [UsedImplicitly]
         internal sealed class EventMethod
         {
-            public EventExecutedDelegate action;
+            public  EventExecutedDelegate action;
+            public string                displayName;
         }
 
         private static readonly List<ConditionTrigger> s_Stack       = new();
@@ -93,7 +97,7 @@ namespace Vvr.Controller.Condition
 #endif
         }
 
-        public static EventScope Scope([NotNull] EventExecutedDelegate e)
+        public static EventScope Scope([NotNull] EventExecutedDelegate e, [CanBeNull] string displayName = null)
         {
             CheckThreadAndThrow(nameof(Scope));
 
@@ -101,7 +105,8 @@ namespace Vvr.Controller.Condition
                 throw new InvalidOperationException("cannot be null");
 
             var pooled = ObjectPool<EventMethod>.Shared.Get();
-            pooled.action = e;
+            pooled.action      = e;
+            pooled.displayName = displayName;
             s_MethodStack.AddLast(pooled);
 
             EventScope s = new EventScope(s_MethodStack.Count, pooled);

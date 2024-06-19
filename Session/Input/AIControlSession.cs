@@ -19,6 +19,7 @@
 
 #endregion
 
+using System.Threading;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using Vvr.Controller.Actor;
@@ -43,7 +44,7 @@ namespace Vvr.Session.Input
             return target is IActor;
         }
 
-        protected override async UniTask OnControl(IEventTarget  target)
+        protected override async UniTask OnControl(IEventTarget  target, CancellationToken cancellationToken)
         {
             IActor actor     = (IActor)target;
             var    actorData = ActorDataProvider.Resolve(actor.Id);
@@ -52,7 +53,8 @@ namespace Vvr.Session.Input
             int count = actorData.Skills.Count;
             var skill = actorData.Skills[UnityEngine.Random.Range(0, count)];
 
-            await actor.Skill.Queue(skill);
+            await actor.Skill.Queue(skill)
+                .AttachExternalCancellation(cancellationToken);
         }
 
         void IConnector<IActorDataProvider>.Connect(IActorDataProvider    t) => ActorDataProvider = t;
