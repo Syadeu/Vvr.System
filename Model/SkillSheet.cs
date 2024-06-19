@@ -34,7 +34,7 @@ namespace Vvr.Model
     public sealed class SkillSheet : Sheet<SkillSheet.Row>
     {
         [Flags]
-        public enum Target : int
+        public enum Target : short
         {
             ERROR = 0,
 
@@ -47,7 +47,7 @@ namespace Vvr.Model
         }
 
         [Flags]
-        public enum Position : int
+        public enum Position : short
         {
             All  = 0,
             Forward  = 0b01,

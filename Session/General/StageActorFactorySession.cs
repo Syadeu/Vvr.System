@@ -47,6 +47,7 @@ namespace Vvr.Session
             private readonly IActor     m_Owner;
             private readonly IActorData m_Data;
             private          bool       m_TagOutRequested;
+            private          ActorState m_State;
 
             public IActor Owner
             {
@@ -65,6 +66,22 @@ namespace Vvr.Session
                     if (Disposed)
                         throw new ObjectDisposedException(nameof(StageActor));
                     return m_Data;
+                }
+            }
+
+            public ActorState State
+            {
+                get
+                {
+                    if (Disposed)
+                        throw new ObjectDisposedException(nameof(StageActor));
+                    return m_State;
+                }
+                set
+                {
+                    if (Disposed)
+                        throw new ObjectDisposedException(nameof(StageActor));
+                    m_State = value;
                 }
             }
 

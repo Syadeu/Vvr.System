@@ -20,11 +20,14 @@
 #endregion
 
 using System;
+using System.Linq;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine.Assertions;
 using Vvr.Controller.Actor;
 using Vvr.Controller.Condition;
+using Vvr.Model;
+using Vvr.Provider;
 using Vvr.Session.Actor;
 using Vvr.Session.Provider;
 
@@ -32,6 +35,34 @@ namespace Vvr.Session.World
 {
     partial class DefaultStage : IStageActorTagInOutProvider
     {
+        private bool          m_CanParrying;
+        private RealtimeTimer m_EnemySkillStartedTime;
+
+        private async UniTask ParryEnemyActionScope(IEventTarget e, Condition condition, string value)
+        {
+            if (!ReferenceEquals(CurrentEventActor.Owner, e)) return;
+
+            // Since ConditionTrigger always executed from main thread,
+            // we don't need to think about memory barrier
+
+            if (condition == Condition.OnSkillStart)
+            {
+                m_CanParrying = false;
+
+                var skillData = CurrentEventActor.Data.Skills.First(x => x.Id == value);
+                if ((skillData.Position & SkillSheet.Position.Random) != 0 &&
+                    skillData.Position                                != SkillSheet.Position.Backward)
+                {
+                    m_CanParrying           = true;
+                    m_EnemySkillStartedTime = RealtimeTimer.Start();
+                }
+            }
+            else if (condition is Condition.OnSkillEnd or Condition.OnSkillCasting)
+            {
+                m_CanParrying = false;
+            }
+        }
+
         UniTask IStageActorTagInOutProvider.TagIn(IActor actor)
         {
             Assert.IsNotNull(actor);
@@ -59,6 +90,12 @@ namespace Vvr.Session.World
             Assert.IsTrue(index  < m_HandActors.Count);
 
             var temp = m_HandActors[index];
+            if ((temp.State & ActorState.CanTag) != ActorState.CanTag)
+            {
+                "Cant tag. no state".ToLog();
+                return;
+            }
+
             m_HandActors.RemoveAt(index);
 
             if (m_PlayerField.Count > 0)

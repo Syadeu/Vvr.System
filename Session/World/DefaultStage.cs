@@ -278,6 +278,7 @@ namespace Vvr.Session.World
                         Join(m_PlayerField, runtimeActor);
                     }
 
+                    runtimeActor.State |= ActorState.CanTag;
                     playerIndex++;
                 }
             }
@@ -304,6 +305,7 @@ namespace Vvr.Session.World
                         Join(m_PlayerField, runtimeActor);
                     }
 
+                    runtimeActor.State |= ActorState.CanTag;
                     playerIndex++;
                 }
             }
@@ -527,7 +529,7 @@ namespace Vvr.Session.World
             if (!m_InputControlProvider.CanControl(runtimeActor.Owner))
             {
                 "[Stage] AI control".ToLog();
-                using var scope = ConditionTrigger.Scope(EnemyActionScope, nameof(EnemyActionScope));
+                using var scope = ConditionTrigger.Scope(ParryEnemyActionScope, nameof(ParryEnemyActionScope));
 
                 int count = runtimeActor.Data.Skills.Count;
                 var skill = runtimeActor.Data.Skills[UnityEngine.Random.Range(0, count)];
@@ -543,21 +545,6 @@ namespace Vvr.Session.World
 
             "[Stage] control done".ToLog();
             // m_ResetEvent.TrySetResult();
-        }
-
-        private RealtimeTimer m_EnemySkillStartedTime;
-
-        private async UniTask EnemyActionScope(IEventTarget e, Condition condition, string value)
-        {
-            if (ReferenceEquals(CurrentEventActor.Owner, e)) return;
-
-            // Since ConditionTrigger always executed from main thread,
-            // we don't need to think about memory barrier
-
-            if (condition == Condition.OnSkillStart)
-            {
-                m_EnemySkillStartedTime = RealtimeTimer.Start();
-            }
         }
 
         private async UniTask OnActorAction(IEventTarget e, Model.Condition condition, string value)
@@ -578,23 +565,11 @@ namespace Vvr.Session.World
         private IEnumerable<IStageActor> GetCurrentPlayerActors()
         {
             return m_PlayerField.Concat(m_HandActors);
-            // for (int i = 0; i < m_PlayerField.Count; i++)
-            // {
-            //     yield return (m_PlayerField[i]);
-            // }
-            // for (int i = 0; i < m_HandActors.Count; i++)
-            // {
-            //     yield return (m_HandActors[i]);
-            // }
         }
 
         private IEnumerable<IStageActor> GetCurrentEnemyActors()
         {
             return m_EnemyField;
-            // for (int i = 0; i < m_EnemyField.Count; i++)
-            // {
-            //     yield return (m_EnemyField[i]);
-            // }
         }
 
         void IConnector<IActorProvider>.Connect(IActorProvider t)

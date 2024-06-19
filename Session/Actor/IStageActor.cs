@@ -20,6 +20,7 @@
 #endregion
 
 using System;
+using JetBrains.Annotations;
 using Vvr.Controller.Actor;
 using Vvr.Controller.Provider;
 using Vvr.Model;
@@ -27,6 +28,7 @@ using Vvr.Provider;
 
 namespace Vvr.Session.Actor
 {
+    [PublicAPI]
     public interface IStageActor : IDisposable,
         IConnector<IAssetProvider>,
         IConnector<IActorViewProvider>,
@@ -37,8 +39,21 @@ namespace Vvr.Session.Actor
     {
         IActor     Owner           { get; }
         IActorData Data            { get; }
+
+        ActorState State { get; set; }
+
         bool       TagOutRequested { get; set; }
 
         bool Disposed { get; }
+    }
+
+    [Flags]
+    [PublicAPI]
+    public enum ActorState
+    {
+        None = 0,
+
+        CanTag   = 0b0001,
+        CanParry = 0b0010
     }
 }
