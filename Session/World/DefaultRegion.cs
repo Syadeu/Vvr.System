@@ -75,7 +75,7 @@ namespace Vvr.Session.World
             var             currentStage = startStage;
             LinkedList<IStageData> list         = new();
 
-            IActor[] aliveActors = Array.Empty<IActor>();
+            IReadOnlyList<IActor> aliveActors = Array.Empty<IActor>();
             do
             {
                 list.AddLast(currentStage);
@@ -85,15 +85,15 @@ namespace Vvr.Session.World
                 {
                     var floor = await CreateSession<DefaultFloor>(new DefaultFloor.SessionData(list, aliveActors));
 
-                    DefaultFloor.Result result = await floor.Start();
-                    aliveActors = result.alivePlayerActors;
+                    var result = await floor.StartAsync();
+                    aliveActors = result.AliveUserActors;
 
                     await floor.Reserve();
 
                     "Floor cleared".ToLog();
                     list.Clear();
 
-                    if (aliveActors.Length <= 0)
+                    if (aliveActors.Count <= 0)
                     {
                         "All player is dead reset".ToLog();
                         currentStage = startStage;

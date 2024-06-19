@@ -38,7 +38,7 @@ namespace Vvr.Session.World
 {
  	// [ParentSession(typeof(DefaultRegion), true)]
     public partial class DefaultFloor : ParentSession<DefaultFloor.SessionData>,
-        IFloor,
+        IFloorProvider,
         IConnector<IUserActorProvider>,
 
         IConnector<IStageViewProvider>,
@@ -48,22 +48,12 @@ namespace Vvr.Session.World
         public struct SessionData : ISessionData
         {
             public readonly IEnumerable<IStageData> stages;
-            public readonly IActor[]              existingActors;
+            public readonly IEnumerable<IActor>     existingActors;
 
-            public SessionData(IEnumerable<IStageData> s, IActor[] existingActors)
+            public SessionData(IEnumerable<IStageData> s, IEnumerable<IActor> existingActors)
             {
                 stages              = s;
                 this.existingActors = existingActors;
-            }
-        }
-
-        public struct Result
-        {
-            public readonly IActor[] alivePlayerActors;
-
-            public Result(IActor[] x)
-            {
-                alivePlayerActors = x;
             }
         }
 
@@ -107,7 +97,7 @@ namespace Vvr.Session.World
                 .Register<IAssetProvider>(m_AssetProvider)
                 .Register<IStageActorProvider>(stageActorCreateSession)
                 ;
-            Vvr.Provider.Provider.Static.Register<IFloor>(this);
+            Vvr.Provider.Provider.Static.Register<IFloorProvider>(this);
 
             await base.OnInitialize(session, data);
         }
@@ -124,7 +114,7 @@ namespace Vvr.Session.World
                 .Unregister<IAssetProvider>()
                 .Unregister<IStageActorProvider>()
                 ;
-            Vvr.Provider.Provider.Static.Unregister<IFloor>(this);
+            Vvr.Provider.Provider.Static.Unregister<IFloorProvider>(this);
 
             m_AssetProvider              = null;
             m_FloorConfigResolveSession = null;
@@ -133,7 +123,7 @@ namespace Vvr.Session.World
             await base.OnReserve();
         }
 
-        public async UniTask<Result> Start()
+        public async UniTask<FloorResult> StartAsync()
         {
             using var evMethod = ConditionTrigger.Scope(m_FloorConfigResolveSession.Resolve, nameof(m_FloorConfigResolveSession));
             using var trigger  = ConditionTrigger.Push(this, DisplayName);
@@ -202,7 +192,7 @@ namespace Vvr.Session.World
                 hasNext = stageIterator.MoveNext();
             }
 
-            var floorResult = new Result(
+            var floorResult = new FloorResult(
                 prevPlayers.Any() ? prevPlayers.ToArray() : Array.Empty<IActor>());
 
             m_CurrentStage = null;

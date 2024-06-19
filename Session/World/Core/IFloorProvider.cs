@@ -17,14 +17,27 @@
 // File created : 2024, 06, 16 21:06
 #endregion
 
+using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using Vvr.Provider;
 
 namespace Vvr.Session.World.Core
 {
+    /// <summary>
+    /// Represents a provider that handles floor related operations.
+    /// </summary>
     [PublicAPI]
-    public interface IFloor : IProvider
+    public interface IFloorProvider : IProvider
     {
+        /// <summary>
+        /// Starts the floor asynchronously.
+        /// </summary>
+        /// <returns>Returns a UniTask of type FloorResult.</returns>
+        UniTask<FloorResult> StartAsync();
+
+        /// <summary>
+        /// Restarts the stage.
+        /// </summary>
         void RestartStage();
     }
 }
