@@ -178,6 +178,48 @@ namespace Vvr.UComponent.UI
             return calculated;
         }
 
+        private void SetLayoutForAxis(int axis)
+        {
+            float pad = axis == 0 ? m_Padding.horizontal : m_Padding.vertical;
+            if (((int)m_Direction ^ axis) == 0)
+            {
+#if UNITY_EDITOR
+                if (!Application.isPlaying)
+                {
+                    float startOffset = GetStartOffset(axis, GetTotalPreferredSize(axis) - pad);
+                    foreach (var child in rectChildren)
+                    {
+                        float preferred = LayoutUtility.GetPreferredSize(child, axis);
+
+                        SetChildAlongAxisWithScale(child, axis, startOffset, preferred, 1);
+                        startOffset += preferred + m_Spacing;
+                    }
+                    return;
+                }
+#endif
+                int i = 0;
+                foreach (var pos in GetVisiblePositionWithAxis(axis))
+                {
+                    if (rectChildren.Count <= i) break;
+
+                    var child = rectChildren[i++];
+
+                    float preferred = LayoutUtility.GetPreferredSize(child, axis);
+                    SetChildAlongAxisWithScale(child, axis, pos.pos, preferred, 1);
+                }
+            }
+            else
+            {
+                float startOffset = GetStartOffset(axis, GetTotalPreferredSize(axis) - m_Padding.vertical);
+                foreach (var child in rectChildren)
+                {
+                    float preferred = LayoutUtility.GetPreferredSize(child, axis);
+
+                    SetChildAlongAxisWithScale(child, axis, startOffset, preferred, 1);
+                }
+            }
+        }
+
         public override void CalculateLayoutInputHorizontal()
         {
             base.CalculateLayoutInputHorizontal();
@@ -195,47 +237,11 @@ namespace Vvr.UComponent.UI
 
         public override void SetLayoutHorizontal()
         {
-            if (!Application.isPlaying)
-            {
-                float startOffset = GetStartOffset(0, GetTotalPreferredSize(0) - m_Padding.horizontal);
-
-                foreach (var child in rectChildren)
-                {
-                    float preferred = LayoutUtility.GetPreferredSize(child, 0);
-
-                    SetChildAlongAxisWithScale(child, 0, startOffset, preferred, 1);
-                    startOffset += preferred + m_Spacing;
-                }
-
-                return;
-            }
-
-            // m_ItemSizeDelta.x = 0;
-            int i = 0;
-            foreach (var pos in GetVisiblePositionWithAxis(0))
-            {
-                if (rectChildren.Count <= i) break;
-
-                var child = rectChildren[i++];
-
-                float preferred = LayoutUtility.GetPreferredSize(child, 0);
-                // m_ItemSizeDelta.x = Mathf.Max(m_ItemSizeDelta.x, preferred);
-
-                SetChildAlongAxisWithScale(child, 0, pos.pos, preferred, 1);
-            }
+            SetLayoutForAxis(0);
         }
         public override void SetLayoutVertical()
         {
-            float startOffset = GetStartOffset(1, GetTotalPreferredSize(1) - m_Padding.vertical);
-
-            // m_ItemSizeDelta.y = 0;
-            foreach (var child in rectChildren)
-            {
-                float preferred = LayoutUtility.GetPreferredSize(child, 1);
-                // m_ItemSizeDelta.y = Mathf.Max(m_ItemSizeDelta.y, preferred);
-
-                SetChildAlongAxisWithScale(child, 1, startOffset, preferred, 1);
-            }
+            SetLayoutForAxis(1);
         }
 
         private IEnumerable<(bool visible, float pos)> GetVisiblePositionWithAxis(int axis, bool visibleOnly = true)
