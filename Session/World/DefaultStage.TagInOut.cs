@@ -188,7 +188,7 @@ namespace Vvr.Session.World
             m_IsParrying = false;
         }
 
-        private async UniTask TagOut(IStageActor target, CancellationToken cancelTokenSource)
+        private partial async UniTask TagOut(IStageActor target, CancellationToken cancelTokenSource)
         {
             Assert.IsTrue(target.TagOutRequested);
             Assert.IsTrue(target.Owner.ConditionResolver[Model.Condition.IsPlayerActor](null));

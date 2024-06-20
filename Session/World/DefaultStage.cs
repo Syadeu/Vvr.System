@@ -488,7 +488,8 @@ namespace Vvr.Session.World
         private partial UniTask UpdateTimelineNodeViewAsync(CancellationToken cancellationToken);
         private partial UniTask CloseTimelineNodeViewAsync(CancellationToken cancellationToken = default);
 
-        private partial UniTask TagIn(int index, CancellationToken cancellationToken);
+        private partial UniTask TagIn(int          index,  CancellationToken cancellationToken);
+        private partial UniTask TagOut(IStageActor target, CancellationToken cancelTokenSource);
 
         private async UniTask ExecuteTurn(IStageActor runtimeActor, CancellationToken cancellationToken)
         {
