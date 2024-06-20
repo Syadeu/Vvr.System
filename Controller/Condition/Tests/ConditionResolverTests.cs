@@ -153,5 +153,56 @@ namespace Vvr.Controller.Condition.Tests
 
             Assert.AreEqual(3, executeCount);
         }
+        [Test]
+        public async Task SubscribeTest_1()
+        {
+            ConditionResolver[(Model.Condition)1] = _ => true;
+            ConditionResolver[(Model.Condition)2] = _ => true;
+            ConditionResolver[(Model.Condition)3] = _ => true;
+
+            int executeCount = 0;
+
+            using (var ob = ConditionResolver.CreateObserver())
+            {
+                ob[(Model.Condition)1] = async (_, _) => executeCount++;
+                ob[(Model.Condition)2] = async (_, _) => executeCount++;
+                ob[(Model.Condition)3] = async (_, _) => executeCount++;
+            }
+
+            using (var trigger = ConditionTrigger.Push(TestEventTarget))
+            {
+                await trigger.Execute((Model.Condition)1, null);
+                await trigger.Execute((Model.Condition)2, null);
+                await trigger.Execute((Model.Condition)3, null);
+            }
+
+            Assert.AreEqual(0, executeCount);
+        }
+        [Test]
+        public async Task SubscribeTest_2()
+        {
+            ConditionResolver[(Model.Condition)1] = _ => true;
+            ConditionResolver[(Model.Condition)2] = _ => true;
+            ConditionResolver[(Model.Condition)3] = _ => true;
+
+            int executeCount = 0;
+
+            var ob = ConditionResolver.CreateObserver();
+            await UniTask.WhenAll(
+                UniTask.RunOnThreadPool(() => ob[(Model.Condition)1] = async (_, _) => executeCount++),
+                UniTask.RunOnThreadPool(() => ob[(Model.Condition)2] = async (_, _) => executeCount++),
+                UniTask.RunOnThreadPool(() => ob[(Model.Condition)3] = async (_, _) => executeCount++)
+            );
+
+            using (var trigger = ConditionTrigger.Push(TestEventTarget))
+            {
+                await trigger.Execute((Model.Condition)1, null);
+                await trigger.Execute((Model.Condition)2, null);
+                await trigger.Execute((Model.Condition)3, null);
+            }
+
+            Assert.AreEqual(3, executeCount);
+            ob.Dispose();
+        }
     }
 }
