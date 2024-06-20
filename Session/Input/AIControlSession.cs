@@ -53,7 +53,7 @@ namespace Vvr.Session.Input
             int count = actorData.Skills.Count;
             var skill = actorData.Skills[UnityEngine.Random.Range(0, count)];
 
-            await actor.Skill.Queue(skill)
+            await actor.Skill.QueueAsync(skill)
                 .AttachExternalCancellation(cancellationToken);
         }
 

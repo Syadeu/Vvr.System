@@ -20,6 +20,7 @@
 #endregion
 
 using System;
+using System.Threading;
 using Cysharp.Threading.Tasks;
 using Vvr.Controller.Condition;
 using Vvr.Controller.Skill;
@@ -30,14 +31,19 @@ namespace Vvr.Controller.Passive
     partial class PassiveController : IConditionObserver
     {
         ConditionQuery IConditionObserver.Filter => ConditionQuery.All;
-        async UniTask IConditionObserver.OnExecute(Model.Condition c, string value)
+        async UniTask IConditionObserver.OnExecute(Model.Condition c, string value, CancellationToken cancellationToken)
         {
             EventCondition condition = (EventCondition)c;
             for (int i = 0; i < m_Values.Count; i++)
             {
                 var e = m_Values[i];
 
-                await ExecuteValue(e, condition, value);
+                await ExecuteValue(e, condition, value)
+                    .AttachExternalCancellation(cancellationToken);
+
+                if (cancellationToken.IsCancellationRequested ||
+                    Disposed)
+                    break;
             }
         }
 
@@ -80,7 +86,7 @@ namespace Vvr.Controller.Passive
                     {
                         if (!target.ConditionResolver[e.passive.executeCondition](e.passive.executeValue)) continue;
 
-                        await Owner.Skill.Queue(skill, target);
+                        await Owner.Skill.QueueAsync(skill, target);
                     }
 
                     break;
@@ -96,7 +102,7 @@ namespace Vvr.Controller.Passive
                     {
                         if (!target.ConditionResolver[e.passive.executeCondition](e.passive.executeValue)) continue;
 
-                        await target.Abnormal.Add(abnormal);
+                        await target.Abnormal.AddAsync(abnormal);
                     }
                     break;
                 default:

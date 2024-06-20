@@ -112,7 +112,7 @@ namespace Vvr.Session.Input
 
         private async UniTask ExecuteSkill(ISkillData skill)
         {
-            await m_Target.Skill.Queue(skill);
+            await m_Target.Skill.QueueAsync(skill);
             OnSkillExecuted(skill);
 
             m_IsSkillExecuting = false;

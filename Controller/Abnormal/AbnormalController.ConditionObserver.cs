@@ -20,6 +20,7 @@
 #endregion
 
 using System;
+using System.Threading;
 using Cysharp.Threading.Tasks;
 using Vvr.Controller.Condition;
 using Vvr.Model;
@@ -30,7 +31,7 @@ namespace Vvr.Controller.Abnormal
     {
         ConditionQuery IConditionObserver.Filter => ConditionQuery.All - Model.Condition.Always;
 
-        UniTask IConditionObserver.OnExecute(Model.Condition c, string value)
+        UniTask IConditionObserver.OnExecute(Model.Condition c, string value, CancellationToken cancellationToken)
         {
             if (Disposed)
                 throw new ObjectDisposedException(nameof(AbnormalController));

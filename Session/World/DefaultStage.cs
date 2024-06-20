@@ -536,7 +536,7 @@ namespace Vvr.Session.World
                 int count = runtimeActor.Data.Skills.Count;
                 var skill = runtimeActor.Data.Skills[UnityEngine.Random.Range(0, count)];
 
-                await runtimeActor.Owner.Skill.Queue(skill)
+                await runtimeActor.Owner.Skill.QueueAsync(skill)
                     .AttachExternalCancellation(cancellationToken);
             }
             else

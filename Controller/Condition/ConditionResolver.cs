@@ -76,11 +76,10 @@ namespace Vvr.Controller.Condition
                 var e = resolver.m_EventObservers[i];
                 if (!e.Filter.Has(condition)) continue;
 
-                tempArray.Value[i] = e.OnExecute(condition, v)
-                    .AttachExternalCancellation(cancellationTokenSource.Token);
+                tempArray.Value[i] = e.OnExecute(condition, v, cancellationTokenSource.Token);
             }
 
-            await UniTask.WhenAll(tempArray.Value);
+            await UniTask.WhenAll(tempArray.Value).AttachExternalCancellation(cancellationTokenSource.Token);
         }
 
         private readonly IReadOnlyConditionResolver m_Parent;

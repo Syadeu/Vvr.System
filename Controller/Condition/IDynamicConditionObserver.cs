@@ -32,7 +32,7 @@ using Vvr.Provider;
 namespace Vvr.Controller.Condition
 {
     [PublicAPI]
-    public delegate UniTask ConditionObserverDelegate(IEventTarget owner, string value);
+    public delegate UniTask ConditionObserverDelegate(IEventTarget owner, string value, CancellationToken cancellationToken);
 
     [PublicAPI]
     public interface IDynamicConditionObserver : IDisposable
@@ -46,7 +46,7 @@ namespace Vvr.Controller.Condition
 
     internal sealed class DynamicConditionObserver : IConditionObserver, IDynamicConditionObserver
     {
-        public static readonly ConditionObserverDelegate None = (_, _) => UniTask.CompletedTask;
+        public static readonly ConditionObserverDelegate None = (_, _, _) => UniTask.CompletedTask;
 
         private ConditionResolver m_Parent;
 
@@ -134,7 +134,7 @@ namespace Vvr.Controller.Condition
             m_Parent = r;
         }
 
-        async UniTask IConditionObserver.OnExecute(Model.Condition condition, string value)
+        async UniTask IConditionObserver.OnExecute(Model.Condition condition, string value, CancellationToken cancellationToken)
         {
             if (Disposed)
                 throw new ObjectDisposedException(nameof(ConditionResolver));
@@ -147,8 +147,11 @@ namespace Vvr.Controller.Condition
 
             if (m_Delegates[i] == null)
                 throw new InvalidOperationException($"{condition} not found with value({value}), {m_Filter.ToString()}");
-            await m_Delegates[i](m_Parent.Owner, value)
-                    .AttachExternalCancellation(m_CancellationTokenSource.Token)
+
+            using var cts =
+                CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, m_CancellationTokenSource.Token);
+            await m_Delegates[i](m_Parent.Owner, value, cts.Token)
+                    .AttachExternalCancellation(cts.Token)
                 ;
         }
 

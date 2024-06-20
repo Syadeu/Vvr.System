@@ -45,13 +45,13 @@ namespace Vvr.Controller.Skill
         IUniTaskAsyncEnumerable<ISkillData> GetSkills();
 
         [PublicAPI]
-        UniTask Queue(int index);
+        UniTask QueueAsync(int index);
         [PublicAPI]
-        UniTask Queue([NotNull] ISkillID skill);
+        UniTask QueueAsync([NotNull] ISkillID skill);
 
         // [PublicAPI, Obsolete]
         // UniTask Queue(SkillSheet.Row data);
         [PublicAPI]
-        UniTask Queue([NotNull] ISkillID data, [CanBeNull] IActor specifiedTarget);
+        UniTask QueueAsync([NotNull] ISkillID data, [CanBeNull] IActor specifiedTarget);
     }
 }

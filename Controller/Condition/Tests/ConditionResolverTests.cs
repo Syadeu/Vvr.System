@@ -140,9 +140,9 @@ namespace Vvr.Controller.Condition.Tests
             int executeCount = 0;
 
             using var ob = ConditionResolver.CreateObserver();
-            ob[(Model.Condition)1] = async (_, _) => executeCount++;
-            ob[(Model.Condition)2] = async (_, _) => executeCount++;
-            ob[(Model.Condition)3] = async (_, _) => executeCount++;
+            ob[(Model.Condition)1] = async (_, _, _) => executeCount++;
+            ob[(Model.Condition)2] = async (_, _, _) => executeCount++;
+            ob[(Model.Condition)3] = async (_, _, _) => executeCount++;
 
             using (var trigger = ConditionTrigger.Push(TestEventTarget))
             {
@@ -164,9 +164,9 @@ namespace Vvr.Controller.Condition.Tests
 
             using (var ob = ConditionResolver.CreateObserver())
             {
-                ob[(Model.Condition)1] = async (_, _) => executeCount++;
-                ob[(Model.Condition)2] = async (_, _) => executeCount++;
-                ob[(Model.Condition)3] = async (_, _) => executeCount++;
+                ob[(Model.Condition)1] = async (_, _, _) => executeCount++;
+                ob[(Model.Condition)2] = async (_, _, _) => executeCount++;
+                ob[(Model.Condition)3] = async (_, _, _) => executeCount++;
             }
 
             using (var trigger = ConditionTrigger.Push(TestEventTarget))
@@ -189,9 +189,9 @@ namespace Vvr.Controller.Condition.Tests
 
             var ob = ConditionResolver.CreateObserver();
             await UniTask.WhenAll(
-                UniTask.RunOnThreadPool(() => ob[(Model.Condition)1] = async (_, _) => executeCount++),
-                UniTask.RunOnThreadPool(() => ob[(Model.Condition)2] = async (_, _) => executeCount++),
-                UniTask.RunOnThreadPool(() => ob[(Model.Condition)3] = async (_, _) => executeCount++)
+                UniTask.RunOnThreadPool(() => ob[(Model.Condition)1] = async (_, _, _) => executeCount++),
+                UniTask.RunOnThreadPool(() => ob[(Model.Condition)2] = async (_, _, _) => executeCount++),
+                UniTask.RunOnThreadPool(() => ob[(Model.Condition)3] = async (_, _, _) => executeCount++)
             );
 
             using (var trigger = ConditionTrigger.Push(TestEventTarget))

@@ -163,20 +163,20 @@ namespace Vvr.Controller.Skill
                 }
             });
         }
-        UniTask ISkill.Queue(int index)
+        UniTask ISkill.QueueAsync(int index)
         {
             if (Disposed)
                 throw new ObjectDisposedException(nameof(SkillController));
 
             var data = m_DataProvider.Resolve(Owner.Id);
-            return Queue(data.Skills[index]);
+            return QueueAsync(data.Skills[index]);
         }
-        public UniTask Queue(ISkillID skill)
+        public UniTask QueueAsync(ISkillID skill)
         {
-            return Queue(skill, null);
+            return QueueAsync(skill, null);
         }
 
-        public async UniTask Queue(ISkillID data, IActor specifiedTarget)
+        public async UniTask QueueAsync(ISkillID data, IActor specifiedTarget)
         {
             if (Disposed)
                 throw new ObjectDisposedException(nameof(SkillController));
@@ -409,7 +409,7 @@ namespace Vvr.Controller.Skill
                 {
                     AbnormalSheet.Row e = value.skill.Abnormal[i].Ref;
 
-                    await target.Abnormal.Add(e);
+                    await target.Abnormal.AddAsync(e);
                 }
 
                 float dmg = Owner.Stats[StatType.ATT] * value.skill.Multiplier;

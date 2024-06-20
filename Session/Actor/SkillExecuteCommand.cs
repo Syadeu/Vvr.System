@@ -43,7 +43,7 @@ namespace Vvr.Session.Actor
             if (target is not IActor actor)
                 throw new InvalidOperationException();
 
-            await actor.Skill.Queue(m_SkillIndex);
+            await actor.Skill.QueueAsync(m_SkillIndex);
         }
     }
 }

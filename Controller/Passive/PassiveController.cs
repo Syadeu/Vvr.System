@@ -21,7 +21,9 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using Cysharp.Threading.Tasks;
+using JetBrains.Annotations;
 using UnityEngine.Assertions;
 using Vvr.Controller.Actor;
 using Vvr.Controller.Provider;
@@ -30,6 +32,7 @@ using Vvr.Provider;
 
 namespace Vvr.Controller.Passive
 {
+    [PublicAPI]
     public sealed partial class PassiveController : IPassive, IDisposable
     {
         struct Value : IComparable<Value>
@@ -50,8 +53,12 @@ namespace Vvr.Controller.Passive
         private IActor Owner { get; }
 
         private ITargetProvider m_TargetProvider;
+        private int             m_Disposed = 0;
 
         private readonly List<Value> m_Values = new();
+
+        [ThreadSafe]
+        public bool Disposed => m_Disposed == 1;
 
         public PassiveController(IActor o)
         {
@@ -59,6 +66,9 @@ namespace Vvr.Controller.Passive
         }
         public void Dispose()
         {
+            if (Interlocked.Exchange(ref m_Disposed, 1) != 0)
+                throw new ObjectDisposedException(nameof(PassiveController));
+
             m_Values.Clear();
 
             m_TargetProvider = null;

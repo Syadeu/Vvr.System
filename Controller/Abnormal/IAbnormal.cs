@@ -42,7 +42,7 @@ namespace Vvr.Controller.Abnormal
         /// <param name="data"></param>
         /// <returns></returns>
         [PublicAPI]
-        UniTask Add(AbnormalSheet.Row data);
+        UniTask AddAsync(AbnormalSheet.Row data);
         /// <summary>
         /// Returns given abnormal id is in this controller
         /// </summary>
