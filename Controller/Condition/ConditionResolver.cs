@@ -61,6 +61,7 @@ namespace Vvr.Controller.Condition
         {
             if (o is not IConditionTarget target) return;
 
+            // TODO: ocp
             var resolver = (ConditionResolver)target.ConditionResolver;
             if (resolver.m_Parent != null)
             {
@@ -94,6 +95,7 @@ namespace Vvr.Controller.Condition
 
         private readonly SemaphoreSlim m_WriteLock = new(1, 1);
 
+        public ConditionQuery Filter => m_Filter;
         [ThreadSafe(ThreadSafeAttribute.SafeType.Semaphore)]
         public ConditionDelegate this[Model.Condition t]
         {
@@ -101,7 +103,7 @@ namespace Vvr.Controller.Condition
             {
                 if (Disposed)
                     throw new ObjectDisposedException(nameof(ConditionResolver));
-                if (t == 0) return Always;
+                if (t is 0) return Always;
 
                 using var wl = new SemaphoreSlimLock(m_WriteLock);
                 wl.Wait(TimeSpan.FromSeconds(1));
@@ -124,7 +126,7 @@ namespace Vvr.Controller.Condition
             {
                 if (Disposed)
                     throw new ObjectDisposedException(nameof(ConditionResolver));
-                if (t == 0) throw new InvalidOperationException("You are trying to override Always condition.");
+                if (t is 0) throw new InvalidOperationException("You are trying to override Always condition.");
 
                 using var wl = new SemaphoreSlimLock(m_WriteLock);
                 wl.Wait(TimeSpan.FromSeconds(1));
@@ -137,7 +139,7 @@ namespace Vvr.Controller.Condition
                 {
                     ConditionDelegate[] nArr = ArrayPool<ConditionDelegate>.Shared.Rent(modifiedLength);
 
-                    if (m_Delegates != null)
+                    if (m_Delegates is not null)
                     {
                         foreach (var condition in m_Filter)
                         {
@@ -155,7 +157,7 @@ namespace Vvr.Controller.Condition
                 if (value is not null)
                 {
                     var target = m_Delegates[i];
-                    if (target != null && target.GetInvocationList().Length > 0)
+                    if (target is not null && target.GetInvocationList().Length > 0)
                     {
                         StringBuilder sb = new();
                         sb.AppendLine("Chaining condition will leads unexpected result.");
@@ -177,7 +179,7 @@ namespace Vvr.Controller.Condition
             }
         }
 
-        [PublicAPI, ThreadSafe]
+        [ThreadSafe]
         public bool Disposed => m_Disposed == 1;
 
         public IEventTarget Owner { get; }

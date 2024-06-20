@@ -334,7 +334,7 @@ namespace Vvr.Controller.Condition
         {
             if (s_MethodStack.Count > 0)
             {
-                LinkedListNode<EventMethod> current = s_MethodStack.Last;
+                var current = s_MethodStack.Last;
                 do
                 {
                     await current.Value.action.Invoke(m_Target, condition, value)

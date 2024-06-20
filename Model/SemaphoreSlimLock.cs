@@ -189,7 +189,8 @@ namespace Vvr.Model
                 !isCurrentWriteThread &&
                 UnityEditorInternal.InternalEditorUtility.CurrentThreadIsMainThread())
             {
-                $"Main thread has been awaited({t.ElapsedTime.TotalSeconds}s) with {nameof(SemaphoreSlimLock)}".ToLog();
+                if (.1f <= t.ElapsedTime.TotalSeconds)
+                    $"Main thread has been awaited({t.ElapsedTime.TotalSeconds}s) with {nameof(SemaphoreSlimLock)}".ToLog();
             }
 #endif
         }

@@ -204,5 +204,71 @@ namespace Vvr.Controller.Condition.Tests
             Assert.AreEqual(3, executeCount);
             ob.Dispose();
         }
+
+        [Test]
+        public async Task SubscribeTest_3()
+        {
+            ConditionResolver[(Model.Condition)1] = _ => true;
+
+            int executeCount = 0;
+
+            using var ob = ConditionResolver.CreateObserver();
+            ob[(Model.Condition)1] = async (_, _, _) => executeCount++;
+            ob[(Model.Condition)2] = async (_, _, _) => executeCount++;
+            ob[(Model.Condition)3] = async (_, _, _) => executeCount++;
+
+            using (var trigger = ConditionTrigger.Push(TestEventTarget))
+            {
+                await trigger.Execute((Model.Condition)1, null);
+                await trigger.Execute((Model.Condition)2, null);
+                await trigger.Execute((Model.Condition)3, null);
+            }
+
+            Assert.AreEqual(3, executeCount);
+        }
+        [Test]
+        public async Task SubscribeTest_4()
+        {
+            int executeCount = 0;
+
+            using var ob = ConditionResolver.CreateObserver();
+            ob[(Model.Condition)1] = async (_, _, _) => executeCount++;
+            ob[(Model.Condition)2] = async (_, _, _) => executeCount++;
+            ob[(Model.Condition)3] = async (_, _, _) => executeCount++;
+
+            using (var trigger = ConditionTrigger.Push(TestEventTarget))
+            {
+                await trigger.Execute((Model.Condition)1, null);
+                await trigger.Execute((Model.Condition)2, null);
+                await trigger.Execute((Model.Condition)3, null);
+            }
+
+            Assert.AreEqual(3, executeCount);
+        }
+        [Test]
+        public async Task SubscribeTest_5()
+        {
+            int executeCount = 0;
+
+            using var ob = ConditionResolver.CreateObserver();
+            ob[Model.Condition.OnActorTurn]       = async (_, _, _) => executeCount++;
+            ob[Model.Condition.OnActorTurnEnd]    = async (_, _, _) => executeCount++;
+            ob[Model.Condition.OnHit]             = async (_, _, _) => executeCount++;
+            ob[Model.Condition.OnAbnormalAdded]   = async (_, _, _) => executeCount++;
+            ob[Model.Condition.OnAbnormalUpdate]  = async (_, _, _) => executeCount++;
+            ob[Model.Condition.OnAbnormalRemoved] = async (_, _, _) => executeCount++;
+
+            using (var trigger = ConditionTrigger.Push(TestEventTarget))
+            {
+                await trigger.Execute(Model.Condition.OnActorTurn, null);
+                await trigger.Execute(Model.Condition.OnActorTurnEnd, null);
+                await trigger.Execute(Model.Condition.OnHit, null);
+                await trigger.Execute(Model.Condition.OnAbnormalAdded, null);
+                await trigger.Execute(Model.Condition.OnAbnormalUpdate, null);
+                await trigger.Execute(Model.Condition.OnAbnormalRemoved, null);
+            }
+
+            Assert.AreEqual(6, executeCount);
+        }
     }
 }

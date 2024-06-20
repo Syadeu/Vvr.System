@@ -32,6 +32,9 @@ namespace Vvr.Model
     [AttributeUsage(AttributeTargets.Method | AttributeTargets.Property)]
     public sealed class ThreadSafeAttribute : Attribute
     {
+        /// <summary>
+        /// Enum that represents the type of thread safety.
+        /// </summary>
         public enum SafeType
         {
             SpinLock,

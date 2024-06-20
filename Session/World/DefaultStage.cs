@@ -370,8 +370,6 @@ namespace Vvr.Session.World
 
                     await ExecuteTurn(CurrentEventActor, cancelTokenSource.Token);
 
-                    // await m_ResetEvent.Task.AttachExternalCancellation(cancelTokenSource.Token);
-
                     await trigger.Execute(Model.Condition.OnActorTurnEnd, null, cancelTokenSource.Token);
 
                     // Tag out check
@@ -406,7 +404,6 @@ namespace Vvr.Session.World
                     foreach (var handActor in m_HandActors)
                     {
                         using var trigger = ConditionTrigger.Push(handActor.Owner, ConditionTrigger.Game);
-
                         await trigger.Execute(Condition.OnActorTurnEnd, null, cancelTokenSource.Token);
                         if (cancelTokenSource.IsCancellationRequested) break;
                     }

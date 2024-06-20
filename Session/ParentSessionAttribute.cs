@@ -21,6 +21,7 @@
 
 using System;
 using System.Diagnostics;
+using JetBrains.Annotations;
 
 namespace Vvr.Session
 {
@@ -40,6 +41,7 @@ namespace Vvr.Session
     /// </example>
     [AttributeUsage(AttributeTargets.Class)]
     [Conditional("UNITY_EDITOR")]
+    [BaseTypeRequired(typeof(IChildSession))]
     public sealed class ParentSessionAttribute : Attribute
     {
         /// <summary>

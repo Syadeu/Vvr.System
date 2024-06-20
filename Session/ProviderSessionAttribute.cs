@@ -20,6 +20,7 @@
 #endregion
 
 using System;
+using System.Diagnostics;
 using JetBrains.Annotations;
 
 namespace Vvr.Session
@@ -33,6 +34,7 @@ namespace Vvr.Session
     /// It should be applied to classes that implement the IChildSession interface.
     /// </remarks>
     [AttributeUsage(AttributeTargets.Class)]
+    [Conditional("UNITY_EDITOR")]
     [BaseTypeRequired(typeof(IChildSession))]
     [PublicAPI]
     public sealed class ProviderSessionAttribute : Attribute
