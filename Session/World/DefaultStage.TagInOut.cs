@@ -128,7 +128,6 @@ namespace Vvr.Session.World
                 isParrying = true;
             }
 
-            // targetActor.State &= ~ActorState.CanTag;
             m_HandActors.RemoveAt(index);
 
             using (var trigger = ConditionTrigger.Push(targetActor.Owner, ConditionTrigger.Game))
