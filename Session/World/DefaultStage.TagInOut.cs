@@ -116,6 +116,8 @@ namespace Vvr.Session.World
 
             m_IsParrying = false;
             if (m_PlayerField.Count > 0 &&
+                // Parrying in definition its happens when enemy attacks.
+                // so if the target actor has turned, means cannot be parried.
                 !targetActor.Owner.ConditionResolver[Condition.IsActorTurn](null))
             {
                 // TODO: Check interruptible state
@@ -158,12 +160,17 @@ namespace Vvr.Session.World
                     Join(m_PlayerField, targetActor);
                 }
 
+                // View resolve requires ConditionTrigger scope.
+                // Because of view uses Condition for resolving their position (front or back)
                 await m_ViewProvider.ResolveAsync(targetActor.Owner).AttachExternalCancellation(cancellationToken);
+                // TODO: show parrying text
 
                 if (m_IsParrying)
                     m_GameTimeProvider.Cancel();
             }
 
+            // This block requires for blocking turn table sequence
+            // by m_IsParrying variable.
             if (m_IsParrying)
             {
                 bool isSkillEnd = false;
@@ -180,6 +187,8 @@ namespace Vvr.Session.World
                     await UniTask.Yield();
                 }
 
+                // After parrying, previous field actor should be tagged out.
+                // normally, parrying will execute when is not user turn.
                 await TagOut(m_PlayerField[0], cancellationToken);
             }
 

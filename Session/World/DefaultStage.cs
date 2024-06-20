@@ -404,6 +404,8 @@ namespace Vvr.Session.World
                     }
                 }
 
+                // If currently is in parrying, wait for ends.
+                // See TagIn method
                 while (m_IsParrying &&
                        !cancellationToken.IsCancellationRequested)
                 {
