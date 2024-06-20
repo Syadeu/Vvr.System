@@ -36,8 +36,9 @@ namespace Vvr.Session.World
     partial class DefaultStage : IStageActorTagInOutProvider,
         IConnector<IGameTimeProvider>
     {
-        private bool          m_CanParry;
+        private bool          m_CanParry, m_IsParrying;
         private RealtimeTimer m_EnemySkillStartedTime;
+        private IActor  m_ParryEnemyTarget;
 
         private IGameTimeProvider m_GameTimeProvider;
 
@@ -57,8 +58,9 @@ namespace Vvr.Session.World
                 var skillData = CurrentEventActor.Data.Skills.First(x => x.Id == value);
                 if (IsInterruptibleSkill(skillData))
                 {
-                    m_CanParry           = true;
+                    m_CanParry              = true;
                     m_EnemySkillStartedTime = RealtimeTimer.Start();
+                    m_ParryEnemyTarget      = (IActor)e;
                     m_GameTimeProvider.SetTimeScale(0.25f, 3);
 
                     "Set parry".ToLog();
@@ -66,7 +68,8 @@ namespace Vvr.Session.World
             }
             else if (condition is Condition.OnSkillEnd or Condition.OnSkillCasting)
             {
-                m_CanParry = false;
+                m_CanParry         = false;
+                m_ParryEnemyTarget = null;
                 m_GameTimeProvider.Cancel();
             }
         }
@@ -111,7 +114,7 @@ namespace Vvr.Session.World
                 return;
             }
 
-            bool isParrying  = false;
+            m_IsParrying = false;
             if (m_PlayerField.Count > 0 &&
                 !targetActor.Owner.ConditionResolver[Condition.IsActorTurn](null))
             {
@@ -125,7 +128,7 @@ namespace Vvr.Session.World
                     return;
                 }
 
-                isParrying = true;
+                m_IsParrying = true;
             }
 
             m_HandActors.RemoveAt(index);
@@ -134,7 +137,7 @@ namespace Vvr.Session.World
             {
                 await trigger.Execute(Model.Condition.OnTagIn, targetActor.Owner.Id, cancellationToken);
 
-                if (isParrying)
+                if (m_IsParrying)
                     await trigger.Execute(Condition.OnParrying, targetActor.Owner.Id, cancellationToken);
 
                 if (m_PlayerField.Count > 0)
@@ -145,7 +148,7 @@ namespace Vvr.Session.World
                     await JoinAfterAsync(currentFieldRuntimeActor, m_PlayerField, targetActor, cancellationToken);
 
                     m_TimelineQueueProvider.SetEnable(currentFieldRuntimeActor, false);
-                    RemoveFromTimeline(currentFieldRuntimeActor, 1);
+                    RemoveFromTimeline(currentFieldRuntimeActor, m_IsParrying ? 0 : 1);
 
                     await m_ViewProvider.ResolveAsync(currentFieldRuntimeActor.Owner)
                         .AttachExternalCancellation(cancellationToken);
@@ -157,11 +160,58 @@ namespace Vvr.Session.World
 
                 await m_ViewProvider.ResolveAsync(targetActor.Owner).AttachExternalCancellation(cancellationToken);
 
-                if (isParrying)
+                if (m_IsParrying)
                     m_GameTimeProvider.Cancel();
             }
 
+            if (m_IsParrying)
+            {
+                bool isSkillEnd = false;
+
+                using var enemyOb = m_ParryEnemyTarget.ConditionResolver.CreateObserver();
+                enemyOb[Condition.OnSkillEnd] = (owner, value, token) =>
+                {
+                    isSkillEnd = true;
+                    return UniTask.CompletedTask;
+                };
+
+                while (!isSkillEnd && !cancellationToken.IsCancellationRequested)
+                {
+                    await UniTask.Yield();
+                }
+
+                await TagOut(m_PlayerField[0], cancellationToken);
+            }
+
             UpdateTimeline();
+
+            m_IsParrying = false;
+        }
+
+        private async UniTask TagOut(IStageActor target, CancellationToken cancelTokenSource)
+        {
+            Assert.IsTrue(target.TagOutRequested);
+            Assert.IsTrue(target.Owner.ConditionResolver[Model.Condition.IsPlayerActor](null));
+
+            using var trigger = ConditionTrigger.Push(target.Owner, ConditionTrigger.Game);
+
+            m_PlayerField.Remove(target);
+            m_HandActors.Add(target);
+
+            target.TagOutRequested = false;
+            RemoveFromQueue(target);
+
+            await trigger.Execute(Condition.OnTagOut, target.Owner.Id, cancelTokenSource);
+
+            await m_ViewProvider.ResolveAsync(target.Owner)
+                .AttachExternalCancellation(cancelTokenSource);
+            foreach (var actor in m_PlayerField)
+            {
+                await m_ViewProvider.ResolveAsync(actor.Owner)
+                    .AttachExternalCancellation(cancelTokenSource);
+
+                if (cancelTokenSource.IsCancellationRequested) break;
+            }
         }
 
         void IConnector<IGameTimeProvider>.Connect(IGameTimeProvider    t) => m_GameTimeProvider = t;

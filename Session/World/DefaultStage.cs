@@ -370,25 +370,7 @@ namespace Vvr.Session.World
                     // Tag out check
                     if (CurrentEventActor.TagOutRequested)
                     {
-                        Assert.IsTrue(CurrentEventActor.Owner.ConditionResolver[Model.Condition.IsPlayerActor](null));
-
-                        m_PlayerField.Remove(CurrentEventActor);
-                        m_HandActors.Add(CurrentEventActor);
-
-                        CurrentEventActor.TagOutRequested = false;
-                        RemoveFromQueue(CurrentEventActor);
-
-                        await trigger.Execute(Condition.OnTagOut, CurrentEventActor.Owner.Id, cancelTokenSource.Token);
-
-                        await m_ViewProvider.ResolveAsync(CurrentEventActor.Owner)
-                            .AttachExternalCancellation(cancelTokenSource.Token);
-                        foreach (var actor in m_PlayerField)
-                        {
-                            await m_ViewProvider.ResolveAsync(actor.Owner)
-                                .AttachExternalCancellation(cancelTokenSource.Token);
-
-                            if (cancelTokenSource.IsCancellationRequested) break;
-                        }
+                        await TagOut(CurrentEventActor, cancelTokenSource.Token);
                     }
 
                     CurrentEventActor = null;
@@ -420,6 +402,12 @@ namespace Vvr.Session.World
                         Assert.IsTrue(m_PlayerField.Count > 0);
                         await UniTask.WaitForSeconds(1, cancellationToken: cancelTokenSource.Token);
                     }
+                }
+
+                while (m_IsParrying &&
+                       !cancellationToken.IsCancellationRequested)
+                {
+                    await UniTask.Yield();
                 }
 
                 previousTime = DequeueTimeline();
