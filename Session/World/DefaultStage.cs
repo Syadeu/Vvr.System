@@ -278,7 +278,6 @@ namespace Vvr.Session.World
                         Join(m_PlayerField, runtimeActor);
                     }
 
-                    runtimeActor.State |= ActorState.CanTag;
                     playerIndex++;
                 }
             }
@@ -305,7 +304,6 @@ namespace Vvr.Session.World
                         Join(m_PlayerField, runtimeActor);
                     }
 
-                    runtimeActor.State |= ActorState.CanTag;
                     playerIndex++;
                 }
             }
@@ -351,9 +349,6 @@ namespace Vvr.Session.World
                 {
                     foreach (var handActor in m_HandActors)
                     {
-                        // TODO: cooltime
-                        handActor.State |= ActorState.CanTag;
-
                         using var trigger = ConditionTrigger.Push(handActor.Owner, ConditionTrigger.Game);
                         await trigger.Execute(Condition.OnActorTurn, null, cancelTokenSource.Token);
                         if (cancelTokenSource.IsCancellationRequested) break;

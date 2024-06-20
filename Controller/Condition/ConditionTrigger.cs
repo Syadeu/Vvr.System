@@ -167,6 +167,8 @@ namespace Vvr.Controller.Condition
                 .Where(x => x.m_Target == target)
                 .LastOrDefault();
 
+            if (d.m_Events is null) return false;
+
             if (value.IsNullOrEmpty())
                 return d.m_Events.Any(x => x.condition == condition);
             return d.m_Events.Any(x => x.condition == condition && x.value == value);

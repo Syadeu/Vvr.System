@@ -36,7 +36,15 @@ namespace Vvr.Session.World
             {
                 case StateCondition.Always: return true;
                 case StateCondition.IsActorTurn:
-                    return m_Timeline[0].Owner == target;
+                    if (m_Timeline[0].Owner == target) return true;
+
+                    if (m_Timeline[0].Owner.Owner == target.Owner &&
+                        m_HandActors.Any<IStageActor>(x => ReferenceEquals(x.Owner, target)))
+                    {
+                        return true;
+                    }
+
+                    return false;
                 case StateCondition.IsInHand:
                     if (target.Owner == m_EnemyId) return false;
 
@@ -57,7 +65,19 @@ namespace Vvr.Session.World
                     else field = m_PlayerField;
 
                     return ResolvePosition(field, field.First(x => ReferenceEquals(x.Owner, target)));
+                case StateCondition.IsParring:
+                    return ConditionTrigger.Last(target, Condition.OnParrying);
+                    break;
+                case StateCondition.CanTag:
+                    // TODO: Cool time
+                    if (target.Owner != Owner) return false;
 
+                    // If already tagged
+                    if (m_PlayerField.Count > 1) return false;
+                    return true;
+                case StateCondition.CanParry:
+                    // TODO:
+                    return true;
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(condition), condition, null);

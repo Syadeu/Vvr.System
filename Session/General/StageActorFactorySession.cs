@@ -46,8 +46,9 @@ namespace Vvr.Session
         {
             private readonly IActor     m_Owner;
             private readonly IActorData m_Data;
-            private          bool       m_TagOutRequested;
-            private          ActorState m_State;
+
+            private          bool       m_TagOutRequested,
+                m_OverrideFront;
 
             public IActor Owner
             {
@@ -69,22 +70,6 @@ namespace Vvr.Session
                 }
             }
 
-            public ActorState State
-            {
-                get
-                {
-                    if (Disposed)
-                        throw new ObjectDisposedException(nameof(StageActor));
-                    return m_State;
-                }
-                set
-                {
-                    if (Disposed)
-                        throw new ObjectDisposedException(nameof(StageActor));
-                    m_State = value;
-                }
-            }
-
             public bool TagOutRequested
             {
                 get
@@ -98,6 +83,22 @@ namespace Vvr.Session
                     if (Disposed)
                         throw new ObjectDisposedException(nameof(StageActor));
                     m_TagOutRequested = value;
+                }
+            }
+
+            public bool OverrideFront
+            {
+                get
+                {
+                    if (Disposed)
+                        throw new ObjectDisposedException(nameof(StageActor));
+                    return m_OverrideFront;
+                }
+                set
+                {
+                    if (Disposed)
+                        throw new ObjectDisposedException(nameof(StageActor));
+                    m_OverrideFront = value;
                 }
             }
 

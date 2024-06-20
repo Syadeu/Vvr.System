@@ -255,6 +255,8 @@ namespace Vvr.Session.World
         [MustUseReturnValue]
         private bool ResolvePosition(IList<IStageActor> field, IStageActor runtimeActor)
         {
+            if (runtimeActor.OverrideFront) return true;
+
             int count = field.Count;
             // If no or just one actor in the field, always front
             if (count <= 1) return true;

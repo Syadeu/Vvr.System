@@ -53,6 +53,8 @@ namespace Vvr.Model
         OnAbnormalAdded,
         OnAbnormalRemoved,
         OnAbnormalUpdate,
+
+        OnParrying,
         // EventCondition
 
         // StateCondition
@@ -60,6 +62,10 @@ namespace Vvr.Model
         IsInHand,
         IsActorTurn,
         IsFront,
+        IsParring,
+
+        CanTag,
+        CanParry,
         // StateCondition
 
         // AbnormalCondition
@@ -116,6 +122,10 @@ namespace Vvr.Model
         IsActorTurn = Condition.IsActorTurn,
         IsInHand    = Condition.IsInHand,
         IsFront = Condition.IsFront,
+        IsParring = Condition.IsParring,
+
+        CanTag = Condition.CanTag,
+        CanParry = Condition.CanParry,
     }
 
     public enum LogicalCondition : short

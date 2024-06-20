@@ -36,7 +36,7 @@ namespace Vvr.Session.World
     partial class DefaultStage : IStageActorTagInOutProvider,
         IConnector<IGameTimeProvider>
     {
-        private bool          m_CanParrying;
+        private bool          m_CanParry;
         private RealtimeTimer m_EnemySkillStartedTime;
 
         private IGameTimeProvider m_GameTimeProvider;
@@ -52,21 +52,21 @@ namespace Vvr.Session.World
 
             if (condition == Condition.OnSkillStart)
             {
-                m_CanParrying = false;
+                m_CanParry = false;
 
                 var skillData = CurrentEventActor.Data.Skills.First(x => x.Id == value);
                 if (IsInterruptibleSkill(skillData))
                 {
-                    m_CanParrying           = true;
+                    m_CanParry           = true;
                     m_EnemySkillStartedTime = RealtimeTimer.Start();
-                    m_GameTimeProvider.SetTimeScale(0.25f, 2);
+                    m_GameTimeProvider.SetTimeScale(0.25f, 3);
 
                     "Set parry".ToLog();
                 }
             }
             else if (condition is Condition.OnSkillEnd or Condition.OnSkillCasting)
             {
-                m_CanParrying = false;
+                m_CanParry = false;
                 m_GameTimeProvider.Cancel();
             }
         }
@@ -101,67 +101,68 @@ namespace Vvr.Session.World
 
         private partial async UniTask TagIn(int index, CancellationToken cancellationToken)
         {
-            // Assert.IsTrue(m_Timeline.First.Value.actor.ConditionResolver[Model.Condition.IsPlayerActor](null));
-            if (m_PlayerField.Count > 1)
-            {
-                "Cant swap. already in progress".ToLog();
-                return;
-            }
-
             Assert.IsFalse(index < 0);
             Assert.IsTrue(index  < m_HandActors.Count);
 
             IStageActor targetActor = m_HandActors[index];
-            if ((targetActor.State & ActorState.CanTag) != ActorState.CanTag)
+            if (!targetActor.Owner.ConditionResolver[Condition.CanTag](null))
             {
-                "Cant tag. no state".ToLog();
+                "Cant tag.".ToLog();
                 return;
             }
 
-            bool isActorTurn = targetActor.Owner.ConditionResolver[Condition.IsActorTurn](null);
-            if (!isActorTurn)
+            bool isParrying  = false;
+            if (m_PlayerField.Count > 0 &&
+                !targetActor.Owner.ConditionResolver[Condition.IsActorTurn](null))
             {
                 // TODO: Check interruptible state
                 // targetActor.State & ActorState.CanParry;
 
-                if (!m_CanParrying &&
+                if (!m_CanParry &&
                     m_EnemySkillStartedTime.IsExceeded(1))
                 {
                     "not interruptible".ToLog();
                     return;
                 }
 
-                m_GameTimeProvider.Cancel();
+                isParrying = true;
             }
 
-            targetActor.State &= ~ActorState.CanTag;
+            // targetActor.State &= ~ActorState.CanTag;
             m_HandActors.RemoveAt(index);
 
-            if (m_PlayerField.Count > 0)
-            {
-                IStageActor currentFieldRuntimeActor = m_PlayerField[0];
-                currentFieldRuntimeActor.TagOutRequested = true;
-
-                await JoinAfterAsync(currentFieldRuntimeActor, m_PlayerField, targetActor, cancellationToken);
-
-                m_TimelineQueueProvider.SetEnable(currentFieldRuntimeActor, false);
-                RemoveFromTimeline(currentFieldRuntimeActor, 1);
-
-                await m_ViewProvider.ResolveAsync(currentFieldRuntimeActor.Owner)
-                    .AttachExternalCancellation(cancellationToken);
-            }
-            else
-            {
-                Join(m_PlayerField, targetActor);
-            }
-
-            UpdateTimeline();
-
-            await m_ViewProvider.ResolveAsync(targetActor.Owner).AttachExternalCancellation(cancellationToken);
             using (var trigger = ConditionTrigger.Push(targetActor.Owner, ConditionTrigger.Game))
             {
                 await trigger.Execute(Model.Condition.OnTagIn, targetActor.Owner.Id, cancellationToken);
+
+                if (isParrying)
+                    await trigger.Execute(Condition.OnParrying, targetActor.Owner.Id, cancellationToken);
+
+                if (m_PlayerField.Count > 0)
+                {
+                    IStageActor currentFieldRuntimeActor = m_PlayerField[0];
+                    currentFieldRuntimeActor.TagOutRequested = true;
+
+                    await JoinAfterAsync(currentFieldRuntimeActor, m_PlayerField, targetActor, cancellationToken);
+
+                    m_TimelineQueueProvider.SetEnable(currentFieldRuntimeActor, false);
+                    RemoveFromTimeline(currentFieldRuntimeActor, 1);
+
+                    await m_ViewProvider.ResolveAsync(currentFieldRuntimeActor.Owner)
+                        .AttachExternalCancellation(cancellationToken);
+                }
+                else
+                {
+                    Join(m_PlayerField, targetActor);
+                }
+
+                await m_ViewProvider.ResolveAsync(targetActor.Owner).AttachExternalCancellation(cancellationToken);
+
+                if (isParrying)
+                    m_GameTimeProvider.Cancel();
             }
+
+            UpdateTimeline();
         }
 
         void IConnector<IGameTimeProvider>.Connect(IGameTimeProvider    t) => m_GameTimeProvider = t;

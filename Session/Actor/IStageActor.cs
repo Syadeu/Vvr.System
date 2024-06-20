@@ -40,20 +40,21 @@ namespace Vvr.Session.Actor
         IActor     Owner           { get; }
         IActorData Data            { get; }
 
-        ActorState State { get; set; }
+        // ActorState State { get; set; }
 
-        bool       TagOutRequested { get; set; }
+        bool TagOutRequested { get; set; }
+        bool OverrideFront   { get; set; }
 
         bool Disposed { get; }
     }
 
-    [Flags]
-    [PublicAPI]
-    public enum ActorState
-    {
-        None = 0,
-
-        CanTag   = 0b0001,
-        CanParry = 0b0010
-    }
+    // [Flags]
+    // [PublicAPI]
+    // public enum ActorState
+    // {
+    //     None = 0,
+    //
+    //     CanTag   = 0b0001,
+    //     CanParry = 0b0010
+    // }
 }
