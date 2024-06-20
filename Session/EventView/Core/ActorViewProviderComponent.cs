@@ -21,6 +21,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -73,6 +74,10 @@ namespace Vvr.Session.EventView.Core
 
             Addressables.Release(handle);
         }
+
+        public abstract UniTask<GameObject> OpenAsync(ICanvasViewProvider canvasViewProvider, IAssetProvider assetProvider,
+            CancellationToken                 cancellationToken);
+        public abstract UniTask CloseAsync();
 
         public abstract UniTask ShowAsync();
         public abstract UniTask ShowAsync(IEventTarget owner);

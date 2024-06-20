@@ -351,8 +351,10 @@ namespace Vvr.Session.World
                 {
                     foreach (var handActor in m_HandActors)
                     {
-                        using var trigger = ConditionTrigger.Push(handActor.Owner, ConditionTrigger.Game);
+                        // TODO: cooltime
+                        handActor.State |= ActorState.CanTag;
 
+                        using var trigger = ConditionTrigger.Push(handActor.Owner, ConditionTrigger.Game);
                         await trigger.Execute(Condition.OnActorTurn, null, cancelTokenSource.Token);
                         if (cancelTokenSource.IsCancellationRequested) break;
                     }
@@ -540,6 +542,8 @@ namespace Vvr.Session.World
             else
             {
                 "[Stage] player control".ToLog();
+
+                using var scope = ConditionTrigger.Scope(ParryEnemyActionScope, nameof(ParryEnemyActionScope));
                 await m_InputControlProvider.TransferControl(runtimeActor.Owner, cancellationToken);
             }
 

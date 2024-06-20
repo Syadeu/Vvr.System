@@ -22,9 +22,8 @@
 using JetBrains.Annotations;
 using UnityEngine;
 using Vvr.Model;
-using Vvr.Provider;
 
-namespace Vvr.Session.ContentView.Core
+namespace Vvr.Provider
 {
     /// <summary>
     /// Represents a provider for canvas views.

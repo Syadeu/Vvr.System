@@ -19,7 +19,7 @@
 
 #endregion
 
-namespace Vvr.Session.ContentView.Core
+namespace Vvr.Provider
 {
     /// <summary>
     /// Represents the sort order of a canvas.

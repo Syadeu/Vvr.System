@@ -156,26 +156,26 @@ namespace Vvr.Session
             if (session is IDependencyContainer sessionConnector)
             {
                 // $"[Session: {ctx.parentSession.Type.FullName}] Chain connector to {ctx.sessionType.FullName}".ToLog();
-                using var debugTimer = DebugTimer.Start();
-
                 using var tempArray = TempArray<UniTask>.Shared(ctx.parentSession.ConnectedProviders.Count, true);
-
-                int i = 0;
-                foreach (var item in ctx.parentSession.ConnectedProviders)
+                using (DebugTimer.Start())
                 {
-                    if (!item.Value.TryPeek(out var v)) continue;
-
-                    var pType = item.Key;
-                    // sessionConnector.Register(pType, v);
-
-                    tempArray.Value[i++] = UniTask.RunOnThreadPool(RegisterProvider, new ProviderRegistrationContext()
+                    int i = 0;
+                    foreach (var item in ctx.parentSession.ConnectedProviders)
                     {
-                        container = sessionConnector,
-                        providerType = pType,
-                        provider  = v
-                    });
-                }
+                        if (!item.Value.TryPeek(out var v)) continue;
 
+                        var pType = item.Key;
+                        // sessionConnector.Register(pType, v);
+
+                        tempArray.Value[i++] = UniTask.RunOnThreadPool(RegisterProvider,
+                            new ProviderRegistrationContext()
+                            {
+                                container    = sessionConnector,
+                                providerType = pType,
+                                provider     = v
+                            });
+                    }
+                }
                 await UniTask.WhenAll(tempArray.Value);
             }
             // else $"[Session: {Type.FullName}] No connector for {childType.FullName}".ToLog();

@@ -22,6 +22,7 @@ using JetBrains.Annotations;
 using NUnit.Framework;
 using UnityEngine;
 using Vvr.Provider;
+using Vvr.Session.EventView.ActorView;
 using Vvr.Session.EventView.Core;
 
 namespace Vvr.Session.EventView
@@ -39,10 +40,13 @@ namespace Vvr.Session.EventView
 
         private IViewRegistryProvider m_ViewRegistryProvider;
 
-        protected override UniTask OnInitialize(IParentSession session, SessionData data)
+        protected override async UniTask OnInitialize(IParentSession session, SessionData data)
         {
+            await base.OnInitialize(session, data);
+
             Vvr.Provider.Provider.Static.Connect<IViewRegistryProvider>(this);
-            return base.OnInitialize(session, data);
+
+            await CreateSession<ActorViewSession>(default);
         }
 
         protected override UniTask OnReserve()

@@ -45,7 +45,8 @@ namespace Vvr.Session.ContentView
     [UsedImplicitly]
     [ProviderSession(
         typeof(IContentViewEventHandlerProvider),
-        typeof(IDialoguePlayProvider)
+        typeof(IDialoguePlayProvider),
+        typeof(ICanvasViewProvider)
         )]
     public sealed class ContentViewSession : ParentSession<ContentViewSession.SessionData>,
         IConnector<IContentViewRegistryProvider>
@@ -139,7 +140,7 @@ namespace Vvr.Session.ContentView
                 ;
 
             var canvasSession = await CreateSession<CanvasViewSession>(default);
-            Register<ICanvasViewProvider>(canvasSession);
+            Parent.Register<ICanvasViewProvider>(canvasSession);
 
             await UniTask.WhenAll(
                 CreateSession<ResearchViewSession>(null),

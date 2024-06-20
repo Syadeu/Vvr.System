@@ -56,15 +56,16 @@ namespace Vvr.Session.ContentView.Core
         /// <summary>
         /// Opens the ContentViewProvider asynchronously.
         /// </summary>
-        /// <param name="canvasProvider">The ICanvasViewProvider instance used for opening the ContentViewProvider.</param>
-        /// <param name="assetProvider">The IAssetProvider instance used for opening the ContentViewProvider.</param>
-        /// <param name="ctx">The context object passed to OpenAsync method.</param>
-        /// <returns>A UniTask representing the asynchronous operation. It completes when the ContentViewProvider is opened.</returns>
+        /// <param name="canvasProvider">The <see cref="ICanvasViewProvider"/> instance used for opening the ContentViewProvider.</param>
+        /// <param name="assetProvider">The <see cref="IAssetProvider"/> instance used for opening the ContentViewProvider.</param>
+        /// <param name="ctx">The context object passed to the OpenAsync method.</param>
+        /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation.</param>
+        /// <returns>A <see cref="UniTask{TResult}"/> representing the asynchronous operation. It completes when the ContentViewProvider is opened.</returns>
         UniTask<GameObject> OpenAsync(
             [NotNull]   ICanvasViewProvider canvasProvider,
             [NotNull]   IAssetProvider      assetProvider,
             [CanBeNull] object              ctx,
-            CancellationToken cancellationToken);
+            CancellationToken               cancellationToken);
 
         /// <summary>
         /// Closes the ContentViewProvider asynchronously with the given context.

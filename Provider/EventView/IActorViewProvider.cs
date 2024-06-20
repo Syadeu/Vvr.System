@@ -20,7 +20,9 @@
 #endregion
 
 using System.Collections.Generic;
+using System.Threading;
 using Cysharp.Threading.Tasks;
+using JetBrains.Annotations;
 using UnityEngine;
 
 namespace Vvr.Provider
@@ -28,12 +30,17 @@ namespace Vvr.Provider
     /// <summary>
     /// View transform provider for all IEventTargets 
     /// </summary>
-    [LocalProvider]
+    [PublicAPI, LocalProvider]
     public interface IActorViewProvider : IEventViewProvider
     {
         bool               Has(IEventTarget     owner);
         UniTask<Transform> ResolveAsync(IEventTarget owner);
         UniTask            ReleaseAsync(IEventTarget owner);
+
+        UniTask<GameObject> OpenAsync(
+            [NotNull] ICanvasViewProvider canvasViewProvider,
+            [NotNull] IAssetProvider assetProvider, CancellationToken cancellationToken);
+        UniTask             CloseAsync();
 
         UniTask ShowAsync();
         UniTask ShowAsync(IEventTarget owner);

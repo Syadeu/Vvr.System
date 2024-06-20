@@ -33,14 +33,19 @@ using Vvr.Session.Provider;
 
 namespace Vvr.Session.World
 {
-    partial class DefaultStage : IStageActorTagInOutProvider
+    partial class DefaultStage : IStageActorTagInOutProvider,
+        IConnector<IGameTimeProvider>
     {
         private bool          m_CanParrying;
         private RealtimeTimer m_EnemySkillStartedTime;
 
+        private IGameTimeProvider m_GameTimeProvider;
+
         private async UniTask ParryEnemyActionScope(IEventTarget e, Condition condition, string value)
         {
             if (!ReferenceEquals(CurrentEventActor.Owner, e)) return;
+            if (CurrentEventActor.Owner.ConditionResolver[Condition.IsPlayerActor](null))
+                return;
 
             // Since ConditionTrigger always executed from main thread,
             // we don't need to think about memory barrier
@@ -50,17 +55,34 @@ namespace Vvr.Session.World
                 m_CanParrying = false;
 
                 var skillData = CurrentEventActor.Data.Skills.First(x => x.Id == value);
-                if ((skillData.Position & SkillSheet.Position.Random) != 0 &&
-                    skillData.Position                                != SkillSheet.Position.Backward)
+                if (IsInterruptibleSkill(skillData))
                 {
                     m_CanParrying           = true;
                     m_EnemySkillStartedTime = RealtimeTimer.Start();
+                    m_GameTimeProvider.SetTimeScale(0.25f, 2);
+
+                    "Set parry".ToLog();
                 }
             }
             else if (condition is Condition.OnSkillEnd or Condition.OnSkillCasting)
             {
                 m_CanParrying = false;
+                m_GameTimeProvider.Cancel();
             }
+        }
+
+        private static bool IsInterruptibleSkill(ISkillData skillData)
+        {
+            if ((skillData.Target & SkillSheet.Target.Enemy) != SkillSheet.Target.Enemy)
+                return false;
+
+            if (skillData.Position
+                is SkillSheet.Position.All
+                or SkillSheet.Position.Random
+                or SkillSheet.Position.Forward)
+                return true;
+
+            return false;
         }
 
         UniTask IStageActorTagInOutProvider.TagIn(IActor actor)
@@ -89,13 +111,30 @@ namespace Vvr.Session.World
             Assert.IsFalse(index < 0);
             Assert.IsTrue(index  < m_HandActors.Count);
 
-            var temp = m_HandActors[index];
-            if ((temp.State & ActorState.CanTag) != ActorState.CanTag)
+            IStageActor targetActor = m_HandActors[index];
+            if ((targetActor.State & ActorState.CanTag) != ActorState.CanTag)
             {
                 "Cant tag. no state".ToLog();
                 return;
             }
 
+            bool isActorTurn = targetActor.Owner.ConditionResolver[Condition.IsActorTurn](null);
+            if (!isActorTurn)
+            {
+                // TODO: Check interruptible state
+                // targetActor.State & ActorState.CanParry;
+
+                if (!m_CanParrying &&
+                    m_EnemySkillStartedTime.IsExceeded(1))
+                {
+                    "not interruptible".ToLog();
+                    return;
+                }
+
+                m_GameTimeProvider.Cancel();
+            }
+
+            targetActor.State &= ~ActorState.CanTag;
             m_HandActors.RemoveAt(index);
 
             if (m_PlayerField.Count > 0)
@@ -103,7 +142,7 @@ namespace Vvr.Session.World
                 IStageActor currentFieldRuntimeActor = m_PlayerField[0];
                 currentFieldRuntimeActor.TagOutRequested = true;
 
-                await JoinAfterAsync(currentFieldRuntimeActor, m_PlayerField, temp, cancellationToken);
+                await JoinAfterAsync(currentFieldRuntimeActor, m_PlayerField, targetActor, cancellationToken);
 
                 m_TimelineQueueProvider.SetEnable(currentFieldRuntimeActor, false);
                 RemoveFromTimeline(currentFieldRuntimeActor, 1);
@@ -113,16 +152,19 @@ namespace Vvr.Session.World
             }
             else
             {
-                Join(m_PlayerField, temp);
+                Join(m_PlayerField, targetActor);
             }
 
             UpdateTimeline();
 
-            await m_ViewProvider.ResolveAsync(temp.Owner).AttachExternalCancellation(cancellationToken);
-            using (var trigger = ConditionTrigger.Push(temp.Owner, ConditionTrigger.Game))
+            await m_ViewProvider.ResolveAsync(targetActor.Owner).AttachExternalCancellation(cancellationToken);
+            using (var trigger = ConditionTrigger.Push(targetActor.Owner, ConditionTrigger.Game))
             {
-                await trigger.Execute(Model.Condition.OnTagIn, temp.Owner.Id, cancellationToken);
+                await trigger.Execute(Model.Condition.OnTagIn, targetActor.Owner.Id, cancellationToken);
             }
         }
+
+        void IConnector<IGameTimeProvider>.Connect(IGameTimeProvider    t) => m_GameTimeProvider = t;
+        void IConnector<IGameTimeProvider>. Disconnect(IGameTimeProvider t) => m_GameTimeProvider = null;
     }
 }

@@ -40,7 +40,8 @@ namespace Vvr.Session
         public override string DisplayName => nameof(GameTimeSession);
 
         private CancellationTokenSource m_CancellationTokenSource;
-        private float                   m_TargetTimeScale;
+
+        private float                   m_TargetTimeScale, m_TargetDuration;
 
         protected override UniTask OnInitialize(IParentSession session, SessionData data)
         {
@@ -61,8 +62,7 @@ namespace Vvr.Session
 
         public void SetTimeScale(float value)
         {
-            m_CancellationTokenSource?.Cancel();
-            m_CancellationTokenSource?.Dispose();
+            Cancel();
 
             m_CancellationTokenSource = new();
             Interlocked.Exchange(ref m_TargetTimeScale, value);
@@ -70,6 +70,66 @@ namespace Vvr.Session
             UniTask.Void(SetTimeScaleAsync, m_CancellationTokenSource.Token);
         }
 
+        public void SetTimeScale(float value, float duration)
+        {
+            Cancel();
+
+            m_CancellationTokenSource = new();
+            Interlocked.Exchange(ref m_TargetTimeScale, value);
+            Interlocked.Exchange(ref m_TargetDuration, duration);
+
+            UniTask.Void(SetTimeScaleDurationAsync, m_CancellationTokenSource.Token);
+        }
+
+        public void Cancel()
+        {
+            m_CancellationTokenSource?.Cancel();
+            m_CancellationTokenSource?.Dispose();
+            m_CancellationTokenSource = null;
+        }
+
+        private async UniTaskVoid SetTimeScaleDurationAsync(CancellationToken cancellationToken)
+        {
+            if (Data.animateDuration <= 0)
+            {
+                Time.timeScale = m_TargetTimeScale;
+                return;
+            }
+
+            Timer timer = Timer.Start();
+            float sv    = Time.timeScale;
+            while (!timer.IsExceeded(Data.animateDuration)    &&
+                   !cancellationToken.IsCancellationRequested &&
+                   !ReserveToken.IsCancellationRequested)
+            {
+                float t = timer.ElapsedTime / Data.animateDuration;
+                Time.timeScale = Mathf.Lerp(sv, m_TargetTimeScale, t);
+                await UniTask.Yield();
+            }
+
+            Time.timeScale = m_TargetTimeScale;
+
+            timer = Timer.Start();
+            while (!timer.IsExceeded(m_TargetDuration - Data.animateDuration * 2) &&
+                   !cancellationToken.IsCancellationRequested                     &&
+                   !ReserveToken.IsCancellationRequested
+                   )
+            {
+                await UniTask.Yield();
+            }
+
+            timer = Timer.Start();
+            while (!timer.IsExceeded(Data.animateDuration)    &&
+                   !cancellationToken.IsCancellationRequested &&
+                   !ReserveToken.IsCancellationRequested)
+            {
+                float t = timer.ElapsedTime / Data.animateDuration;
+                Time.timeScale = Mathf.Lerp(m_TargetTimeScale, sv, t);
+                await UniTask.Yield();
+            }
+
+            Time.timeScale = sv;
+        }
         private async UniTaskVoid SetTimeScaleAsync(CancellationToken cancellationToken)
         {
             if (Data.animateDuration <= 0)
@@ -81,15 +141,13 @@ namespace Vvr.Session
             Timer timer = Timer.Start();
             float sv    = Time.timeScale;
             while (!timer.IsExceeded(Data.animateDuration) &&
-                   !cancellationToken.IsCancellationRequested)
+                   !cancellationToken.IsCancellationRequested&&
+                   !ReserveToken.IsCancellationRequested)
             {
                 float t = timer.ElapsedTime / Data.animateDuration;
                 Time.timeScale = Mathf.Lerp(sv, m_TargetTimeScale, t);
                 await UniTask.Yield();
             }
-
-            if (cancellationToken.IsCancellationRequested)
-                return;
 
             Time.timeScale = m_TargetTimeScale;
         }

@@ -27,5 +27,7 @@ namespace Vvr.Provider
     public interface IGameTimeProvider : IProvider
     {
         void SetTimeScale(float value);
+        void SetTimeScale(float value, float duration);
+        void Cancel();
     }
 }

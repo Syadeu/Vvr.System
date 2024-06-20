@@ -55,7 +55,7 @@ namespace Vvr.Session.World
                 CreateSession<ContentViewSession>(default),
                 CreateSession<GameTimeSession>(new GameTimeSession.SessionData()
                 {
-                    animateDuration = .25f
+                    animateDuration = .5f
                 })
 #if VVR_FIREBASE
                 , CreateSession<FirebaseSession>(default)

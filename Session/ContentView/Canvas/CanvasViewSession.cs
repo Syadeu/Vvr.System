@@ -87,6 +87,7 @@ namespace Vvr.Session.ContentView.Canvas
             out UnityEngine.Canvas canvas)
         {
             GameObject obj = new GameObject(objName);
+
             obj.transform.SetParent(m_CanvasParent);
 
             canvas = obj.AddComponent<UnityEngine.Canvas>();
@@ -103,12 +104,14 @@ namespace Vvr.Session.ContentView.Canvas
                 raycaster.blockingObjects        = GraphicRaycaster.BlockingObjects.TwoD;
                 raycaster.ignoreReversedGraphics = true;
             }
+
+            obj.SetLayerRecursive(LayerMask.NameToLayer("UI"));
         }
 
         public IImmutableObject<UnityEngine.Canvas> ResolveOverlay(
             CanvasSortOrder sortOrder, bool raycaster)
         {
-            int h = (short)sortOrder ^ raycaster.ToByte() ^ 37 ^ 267;
+            int h = (short)sortOrder ^ raycaster.ToByte() ^ 37;
 
             if (m_CanvasMap.TryGetValue(h, out var v)) return v;
 
@@ -126,8 +129,8 @@ namespace Vvr.Session.ContentView.Canvas
             CanvasCameraType cameraType, RenderMode renderMode,
             CanvasLayerName sortingLayerName, CanvasSortOrder sortOrder, bool raycaster)
         {
-            int h = (short)sortingLayerName ^ (short)sortOrder ^ raycaster.ToByte() ^ 37 ^ 267
-                ^ (int)renderMode;
+            int h = (short)sortingLayerName ^ ((short)sortOrder + 1) ^ raycaster.ToByte() ^ 37 ^ 267
+                ^ ((int)renderMode + 1);
 
             if (m_CanvasMap.TryGetValue(h, out var v)) return v;
 
@@ -146,11 +149,25 @@ namespace Vvr.Session.ContentView.Canvas
 
             if (renderMode == RenderMode.WorldSpace)
             {
-                RectTransform rectTr = (RectTransform)canvas.transform;
-                rectTr.localPosition = new Vector3(0, 0, 100);
-                rectTr.sizeDelta =
-                    new Vector2(Screen.width, Screen.height);
-                rectTr.localScale    = Vector3.one * .17f;
+                canvas.renderMode = RenderMode.ScreenSpaceCamera;
+                canvas.renderMode = renderMode;
+
+                // RectTransform rectTr = (RectTransform)canvas.transform;
+                // rectTr.localPosition = new Vector3(0, 0, 100);
+                //
+                // rectTr.anchorMin
+                //     = rectTr.anchorMax = Vector2.zero;
+                // rectTr.sizeDelta =
+                //     new Vector2(canvas.worldCamera.pixelWidth, canvas.worldCamera.pixelHeight);
+                // rectTr.sizeDelta =
+                //     new Vector2(Screen.width, Screen.height);
+
+                // Vector2 scalar = new Vector2(
+                //     Screen.dpi / canvas.worldCamera.pixelWidth,
+                //     Screen.dpi / canvas.worldCamera.pixelHeight
+                // );
+                //
+                // rectTr.localScale    = Vector3.one * Screen.dpi / canvas.worldCamera.pixelHeight;
             }
 
             var result = new ImmutableCanvas(canvas);
