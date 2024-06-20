@@ -28,7 +28,8 @@ namespace Vvr.TestClass
     [PublicAPI]
     public class TestConditionTarget : TestEventTarget, IConditionTarget
     {
-        public IReadOnlyConditionResolver ConditionResolver { get; set; }
+        IReadOnlyConditionResolver IConditionTarget.ConditionResolver => ConditionResolver;
+        public ConditionResolver                    ConditionResolver { get; set; }
 
         public TestConditionTarget(string displayName) : base(displayName)
         {

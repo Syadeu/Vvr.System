@@ -46,7 +46,7 @@ namespace Vvr.Model
         private int  m_CurrentThreadId;
         private int  m_Started;
 
-        public SemaphoreSlimLock(SemaphoreSlim s, bool allowMainThread = false)
+        public SemaphoreSlimLock(SemaphoreSlim s, bool allowMainThread = true)
         {
             m_SemaphoreSlim   = s;
             m_AllowMainThread = allowMainThread;

@@ -24,6 +24,7 @@ using System.Buffers;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using UnityEngine.Assertions;
@@ -36,6 +37,7 @@ namespace Vvr.Controller.Condition
 {
     public delegate bool ConditionDelegate(string value);
 
+    [PublicAPI]
     public sealed class ConditionResolver : IReadOnlyConditionResolver, IDisposable
     {
         public static readonly ConditionDelegate Always = _ => true;
@@ -54,32 +56,46 @@ namespace Vvr.Controller.Condition
         {
             return new(o, parent);
         }
-        internal static async UniTask Execute(IEventTarget o, Model.Condition condition, string v)
+        internal static async UniTask Execute(
+            IEventTarget o, Model.Condition condition, string v, CancellationToken cancellationToken)
         {
             if (o is not IConditionTarget target) return;
 
             var resolver = (ConditionResolver)target.ConditionResolver;
             if (resolver.m_Parent != null)
             {
-                await Execute(resolver.m_Parent.Owner, condition, v);
+                await Execute(resolver.m_Parent.Owner, condition, v, cancellationToken);
             }
 
+            using var cancellationTokenSource =
+                CancellationTokenSource.CreateLinkedTokenSource(cancellationToken,
+                    resolver.m_CancellationTokenSource.Token);
+            using var tempArray = TempArray<UniTask>.Shared(resolver.m_EventObservers.Count, true);
             for (int i = 0; i < resolver.m_EventObservers.Count; i++)
             {
                 var e = resolver.m_EventObservers[i];
                 if (!e.Filter.Has(condition)) continue;
 
-                await e.OnExecute(condition, v);
+                tempArray.Value[i] = e.OnExecute(condition, v)
+                    .AttachExternalCancellation(cancellationTokenSource.Token);
             }
+
+            await UniTask.WhenAll(tempArray.Value);
         }
 
         private readonly IReadOnlyConditionResolver m_Parent;
 
         private ConditionQuery      m_Filter;
         private ConditionDelegate[] m_Delegates;
+        private int                 m_Disposed = 0;
+
+        private CancellationTokenSource m_CancellationTokenSource = new();
 
         private readonly List<IConditionObserver> m_EventObservers = new();
 
+        private readonly SemaphoreSlim m_WriteLock = new(1, 1);
+
+        [ThreadSafe(ThreadSafeAttribute.SafeType.Semaphore)]
         public ConditionDelegate this[Model.Condition t]
         {
             get
@@ -88,7 +104,10 @@ namespace Vvr.Controller.Condition
                     throw new ObjectDisposedException(nameof(ConditionResolver));
                 if (t == 0) return Always;
 
-                if (m_Delegates == null ||
+                using var wl = new SemaphoreSlimLock(m_WriteLock);
+                wl.Wait(TimeSpan.FromSeconds(1));
+
+                if (m_Delegates is null ||
                     !m_Filter.Has(t))
                 {
                     // If there is no parent, this resolver cannot resolve target condition
@@ -108,11 +127,14 @@ namespace Vvr.Controller.Condition
                     throw new ObjectDisposedException(nameof(ConditionResolver));
                 if (t == 0) throw new InvalidOperationException("You are trying to override Always condition.");
 
+                using var wl = new SemaphoreSlimLock(m_WriteLock);
+                wl.Wait(TimeSpan.FromSeconds(1));
+
                 var modifiedQuery  = m_Filter | t;
                 int modifiedLength = modifiedQuery.MaxIndex + 1;
 
                 // require resize
-                if (m_Delegates == null || m_Delegates.Length < modifiedLength)
+                if (m_Delegates is null || m_Delegates.Length < modifiedLength)
                 {
                     ConditionDelegate[] nArr = ArrayPool<ConditionDelegate>.Shared.Rent(modifiedLength);
 
@@ -131,7 +153,7 @@ namespace Vvr.Controller.Condition
                 m_Filter = modifiedQuery;
                 int i = m_Filter.IndexOf(t);
 
-                if (value != null)
+                if (value is not null)
                 {
                     var target = m_Delegates[i];
                     if (target != null && target.GetInvocationList().Length > 0)
@@ -156,8 +178,8 @@ namespace Vvr.Controller.Condition
             }
         }
 
-        [PublicAPI]
-        public bool Disposed  { get; private set; }
+        [PublicAPI, ThreadSafe]
+        public bool Disposed => m_Disposed == 1;
 
         public IEventTarget Owner { get; }
 
@@ -171,11 +193,15 @@ namespace Vvr.Controller.Condition
             m_Parent = parent;
         }
 
+        [ThreadSafe(ThreadSafeAttribute.SafeType.Semaphore)]
         public bool CanResolve(Model.Condition t)
         {
             if (t == 0) return true;
 
-            if (m_Delegates == null ||
+            using var wl = new SemaphoreSlimLock(m_WriteLock);
+            wl.Wait(TimeSpan.FromSeconds(1));
+
+            if (m_Delegates is null ||
                 !m_Filter.Has(t))
             {
                 // If there is no parent, this resolver cannot resolve target condition
@@ -198,7 +224,7 @@ namespace Vvr.Controller.Condition
                 = Enum.GetValues(typeof(EventCondition)).Cast<EventCondition>();
             foreach (var condition in conditions)
             {
-                if (condition == 0) continue;
+                if (condition is 0) continue;
 
                 this[(Model.Condition)condition] = x => provider.Resolve(condition, Owner, x);
             }
@@ -212,7 +238,7 @@ namespace Vvr.Controller.Condition
                 = Enum.GetValues(typeof(EventCondition)).Cast<EventCondition>();
             foreach (var condition in conditions)
             {
-                if (condition == 0) continue;
+                if (condition is 0) continue;
 
                 this[(Model.Condition)condition] = null;
             }
@@ -227,7 +253,7 @@ namespace Vvr.Controller.Condition
                 = Enum.GetValues(typeof(StateCondition)).Cast<StateCondition>();
             foreach (var condition in conditions)
             {
-                if (condition == 0) continue;
+                if (condition is 0) continue;
 
                 this[(Model.Condition)condition] = x => t.Resolve(condition, Owner, x);
             }
@@ -241,14 +267,16 @@ namespace Vvr.Controller.Condition
                 = Enum.GetValues(typeof(StateCondition)).Cast<StateCondition>();
             foreach (var condition in conditions)
             {
-                if (condition == 0) continue;
+                if (condition is 0) continue;
 
                 this[(Model.Condition)condition] = null;
             }
         }
 
-        public ConditionResolver Connect(IAbnormalConditionProvider provider)
+        [ThreadSafe(ThreadSafeAttribute.SafeType.Semaphore)]
+        public ConditionResolver Connect([NotNull] IAbnormalConditionProvider provider)
         {
+            Assert.IsNotNull(provider);
             if (Disposed)
                 throw new ObjectDisposedException(nameof(ConditionResolver));
             Assert.IsTrue(Owner is IActor);
@@ -257,7 +285,7 @@ namespace Vvr.Controller.Condition
                 = Enum.GetValues(typeof(AbnormalCondition)).Cast<AbnormalCondition>();
             foreach (var condition in conditions)
             {
-                if (condition == 0) continue;
+                if (condition is 0) continue;
 
                 this[(Model.Condition)condition] = x => provider.Resolve(condition, x);
             }
@@ -265,8 +293,11 @@ namespace Vvr.Controller.Condition
             return this;
         }
 
-        public ConditionResolver Connect(IStatValueStack stats, IStatConditionProvider provider)
+        [ThreadSafe(ThreadSafeAttribute.SafeType.Semaphore)]
+        public ConditionResolver Connect([NotNull] IStatValueStack stats, [NotNull] IStatConditionProvider provider)
         {
+            Assert.IsNotNull(stats);
+            Assert.IsNotNull(provider);
             if (Disposed)
                 throw new ObjectDisposedException(nameof(ConditionResolver));
             Assert.IsTrue(Owner is IActor);
@@ -275,39 +306,72 @@ namespace Vvr.Controller.Condition
                 = Enum.GetValues(typeof(OperatorCondition)).Cast<OperatorCondition>();
             foreach (var condition in conditions)
             {
-                if (condition == 0) continue;
+                if (condition is 0) continue;
 
                 this[(Model.Condition)condition] = x => provider.Resolve(stats.OriginalStats, stats, condition, x);
             }
             return this;
         }
 
-        public IReadOnlyConditionResolver Subscribe(IConditionObserver ob)
+        [ThreadSafe(ThreadSafeAttribute.SafeType.Semaphore)]
+        public IReadOnlyConditionResolver Subscribe([NotNull] IConditionObserver ob)
         {
+            Assert.IsNotNull(ob);
             if (Disposed)
                 throw new ObjectDisposedException(nameof(ConditionResolver));
+
+            using var wl = new SemaphoreSlimLock(m_WriteLock);
+            wl.Wait(TimeSpan.FromSeconds(1));
 
             Assert.IsFalse(m_EventObservers.Contains(ob));
             m_EventObservers.Add(ob);
             return this;
         }
-        public IReadOnlyConditionResolver Unsubscribe(IConditionObserver ob)
+        [ThreadSafe(ThreadSafeAttribute.SafeType.Semaphore)]
+        public IReadOnlyConditionResolver Unsubscribe([NotNull] IConditionObserver ob)
         {
+            Assert.IsNotNull(ob);
             if (Disposed)
                 throw new ObjectDisposedException(nameof(ConditionResolver));
+
+            using var wl = new SemaphoreSlimLock(m_WriteLock);
+            wl.Wait(TimeSpan.FromSeconds(1));
 
             m_EventObservers.Remove(ob);
             return this;
         }
 
+        [ThreadSafe(ThreadSafeAttribute.SafeType.Semaphore)]
+        public void Clear()
+        {
+            using var wl = new SemaphoreSlimLock(m_WriteLock);
+            wl.Wait(TimeSpan.FromSeconds(1));
+
+            m_CancellationTokenSource.Cancel();
+            m_CancellationTokenSource.Dispose();
+            m_CancellationTokenSource = new();
+
+            for (int i = 0; i < m_Delegates?.Length; i++)
+            {
+                m_Delegates[i] = null;
+            }
+
+            m_EventObservers.Clear();
+        }
+
         public void Dispose()
         {
-            if (Disposed)
+            if (m_WriteLock.CurrentCount == 0)
+                throw new InvalidOperationException();
+
+            if (Interlocked.Exchange(ref m_Disposed, 1) != 0)
                 throw new ObjectDisposedException(nameof(ConditionResolver));
+
+            m_CancellationTokenSource.Cancel();
+            m_CancellationTokenSource.Dispose();
 
             if (m_Delegates != null)
                 ArrayPool<ConditionDelegate>.Shared.Return(m_Delegates, true);
-            Disposed = true;
         }
     }
 

@@ -29,7 +29,7 @@ namespace Vvr.Model
     /// Attribute used to indicate that a method is thread-safe.
     /// </summary>
     [Conditional("UNITY_EDITOR"), PublicAPI]
-    [AttributeUsage(AttributeTargets.Method)]
+    [AttributeUsage(AttributeTargets.Method | AttributeTargets.Property)]
     public sealed class ThreadSafeAttribute : Attribute
     {
         public enum SafeType

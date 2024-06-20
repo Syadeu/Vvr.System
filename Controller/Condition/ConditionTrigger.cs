@@ -346,8 +346,7 @@ namespace Vvr.Controller.Condition
             if (cancellationToken.IsCancellationRequested)
                 return;
 
-            await ConditionResolver.Execute(m_Target, condition, value)
-                .AttachExternalCancellation(cancellationToken);
+            await ConditionResolver.Execute(m_Target, condition, value, cancellationToken);
 
             if (cancellationToken.IsCancellationRequested)
                 return;

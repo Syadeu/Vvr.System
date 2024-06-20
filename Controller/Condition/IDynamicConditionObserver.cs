@@ -22,18 +22,26 @@
 using System;
 using System.Buffers;
 using System.Collections.Generic;
+using System.Threading;
 using Cysharp.Threading.Tasks;
+using JetBrains.Annotations;
 using UnityEngine.Assertions;
 using Vvr.Model;
 using Vvr.Provider;
 
 namespace Vvr.Controller.Condition
 {
+    [PublicAPI]
     public delegate UniTask ConditionObserverDelegate(IEventTarget owner, string value);
 
+    [PublicAPI]
     public interface IDynamicConditionObserver : IDisposable
     {
+        [ThreadSafe]
         ConditionObserverDelegate this[Model.Condition t] { get; set; }
+
+        [ThreadSafe]
+        bool Disposed { get; }
     }
 
     internal sealed class DynamicConditionObserver : IConditionObserver, IDynamicConditionObserver
@@ -45,11 +53,22 @@ namespace Vvr.Controller.Condition
         private ConditionQuery              m_Filter;
         private ConditionObserverDelegate[] m_Delegates;
 
+        private readonly SemaphoreSlim           m_WriteLock               = new(1, 1);
+        private readonly CancellationTokenSource m_CancellationTokenSource = new();
+
+        private int m_Disposed;
+
         public ConditionObserverDelegate this[Model.Condition t]
         {
             get
             {
-                if (m_Delegates == null ||
+                if (Disposed)
+                    throw new ObjectDisposedException(nameof(ConditionResolver));
+
+                using var wl = new SemaphoreSlimLock(m_WriteLock);
+                wl.Wait(TimeSpan.FromSeconds(1));
+
+                if (m_Delegates is null ||
                     !m_Filter.Has(t))
                 {
                     return null;
@@ -60,15 +79,21 @@ namespace Vvr.Controller.Condition
             }
             set
             {
+                if (Disposed)
+                    throw new ObjectDisposedException(nameof(ConditionResolver));
+
+                using var wl = new SemaphoreSlimLock(m_WriteLock);
+                wl.Wait(TimeSpan.FromSeconds(1));
+
                 var modifiedQuery  = m_Filter | t;
                 int modifiedLength = modifiedQuery.MaxIndex + 1;
 
                 // require resize
-                if (m_Delegates == null || m_Delegates.Length < modifiedLength)
+                if (m_Delegates is null || m_Delegates.Length < modifiedLength)
                 {
                     var nArr = ArrayPool<ConditionObserverDelegate>.Shared.Rent(modifiedLength);
 
-                    if (m_Delegates != null)
+                    if (m_Delegates is not null)
                     {
                         foreach (var condition in m_Filter)
                         {
@@ -100,6 +125,8 @@ namespace Vvr.Controller.Condition
             }
         }
 
+        public bool Disposed => m_Disposed == 1;
+
         ConditionQuery IConditionObserver.Filter => m_Filter;
 
         internal DynamicConditionObserver(ConditionResolver r)
@@ -109,6 +136,9 @@ namespace Vvr.Controller.Condition
 
         async UniTask IConditionObserver.OnExecute(Model.Condition condition, string value)
         {
+            if (Disposed)
+                throw new ObjectDisposedException(nameof(ConditionResolver));
+
             if (m_Parent.Disposed)
                 throw new ObjectDisposedException(nameof(ConditionResolver));
 
@@ -117,11 +147,21 @@ namespace Vvr.Controller.Condition
 
             if (m_Delegates[i] == null)
                 throw new InvalidOperationException($"{condition} not found with value({value}), {m_Filter.ToString()}");
-;            await m_Delegates[i](m_Parent.Owner, value);
+            await m_Delegates[i](m_Parent.Owner, value)
+                    .AttachExternalCancellation(m_CancellationTokenSource.Token)
+                ;
         }
 
         public void Dispose()
         {
+            if (m_WriteLock.CurrentCount is 0)
+                throw new InvalidOperationException();
+            if (Interlocked.Exchange(ref m_Disposed, 1) is not 0)
+                throw new ObjectDisposedException(nameof(ConditionResolver));
+
+            m_CancellationTokenSource.Cancel();
+            m_CancellationTokenSource.Dispose();
+
             if (!m_Parent.Disposed)
                 m_Parent.Unsubscribe(this);
 
