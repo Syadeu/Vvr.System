@@ -152,9 +152,6 @@ namespace Vvr.Session.World
                 // so if the target actor has turned, means cannot be parried.
                 !targetActor.Owner.ConditionResolver[Condition.IsActorTurn](null))
             {
-                // TODO: Check interruptible state
-                // targetActor.State & ActorState.CanParry;
-
                 if (!m_CanParry &&
                     m_EnemySkillStartedTime.IsExceeded(1))
                 {
@@ -169,7 +166,6 @@ namespace Vvr.Session.World
             }
 
             IStageActor currentFieldRuntimeActor;
-            Transform  targetView = null;
             using (var trigger = ConditionTrigger.Push(targetActor.Owner, ConditionTrigger.Game))
             {
                 await trigger.Execute(Model.Condition.OnTagIn, targetActor.Owner.Id, cancellationToken);
@@ -196,16 +192,9 @@ namespace Vvr.Session.World
                 // Because of view uses Condition for resolving their position (front or back)
                 foreach (var userActor in m_PlayerField)
                 {
-                    var view = await m_ViewProvider.ResolveAsync(userActor.Owner)
+                    await m_ViewProvider.ResolveAsync(userActor.Owner)
                         .AttachExternalCancellation(cancellationToken);
-
-                    if (userActor == targetActor)
-                    {
-                        targetView = view;
-                    }
                 }
-
-                // TODO: show parrying text
 
                 if (m_IsParrying)
                 {
