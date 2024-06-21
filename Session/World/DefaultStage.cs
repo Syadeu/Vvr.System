@@ -118,6 +118,8 @@ namespace Vvr.Session.World
             m_PlayerField,
             m_EnemyField;
 
+        private ITargetProvider m_ActorTargetSession;
+
         public override string DisplayName => nameof(DefaultStage);
 
         public IReadOnlyList<IStageActor> Timeline    => m_Timeline;
@@ -137,8 +139,11 @@ namespace Vvr.Session.World
             m_PlayerField = await CreateSessionOnBackground<StageActorFieldSession>(default);
             m_EnemyField  = await CreateSessionOnBackground<StageActorFieldSession>(default);
 
+            m_ActorTargetSession = await CreateSessionOnBackground<ActorTargetSession>(
+                new ActorTargetSession.SessionData(m_PlayerField, m_EnemyField));
+
             // This is required for injecting actors
-            Parent.Register<ITargetProvider>(this)
+            Parent.Register<ITargetProvider>(m_ActorTargetSession)
                 .Register<IStateConditionProvider>(this)
                 .Register<IEventConditionProvider>(this)
                 .Register<IStageInfoProvider>(this)
