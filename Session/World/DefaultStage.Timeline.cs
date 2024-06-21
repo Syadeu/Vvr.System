@@ -152,10 +152,10 @@ namespace Vvr.Session.World
         /// </summary>
         /// <param name="field">The field in the stage where the actor will be joined.</param>
         /// <param name="actor">The actor to be joined.</param>
-        private partial void Join(IList<IStageActor> field, IStageActor actor)
+        private partial void Join(IStageActorField field, IStageActor actor)
         {
             Assert.IsFalse(field.Contains(actor));
-            field.Add(actor, ActorPositionComparer.Static);
+            field.Add(actor);
 
             m_TimelineQueueProvider.Enqueue(actor);
 
@@ -176,10 +176,10 @@ namespace Vvr.Session.World
         /// <param name="field">The field to which the actor should be added.</param>
         /// <param name="actor">The actor to be added.</param>
         /// <returns>A <see cref="UniTask"/> representing the asynchronous operation.</returns>
-        private partial void JoinAfter(IStageActor target, IList<IStageActor> field, IStageActor actor)
+        private partial void JoinAfter(IStageActor target, IStageActorField field, IStageActor actor)
         {
             Assert.IsFalse(field.Contains(actor));
-            field.Add(actor, ActorPositionComparer.Static);
+            field.Add(actor);
 
             int index = m_TimelineQueueProvider.IndexOf(target);
             m_TimelineQueueProvider.InsertAfter(
@@ -240,56 +240,6 @@ namespace Vvr.Session.World
                 m_Times.RemoveAt(i);
                 i--;
             }
-        }
-
-        [MustUseReturnValue]
-        private bool ResolvePosition(IList<IStageActor> field, IStageActor runtimeActor)
-        {
-            if (runtimeActor.OverrideFront) return true;
-
-            int count = field.Count;
-            // If no or just one actor in the field, always front
-            if (count <= 1) return true;
-
-            // This because field list is ordered list by ActorPositionComparer.
-            // If the first element is defensive(2), should direct comparison with given actor
-            if (field[0].Data.Type == ActorSheet.ActorType.Defensive)
-            {
-                int order = ActorPositionComparer.Static.Compare(runtimeActor, field[0]);
-                // If only actor is Offensive(0)
-                if (order < 0) return false;
-                // If actor also defensive(2)
-                if (order == 0)
-                {
-                    return true;
-                }
-                return false;
-            }
-
-            var lastActor = field[^1];
-            // If first is not defensive, should iterate all fields until higher order found
-            for (int i = 0; i < count; i++)
-            {
-                IStageActor e    = field[i];
-                int order = ActorPositionComparer.Static.Compare(runtimeActor, e);
-                if (order == 0) continue;
-
-                // If e is default or defensive will return -1.
-                // In that case, this actor must be front
-                if (order < 0) return true;
-
-                // If given actor is default or defensive,
-                order = ActorPositionComparer.Static.Compare(runtimeActor, lastActor);
-                // If last is defence, and actor is default
-                // should front of it
-                if (order < 0) return true;
-
-                // and field has only default or offensive should behind of it.
-                return false;
-            }
-
-            // If all check failed, given actor should be front.
-            return true;
         }
 
         void IConnector<ITimelineQueueProvider>.Connect(ITimelineQueueProvider t)

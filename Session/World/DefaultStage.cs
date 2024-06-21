@@ -74,24 +74,24 @@ namespace Vvr.Session.World
             }
         }
 
-        struct ActorPositionComparer : IComparer<IStageActor>
-        {
-            public static readonly Func<IStageActor, IStageActor>      Selector = x => x;
-            public static readonly IComparer<IStageActor> Static   = default(ActorPositionComparer);
-
-            public int Compare(IStageActor x, IStageActor y)
-            {
-                if (x == null && y == null) return 0;
-                if (x == null) return 1;
-                if (y == null) return -1;
-
-                short xx = (short)x.Data.Type,
-                    yy   = (short)y.Data.Type;
-
-                if (xx < yy) return 1;
-                return xx > yy ? -1 : 0;
-            }
-        }
+        // struct ActorPositionComparer : IComparer<IStageActor>
+        // {
+        //     public static readonly Func<IStageActor, IStageActor>      Selector = x => x;
+        //     public static readonly IComparer<IStageActor> Static   = default(ActorPositionComparer);
+        //
+        //     public int Compare(IStageActor x, IStageActor y)
+        //     {
+        //         if (x == null && y == null) return 0;
+        //         if (x == null) return 1;
+        //         if (y == null) return -1;
+        //
+        //         short xx = (short)x.Data.Type,
+        //             yy   = (short)y.Data.Type;
+        //
+        //         if (xx < yy) return 1;
+        //         return xx > yy ? -1 : 0;
+        //     }
+        // }
 
         public struct Result
         {
@@ -427,9 +427,9 @@ namespace Vvr.Session.World
                 await DeleteAsync(m_EnemyField, sta);
         }
 
-        private partial void    Join(IList<IStageActor>        field,  IStageActor        actor);
-        private partial void    JoinAfter(IStageActor          target, IList<IStageActor> field, IStageActor actor);
-        private partial UniTask DeleteAsync(IList<IStageActor> field,  IStageActor        stageActor);
+        private partial void    Join(IStageActorField          field,  IStageActor      actor);
+        private partial void    JoinAfter(IStageActor          target, IStageActorField field, IStageActor actor);
+        private partial UniTask DeleteAsync(IList<IStageActor> field,  IStageActor      stageActor);
         private partial void    RemoveFromQueue(IStageActor    actor);
         private partial void    RemoveFromTimeline(IStageActor actor, int preserveCount = 0);
 

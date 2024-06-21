@@ -23,6 +23,7 @@ using System;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
+using UnityEngine.Assertions;
 using Vvr.Controller.Actor;
 using Vvr.Controller.Provider;
 using Vvr.Model;
@@ -176,6 +177,36 @@ namespace Vvr.Session
                 Owner.Skill.Disconnect(t);
             }
         }
+        private struct ActorComparer : IComparer<StageActor>, IComparer<IActor>
+        {
+            public static readonly Func<StageActor, IActor> ActorSelector = x => x.Owner;
+            public static readonly IComparer<StageActor>        StageActorStatic   = default(ActorComparer);
+            public static readonly IComparer<IActor>        ActorStatic   = default(ActorComparer);
+
+            int IComparer<StageActor>.Compare(StageActor x, StageActor y)
+            {
+                if (x == null && y == null) return 0;
+                if (x == null) return 1;
+                if (y == null) return -1;
+
+                int xx = x.Owner.GetInstanceID(),
+                    yy = y.Owner.GetInstanceID();
+
+                return xx.CompareTo(yy);
+            }
+
+            public int Compare(IActor x, IActor y)
+            {
+                if (x == null && y == null) return 0;
+                if (x == null) return 1;
+                if (y == null) return -1;
+
+                int xx = x.GetInstanceID(),
+                    yy = y.GetInstanceID();
+
+                return xx.CompareTo(yy);
+            }
+        }
 
         private readonly List<StageActor> m_Created = new();
 
@@ -197,9 +228,23 @@ namespace Vvr.Session
             m_Created.Clear();
         }
 
+        public IStageActor Get(IActor actor)
+        {
+            Assert.IsNotNull(actor);
+
+            using var timer = DebugTimer.StartWithCustomName(
+                DebugTimer.BuildDisplayName(nameof(StageActorFactorySession), nameof(Get))
+            );
+
+            return m_Created.BinarySearch(ActorComparer.ActorSelector, ActorComparer.ActorStatic, actor);
+        }
         public IStageActor Create(IActor actor, IActorData data)
         {
-            using var timer = DebugTimer.Start();
+            Assert.IsNotNull(actor);
+            Assert.IsNotNull(data);
+            using var timer = DebugTimer.StartWithCustomName(
+                DebugTimer.BuildDisplayName(nameof(StageActorFactorySession), nameof(Create))
+                );
 
             StageActor result = new StageActor(actor, data);
             IActor     item   = result.Owner;
@@ -224,15 +269,18 @@ namespace Vvr.Session
                 }
             }
 
-            m_Created.Add(result);
+            m_Created.Add(result, ActorComparer.StageActorStatic);
             return result;
         }
         public void Reserve(IStageActor item)
         {
-            using var timer = DebugTimer.Start();
+            Assert.IsNotNull(item);
+            using var timer = DebugTimer.StartWithCustomName(
+                DebugTimer.BuildDisplayName(nameof(StageActorFactorySession), nameof(Reserve))
+                );
 
             if (item is not StageActor actor ||
-                !m_Created.Remove(actor))
+                !m_Created.Remove(actor, ActorComparer.StageActorStatic))
                 throw new InvalidOperationException();
 
             DisconnectActor(actor);

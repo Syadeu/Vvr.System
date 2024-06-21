@@ -115,13 +115,13 @@ namespace Vvr.Session.World
         }
 
         private IEnumerable<IStageActor> GetTargets(
-            IList<IStageActor> list, int count, IList<IStageActor> field, SkillSheet.Position targetPosition)
+            IList<IStageActor> list, int count, IStageActorField field, SkillSheet.Position targetPosition)
         {
             for (var i = 0; i < count; i++)
             {
                 var  actor   = list[i];
                 Assert.IsFalse(actor.Owner.Disposed);
-                bool isFront = ResolvePosition(field, actor);
+                bool isFront = field.ResolvePosition(actor);
 
                 if (targetPosition != 0)
                 {

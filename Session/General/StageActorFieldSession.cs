@@ -25,19 +25,43 @@ using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
+using UnityEngine.Assertions;
 using Vvr.Controller.Actor;
 using Vvr.Model;
+using Vvr.Provider;
 using Vvr.Session.Actor;
+using Vvr.Session.Provider;
 
 namespace Vvr.Session
 {
     [UsedImplicitly]
     public sealed class StageActorFieldSession : ChildSession<StageActorFieldSession.SessionDta>,
-        IList<IStageActor>, IReadOnlyActorList
+        IStageActorField, IReadOnlyActorList
+        // ,
+
+        // IConnector<IStageActorProvider>
     {
         public struct SessionDta : ISessionData
         {
 
+        }
+        struct ActorPositionComparer : IComparer<IStageActor>
+        {
+            public static readonly Func<IStageActor, IStageActor> Selector = x => x;
+            public static readonly IComparer<IStageActor>         Static   = default(ActorPositionComparer);
+
+            public int Compare(IStageActor x, IStageActor y)
+            {
+                if (x == null && y == null) return 0;
+                if (x == null) return 1;
+                if (y == null) return -1;
+
+                short xx = (short)x.Data.Type,
+                    yy   = (short)y.Data.Type;
+
+                if (xx < yy) return 1;
+                return xx > yy ? -1 : 0;
+            }
         }
 
         public override string DisplayName => nameof(StageActorFieldSession);
@@ -78,10 +102,12 @@ namespace Vvr.Session
         [ThreadSafe(ThreadSafeAttribute.SafeType.Semaphore)]
         public void Add(IStageActor actor)
         {
+            Assert.IsNotNull(actor);
+
             using var wl = new SemaphoreSlimLock(m_Lock);
             wl.Wait(TimeSpan.FromSeconds(1));
 
-            m_Actors.Add(actor);
+            m_Actors.Add(actor, ActorPositionComparer.Static);
         }
 
         [ThreadSafe(ThreadSafeAttribute.SafeType.Semaphore)]
@@ -233,5 +259,59 @@ namespace Vvr.Session
             Array.Clear(array, 0, array.Length);
         }
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+        [ThreadSafe(ThreadSafeAttribute.SafeType.Semaphore)]
+        public bool ResolvePosition(IStageActor runtimeActor)
+        {
+            if (runtimeActor.OverrideFront) return true;
+
+            using var wl = new SemaphoreSlimLock(m_Lock);
+            wl.Wait(TimeSpan.FromSeconds(1));
+
+            int count = Count;
+            // If no or just one actor in the field, always front
+            if (count <= 1) return true;
+
+            // This because field list is ordered list by ActorPositionComparer.
+            // If the first element is defensive(2), should direct comparison with given actor
+            if (m_Actors[0].Data.Type == ActorSheet.ActorType.Defensive)
+            {
+                int order = ActorPositionComparer.Static.Compare(runtimeActor, m_Actors[0]);
+                // If only actor is Offensive(0)
+                if (order < 0) return false;
+                // If actor also defensive(2)
+                if (order == 0)
+                {
+                    return true;
+                }
+
+                return false;
+            }
+
+            var lastActor = m_Actors[^1];
+            // If first is not defensive, should iterate all fields until higher order found
+            for (int i = 0; i < count; i++)
+            {
+                IStageActor e     = m_Actors[i];
+                int         order = ActorPositionComparer.Static.Compare(runtimeActor, e);
+                if (order == 0) continue;
+
+                // If e is default or defensive will return -1.
+                // In that case, this actor must be front
+                if (order < 0) return true;
+
+                // If given actor is default or defensive,
+                order = ActorPositionComparer.Static.Compare(runtimeActor, lastActor);
+                // If last is defence, and actor is default
+                // should front of it
+                if (order < 0) return true;
+
+                // and field has only default or offensive should behind of it.
+                return false;
+            }
+
+            // If all check failed, given actor should be front.
+            return true;
+        }
     }
 }

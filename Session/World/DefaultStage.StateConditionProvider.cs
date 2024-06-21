@@ -59,14 +59,14 @@ namespace Vvr.Session.World
                         return false;
                     }
 
-                    IList<IStageActor> field;
+                    StageActorFieldSession field;
                     if (target.Owner == m_EnemyId)
                     {
                         field = m_EnemyField;
                     }
                     else field = m_PlayerField;
 
-                    return ResolvePosition(field, field.First(x => ReferenceEquals(x.Owner, target)));
+                    return field.ResolvePosition(field.First(x => ReferenceEquals(x.Owner, target)));
                 case StateCondition.IsParring:
                     return ConditionTrigger.Last(target, Condition.OnParrying);
                     break;
