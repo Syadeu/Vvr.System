@@ -42,6 +42,8 @@ namespace Vvr.Controller.Condition
 
         [ThreadSafe]
         bool Disposed { get; }
+
+        UniTask WaitForCondition(Model.Condition condition, CancellationToken cancellationToken = default);
     }
 
     internal sealed class DynamicConditionObserver : IConditionObserver, IDynamicConditionObserver
@@ -142,6 +144,9 @@ namespace Vvr.Controller.Condition
             if (m_Parent.Disposed)
                 throw new ObjectDisposedException(nameof(ConditionResolver));
 
+            using var wl = new SemaphoreSlimLock(m_WriteLock);
+            await wl.WaitAsync(TimeSpan.FromSeconds(1), cancellationToken);
+
             int i = m_Filter.IndexOf(condition);
             Assert.IsFalse(i < 0);
 
@@ -153,6 +158,27 @@ namespace Vvr.Controller.Condition
             await m_Delegates[i](m_Parent.Owner, value, cts.Token)
                     .AttachExternalCancellation(cts.Token)
                 ;
+        }
+
+        public async UniTask WaitForCondition(Model.Condition condition, CancellationToken cancellationToken = default)
+        {
+            bool executed = false;
+            ConditionObserverDelegate d = (owner, value, token) =>
+            {
+                executed = true;
+                return UniTask.CompletedTask;
+            };
+            this[condition] += d;
+
+            while (!executed)
+            {
+                await UniTask.Yield();
+
+                if (cancellationToken is { CanBeCanceled: true, IsCancellationRequested: true })
+                    break;
+            }
+
+            this[condition] -= d;
         }
 
         public void Dispose()

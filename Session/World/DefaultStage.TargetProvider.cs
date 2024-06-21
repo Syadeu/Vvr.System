@@ -115,7 +115,7 @@ namespace Vvr.Session.World
         }
 
         private IEnumerable<IStageActor> GetTargets(
-            IList<IStageActor> list, int count, ActorList field, SkillSheet.Position targetPosition)
+            IList<IStageActor> list, int count, IList<IStageActor> field, SkillSheet.Position targetPosition)
         {
             for (var i = 0; i < count; i++)
             {

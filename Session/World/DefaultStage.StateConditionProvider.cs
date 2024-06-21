@@ -20,6 +20,7 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Vvr.Controller.Condition;
 using Vvr.Model;
@@ -54,10 +55,11 @@ namespace Vvr.Session.World
                 case StateCondition.IsFront:
                     if (m_HandActors.Any(x => ReferenceEquals(x.Owner, target)))
                     {
+                        "Hand actor always false".ToLogError();
                         return false;
                     }
 
-                    ActorList field;
+                    IList<IStageActor> field;
                     if (target.Owner == m_EnemyId)
                     {
                         field = m_EnemyField;

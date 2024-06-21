@@ -41,6 +41,7 @@ namespace Vvr.Session.EventView.Core
 
         public async UniTask<Transform> ResolveAsync(IEventTarget owner)
         {
+            "in".ToLog();
             if (owner.Disposed)
                 throw new ObjectDisposedException(owner.DisplayName);
             if (owner is not IActor)

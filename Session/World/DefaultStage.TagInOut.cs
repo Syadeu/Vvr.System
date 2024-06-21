@@ -20,6 +20,7 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using Cysharp.Threading.Tasks;
@@ -92,7 +93,8 @@ namespace Vvr.Session.World
         {
             Assert.IsNotNull(actor);
 
-            int index = m_HandActors.FindIndex(x => ReferenceEquals(x.Owner, actor));
+            // int               index = m_HandActors.FindIndex(x => ReferenceEquals(x.Owner, actor));
+            int               index = m_HandActors.FindIndex(actor);
             if (index < 0)
             {
                 "This actor is not in hand".ToLogError();
@@ -130,10 +132,25 @@ namespace Vvr.Session.World
                     return;
                 }
 
-                m_IsParrying = true;
+                m_IsParrying              = true;
+                targetActor.OverrideFront = true;
             }
 
             m_HandActors.RemoveAt(index);
+            if (m_PlayerField.Count > 0)
+            {
+                IStageActor currentFieldRuntimeActor = m_PlayerField[0];
+                currentFieldRuntimeActor.TagOutRequested = true;
+
+                JoinAfter(currentFieldRuntimeActor, m_PlayerField, targetActor);
+
+                m_TimelineQueueProvider.SetEnable(currentFieldRuntimeActor, false);
+                RemoveFromTimeline(currentFieldRuntimeActor, m_IsParrying ? 0 : 1);
+            }
+            else
+            {
+                Join(m_PlayerField, targetActor);
+            }
 
             using (var trigger = ConditionTrigger.Push(targetActor.Owner, ConditionTrigger.Game))
             {
@@ -142,27 +159,15 @@ namespace Vvr.Session.World
                 if (m_IsParrying)
                     await trigger.Execute(Condition.OnParrying, targetActor.Owner.Id, cancellationToken);
 
-                if (m_PlayerField.Count > 0)
-                {
-                    IStageActor currentFieldRuntimeActor = m_PlayerField[0];
-                    currentFieldRuntimeActor.TagOutRequested = true;
-
-                    await JoinAfterAsync(currentFieldRuntimeActor, m_PlayerField, targetActor, cancellationToken);
-
-                    m_TimelineQueueProvider.SetEnable(currentFieldRuntimeActor, false);
-                    RemoveFromTimeline(currentFieldRuntimeActor, m_IsParrying ? 0 : 1);
-
-                    await m_ViewProvider.ResolveAsync(currentFieldRuntimeActor.Owner)
-                        .AttachExternalCancellation(cancellationToken);
-                }
-                else
-                {
-                    Join(m_PlayerField, targetActor);
-                }
-
                 // View resolve requires ConditionTrigger scope.
                 // Because of view uses Condition for resolving their position (front or back)
-                await m_ViewProvider.ResolveAsync(targetActor.Owner).AttachExternalCancellation(cancellationToken);
+                foreach (var userActor in m_PlayerField)
+                {
+                    await m_ViewProvider.ResolveAsync(userActor.Owner)
+                        .AttachExternalCancellation(cancellationToken);
+                }
+                // await m_ViewProvider.ResolveAsync(targetActor.Owner)
+                //     .AttachExternalCancellation(cancellationToken);
                 // TODO: show parrying text
 
                 if (m_IsParrying)
@@ -173,19 +178,8 @@ namespace Vvr.Session.World
             // by m_IsParrying variable.
             if (m_IsParrying)
             {
-                bool isSkillEnd = false;
-
                 using var enemyOb = m_ParryEnemyTarget.ConditionResolver.CreateObserver();
-                enemyOb[Condition.OnSkillEnd] = (owner, value, token) =>
-                {
-                    isSkillEnd = true;
-                    return UniTask.CompletedTask;
-                };
-
-                while (!isSkillEnd && !cancellationToken.IsCancellationRequested)
-                {
-                    await UniTask.Yield();
-                }
+                await enemyOb.WaitForCondition(Condition.OnSkillEnd, cancellationToken);
 
                 // After parrying, previous field actor should be tagged out.
                 // normally, parrying will execute when is not user turn.

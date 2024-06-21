@@ -19,6 +19,7 @@
 
 #endregion
 
+using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using Vvr.Controller.Actor;
 using Vvr.Model;
@@ -30,7 +31,7 @@ namespace Vvr.Session.Provider
     [LocalProvider]
     public interface IStageInfoProvider : IProvider
     {
-        IReadOnlyActorList Timeline     { get; }
+        IReadOnlyList<IStageActor> Timeline     { get; }
 
         IReadOnlyActorList HandActors  { get; }
         IReadOnlyActorList PlayerField { get; }

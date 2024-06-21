@@ -40,8 +40,8 @@ namespace Vvr.Session.World
         IConnector<ITimelineQueueProvider>,
         IConnector<IEventTimelineNodeViewProvider>
     {
-        private readonly ActorList   m_Timeline = new();
-        private readonly List<float> m_Times    = new();
+        private readonly List<IStageActor> m_Timeline = new();
+        private readonly List<float>       m_Times    = new();
 
         private ITimelineQueueProvider     m_TimelineQueueProvider;
         private IEventTimelineNodeViewProvider m_TimelineNodeViewProvider;
@@ -152,7 +152,7 @@ namespace Vvr.Session.World
         /// </summary>
         /// <param name="field">The field in the stage where the actor will be joined.</param>
         /// <param name="actor">The actor to be joined.</param>
-        private partial void Join(ActorList field, IStageActor actor)
+        private partial void Join(IList<IStageActor> field, IStageActor actor)
         {
             Assert.IsFalse(field.Contains(actor));
             field.Add(actor, ActorPositionComparer.Static);
@@ -176,9 +176,7 @@ namespace Vvr.Session.World
         /// <param name="field">The field to which the actor should be added.</param>
         /// <param name="actor">The actor to be added.</param>
         /// <returns>A <see cref="UniTask"/> representing the asynchronous operation.</returns>
-        private partial async UniTask JoinAfterAsync(
-            IStageActor target, ActorList field, IStageActor actor,
-            CancellationToken cancellationToken)
+        private partial void JoinAfter(IStageActor target, IList<IStageActor> field, IStageActor actor)
         {
             Assert.IsFalse(field.Contains(actor));
             field.Add(actor, ActorPositionComparer.Static);
@@ -186,14 +184,6 @@ namespace Vvr.Session.World
             int index = m_TimelineQueueProvider.IndexOf(target);
             m_TimelineQueueProvider.InsertAfter(
                 index, actor);
-
-            foreach (var e in field)
-            {
-                await m_ViewProvider.ResolveAsync(e.Owner)
-                    .AttachExternalCancellation(cancellationToken);
-
-                if (cancellationToken.IsCancellationRequested) break;
-            }
         }
 
         /// <summary>
@@ -202,7 +192,7 @@ namespace Vvr.Session.World
         /// <param name="field">The actor list from which to delete the actor.</param>
         /// <param name="stageActor">The actor to delete.</param>
         /// <returns>A <see cref="UniTask"/> representing the asynchronous operation.</returns>
-        private partial async UniTask DeleteAsync(ActorList field, IStageActor stageActor)
+        private partial async UniTask DeleteAsync(IList<IStageActor> field, IStageActor stageActor)
         {
             bool result = field.Remove(stageActor);
             Assert.IsTrue(result);

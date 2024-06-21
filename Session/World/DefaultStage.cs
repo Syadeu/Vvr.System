@@ -43,7 +43,7 @@ using Vvr.UI.Observer;
 namespace Vvr.Session.World
 {
     [ParentSession(typeof(DefaultFloor), true), Preserve]
-    public partial class DefaultStage : ChildSession<DefaultStage.SessionData>,
+    public partial class DefaultStage : ParentSession<DefaultStage.SessionData>,
         IStageInfoProvider,
         IConnector<IActorViewProvider>,
         IConnector<IActorProvider>,
@@ -51,59 +51,6 @@ namespace Vvr.Session.World
         IConnector<IStageActorProvider>,
         IConnector<IInputControlProvider>
     {
-        private class ActorList : List<IStageActor>, IReadOnlyActorList
-        {
-            IStageActor IReadOnlyList<IStageActor>.this[int index] => (this[index]);
-
-            public ActorList() : base()
-            {
-                ObjectObserver<ActorList>.Get(this).EnsureContainer();
-            }
-
-            public bool TryGetActor(string instanceId, out IStageActor actor)
-            {
-                for (int i = 0; i < Count; i++)
-                {
-                    if (this[i].Owner.GetInstanceID().ToString() == instanceId)
-                    {
-                        actor = (this[i]);
-                        return true;
-                    }
-                }
-
-                actor = default;
-                return false;
-            }
-
-            public bool TryGetActor(IActor actor, out IStageActor result)
-            {
-                for (int i = 0; i < Count; i++)
-                {
-                    result = this[i];
-                    if (!ReferenceEquals(result.Owner, actor)) continue;
-
-                    return true;
-                }
-
-                result = null;
-                return false;
-            }
-
-            public new void CopyTo(IStageActor[] array)
-            {
-                for (int i = 0; i < Count; i++)
-                {
-                    array[i] = this[i];
-                }
-            }
-            IEnumerator<IStageActor> IEnumerable<IStageActor>.GetEnumerator()
-            {
-                for (int i = 0; i < Count; i++)
-                {
-                    yield return (this[i]);
-                }
-            }
-        }
         public struct SessionData : ISessionData
         {
             [NotNull] public readonly IStageData              stage;
@@ -166,24 +113,29 @@ namespace Vvr.Session.World
 
         private Owner m_EnemyId;
 
-        private readonly ActorList
-            m_HandActors  = new(),
-            m_PlayerField = new(), m_EnemyField = new();
-
-        // private UniTaskCompletionSource m_ResetEvent;
+        private StageActorFieldSession
+            m_HandActors,
+            m_PlayerField,
+            m_EnemyField;
 
         public override string DisplayName => nameof(DefaultStage);
 
-        public IReadOnlyActorList Timeline    => m_Timeline;
-        public IReadOnlyActorList HandActors  => m_HandActors;
-        public IReadOnlyActorList PlayerField => m_PlayerField;
-        public IReadOnlyActorList EnemyField  => m_EnemyField;
+        public IReadOnlyList<IStageActor> Timeline    => m_Timeline;
+        public IReadOnlyActorList         HandActors  => m_HandActors;
+        public IReadOnlyActorList         PlayerField => m_PlayerField;
+        public IReadOnlyActorList         EnemyField  => m_EnemyField;
 
         public IStageActor CurrentEventActor { get; private set; }
 
-        protected override UniTask OnInitialize(IParentSession session, SessionData data)
+        protected override async UniTask OnInitialize(IParentSession session, SessionData data)
         {
+            await base.OnInitialize(session, data);
+
             EvaluateSessionData(data);
+
+            m_HandActors  = await CreateSessionOnBackground<StageActorFieldSession>(default);
+            m_PlayerField = await CreateSessionOnBackground<StageActorFieldSession>(default);
+            m_EnemyField  = await CreateSessionOnBackground<StageActorFieldSession>(default);
 
             // This is required for injecting actors
             Parent.Register<ITargetProvider>(this)
@@ -195,8 +147,6 @@ namespace Vvr.Session.World
             m_EnemyId = Owner.Issue;
 
             Vvr.Provider.Provider.Static.Register<IStageActorTagInOutProvider>(this);
-
-            return base.OnInitialize(session, data);
         }
 
         protected override UniTask OnReserve()
@@ -477,11 +427,9 @@ namespace Vvr.Session.World
                 await DeleteAsync(m_EnemyField, sta);
         }
 
-        private partial void    Join(ActorList                 field,  IStageActor actor);
-        private partial UniTask JoinAfterAsync(
-            IStageActor     target, ActorList   field, IStageActor actor,
-            CancellationToken cancellationToken);
-        private partial UniTask DeleteAsync(ActorList          field,  IStageActor stageActor);
+        private partial void    Join(IList<IStageActor>        field,  IStageActor        actor);
+        private partial void    JoinAfter(IStageActor          target, IList<IStageActor> field, IStageActor actor);
+        private partial UniTask DeleteAsync(IList<IStageActor> field,  IStageActor        stageActor);
         private partial void    RemoveFromQueue(IStageActor    actor);
         private partial void    RemoveFromTimeline(IStageActor actor, int preserveCount = 0);
 

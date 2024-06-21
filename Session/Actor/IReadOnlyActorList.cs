@@ -20,11 +20,14 @@
 #endregion
 
 using System.Collections.Generic;
+using Vvr.Controller.Actor;
 
 namespace Vvr.Session.Actor
 {
     public interface IReadOnlyActorList : IReadOnlyList<IStageActor>
     {
         bool TryGetActor(string instanceId, out IStageActor actor);
+
+        int FindIndex(IActor actor);
     }
 }
