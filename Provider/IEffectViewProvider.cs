@@ -32,12 +32,12 @@ namespace Vvr.Provider
     public interface IEffectViewProvider : IProvider
     {
         UniTask SpawnAsync(
-            object            key,
+            [NotNull] object            key,
             Vector3           position,
             CancellationToken cancellationToken);
         UniTask SpawnAsync(
-            object            key,
-            Vector3           position, Quaternion rotation, Transform parent,
+            [NotNull] object            key,
+            Vector3           position, Quaternion rotation, [CanBeNull] Transform parent,
             CancellationToken cancellationToken);
     }
 

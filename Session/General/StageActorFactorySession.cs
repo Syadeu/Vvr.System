@@ -43,7 +43,15 @@ namespace Vvr.Session
         {
         }
 
-        private sealed class StageActor : IStageActor
+        private sealed class StageActor : IStageActor,
+            IConnector<IAssetProvider>,
+            IConnector<IActorViewProvider>,
+            IConnector<ITargetProvider>,
+            IConnector<IActorDataProvider>,
+            IConnector<IEventConditionProvider>,
+            IConnector<IStateConditionProvider>,
+
+            IConnector<IEffectViewProvider>
         {
             private readonly IActor     m_Owner;
             private readonly IActorData m_Data;

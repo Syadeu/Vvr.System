@@ -21,6 +21,7 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using UnityEngine;
+using UnityEngine.Assertions;
 using Vvr.Provider;
 using Vvr.Session.EventView.Core;
 using Vvr.Session.EventView.GameObjectPoolView;
@@ -53,6 +54,8 @@ namespace Vvr.Session.EventView.EffectView
             Vector3 position, Quaternion rotation, Transform parent,
             CancellationToken cancellationToken)
         {
+            Assert.IsNotNull(key);
+
             using var cancelTokenSource =
                 CancellationTokenSource.CreateLinkedTokenSource(ReserveToken, cancellationToken);
             using var scope = await m_GameObjectPoolViewProvider.Scope(key, cancelTokenSource.Token);
@@ -64,7 +67,8 @@ namespace Vvr.Session.EventView.EffectView
             GameObject obj = scope.Object;
             {
                 Transform tr = obj.transform;
-                tr.SetParent(parent, false);
+                if (parent is not null)
+                    tr.SetParent(parent, false);
                 tr.position = position;
                 tr.rotation = rotation;
             }
@@ -87,6 +91,8 @@ namespace Vvr.Session.EventView.EffectView
             Vector3 position,
             CancellationToken cancellationToken)
         {
+            Assert.IsNotNull(key);
+
             using var cancelTokenSource =
                 CancellationTokenSource.CreateLinkedTokenSource(ReserveToken, cancellationToken);
             using var scope = await m_GameObjectPoolViewProvider.Scope(key, cancelTokenSource.Token);

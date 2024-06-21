@@ -29,15 +29,7 @@ using Vvr.Provider;
 namespace Vvr.Session.Actor
 {
     [PublicAPI]
-    public interface IStageActor : IDisposable,
-        IConnector<IAssetProvider>,
-        IConnector<IActorViewProvider>,
-        IConnector<ITargetProvider>,
-        IConnector<IActorDataProvider>,
-        IConnector<IEventConditionProvider>,
-        IConnector<IStateConditionProvider>,
-
-        IConnector<IEffectViewProvider>
+    public interface IStageActor : IDisposable
     {
         IActor     Owner           { get; }
         IActorData Data            { get; }

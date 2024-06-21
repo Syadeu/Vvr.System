@@ -55,6 +55,9 @@ namespace Vvr.Session.EventView.GameObjectPoolView
         private readonly Stack<GameObject>                  m_CreatedInstances = new();
         private readonly Dictionary<int, Stack<GameObject>> m_Pool             = new();
 
+        private          Transform                 m_Root;
+        private readonly Dictionary<int, Transform> m_PoolParent = new();
+
         protected override async UniTask OnInitialize(IParentSession session, SessionData data)
         {
             await base.OnInitialize(session, data);
@@ -108,6 +111,24 @@ namespace Vvr.Session.EventView.GameObjectPoolView
             var poolItem = ins.AddComponent<ObjectPoolItem>();
             poolItem.Key = hash;
 
+            if (!m_PoolParent.TryGetValue(hash, out var parent))
+            {
+                GameObject obj = new GameObject(asset.Result.Object.name);
+                obj.hideFlags = HideFlags.NotEditable;
+                parent        = obj.transform;
+
+                if (m_Root is null)
+                {
+                    GameObject rootObj = new GameObject(DisplayName);
+                    rootObj.hideFlags = HideFlags.NotEditable;
+                    m_Root            = rootObj.transform;
+                }
+                parent.SetParent(m_Root);
+
+                m_PoolParent[hash] = parent;
+            }
+            ins.transform.SetParent(parent);
+
             m_CreatedInstances.Push(ins);
 
             return ins;
@@ -125,6 +146,8 @@ namespace Vvr.Session.EventView.GameObjectPoolView
                 pool                 = new();
                 m_Pool[poolItem.Key] = pool;
             }
+
+            obj.transform.SetParent(m_PoolParent[poolItem.Key], false);
 
             pool.Push(obj);
         }
