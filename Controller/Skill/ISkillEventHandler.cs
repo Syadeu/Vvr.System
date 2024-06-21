@@ -29,9 +29,11 @@ namespace Vvr.Controller.Skill
 {
     public interface ISkillEventHandler
     {
-        UniTask OnSkillStart(ISkillData         skill, EffectEmitter effectEmitter);
-        UniTask OnSkillCasting(ISkillData       skill, EffectEmitter effectEmitter);
-        UniTask OnSkillEnd([NotNull] ISkillData skill, Transform     target, EffectEmitter effectEmitter);
-        UniTask OnSkillCanceled(ISkillData      skill);
+        UniTask OnSkillStart([NotNull] ISkillData         skill, EffectEmitter effectEmitter);
+        UniTask OnSkillCasting([NotNull] ISkillData       skill, EffectEmitter effectEmitter);
+        UniTask OnSkillEnd(
+            [NotNull] ISkillData skill,
+            [NotNull] Transform     target, EffectEmitter effectEmitter);
+        UniTask OnSkillCanceled([NotNull] ISkillData      skill);
     }
 }

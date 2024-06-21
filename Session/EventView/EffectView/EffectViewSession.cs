@@ -46,7 +46,11 @@ namespace Vvr.Session.EventView.EffectView
             await base.OnInitialize(session, data);
 
             m_GameObjectPoolViewProvider
-                = await CreateSessionOnBackground<GameObjectPoolViewSession>(default);
+                = await CreateSessionOnBackground<GameObjectPoolViewSession>(
+                    new GameObjectPoolViewSession.SessionData()
+                    {
+                        rootObjectName = DisplayName
+                    });
         }
 
         public async UniTask SpawnAsync(

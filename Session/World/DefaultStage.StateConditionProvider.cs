@@ -22,6 +22,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine.Assertions;
+using Vvr.Controller.Actor;
 using Vvr.Controller.Condition;
 using Vvr.Model;
 using Vvr.Provider;
@@ -67,7 +69,7 @@ namespace Vvr.Session.World
                     else field = m_PlayerField;
 
                     return field.ResolvePosition(field.First(x => ReferenceEquals(x.Owner, target)));
-                case StateCondition.IsParring:
+                case StateCondition.IsParrying:
                     return ConditionTrigger.Last(target, Condition.OnParrying);
                     break;
                 case StateCondition.CanTag:
@@ -78,9 +80,10 @@ namespace Vvr.Session.World
                     if (m_PlayerField.Count > 1) return false;
                     return true;
                 case StateCondition.CanParry:
-                    // TODO:
-                    return true;
-                    break;
+                    var stageActor = m_StageActorProvider.Get((IActor)target);
+                    Assert.IsNotNull(stageActor);
+
+                    return stageActor.ParryCount > 0;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(condition), condition, null);
             }

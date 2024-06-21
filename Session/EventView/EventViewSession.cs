@@ -24,6 +24,7 @@ using Vvr.Provider;
 using Vvr.Session.EventView.ActorView;
 using Vvr.Session.EventView.Core;
 using Vvr.Session.EventView.EffectView;
+using Vvr.Session.EventView.GameObjectPoolView;
 
 namespace Vvr.Session.EventView
 {
@@ -49,12 +50,17 @@ namespace Vvr.Session.EventView
             await CreateSession<ActorViewSession>(default);
             var effectView = await CreateSessionOnBackground<EffectViewSession>(default);
 
-            Parent.Register<IEffectViewProvider>(effectView);
+            Parent
+                .Register<IGameObjectPoolViewProvider>(await CreateSessionOnBackground<GameObjectPoolViewSession>(default))
+                .Register<IEffectViewProvider>(effectView);
         }
 
         protected override UniTask OnReserve()
         {
-            Parent.Unregister<IEffectViewProvider>();
+            Parent
+                .Unregister<IGameObjectPoolViewProvider>()
+                .Unregister<IEffectViewProvider>()
+                ;
 
             Vvr.Provider.Provider.Static.Disconnect<IViewRegistryProvider>(this);
             return base.OnReserve();

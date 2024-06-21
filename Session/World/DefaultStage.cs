@@ -322,11 +322,17 @@ namespace Vvr.Session.World
 
                     await trigger.Execute(Model.Condition.OnActorTurnEnd, null, cancelTokenSource.Token);
 
-                    // Tag out check
-                    if (CurrentEventActor.TagOutRequested)
+                    // If currently is in parrying, wait for ends.
+                    // See TagIn method
+                    while (m_IsParrying &&
+                           !cancellationToken.IsCancellationRequested)
                     {
-                        await TagOut(CurrentEventActor, cancelTokenSource.Token);
+                        await UniTask.Yield();
                     }
+
+                    // Tag out check
+                    await CheckFieldTagOut(m_PlayerField, cancelTokenSource.Token);
+                    await CheckFieldTagOut(m_EnemyField, cancelTokenSource.Token);
 
                     CurrentEventActor = null;
                 }
@@ -359,16 +365,7 @@ namespace Vvr.Session.World
                     }
                 }
 
-                // If currently is in parrying, wait for ends.
-                // See TagIn method
-                while (m_IsParrying &&
-                       !cancellationToken.IsCancellationRequested)
-                {
-                    await UniTask.Yield();
-                }
-
                 previousTime = DequeueTimeline();
-                // ObjectObserver<ActorList>.ChangedEvent(m_Timeline);
             }
 
             IActor[] playerActors = GetCurrentPlayerActors().Select(x => x.Owner).ToArray();
@@ -443,8 +440,9 @@ namespace Vvr.Session.World
         private partial UniTask UpdateTimelineNodeViewAsync(CancellationToken cancellationToken);
         private partial UniTask CloseTimelineNodeViewAsync(CancellationToken cancellationToken = default);
 
-        private partial UniTask TagIn(int          index,  CancellationToken cancellationToken);
-        private partial UniTask TagOut(IStageActor target, CancellationToken cancelTokenSource);
+        private partial UniTask TagIn(int                         index,  CancellationToken cancellationToken);
+        private partial UniTask TagOut(IStageActor                target, CancellationToken cancelTokenSource);
+        private partial UniTask CheckFieldTagOut(IStageActorField field,  CancellationToken cancellationToken);
 
         private async UniTask ExecuteTurn(IStageActor runtimeActor, CancellationToken cancellationToken)
         {

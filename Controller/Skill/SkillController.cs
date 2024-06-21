@@ -371,6 +371,13 @@ namespace Vvr.Controller.Skill
             Assert.IsFalse(target.Disposed);
             Assert.IsTrue(Owner.ConditionResolver[Model.Condition.IsActorTurn](null));
 
+            UniTask
+                skillEffectTask = UniTask.CompletedTask,
+                skillEffectHitTask = UniTask.CompletedTask;
+
+            // TODO: parry damage
+            bool canParry = target.ConditionResolver[Model.Condition.CanParry](null);
+
             #region Warmup
 
             Transform targetView = await m_ViewProvider.ResolveAsync(target)
@@ -381,34 +388,6 @@ namespace Vvr.Controller.Skill
             var skillEventHandle = view.GetComponent<ISkillEventHandler>();
             if (skillEventHandle != null)
             {
-                // SkillEffectEmitter emitter = null;
-                //
-                // if (value.skill.TargetEffectAssetKey is not null)
-                // {
-                //     // If method is damage, should shake camera
-                //     if (value.skill.Method == SkillSheet.Method.Damage)
-                //     {
-                //         ICameraShakeProvider camPrv = await Vvr.Provider.Provider.Static.GetAsync<ICameraShakeProvider>()
-                //                 .AttachExternalCancellation(CancellationToken)
-                //             ;
-                //
-                //         emitter = new SkillEffectEmitter(
-                //             value.skill.TargetEffectAssetKey,
-                //             () => camPrv.Shake().Forget());
-                //     }
-                //     else emitter = new SkillEffectEmitter(value.skill.TargetEffectAssetKey, null);
-                // }
-                //
-                // await skillEventHandle
-                //         .OnSkillEnd(value.skill, targetView, emitter)
-                //         .SuppressCancellationThrow()
-                //         .AttachExternalCancellation(CancellationToken)
-                //         .TimeoutWithoutException(TimeSpan.FromSeconds(5))
-                //     ;
-                //
-                // emitter?.Dispose();
-
-
                 EffectEmitter emitter = default;
                 if (value.skill.TargetEffectAssetKey is not null)
                 {
@@ -421,13 +400,17 @@ namespace Vvr.Controller.Skill
 
                         emitter = new EffectEmitter(
                             m_EffectViewProvider,
-                            value.skill.TargetEffectAssetKey);
+                            canParry ? null : value.skill.TargetEffectAssetKey
+                            );
                         emitter.OnSpawn += () => camPrv.Shake().Forget();
                     }
-                    else emitter = new EffectEmitter(m_EffectViewProvider, value.skill.TargetEffectAssetKey);
+                    else
+                        emitter = new EffectEmitter(m_EffectViewProvider, value.skill.TargetEffectAssetKey);
+
+                    skillEffectHitTask = emitter.Task;
                 }
 
-                await skillEventHandle
+                skillEffectTask =  skillEventHandle
                         .OnSkillEnd(value.skill, targetView, emitter)
                         .SuppressCancellationThrow()
                         .AttachExternalCancellation(CancellationToken)
@@ -436,18 +419,7 @@ namespace Vvr.Controller.Skill
             }
             else if (value.skill.TargetEffectAssetKey is not null)
             {
-                // var effectPool = GameObjectPool.GetWithRawKey(value.skill.TargetEffectAssetKey);
-                // var effect = await effectPool
-                //         .SpawnEffect(targetView.position, Quaternion.identity)
-                //         .AttachExternalCancellation(CancellationToken)
-                //     ;
-                // while (!effect.Reserved &&
-                //        !CancellationToken.IsCancellationRequested)
-                // {
-                //     await UniTask.Yield();
-                // }
-
-                await m_EffectViewProvider.SpawnAsync(
+                skillEffectTask = m_EffectViewProvider.SpawnAsync(
                     value.skill.TargetEffectAssetKey,
                     targetView.position, Quaternion.identity, null,
                     CancellationToken);
@@ -465,6 +437,8 @@ namespace Vvr.Controller.Skill
 
                     await target.Abnormal.AddAsync(e);
                 }
+
+                await skillEffectHitTask;
 
                 float dmg = Owner.Stats[StatType.ATT] * value.skill.Multiplier;
                 switch (value.skill.Method)
@@ -489,6 +463,8 @@ namespace Vvr.Controller.Skill
             }
 
             #endregion
+
+            await skillEffectTask;
 
             await trigger.Execute(Model.Condition.OnSkillEnd, value.skill.Id, CancellationToken)
                 ;

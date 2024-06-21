@@ -38,6 +38,8 @@ namespace Vvr.Session.Actor
         bool OverrideFront     { get; set; }
         int  TargetingPriority { get; set; }
 
+        int ParryCount { get; set; }
+
         bool Disposed { get; }
     }
 }

@@ -24,18 +24,21 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using UnityEngine;
 using UnityEngine.Assertions;
 using Vvr.Controller.Actor;
 using Vvr.Controller.Condition;
 using Vvr.Model;
 using Vvr.Provider;
 using Vvr.Session.Actor;
+using Vvr.Session.EventView.Core;
 using Vvr.Session.Provider;
 
 namespace Vvr.Session.World
 {
     partial class DefaultStage : IStageActorTagInOutProvider,
-        IConnector<IGameTimeProvider>
+        IConnector<IGameTimeProvider>,
+        IConnector<IGameObjectPoolViewProvider>
     {
         const float PARRY_TIME = 3;
 
@@ -43,7 +46,8 @@ namespace Vvr.Session.World
         private RealtimeTimer m_EnemySkillStartedTime;
         private IActor  m_ParryEnemyTarget;
 
-        private IGameTimeProvider m_GameTimeProvider;
+        private IGameTimeProvider           m_GameTimeProvider;
+        private IGameObjectPoolViewProvider m_GameObjectPoolViewProvider;
 
         private CancellationTokenSource          m_ParryCancelSource;
 
@@ -160,19 +164,15 @@ namespace Vvr.Session.World
 
                 m_IsParrying              = true;
                 targetActor.OverrideFront = true;
+                targetActor.ParryCount++;
                 targetActor.TargetingPriority++;
             }
 
             IStageActor currentFieldRuntimeActor;
+            Transform  targetView = null;
             using (var trigger = ConditionTrigger.Push(targetActor.Owner, ConditionTrigger.Game))
             {
                 await trigger.Execute(Model.Condition.OnTagIn, targetActor.Owner.Id, cancellationToken);
-
-                if (m_IsParrying)
-                    await trigger.Execute(Condition.OnParrying, targetActor.Owner.Id, cancellationToken);
-
-                // View resolve requires ConditionTrigger scope.
-                // Because of view uses Condition for resolving their position (front or back)
 
                 m_HandActors.RemoveAt(index);
                 if (m_PlayerField.Count > 0)
@@ -192,17 +192,23 @@ namespace Vvr.Session.World
                     Join(m_PlayerField, targetActor);
                 }
 
+                // View resolve requires ConditionTrigger scope.
+                // Because of view uses Condition for resolving their position (front or back)
                 foreach (var userActor in m_PlayerField)
                 {
-                    await m_ViewProvider.ResolveAsync(userActor.Owner)
+                    var view = await m_ViewProvider.ResolveAsync(userActor.Owner)
                         .AttachExternalCancellation(cancellationToken);
+
+                    if (userActor == targetActor)
+                    {
+                        targetView = view;
+                    }
                 }
 
                 // TODO: show parrying text
 
                 if (m_IsParrying)
                 {
-                    // m_GameTimeProvider.Cancel();
                     m_ParryCancelSource?.Cancel();
                 }
             }
@@ -212,13 +218,10 @@ namespace Vvr.Session.World
             if (m_IsParrying)
             {
                 Assert.IsNotNull(currentFieldRuntimeActor);
+                Assert.IsNotNull(m_ParryEnemyTarget);
 
                 using var enemyOb = m_ParryEnemyTarget.ConditionResolver.CreateObserver();
                 await enemyOb.WaitForCondition(Condition.OnSkillEnd, cancellationToken);
-
-                // After parrying, previous field actor should be tagged out.
-                // normally, parrying will execute when is not user turn.
-                await TagOut(currentFieldRuntimeActor, cancellationToken);
 
                 targetActor.TargetingPriority--;
             }
@@ -241,6 +244,8 @@ namespace Vvr.Session.World
             target.TagOutRequested = false;
             RemoveFromQueue(target);
 
+            await m_TimelineNodeViewProvider.Release(target.Owner);
+
             await trigger.Execute(Condition.OnTagOut, target.Owner.Id, cancelTokenSource);
 
             await m_ViewProvider.ResolveAsync(target.Owner)
@@ -254,7 +259,29 @@ namespace Vvr.Session.World
             }
         }
 
+        private partial async UniTask CheckFieldTagOut(IStageActorField field, CancellationToken cancellationToken)
+        {
+            int       fieldCount = field.Count;
+            using var tempArray  = TempArray<IStageActor>.Shared(fieldCount);
+
+            field.CopyTo(tempArray.Value);
+            for (var i = 0; i < fieldCount; i++)
+            {
+                var actor = tempArray.Value[i];
+                if (actor.TagOutRequested)
+                {
+                    await TagOut(actor, cancellationToken);
+                    continue;
+                }
+
+                if (cancellationToken.IsCancellationRequested) break;
+            }
+        }
+
         void IConnector<IGameTimeProvider>.Connect(IGameTimeProvider    t) => m_GameTimeProvider = t;
         void IConnector<IGameTimeProvider>. Disconnect(IGameTimeProvider t) => m_GameTimeProvider = null;
+
+        void IConnector<IGameObjectPoolViewProvider>.Connect(IGameObjectPoolViewProvider    t) => m_GameObjectPoolViewProvider = t;
+        void IConnector<IGameObjectPoolViewProvider>.Disconnect(IGameObjectPoolViewProvider t) => m_GameObjectPoolViewProvider = null;
     }
 }

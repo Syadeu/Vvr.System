@@ -31,13 +31,13 @@ using Vvr.Session.EventView.Core;
 
 namespace Vvr.Session.EventView.GameObjectPoolView
 {
-    [UsedImplicitly]
+    [UsedImplicitly, PublicAPI]
     public class GameObjectPoolViewSession : ParentSession<GameObjectPoolViewSession.SessionData>,
         IGameObjectPoolViewProvider
     {
         public struct SessionData : ISessionData
         {
-
+            public string rootObjectName;
         }
 
         [HideMonoScript]
@@ -58,11 +58,15 @@ namespace Vvr.Session.EventView.GameObjectPoolView
         private          Transform                 m_Root;
         private readonly Dictionary<int, Transform> m_PoolParent = new();
 
+        public Transform RootTransform => m_Root;
+
         protected override async UniTask OnInitialize(IParentSession session, SessionData data)
         {
             await base.OnInitialize(session, data);
 
             m_AssetProvider = await CreateSession<AssetSession>(default);
+
+            await UniTask.Create(SetupRootObject);
         }
 
         protected override UniTask OnReserve()
@@ -82,6 +86,15 @@ namespace Vvr.Session.EventView.GameObjectPoolView
             m_Pool.Clear();
 
             return base.OnReserve();
+        }
+
+        private async UniTask SetupRootObject()
+        {
+            GameObject rootObj = new GameObject(
+                Data.rootObjectName.IsNullOrEmpty() ? DisplayName : Data.rootObjectName
+            );
+            rootObj.hideFlags = HideFlags.NotEditable;
+            m_Root            = rootObj.transform;
         }
 
         public async UniTask<GameObjectPoolScope> Scope(object key, CancellationToken cancellationToken)
@@ -116,13 +129,6 @@ namespace Vvr.Session.EventView.GameObjectPoolView
                 GameObject obj = new GameObject(asset.Result.Object.name);
                 obj.hideFlags = HideFlags.NotEditable;
                 parent        = obj.transform;
-
-                if (m_Root is null)
-                {
-                    GameObject rootObj = new GameObject(DisplayName);
-                    rootObj.hideFlags = HideFlags.NotEditable;
-                    m_Root            = rootObj.transform;
-                }
                 parent.SetParent(m_Root);
 
                 m_PoolParent[hash] = parent;

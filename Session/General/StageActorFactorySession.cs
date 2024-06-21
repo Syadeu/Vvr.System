@@ -23,12 +23,15 @@ using System;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
+using UnityEngine;
 using UnityEngine.Assertions;
 using Vvr.Controller.Actor;
+using Vvr.Controller.Condition;
 using Vvr.Controller.Provider;
 using Vvr.Model;
 using Vvr.Provider;
 using Vvr.Session.Actor;
+using Vvr.Session.EventView.Core;
 using Vvr.Session.Provider;
 
 namespace Vvr.Session
@@ -37,7 +40,10 @@ namespace Vvr.Session
     public sealed class StageActorFactorySession : ChildSession<StageActorFactorySession.SessionData>,
         IStageActorProvider,
         IConnector<IResearchDataProvider>,
-        IConnector<IEffectViewProvider>
+        IConnector<IEffectViewProvider>,
+        IConnector<IGameObjectPoolViewProvider>,
+        IConnector<ICanvasViewProvider>,
+        IConnector<IActorViewProvider>
     {
         public struct SessionData : ISessionData
         {
@@ -56,10 +62,14 @@ namespace Vvr.Session
             private readonly IActor     m_Owner;
             private readonly IActorData m_Data;
 
+            private readonly IDynamicConditionObserver m_Observer;
+
             private bool m_TagOutRequested,
                 m_OverrideFront;
 
             private int m_TargetingPriority;
+
+            private int m_ParryCount;
 
             public IActor Owner
             {
@@ -129,16 +139,34 @@ namespace Vvr.Session
                 }
             }
 
+            public int ParryCount
+            {
+                get
+                {
+                    if (Disposed)
+                        throw new ObjectDisposedException(nameof(StageActor));
+                    return m_ParryCount;
+                }
+                set
+                {
+                    if (Disposed)
+                        throw new ObjectDisposedException(nameof(StageActor));
+                    m_ParryCount = value;
+                }
+            }
+
             public bool Disposed { get; private set; }
 
-            public StageActor(IActor o, IActorData d)
+            public StageActor(IActor o, IActorData d, IDynamicConditionObserver observer)
             {
                 m_Owner = o;
                 m_Data  = d;
-            }
 
+                m_Observer = observer;
+            }
             public void Dispose()
             {
+                m_Observer.Dispose();
                 Disposed = true;
             }
 
@@ -245,7 +273,11 @@ namespace Vvr.Session
 
         private readonly List<StageActor> m_Created = new();
 
-        private IResearchDataProvider m_ResearchDataProvider;
+        private IResearchDataProvider       m_ResearchDataProvider;
+        private IGameObjectPoolViewProvider m_GameObjectPoolViewProvider;
+
+        private ICanvasViewProvider m_CanvasViewProvider;
+        private IActorViewProvider  m_ActorViewProvider;
 
         public override string DisplayName => nameof(StageActorFactorySession);
 
@@ -281,7 +313,10 @@ namespace Vvr.Session
                 DebugTimer.BuildDisplayName(nameof(StageActorFactorySession), nameof(Create))
                 );
 
-            StageActor result = new StageActor(actor, data);
+            var ob = actor.ConditionResolver.CreateObserver();
+            SetupObserver(ob);
+
+            StageActor result = new StageActor(actor, data, ob);
             IActor     item   = result.Owner;
             Connect<IAssetProvider>(result)
                 .Connect<ITargetProvider>(result)
@@ -355,6 +390,44 @@ namespace Vvr.Session
             item.Owner.Abnormal.Clear();
         }
 
+
+        private void SetupObserver(IDynamicConditionObserver observer)
+        {
+            observer[Condition.OnHit] += async (owner, value, token) =>
+            {
+                var    stageActor = Get((IActor)owner);
+                Assert.IsNotNull(stageActor);
+
+                if (stageActor.ParryCount > 0)
+                {
+                    stageActor.ParryCount--;
+                    var view = await m_ActorViewProvider.ResolveAsync(owner);
+
+                    using var trigger = ConditionTrigger.Push(owner);
+                    await trigger.Execute(Condition.OnParrying, null, token);
+
+                    var canvas = m_CanvasViewProvider.ResolveCamera(
+                        CanvasCameraType.Default, RenderMode.WorldSpace, CanvasLayerName.OverlayUI, 0, false);
+
+                    using (var scope = await m_GameObjectPoolViewProvider.Scope("Contents/Effect/Parrying Effect.prefab", token))
+                    {
+                        scope.Object.transform.SetParent(canvas.Object.transform, false);
+
+                        Vector3 pos = view.position + new Vector3(25, 0);
+                        pos.y += UnityEngine.Random.Range(-25, 25);
+
+                        scope.Object.transform.position = pos;
+
+                        scope.Object.SetActive(true);
+
+                        await UniTask.WaitForSeconds(1);
+
+                        scope.Object.SetActive(false);
+                    }
+                }
+            };
+        }
+
         void IConnector<IResearchDataProvider>.Connect(IResearchDataProvider    t) => m_ResearchDataProvider = t;
         void IConnector<IResearchDataProvider>.Disconnect(IResearchDataProvider t) => m_ResearchDataProvider = null;
 
@@ -365,5 +438,14 @@ namespace Vvr.Session
         void IConnector<IEffectViewProvider>.Disconnect(IEffectViewProvider t)
         {
         }
+
+        void IConnector<IGameObjectPoolViewProvider>.Connect(IGameObjectPoolViewProvider    t) => m_GameObjectPoolViewProvider = t;
+        void IConnector<IGameObjectPoolViewProvider>.Disconnect(IGameObjectPoolViewProvider t) => m_GameObjectPoolViewProvider = null;
+
+        void IConnector<IActorViewProvider>.Connect(IActorViewProvider t) => m_ActorViewProvider = t;
+        void IConnector<IActorViewProvider>.Disconnect(IActorViewProvider t) => m_ActorViewProvider = null;
+
+        void IConnector<ICanvasViewProvider>.Connect(ICanvasViewProvider    t) => m_CanvasViewProvider = t;
+        void IConnector<ICanvasViewProvider>.Disconnect(ICanvasViewProvider t) => m_CanvasViewProvider = null;
     }
 }

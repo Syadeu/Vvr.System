@@ -48,15 +48,19 @@ namespace Vvr.Provider
 
         private readonly object m_Key;
 
+        private readonly AutoResetUniTaskCompletionSource m_Source;
+
         public event Action OnSpawn;
 
-        public EffectEmitter(IEffectViewProvider p, object key)
+        public UniTask Task => m_Source.Task;
+
+        public EffectEmitter(IEffectViewProvider p, [CanBeNull] object key)
         {
             Assert.IsNotNull(p, "p != null");
-            Assert.IsNotNull(key);
 
             m_ViewProvider = p;
             m_Key          = key;
+            m_Source = AutoResetUniTaskCompletionSource.Create();
 
             OnSpawn = null;
         }
@@ -68,6 +72,9 @@ namespace Vvr.Provider
             if (m_ViewProvider is null) return UniTask.CompletedTask;
 
             OnSpawn?.Invoke();
+            m_Source.TrySetResult();
+
+            if (m_Key is null) return UniTask.CompletedTask;
             return m_ViewProvider.SpawnAsync(m_Key, position, cancellationToken);
         }
         public UniTask SpawnAsync(Vector3 position, Quaternion rotation, Transform parent,
@@ -76,6 +83,9 @@ namespace Vvr.Provider
             if (m_ViewProvider is null) return UniTask.CompletedTask;
 
             OnSpawn?.Invoke();
+            m_Source.TrySetResult();
+
+            if (m_Key is null) return UniTask.CompletedTask;
             return m_ViewProvider.SpawnAsync(m_Key, position, rotation, parent, cancellationToken);
         }
     }

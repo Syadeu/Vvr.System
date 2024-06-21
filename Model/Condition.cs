@@ -123,7 +123,7 @@ namespace Vvr.Model
         IsActorTurn = Condition.IsActorTurn,
         IsInHand    = Condition.IsInHand,
         IsFront = Condition.IsFront,
-        IsParring = Condition.IsParring,
+        IsParrying = Condition.IsParring,
 
         CanTag = Condition.CanTag,
         CanParry = Condition.CanParry,
