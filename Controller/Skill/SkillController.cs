@@ -312,7 +312,7 @@ namespace Vvr.Controller.Skill
         async UniTask ExecuteSkillBody(ConditionTrigger trigger, Value value)
         {
             Assert.IsFalse(Owner.Disposed);
-            Assert.IsTrue(Owner.ConditionResolver[Model.Condition.IsActorTurn](null));
+            // Assert.IsTrue(Owner.ConditionResolver[Model.Condition.IsActorTurn](null));
 
             bool executed = false;
             if (value.overrideTarget is not null)
@@ -369,7 +369,7 @@ namespace Vvr.Controller.Skill
         async UniTask ExecuteSkillTarget(ConditionTrigger trigger, Value value, IActor target)
         {
             Assert.IsFalse(target.Disposed);
-            Assert.IsTrue(Owner.ConditionResolver[Model.Condition.IsActorTurn](null));
+            // Assert.IsTrue(Owner.ConditionResolver[Model.Condition.IsActorTurn](null));
 
             UniTask
                 skillEffectTask = UniTask.CompletedTask,

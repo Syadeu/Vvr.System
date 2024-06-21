@@ -43,7 +43,6 @@ namespace Vvr.Session.World
         const float PARRY_TIME = 3;
 
         private bool          m_CanParry, m_IsParrying;
-        private RealtimeTimer m_EnemySkillStartedTime;
         private IActor  m_ParryEnemyTarget;
 
         private IGameTimeProvider           m_GameTimeProvider;
@@ -68,7 +67,6 @@ namespace Vvr.Session.World
                 if (IsInterruptibleSkill(skillData))
                 {
                     m_CanParry              = true;
-                    m_EnemySkillStartedTime = RealtimeTimer.Start();
                     m_ParryEnemyTarget      = (IActor)e;
 
                     m_ParryCancelSource  = new();
@@ -152,10 +150,9 @@ namespace Vvr.Session.World
                 // so if the target actor has turned, means cannot be parried.
                 !targetActor.Owner.ConditionResolver[Condition.IsActorTurn](null))
             {
-                if (!m_CanParry &&
-                    m_EnemySkillStartedTime.IsExceeded(1))
+                if (!m_CanParry)
                 {
-                    "not interruptible".ToLog();
+                    $"not interruptible".ToLog();
                     return;
                 }
 
@@ -251,7 +248,7 @@ namespace Vvr.Session.World
         private partial async UniTask CheckFieldTagOut(IStageActorField field, CancellationToken cancellationToken)
         {
             int       fieldCount = field.Count;
-            using var tempArray  = TempArray<IStageActor>.Shared(fieldCount);
+            using var tempArray  = TempArray<IStageActor>.Shared(fieldCount, true);
 
             field.CopyTo(tempArray.Value);
             for (var i = 0; i < fieldCount; i++)

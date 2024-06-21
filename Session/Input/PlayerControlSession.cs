@@ -124,6 +124,7 @@ namespace Vvr.Session.Input
                 throw new InvalidOperationException();
 
             UnregisterInput();
+            CompleteControl();
             await m_CommandProvider.EnqueueAsync(m_CurrentControl, new SkillExecuteCommand(1));
 
             if (!m_ActionCompletionSource.TrySetResult())
@@ -135,6 +136,7 @@ namespace Vvr.Session.Input
                 throw new InvalidOperationException();
 
             UnregisterInput();
+            CompleteControl();
             await m_CommandProvider.EnqueueAsync(m_CurrentControl, new SkillExecuteCommand(0));
 
             if (!m_ActionCompletionSource.TrySetResult())

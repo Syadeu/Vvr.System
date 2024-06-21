@@ -76,6 +76,7 @@ namespace Vvr.Session.EventView.EffectView
                 tr.position = position;
                 tr.rotation = rotation;
             }
+            obj.SetActive(true);
 
             var particleSystem = obj.GetComponentInChildren<ParticleSystem>();
             var main           = particleSystem.main;
@@ -89,6 +90,7 @@ namespace Vvr.Session.EventView.EffectView
             }
 
             particleSystem.Stop();
+            obj.SetActive(false);
         }
         public async UniTask SpawnAsync(
             object key,

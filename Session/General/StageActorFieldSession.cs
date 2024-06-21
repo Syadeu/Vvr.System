@@ -35,15 +35,15 @@ using Vvr.Session.Provider;
 namespace Vvr.Session
 {
     [UsedImplicitly]
-    public sealed class StageActorFieldSession : ChildSession<StageActorFieldSession.SessionDta>,
+    public sealed class StageActorFieldSession : ChildSession<StageActorFieldSession.SessionData>,
         IStageActorField, IReadOnlyActorList
         // ,
 
         // IConnector<IStageActorProvider>
     {
-        public struct SessionDta : ISessionData
+        public struct SessionData : ISessionData
         {
-
+            public Owner? Owner { get; set; }
         }
         struct ActorPositionComparer : IComparer<IStageActor>
         {
@@ -96,6 +96,8 @@ namespace Vvr.Session
 
         public override string DisplayName => nameof(StageActorFieldSession);
 
+        Owner IStageActorField.Owner => Data.Owner ?? Owner;
+
         [ThreadSafe(ThreadSafeAttribute.SafeType.Semaphore)]
         public IStageActor this[int index]
         {
@@ -133,6 +135,7 @@ namespace Vvr.Session
         public void Add(IStageActor actor)
         {
             Assert.IsNotNull(actor);
+            Assert.IsTrue(actor.Owner.Owner == ((IStageActorField)this).Owner);
 
             using var wl = new SemaphoreSlimLock(m_Lock);
             wl.Wait(TimeSpan.FromSeconds(1));
@@ -204,6 +207,9 @@ namespace Vvr.Session
         [ThreadSafe(ThreadSafeAttribute.SafeType.Semaphore)]
         public void Insert(int index, IStageActor item)
         {
+            Assert.IsNotNull(item);
+            Assert.IsTrue(item.Owner.Owner == ((IStageActorField)this).Owner);
+
             using var wl = new SemaphoreSlimLock(m_Lock);
             wl.Wait(TimeSpan.FromSeconds(1));
 

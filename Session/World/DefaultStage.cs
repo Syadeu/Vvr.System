@@ -133,11 +133,17 @@ namespace Vvr.Session.World
         {
             await base.OnInitialize(session, data);
 
+            m_EnemyId = Owner.Issue;
+
             EvaluateSessionData(data);
 
             m_HandActors  = await CreateSessionOnBackground<StageActorFieldSession>(default);
             m_PlayerField = await CreateSessionOnBackground<StageActorFieldSession>(default);
-            m_EnemyField  = await CreateSessionOnBackground<StageActorFieldSession>(default);
+            m_EnemyField  = await CreateSessionOnBackground<StageActorFieldSession>(
+                new StageActorFieldSession.SessionData()
+                {
+                    Owner = m_EnemyId
+                });
 
             m_ActorTargetSession = await CreateSessionOnBackground<ActorTargetSession>(
                 new ActorTargetSession.SessionData(m_PlayerField, m_EnemyField));
@@ -148,8 +154,6 @@ namespace Vvr.Session.World
                 .Register<IEventConditionProvider>(this)
                 .Register<IStageInfoProvider>(this)
                 ;
-
-            m_EnemyId = Owner.Issue;
 
             Vvr.Provider.Provider.Static.Register<IStageActorTagInOutProvider>(this);
         }
@@ -310,6 +314,8 @@ namespace Vvr.Session.World
                     }
                 }
 
+                UniTask turnTask;
+
                 // Because field can be cleared by delayed skills while time controller.
                 if (m_PlayerField.Count > 0 && m_EnemyField.Count > 0 &&
                     !cancelTokenSource.IsCancellationRequested)
@@ -318,23 +324,19 @@ namespace Vvr.Session.World
                     await trigger.Execute(Model.Condition.OnActorTurn, null, cancelTokenSource.Token);
                     await UniTask.WaitForSeconds(1f, cancellationToken: cancelTokenSource.Token);
 
-                    await ExecuteTurn(CurrentEventActor, cancelTokenSource.Token);
-
-                    await trigger.Execute(Model.Condition.OnActorTurnEnd, null, cancelTokenSource.Token);
-
-                    // If currently is in parrying, wait for ends.
-                    // See TagIn method
-                    while (m_IsParrying &&
-                           !cancellationToken.IsCancellationRequested)
+                    turnTask = ExecuteTurn(CurrentEventActor, cancelTokenSource.Token);
+                    while (!m_InputControlProvider.HasControlStarted &&
+                           !cancelTokenSource.IsCancellationRequested)
                     {
                         await UniTask.Yield();
                     }
+                    await m_InputControlProvider.WaitForEndControl;
 
-                    // Tag out check
-                    await CheckFieldTagOut(m_PlayerField, cancelTokenSource.Token);
-                    await CheckFieldTagOut(m_EnemyField, cancelTokenSource.Token);
-
-                    CurrentEventActor = null;
+                    await trigger.Execute(Model.Condition.OnActorTurnEnd, null, cancelTokenSource.Token);
+                }
+                else
+                {
+                    turnTask = UniTask.CompletedTask;
                 }
 
                 if (isPlayerActor)
@@ -346,6 +348,22 @@ namespace Vvr.Session.World
                         if (cancelTokenSource.IsCancellationRequested) break;
                     }
                 }
+
+                await turnTask;
+
+                // If currently is in parrying, wait for ends.
+                // See TagIn method
+                while (m_IsParrying &&
+                       !cancellationToken.IsCancellationRequested)
+                {
+                    await UniTask.Yield();
+                }
+
+                // Tag out check
+                await CheckFieldTagOut(m_PlayerField, cancelTokenSource.Token);
+                await CheckFieldTagOut(m_EnemyField, cancelTokenSource.Token);
+
+                CurrentEventActor = null;
 
                 // TODO: Should controlled by GameConfig?
                 if (m_PlayerField.Count == 0)
@@ -484,21 +502,6 @@ namespace Vvr.Session.World
             "[Stage] control done".ToLog();
             // m_ResetEvent.TrySetResult();
         }
-
-        // private async UniTask OnActorAction(IEventTarget e, Model.Condition condition, string value)
-        // {
-        //     if (e is not IActor) return;
-        //
-        //     await CloseTimelineNodeViewAsync(ReserveToken);
-        //
-        //     await UniTask.WaitForSeconds(0.1f);
-        //
-        //     if (condition == Condition.OnTagIn ||
-        //         condition == Condition.OnTagOut)
-        //     {
-        //         await UpdateTimelineNodeViewAsync(ReserveToken);
-        //     }
-        // }
 
         private IEnumerable<IStageActor> GetCurrentPlayerActors()
         {

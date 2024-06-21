@@ -39,14 +39,16 @@ namespace Vvr.Session.World
             {
                 case StateCondition.Always: return true;
                 case StateCondition.IsActorTurn:
-                    if (m_Timeline[0].Owner == target) return true;
+                    if (m_Timeline[0].Owner == target &&
+                        !m_Timeline[0].IsTurnEnd) return true;
 
                     if (m_Timeline[0].Owner.Owner == target.Owner &&
-                        m_HandActors.Any<IStageActor>(x => ReferenceEquals(x.Owner, target)))
+                        m_HandActors.Any<IStageActor>(x => ReferenceEquals(x.Owner, target)) &&
+                        !m_Timeline[0].IsTurnEnd
+                        )
                     {
                         return true;
                     }
-
                     return false;
                 case StateCondition.IsInHand:
                     if (target.Owner == m_EnemyId) return false;
@@ -78,6 +80,7 @@ namespace Vvr.Session.World
 
                     // If already tagged
                     if (m_PlayerField.Count > 1) return false;
+
                     return true;
                 case StateCondition.CanParry:
                     var stageActor = m_StageActorProvider.Get((IActor)target);

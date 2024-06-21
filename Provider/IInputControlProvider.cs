@@ -28,6 +28,9 @@ namespace Vvr.Provider
     [LocalProvider]
     public interface IInputControlProvider : IProvider
     {
+        bool    HasControlStarted { get; }
+        UniTask WaitForEndControl { get; }
+
         [PublicAPI]
         bool    CanControl(IEventTarget      target);
         [PublicAPI]

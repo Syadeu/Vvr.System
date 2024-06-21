@@ -21,6 +21,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using UnityEngine;
@@ -64,7 +65,9 @@ namespace Vvr.Session
 
             private readonly IDynamicConditionObserver m_Observer;
 
-            private bool m_TagOutRequested,
+            private bool
+                m_IsTurnEnd,
+                m_TagOutRequested,
                 m_OverrideFront;
 
             private int m_TargetingPriority;
@@ -88,6 +91,15 @@ namespace Vvr.Session
                     if (Disposed)
                         throw new ObjectDisposedException(nameof(StageActor));
                     return m_Data;
+                }
+            }
+            public bool IsTurnEnd
+            {
+                get
+                {
+                    if (Disposed)
+                        throw new ObjectDisposedException(nameof(StageActor));
+                    return m_IsTurnEnd;
                 }
             }
 
@@ -163,7 +175,22 @@ namespace Vvr.Session
                 m_Data  = d;
 
                 m_Observer = observer;
+
+                m_Observer[Condition.OnActorTurn] += OnActorTurn;
+                m_Observer[Condition.OnActorTurnEnd] += OnActorTurnEnd;
             }
+
+            private UniTask OnActorTurn(IEventTarget owner, string value, CancellationToken cancellationtoken)
+            {
+                m_IsTurnEnd = false;
+                return UniTask.CompletedTask;
+            }
+            private UniTask OnActorTurnEnd(IEventTarget owner, string value, CancellationToken cancellationtoken)
+            {
+                m_IsTurnEnd = true;
+                return UniTask.CompletedTask;
+            }
+
             public void Dispose()
             {
                 m_Observer.Dispose();
@@ -414,7 +441,7 @@ namespace Vvr.Session
                         scope.Object.transform.SetParent(canvas.Object.transform, false);
 
                         Vector3 pos = view.position + new Vector3(25, 0);
-                        pos.y += UnityEngine.Random.Range(-25, 25);
+                        pos.y += UnityEngine.Random.Range(-10, 25);
 
                         scope.Object.transform.position = pos;
 

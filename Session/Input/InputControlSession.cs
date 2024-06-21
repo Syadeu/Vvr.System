@@ -17,21 +17,23 @@
 // File created : 2024, 05, 16 23:05
 #endregion
 
+using System;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using UnityEngine.Assertions;
 using Vvr.Provider;
 
 namespace Vvr.Session.Input
 {
-    public abstract class InputControlSession<TSessionData>
-        : ChildSession<TSessionData>,
+    public abstract class InputControlSession<TSessionData> : ChildSession<TSessionData>,
         IInputControlProvider
 
         where TSessionData : ISessionData
     {
         private IEventTarget m_InputOwner;
 
-        private CancellationTokenSource m_CancellationTokenSource;
+        private AutoResetUniTaskCompletionSource m_ControlStartSource;
+        private AutoResetUniTaskCompletionSource m_ControlCompletionSource;
 
         protected override UniTask OnInitialize(IParentSession session, TSessionData data)
         {
@@ -47,19 +49,36 @@ namespace Vvr.Session.Input
             return base.OnReserve();
         }
 
+        public bool    HasControlStarted { get; private set; }
+        public UniTask WaitForEndControl => m_ControlCompletionSource.Task;
+
         public abstract bool CanControl(IEventTarget target);
 
         async UniTask IInputControlProvider.TransferControl(IEventTarget target, CancellationToken cancellationToken)
         {
+            HasControlStarted = true;
             using var sts = CancellationTokenSource.CreateLinkedTokenSource(ReserveToken, cancellationToken);
+
+            m_ControlCompletionSource = AutoResetUniTaskCompletionSource.Create();
 
             await OnControl(target, sts.Token)
                 .AttachExternalCancellation(ReserveToken);
 
             if (sts.Token.IsCancellationRequested)
                 "Canceled input control".ToLog();
+
+            m_ControlCompletionSource = null;
+            HasControlStarted         = false;
         }
 
         protected abstract UniTask OnControl(IEventTarget target, CancellationToken cancellationToken);
+
+        protected void CompleteControl()
+        {
+            Assert.IsNotNull(m_ControlCompletionSource);
+
+            if (!m_ControlCompletionSource.TrySetResult())
+                throw new InvalidOperationException();
+        }
     }
 }

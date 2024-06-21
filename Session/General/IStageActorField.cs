@@ -21,6 +21,7 @@
 
 using System.Collections.Generic;
 using JetBrains.Annotations;
+using Vvr.Provider;
 using Vvr.Session.Actor;
 
 namespace Vvr.Session
@@ -28,6 +29,8 @@ namespace Vvr.Session
     [PublicAPI]
     public interface IStageActorField : IList<IStageActor>
     {
+        Owner Owner { get; }
+
         void CopyTo(IStageActor[]                   array);
         void CopyToWithTargetPriority(IStageActor[] array);
 

@@ -34,6 +34,8 @@ namespace Vvr.Session.Actor
         IActor     Owner           { get; }
         IActorData Data            { get; }
 
+        bool IsTurnEnd { get; }
+
         bool TagOutRequested   { get; set; }
         bool OverrideFront     { get; set; }
         int  TargetingPriority { get; set; }

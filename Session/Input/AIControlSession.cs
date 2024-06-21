@@ -46,6 +46,8 @@ namespace Vvr.Session.Input
 
         protected override async UniTask OnControl(IEventTarget  target, CancellationToken cancellationToken)
         {
+            CompleteControl();
+
             IActor actor     = (IActor)target;
             var    actorData = ActorDataProvider.Resolve(actor.Id);
 

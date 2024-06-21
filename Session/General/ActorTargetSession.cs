@@ -20,8 +20,8 @@
 #endregion
 
 using System;
-using System.Buffers;
 using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using UnityEngine.Assertions;
 using Vvr.Controller.Actor;
@@ -45,6 +45,7 @@ namespace Vvr.Session
             {
                 Assert.IsNotNull(u);
                 Assert.IsNotNull(e);
+                Assert.AreNotEqual(u, e);
 
                 UserField  = u;
                 EnemyField = e;
@@ -53,22 +54,9 @@ namespace Vvr.Session
 
         public override string DisplayName => nameof(ActorTargetSession);
 
-        [NotNull]
-        private IStageActorField GetAllyField([NotNull] IActor actor)
-        {
-            var field = actor.Owner == Owner ? Data.UserField : Data.EnemyField;
-            return field;
-        }
-        [NotNull]
-        private IStageActorField GetEnemyField([NotNull] IActor actor)
-        {
-            var field = actor.Owner == Owner ? Data.EnemyField : Data.UserField;
-            return field;
-        }
-
         public IEnumerable<IActor> FindTargets(IActor from, ITargetDefinition target)
         {
-              if (target.Target                            == 0 ||
+            if (target.Target                            == 0 ||
                 (target.Target & SkillSheet.Target.Self) == SkillSheet.Target.Self)
             {
                 Assert.IsFalse(from.Disposed);
@@ -80,10 +68,10 @@ namespace Vvr.Session
             if ((target.Target & SkillSheet.Target.Ally) == SkillSheet.Target.Ally)
             {
                 "target is ally".ToLog();
-                var field = GetAllyField(from);
+                var field = Data.UserField.Owner == from.Owner ? Data.UserField : Data.EnemyField;
                 int count = field.Count;
 
-                using var cachedArray = TempArray<IStageActor>.Shared(count);
+                using var cachedArray = TempArray<IStageActor>.Shared(count, true);
                 field.CopyToWithTargetPriority(cachedArray.Value);
 
                 SkillSheet.Position targetPosition = target.Position;
@@ -97,6 +85,8 @@ namespace Vvr.Session
                 foreach (var actor in GetTargets(cachedArray.Value, count, field, targetPosition))
                 {
                     targetFound = true;
+
+                    Assert.IsTrue(actor.Owner.Owner == from.Owner);
                     yield return actor.Owner;
                 }
 
@@ -112,11 +102,11 @@ namespace Vvr.Session
 
             if ((target.Target & SkillSheet.Target.Enemy) == SkillSheet.Target.Enemy)
             {
-                "target is enemy".ToLog();
-                var field = GetEnemyField(from);
+                $"target is enemy isplayer: {from.ConditionResolver[Condition.IsPlayerActor](null)}".ToLog();
+                var field = Data.UserField.Owner == from.Owner ? Data.EnemyField : Data.UserField;
                 int count = field.Count;
 
-                using var cachedArray = TempArray<IStageActor>.Shared(count);
+                using var cachedArray = TempArray<IStageActor>.Shared(count, true);
                 field.CopyToWithTargetPriority(cachedArray.Value);
 
                 SkillSheet.Position targetPosition = target.Position;
@@ -130,6 +120,9 @@ namespace Vvr.Session
                 foreach (var actor in GetTargets(cachedArray.Value, count, field, targetPosition))
                 {
                     targetFound = true;
+
+                    Assert.IsTrue(actor.Owner.Owner != from.Owner,
+                        $"{Data.UserField.Owner} :: {Data.EnemyField.Owner} = {from.Owner} ? {field.Owner}");
                     yield return actor.Owner;
                 }
 
