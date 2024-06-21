@@ -42,8 +42,9 @@ namespace Vvr.Session.Actor
 
         // ActorState State { get; set; }
 
-        bool TagOutRequested { get; set; }
-        bool OverrideFront   { get; set; }
+        bool TagOutRequested   { get; set; }
+        bool OverrideFront     { get; set; }
+        int  TargetingPriority { get; set; }
 
         bool Disposed { get; }
     }

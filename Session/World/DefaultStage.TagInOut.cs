@@ -37,11 +37,15 @@ namespace Vvr.Session.World
     partial class DefaultStage : IStageActorTagInOutProvider,
         IConnector<IGameTimeProvider>
     {
+        const float PARRY_TIME = 3;
+
         private bool          m_CanParry, m_IsParrying;
         private RealtimeTimer m_EnemySkillStartedTime;
         private IActor  m_ParryEnemyTarget;
 
         private IGameTimeProvider m_GameTimeProvider;
+
+        private CancellationTokenSource          m_ParryCancelSource;
 
         private async UniTask ParryEnemyActionScope(IEventTarget e, Condition condition, string value)
         {
@@ -62,17 +66,39 @@ namespace Vvr.Session.World
                     m_CanParry              = true;
                     m_EnemySkillStartedTime = RealtimeTimer.Start();
                     m_ParryEnemyTarget      = (IActor)e;
-                    m_GameTimeProvider.SetTimeScale(0.25f, 3);
+
+                    m_ParryCancelSource  = new();
 
                     "Set parry".ToLog();
+                    await ParryDuration(m_ParryCancelSource.Token);
+
+                    m_ParryCancelSource.Dispose();
+                    m_ParryCancelSource = null;
+                    "cancel".ToLog();
                 }
             }
             else if (condition is Condition.OnSkillEnd or Condition.OnSkillCasting)
             {
                 m_CanParry         = false;
                 m_ParryEnemyTarget = null;
-                m_GameTimeProvider.Cancel();
+
+                // m_GameTimeProvider.SetTimeScale(1);
+                // m_ParryCancelSource.Dispose();
             }
+        }
+
+        private async UniTask ParryDuration(CancellationToken cancellationToken)
+        {
+            m_GameTimeProvider.SetTimeScale(0.25f);
+
+            Timer timer = Timer.Start();
+            while (!timer.IsExceeded(PARRY_TIME) &&
+                   !cancellationToken.IsCancellationRequested)
+            {
+                await UniTask.Yield();
+            }
+
+            m_GameTimeProvider.SetTimeScale(1);
         }
 
         private static bool IsInterruptibleSkill(ISkillData skillData)
@@ -134,24 +160,10 @@ namespace Vvr.Session.World
 
                 m_IsParrying              = true;
                 targetActor.OverrideFront = true;
+                targetActor.TargetingPriority++;
             }
 
-            m_HandActors.RemoveAt(index);
-            if (m_PlayerField.Count > 0)
-            {
-                IStageActor currentFieldRuntimeActor = m_PlayerField[0];
-                currentFieldRuntimeActor.TagOutRequested = true;
-
-                JoinAfter(currentFieldRuntimeActor, m_PlayerField, targetActor);
-
-                m_TimelineQueueProvider.SetEnable(currentFieldRuntimeActor, false);
-                RemoveFromTimeline(currentFieldRuntimeActor, m_IsParrying ? 0 : 1);
-            }
-            else
-            {
-                Join(m_PlayerField, targetActor);
-            }
-
+            IStageActor currentFieldRuntimeActor;
             using (var trigger = ConditionTrigger.Push(targetActor.Owner, ConditionTrigger.Game))
             {
                 await trigger.Execute(Model.Condition.OnTagIn, targetActor.Owner.Id, cancellationToken);
@@ -161,29 +173,54 @@ namespace Vvr.Session.World
 
                 // View resolve requires ConditionTrigger scope.
                 // Because of view uses Condition for resolving their position (front or back)
+
+                m_HandActors.RemoveAt(index);
+                if (m_PlayerField.Count > 0)
+                {
+                    currentFieldRuntimeActor = m_PlayerField[0];
+                    currentFieldRuntimeActor.TagOutRequested = true;
+
+                    JoinAfter(currentFieldRuntimeActor, m_PlayerField, targetActor);
+
+                    m_TimelineQueueProvider.SetEnable(currentFieldRuntimeActor, false);
+                    RemoveFromTimeline(currentFieldRuntimeActor, m_IsParrying ? 0 : 1);
+                }
+                else
+                {
+                    currentFieldRuntimeActor = null;
+
+                    Join(m_PlayerField, targetActor);
+                }
+
                 foreach (var userActor in m_PlayerField)
                 {
                     await m_ViewProvider.ResolveAsync(userActor.Owner)
                         .AttachExternalCancellation(cancellationToken);
                 }
-                // await m_ViewProvider.ResolveAsync(targetActor.Owner)
-                //     .AttachExternalCancellation(cancellationToken);
+
                 // TODO: show parrying text
 
                 if (m_IsParrying)
-                    m_GameTimeProvider.Cancel();
+                {
+                    // m_GameTimeProvider.Cancel();
+                    m_ParryCancelSource?.Cancel();
+                }
             }
 
             // This block requires for blocking turn table sequence
             // by m_IsParrying variable.
             if (m_IsParrying)
             {
+                Assert.IsNotNull(currentFieldRuntimeActor);
+
                 using var enemyOb = m_ParryEnemyTarget.ConditionResolver.CreateObserver();
                 await enemyOb.WaitForCondition(Condition.OnSkillEnd, cancellationToken);
 
                 // After parrying, previous field actor should be tagged out.
                 // normally, parrying will execute when is not user turn.
-                await TagOut(m_PlayerField[0], cancellationToken);
+                await TagOut(currentFieldRuntimeActor, cancellationToken);
+
+                targetActor.TargetingPriority--;
             }
 
             UpdateTimeline();

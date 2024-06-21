@@ -443,7 +443,7 @@ namespace Vvr.Session.World
 
         private async UniTask ExecuteTurn(IStageActor runtimeActor, CancellationToken cancellationToken)
         {
-            using var triggerEvent = ConditionTrigger.Scope(OnActorAction, nameof(OnActorAction));
+            // using var triggerEvent = ConditionTrigger.Scope(OnActorAction, nameof(OnActorAction));
 
             if (m_InputControlProvider == null)
             {
@@ -482,20 +482,20 @@ namespace Vvr.Session.World
             // m_ResetEvent.TrySetResult();
         }
 
-        private async UniTask OnActorAction(IEventTarget e, Model.Condition condition, string value)
-        {
-            if (e is not IActor) return;
-
-            await CloseTimelineNodeViewAsync(ReserveToken);
-
-            await UniTask.WaitForSeconds(0.1f);
-
-            if (condition == Condition.OnTagIn ||
-                condition == Condition.OnTagOut)
-            {
-                await UpdateTimelineNodeViewAsync(ReserveToken);
-            }
-        }
+        // private async UniTask OnActorAction(IEventTarget e, Model.Condition condition, string value)
+        // {
+        //     if (e is not IActor) return;
+        //
+        //     await CloseTimelineNodeViewAsync(ReserveToken);
+        //
+        //     await UniTask.WaitForSeconds(0.1f);
+        //
+        //     if (condition == Condition.OnTagIn ||
+        //         condition == Condition.OnTagOut)
+        //     {
+        //         await UpdateTimelineNodeViewAsync(ReserveToken);
+        //     }
+        // }
 
         private IEnumerable<IStageActor> GetCurrentPlayerActors()
         {

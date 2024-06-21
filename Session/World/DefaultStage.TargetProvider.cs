@@ -84,18 +84,19 @@ namespace Vvr.Session.World
                 "target is enemy".ToLog();
                 var field = m_EnemyId != from.Owner ? m_EnemyField : m_PlayerField;
                 int count       = field.Count;
-                var cachedArray = ArrayPool<IStageActor>.Shared.Rent(count);
-                field.CopyTo(cachedArray);
+
+                using var cachedArray = TempArray<IStageActor>.Shared(count);
+                field.CopyToWithTargetPriority(cachedArray.Value);
 
                 SkillSheet.Position targetPosition = target.Position;
                 if (targetPosition == SkillSheet.Position.Random)
                 {
                     var rnd = Unity.Mathematics.Random.CreateFromIndex(FNV1a32.Calculate(Guid.NewGuid()));
-                    cachedArray.Shuffle(ref rnd, count);
+                    cachedArray.Value.Shuffle(ref rnd, count);
                 }
 
                 bool targetFound = false;
-                foreach (var actor in GetTargets(cachedArray, count, field, targetPosition))
+                foreach (var actor in GetTargets(cachedArray.Value, count, field, targetPosition))
                 {
                     targetFound = true;
                     yield return actor.Owner;
@@ -106,11 +107,9 @@ namespace Vvr.Session.World
                 {
                     for (int i = 0; i < count; i++)
                     {
-                        yield return cachedArray[i].Owner;
+                        yield return cachedArray.Value[i].Owner;
                     }
                 }
-
-                ArrayPool<IStageActor>.Shared.Return(cachedArray, true);
             }
         }
 

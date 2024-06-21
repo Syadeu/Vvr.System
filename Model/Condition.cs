@@ -54,6 +54,7 @@ namespace Vvr.Model
         OnAbnormalRemoved,
         OnAbnormalUpdate,
 
+        OnTargeted,
         OnParrying,
         // EventCondition
 
@@ -227,6 +228,9 @@ namespace Vvr.Model
         OnAbnormalAdded = Condition.OnAbnormalAdded,
         OnAbnormalRemoved = Condition.OnAbnormalRemoved,
         OnAbnormalUpdate = Condition.OnAbnormalUpdate,
+
+        OnTargeted = Condition.OnTargeted,
+        OnParrying = Condition.OnParrying,
     }
 
     public enum AbnormalCondition : short

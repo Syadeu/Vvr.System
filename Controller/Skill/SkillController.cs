@@ -204,6 +204,11 @@ namespace Vvr.Controller.Skill
             }
 
             var value = new Value(skillRow, specifiedTarget);
+            if (specifiedTarget is not null)
+            {
+                using var targetTrigger = ConditionTrigger.Push(specifiedTarget, ConditionTrigger.Skill);
+                await targetTrigger.Execute(Model.Condition.OnTargeted, data.Id, CancellationToken);
+            }
 
             using var trigger = ConditionTrigger.Push(Owner, ConditionTrigger.Skill);
             await ExecuteSkillAsync(trigger, value)
@@ -220,27 +225,27 @@ namespace Vvr.Controller.Skill
                 $"[Skill:{Owner.DisplayName}:{Owner.GetInstanceID()}] Skill({value.skill.Id}) is in cooltime {cooltime}"
                     .ToLog();
 
-                await trigger.Execute(Model.Condition.OnSkillCooltime, $"{cooltime}")
-                    .AttachExternalCancellation(CancellationToken);
+                await trigger.Execute(Model.Condition.OnSkillCooltime, $"{cooltime}", CancellationToken);
                 return;
             }
 
             $"[Skill:{Owner.DisplayName}:{Owner.GetInstanceID()}] Skill start {value.skill.Id}".ToLog();
 
-            await trigger.Execute(Model.Condition.OnSkillStart, value.skill.Id)
-                    .AttachExternalCancellation(CancellationToken)
-                ;
+            // await trigger.Execute(Model.Condition.OnSkillStart, value.skill.Id, CancellationToken);
             if (CancellationToken.IsCancellationRequested)
                 return;
+
+            UniTask skillEffectTask = UniTask.CompletedTask;
 
             #region Warmup
 
             var viewTarget       = await m_ViewProvider.ResolveAsync(Owner);
             var skillEventHandle = viewTarget.GetComponent<ISkillEventHandler>();
-            if (skillEventHandle != null)
+            if (skillEventHandle is not null &&
+                value.skill.SelfEffectAssetKey is not null)
             {
                 SkillEffectEmitter emitter = new SkillEffectEmitter(value.skill.SelfEffectAssetKey, null);
-                await skillEventHandle
+                skillEffectTask = skillEventHandle
                     .OnSkillStart(value.skill, emitter)
                     .AttachExternalCancellation(CancellationToken)
                     .TimeoutWithoutException(TimeSpan.FromSeconds(5))
@@ -250,22 +255,26 @@ namespace Vvr.Controller.Skill
             {
                 Transform view = await m_ViewProvider.ResolveAsync(Owner);
 
-                var effectPool = GameObjectPool.GetWithRawKey(value.skill.SelfEffectAssetKey);
-                var effect = await effectPool
+                var             effectPool = GameObjectPool.GetWithRawKey(value.skill.SelfEffectAssetKey);
+                skillEffectTask = effectPool
                     .SpawnEffect(view.position, Quaternion.identity)
                     .AttachExternalCancellation(CancellationToken)
                     ;
-                while (!effect.Reserved &&
-                       !CancellationToken.IsCancellationRequested)
-                {
-                    await UniTask.Yield();
-                }
+                // while (!effect.Reserved &&
+                //        !CancellationToken.IsCancellationRequested)
+                // {
+                //     await UniTask.Yield();
+                // }
             }
 
+            #endregion
+
+            await UniTask.WhenAll(
+                skillEffectTask,
+                trigger.Execute(Model.Condition.OnSkillStart, value.skill.Id, CancellationToken)
+            );
             if (CancellationToken.IsCancellationRequested)
                 return;
-
-            #endregion
 
             // Check value can be executed immediately
             if (value.delayedExecutionTime > 0)
@@ -300,10 +309,14 @@ namespace Vvr.Controller.Skill
             Assert.IsTrue(Owner.ConditionResolver[Model.Condition.IsActorTurn](null));
 
             bool executed = false;
-            if (value.overrideTarget != null)
+            if (value.overrideTarget is not null)
             {
                 if (!value.overrideTarget.Disposed)
                 {
+                    using var targetTrigger = ConditionTrigger.Push(value.overrideTarget, ConditionTrigger.Skill);
+                    await targetTrigger.Execute(Model.Condition.OnTargeted, value.skill.Id, CancellationToken);
+                    // await UniTask.WaitForSeconds(2);
+
                     executed = true;
                     await ExecuteSkillTarget(trigger, value, value.overrideTarget)
                             .AttachExternalCancellation(CancellationToken)
@@ -317,6 +330,10 @@ namespace Vvr.Controller.Skill
                 {
                     // If target count exceed its capability
                     if (value.skill.TargetCount <= count++) break;
+
+                    using var targetTrigger = ConditionTrigger.Push(target, ConditionTrigger.Skill);
+                    await targetTrigger.Execute(Model.Condition.OnTargeted, value.skill.Id, CancellationToken);
+                    // await UniTask.WaitForSeconds(2);
 
                     await ExecuteSkillTarget(trigger, value, target)
                             .AttachExternalCancellation(CancellationToken)

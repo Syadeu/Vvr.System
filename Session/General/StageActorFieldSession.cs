@@ -47,8 +47,8 @@ namespace Vvr.Session
         }
         struct ActorPositionComparer : IComparer<IStageActor>
         {
-            public static readonly Func<IStageActor, IStageActor> Selector = x => x;
-            public static readonly IComparer<IStageActor>         Static   = default(ActorPositionComparer);
+            // public static readonly Func<IStageActor, IStageActor> Selector = x => x;
+            public static readonly IComparer<IStageActor> Static = default(ActorPositionComparer);
 
             public int Compare(IStageActor x, IStageActor y)
             {
@@ -59,6 +59,36 @@ namespace Vvr.Session
                 short xx = (short)x.Data.Type,
                     yy   = (short)y.Data.Type;
 
+                // if (xx == yy)
+                // {
+                //     return x.TargetingPriority.CompareTo(y.TargetingPriority);
+                // }
+                if (xx < yy) return 1;
+                return xx > yy ? -1 : 0;
+            }
+        }
+        struct TargetingPriorityComparer : IComparer<IStageActor>
+        {
+            // public static readonly Func<IStageActor, IStageActor> Selector = x => x;
+            public static readonly IComparer<IStageActor> Static = default(TargetingPriorityComparer);
+
+            public int Compare(IStageActor x, IStageActor y)
+            {
+                if (x == null && y == null) return 0;
+                if (x == null) return 1;
+                if (y == null) return -1;
+
+                short xx = (short)x.Data.Type,
+                    yy   = (short)y.Data.Type;
+
+                if (xx == yy)
+                {
+                    if (x.TargetingPriority < y.TargetingPriority)
+                        return 1;
+                    if (x.TargetingPriority > y.TargetingPriority)
+                        return -1;
+                    return 0;
+                }
                 if (xx < yy) return 1;
                 return xx > yy ? -1 : 0;
             }
@@ -225,6 +255,19 @@ namespace Vvr.Session
             {
                 array[i] = m_Actors[i];
             }
+        }
+
+        [ThreadSafe(ThreadSafeAttribute.SafeType.Semaphore)]
+        public void CopyToWithTargetPriority(IStageActor[] array)
+        {
+            using var wl = new SemaphoreSlimLock(m_Lock);
+            wl.Wait(TimeSpan.FromSeconds(1));
+
+            for (int i = 0; i < m_Actors.Count; i++)
+            {
+                array[i] = m_Actors[i];
+            }
+            Array.Sort(array, TargetingPriorityComparer.Static);
         }
 
         [ThreadSafe(ThreadSafeAttribute.SafeType.Semaphore)]

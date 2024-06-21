@@ -48,8 +48,10 @@ namespace Vvr.Session
             private readonly IActor     m_Owner;
             private readonly IActorData m_Data;
 
-            private          bool       m_TagOutRequested,
+            private bool m_TagOutRequested,
                 m_OverrideFront;
+
+            private int m_TargetingPriority;
 
             public IActor Owner
             {
@@ -100,6 +102,22 @@ namespace Vvr.Session
                     if (Disposed)
                         throw new ObjectDisposedException(nameof(StageActor));
                     m_OverrideFront = value;
+                }
+            }
+
+            public int TargetingPriority
+            {
+                get
+                {
+                    if (Disposed)
+                        throw new ObjectDisposedException(nameof(StageActor));
+                    return m_TargetingPriority;
+                }
+                set
+                {
+                    if (Disposed)
+                        throw new ObjectDisposedException(nameof(StageActor));
+                    m_TargetingPriority = value;
                 }
             }
 
