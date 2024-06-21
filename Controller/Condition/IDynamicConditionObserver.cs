@@ -21,7 +21,6 @@
 
 using System;
 using System.Buffers;
-using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
@@ -60,6 +59,7 @@ namespace Vvr.Controller.Condition
 
         private int m_Disposed;
 
+        [ThreadSafe(ThreadSafeAttribute.SafeType.Semaphore)]
         public ConditionObserverDelegate this[Model.Condition t]
         {
             get

@@ -15,23 +15,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// File created : 2024, 05, 17 23:05
+// File created : 2024, 06, 21 20:06
 
 #endregion
 
+using System.Threading;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using UnityEngine;
-using Vvr.Model;
 using Vvr.Provider;
 
-namespace Vvr.Controller.Skill
+namespace Vvr.Session.EventView.Core
 {
-    public interface ISkillEventHandler
+    [PublicAPI, LocalProvider]
+    public interface IGameObjectPoolViewProvider : IProvider
     {
-        UniTask OnSkillStart(ISkillData         skill, EffectEmitter effectEmitter);
-        UniTask OnSkillCasting(ISkillData       skill, EffectEmitter effectEmitter);
-        UniTask OnSkillEnd([NotNull] ISkillData skill, Transform     target, EffectEmitter effectEmitter);
-        UniTask OnSkillCanceled(ISkillData      skill);
+        UniTask<GameObjectPoolScope> Scope([NotNull] object key, CancellationToken cancellationToken);
+
+        UniTask<GameObject> CreateInstanceAsync([NotNull] object key, CancellationToken cancellationToken);
+
+        void ReserveInstance([NotNull] GameObject obj);
     }
 }

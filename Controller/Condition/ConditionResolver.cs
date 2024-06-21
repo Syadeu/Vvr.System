@@ -96,6 +96,7 @@ namespace Vvr.Controller.Condition
         private readonly SemaphoreSlim m_WriteLock = new(1, 1);
 
         public ConditionQuery Filter => m_Filter;
+
         [ThreadSafe(ThreadSafeAttribute.SafeType.Semaphore)]
         public ConditionDelegate this[Model.Condition t]
         {

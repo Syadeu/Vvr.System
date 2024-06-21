@@ -35,7 +35,7 @@ namespace Vvr.Controller
     /// <summary>
     /// Represents a pool of GameObject instances that can be spawned and reserved.
     /// </summary>
-    [Obsolete]
+    [Obsolete("Use EffectViewSession or GameObjectPoolViewSession", true)]
     internal sealed class GameObjectPool : MonoBehaviour
     {
         [DisallowMultipleComponent]
@@ -280,6 +280,7 @@ namespace Vvr.Controller
         }
     }
 
+    [Obsolete("Use EffectViewSession or GameObjectPoolViewSession", true)]
     public interface IEffectObject
     {
         bool Reserved { get; }

@@ -1,5 +1,5 @@
 {
-  "name": "Vvr.Session.EventView",
+  "name": "Vvr.Session.EventView.GameObjectPoolView",
   "references": [
     "Vvr",
     "GUID:3957eefabf624d2485d569ea058bfc85",
@@ -7,19 +7,13 @@
     "GUID:0bebf4b98a2c47cd93c8f4c2f5f17d2a",
     "GUID:ca7a9d7f2d304e6d8e77b3a8931dc117",
     "GUID:9d961b8c2f6843b8be5b4b8df3da8cb2",
-    "GUID:ad6aa7391a684b84b557bc2ae3f7a6f5",
-    "GUID:1e36ab3b0d154fb2825cb73ccfa75fdb",
 
     "Unity.Mathematics",
     "Unity.Collections",
     "Unity.Addressables",
     "Unity.ResourceManager",
-    "Unity.TextMeshPro",
 
     "UniTask",
-    "UniTask.Addressables",
-
-    "BakingSheet",
-    "BakingSheet.ScriptableObject"
+    "UniTask.Addressables"
   ]
 }

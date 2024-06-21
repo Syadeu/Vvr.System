@@ -34,10 +34,10 @@ using Vvr.Session.Provider;
 namespace Vvr.Session
 {
     [UsedImplicitly]
-    // [ParentSession(typeof(DefaultFloor), true)]
     public sealed class StageActorFactorySession : ChildSession<StageActorFactorySession.SessionData>,
         IStageActorProvider,
-        IConnector<IResearchDataProvider>
+        IConnector<IResearchDataProvider>,
+        IConnector<IEffectViewProvider>
     {
         public struct SessionData : ISessionData
         {
@@ -194,6 +194,15 @@ namespace Vvr.Session
             {
                 Owner.Skill.Disconnect(t);
             }
+
+            void IConnector<IEffectViewProvider>.Connect(IEffectViewProvider t)
+            {
+                Owner.Skill.Connect(t);
+            }
+            void IConnector<IEffectViewProvider>.Disconnect(IEffectViewProvider t)
+            {
+                Owner.Skill.Disconnect(t);
+            }
         }
         private struct ActorComparer : IComparer<StageActor>, IComparer<IActor>
         {
@@ -271,7 +280,9 @@ namespace Vvr.Session
                 .Connect<IActorViewProvider>(result)
                 .Connect<IActorDataProvider>(result)
                 .Connect<IEventConditionProvider>(result)
-                .Connect<IStateConditionProvider>(result);
+                .Connect<IStateConditionProvider>(result)
+                .Connect<IEffectViewProvider>(result)
+                ;
 
             item.ConnectTime();
 
@@ -326,7 +337,9 @@ namespace Vvr.Session
                 .Disconnect<IActorViewProvider>(item)
                 .Disconnect<IActorDataProvider>(item)
                 .Disconnect<IEventConditionProvider>(item)
-                .Disconnect<IStateConditionProvider>(item);
+                .Disconnect<IStateConditionProvider>(item)
+                .Disconnect<IEffectViewProvider>(item)
+                ;
 
             item.Owner.DisconnectTime();
             item.Owner.Skill.Clear();
@@ -336,5 +349,13 @@ namespace Vvr.Session
 
         void IConnector<IResearchDataProvider>.Connect(IResearchDataProvider    t) => m_ResearchDataProvider = t;
         void IConnector<IResearchDataProvider>.Disconnect(IResearchDataProvider t) => m_ResearchDataProvider = null;
+
+        void IConnector<IEffectViewProvider>.Connect(IEffectViewProvider t)
+        {
+
+        }
+        void IConnector<IEffectViewProvider>.Disconnect(IEffectViewProvider t)
+        {
+        }
     }
 }

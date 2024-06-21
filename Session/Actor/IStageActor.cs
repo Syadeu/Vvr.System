@@ -35,12 +35,12 @@ namespace Vvr.Session.Actor
         IConnector<ITargetProvider>,
         IConnector<IActorDataProvider>,
         IConnector<IEventConditionProvider>,
-        IConnector<IStateConditionProvider>
+        IConnector<IStateConditionProvider>,
+
+        IConnector<IEffectViewProvider>
     {
         IActor     Owner           { get; }
         IActorData Data            { get; }
-
-        // ActorState State { get; set; }
 
         bool TagOutRequested   { get; set; }
         bool OverrideFront     { get; set; }
@@ -48,14 +48,4 @@ namespace Vvr.Session.Actor
 
         bool Disposed { get; }
     }
-
-    // [Flags]
-    // [PublicAPI]
-    // public enum ActorState
-    // {
-    //     None = 0,
-    //
-    //     CanTag   = 0b0001,
-    //     CanParry = 0b0010
-    // }
 }

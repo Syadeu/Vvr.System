@@ -20,10 +20,10 @@
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using NUnit.Framework;
-using UnityEngine;
 using Vvr.Provider;
 using Vvr.Session.EventView.ActorView;
 using Vvr.Session.EventView.Core;
+using Vvr.Session.EventView.EffectView;
 
 namespace Vvr.Session.EventView
 {
@@ -47,10 +47,15 @@ namespace Vvr.Session.EventView
             Vvr.Provider.Provider.Static.Connect<IViewRegistryProvider>(this);
 
             await CreateSession<ActorViewSession>(default);
+            var effectView = await CreateSessionOnBackground<EffectViewSession>(default);
+
+            Parent.Register<IEffectViewProvider>(effectView);
         }
 
         protected override UniTask OnReserve()
         {
+            Parent.Unregister<IEffectViewProvider>();
+
             Vvr.Provider.Provider.Static.Disconnect<IViewRegistryProvider>(this);
             return base.OnReserve();
         }

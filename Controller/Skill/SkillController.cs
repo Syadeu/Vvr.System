@@ -21,16 +21,12 @@
 
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Threading;
-using Cathei.BakingSheet;
 using Cysharp.Threading.Tasks;
 using Cysharp.Threading.Tasks.Linq;
-using JetBrains.Annotations;
 using UnityEngine;
 using UnityEngine.Assertions;
-using Vvr.Buffer;
 using Vvr.Controller.Actor;
 using Vvr.Controller.Condition;
 using Vvr.Controller.Provider;
@@ -80,9 +76,10 @@ namespace Vvr.Controller.Skill
             }
         }
 
-        private IActorViewProvider m_ViewProvider;
-        private IActorDataProvider m_DataProvider;
-        private ITargetProvider    m_TargetProvider;
+        private IActorViewProvider  m_ViewProvider;
+        private IActorDataProvider  m_DataProvider;
+        private IEffectViewProvider m_EffectViewProvider;
+        private ITargetProvider     m_TargetProvider;
 
         private readonly List<Value> m_Values = new(2);
 
@@ -244,7 +241,7 @@ namespace Vvr.Controller.Skill
             if (skillEventHandle is not null &&
                 value.skill.SelfEffectAssetKey is not null)
             {
-                SkillEffectEmitter emitter = new SkillEffectEmitter(value.skill.SelfEffectAssetKey, null);
+                EffectEmitter emitter = new EffectEmitter(m_EffectViewProvider, value.skill.SelfEffectAssetKey);
                 skillEffectTask = skillEventHandle
                     .OnSkillStart(value.skill, emitter)
                     .AttachExternalCancellation(CancellationToken)
@@ -255,16 +252,17 @@ namespace Vvr.Controller.Skill
             {
                 Transform view = await m_ViewProvider.ResolveAsync(Owner);
 
-                var             effectPool = GameObjectPool.GetWithRawKey(value.skill.SelfEffectAssetKey);
-                skillEffectTask = effectPool
-                    .SpawnEffect(view.position, Quaternion.identity)
-                    .AttachExternalCancellation(CancellationToken)
-                    ;
-                // while (!effect.Reserved &&
-                //        !CancellationToken.IsCancellationRequested)
-                // {
-                //     await UniTask.Yield();
-                // }
+                // var             effectPool = GameObjectPool.GetWithRawKey(value.skill.SelfEffectAssetKey);
+                // skillEffectTask = effectPool
+                //     .SpawnEffect(view.position, Quaternion.identity)
+                //     .AttachExternalCancellation(CancellationToken)
+                //     ;
+
+                skillEffectTask
+                    = m_EffectViewProvider.SpawnAsync(
+                        value.skill.SelfEffectAssetKey,
+                        view.position, Quaternion.identity, null,
+                        CancellationToken);
             }
 
             #endregion
@@ -286,13 +284,21 @@ namespace Vvr.Controller.Skill
             if (skillEventHandle != null &&
                 value.skill.CastingEffectAssetKey is not null)
             {
-                SkillEffectEmitter emitter = new SkillEffectEmitter(value.skill.CastingEffectAssetKey, null);
+                EffectEmitter emitter = new EffectEmitter(m_EffectViewProvider, value.skill.CastingEffectAssetKey);
                 await skillEventHandle
-                        .OnSkillCasting(value.skill, emitter)
+                        .OnSkillStart(value.skill, emitter)
                         .SuppressCancellationThrow()
                         .AttachExternalCancellation(CancellationToken)
                         .TimeoutWithoutException(TimeSpan.FromSeconds(5))
                     ;
+
+                // SkillEffectEmitter emitter = new SkillEffectEmitter(value.skill.CastingEffectAssetKey, null);
+                // await skillEventHandle
+                //         .OnSkillCasting(value.skill, emitter)
+                //         .SuppressCancellationThrow()
+                //         .AttachExternalCancellation(CancellationToken)
+                //         .TimeoutWithoutException(TimeSpan.FromSeconds(5))
+                //     ;
 
                 if (CancellationToken.IsCancellationRequested)
                     return;
@@ -375,8 +381,35 @@ namespace Vvr.Controller.Skill
             var skillEventHandle = view.GetComponent<ISkillEventHandler>();
             if (skillEventHandle != null)
             {
-                SkillEffectEmitter emitter = null;
+                // SkillEffectEmitter emitter = null;
+                //
+                // if (value.skill.TargetEffectAssetKey is not null)
+                // {
+                //     // If method is damage, should shake camera
+                //     if (value.skill.Method == SkillSheet.Method.Damage)
+                //     {
+                //         ICameraShakeProvider camPrv = await Vvr.Provider.Provider.Static.GetAsync<ICameraShakeProvider>()
+                //                 .AttachExternalCancellation(CancellationToken)
+                //             ;
+                //
+                //         emitter = new SkillEffectEmitter(
+                //             value.skill.TargetEffectAssetKey,
+                //             () => camPrv.Shake().Forget());
+                //     }
+                //     else emitter = new SkillEffectEmitter(value.skill.TargetEffectAssetKey, null);
+                // }
+                //
+                // await skillEventHandle
+                //         .OnSkillEnd(value.skill, targetView, emitter)
+                //         .SuppressCancellationThrow()
+                //         .AttachExternalCancellation(CancellationToken)
+                //         .TimeoutWithoutException(TimeSpan.FromSeconds(5))
+                //     ;
+                //
+                // emitter?.Dispose();
 
+
+                EffectEmitter emitter = default;
                 if (value.skill.TargetEffectAssetKey is not null)
                 {
                     // If method is damage, should shake camera
@@ -386,11 +419,12 @@ namespace Vvr.Controller.Skill
                                 .AttachExternalCancellation(CancellationToken)
                             ;
 
-                        emitter = new SkillEffectEmitter(
-                            value.skill.TargetEffectAssetKey,
-                            () => camPrv.Shake().Forget());
+                        emitter = new EffectEmitter(
+                            m_EffectViewProvider,
+                            value.skill.TargetEffectAssetKey);
+                        emitter.OnSpawn += () => camPrv.Shake().Forget();
                     }
-                    else emitter = new SkillEffectEmitter(value.skill.TargetEffectAssetKey, null);
+                    else emitter = new EffectEmitter(m_EffectViewProvider, value.skill.TargetEffectAssetKey);
                 }
 
                 await skillEventHandle
@@ -399,21 +433,24 @@ namespace Vvr.Controller.Skill
                         .AttachExternalCancellation(CancellationToken)
                         .TimeoutWithoutException(TimeSpan.FromSeconds(5))
                     ;
-
-                emitter?.Dispose();
             }
             else if (value.skill.TargetEffectAssetKey is not null)
             {
-                var effectPool = GameObjectPool.GetWithRawKey(value.skill.TargetEffectAssetKey);
-                var effect = await effectPool
-                        .SpawnEffect(targetView.position, Quaternion.identity)
-                        .AttachExternalCancellation(CancellationToken)
-                    ;
-                while (!effect.Reserved &&
-                       !CancellationToken.IsCancellationRequested)
-                {
-                    await UniTask.Yield();
-                }
+                // var effectPool = GameObjectPool.GetWithRawKey(value.skill.TargetEffectAssetKey);
+                // var effect = await effectPool
+                //         .SpawnEffect(targetView.position, Quaternion.identity)
+                //         .AttachExternalCancellation(CancellationToken)
+                //     ;
+                // while (!effect.Reserved &&
+                //        !CancellationToken.IsCancellationRequested)
+                // {
+                //     await UniTask.Yield();
+                // }
+
+                await m_EffectViewProvider.SpawnAsync(
+                    value.skill.TargetEffectAssetKey,
+                    targetView.position, Quaternion.identity, null,
+                    CancellationToken);
             }
 
             #endregion
@@ -519,8 +556,7 @@ namespace Vvr.Controller.Skill
             {
                 Value e = m_Values[i];
 
-                await trigger.Execute(Model.Condition.OnSkillCasting, e.skill.Id)
-                    .AttachExternalCancellation(CancellationToken);
+                await trigger.Execute(Model.Condition.OnSkillCasting, e.skill.Id, CancellationToken);
 
                 Transform viewTarget       = await m_ViewProvider.ResolveAsync(Owner)
                     .AttachExternalCancellation(CancellationToken);
@@ -529,7 +565,14 @@ namespace Vvr.Controller.Skill
                 if (skillEventHandle != null &&
                     e.skill.CastingEffectAssetKey is not null)
                 {
-                    SkillEffectEmitter emitter = new SkillEffectEmitter(e.skill.CastingEffectAssetKey, null);
+                    // SkillEffectEmitter emitter = new SkillEffectEmitter(e.skill.CastingEffectAssetKey, null);
+                    // await skillEventHandle
+                    //         .OnSkillCasting(e.skill, emitter)
+                    //         .SuppressCancellationThrow()
+                    //         .AttachExternalCancellation(viewTarget.GetCancellationTokenOnDestroy())
+                    //         .TimeoutWithoutException(TimeSpan.FromSeconds(5))
+                    //     ;
+                    EffectEmitter emitter = new EffectEmitter(m_EffectViewProvider, e.skill.CastingEffectAssetKey);
                     await skillEventHandle
                             .OnSkillCasting(e.skill, emitter)
                             .SuppressCancellationThrow()
@@ -598,6 +641,19 @@ namespace Vvr.Controller.Skill
             if (Disposed)
                 throw new ObjectDisposedException(nameof(SkillController));
             m_ViewProvider = null;
+        }
+
+        void IConnector<IEffectViewProvider>.Connect(IEffectViewProvider t)
+        {
+            if (Disposed)
+                throw new ObjectDisposedException(nameof(SkillController));
+            m_EffectViewProvider = t;
+        }
+        void IConnector<IEffectViewProvider>.Disconnect(IEffectViewProvider t)
+        {
+            if (Disposed)
+                throw new ObjectDisposedException(nameof(SkillController));
+            m_EffectViewProvider = null;
         }
 
         #endregion

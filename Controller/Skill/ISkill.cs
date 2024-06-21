@@ -31,7 +31,9 @@ namespace Vvr.Controller.Skill
     public interface ISkill :
         IConnector<ITargetProvider>,
         IConnector<IActorDataProvider>,
-        IConnector<IActorViewProvider>
+        IConnector<IActorViewProvider>,
+
+        IConnector<IEffectViewProvider>
     {
         [PublicAPI]
         void Clear();

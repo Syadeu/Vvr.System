@@ -28,6 +28,7 @@ using UnityEngine.AddressableAssets;
 
 namespace Vvr.Controller.Skill
 {
+    [Obsolete("Use EffectViewSession or GameObjectPoolViewSession", true)]
     public interface ISkillEffectEmitter
     {
         UniTask Execute(Vector3 position);
@@ -36,7 +37,8 @@ namespace Vvr.Controller.Skill
         UniTask Stop();
     }
 
-    [Obsolete("Because using outside of Session design")]
+    // [Obsolete("Because using outside of Session design")]
+    [Obsolete("Use EffectViewSession or GameObjectPoolViewSession", true)]
     internal sealed class SkillEffectEmitter : ISkillEffectEmitter, IDisposable
     {
         [NotNull]
@@ -114,6 +116,7 @@ namespace Vvr.Controller.Skill
         }
     }
 
+    [Obsolete("Use EffectViewSession or GameObjectPoolViewSession", true)]
     public sealed class CustomSkillEffectEmitter : ISkillEffectEmitter
     {
         private readonly AssetReference m_Path;
