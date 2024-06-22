@@ -34,6 +34,7 @@ namespace Vvr.Session.Provider
     public interface IStageActorProvider : IProvider
     {
         [CanBeNull]
+        [ThreadSafe]
         IStageActor Get([NotNull] IActor actor);
         /// <summary>
         /// Creates a stage actor instance by initializing and configuring it with the provided actor and data.
@@ -41,14 +42,21 @@ namespace Vvr.Session.Provider
         /// <param name="actor">The actor to create a stage actor from.</param>
         /// <param name="data">The data used to configure the stage actor.</param>
         /// <returns>The created stage actor instance.</returns>
-        [PublicAPI, NotNull]
+        [NotNull]
+        [ThreadSafe]
         IStageActor Create([NotNull] IActor actor, [NotNull] IActorData data);
 
         /// <summary>
         /// Reserves a stage actor for reuse by disconnecting and clearing its connections and resetting its state.
         /// </summary>
         /// <param name="item">The stage actor to reserve.</param>
-        [PublicAPI]
+        [ThreadSafe]
         void Reserve([NotNull] IStageActor item);
+
+        /// <summary>
+        /// Clears the stage actor.
+        /// </summary>
+        [ThreadSafe]
+        void Clear();
     }
 }

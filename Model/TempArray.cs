@@ -29,7 +29,7 @@ namespace Vvr.Model
     [PublicAPI]
     public struct TempArray<T> : IDisposable
     {
-        public static TempArray<T> Shared(int minLength, bool clearOnDispose = false)
+        public static TempArray<T> Shared(int minLength, bool clearOnDispose = true)
         {
             ArrayPool<T> pool = ArrayPool<T>.Shared;
             return new TempArray<T>(

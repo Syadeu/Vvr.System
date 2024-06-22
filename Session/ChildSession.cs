@@ -31,6 +31,7 @@ using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using UnityEngine.Assertions;
 using Vvr.Controller.Condition;
+using Vvr.Model;
 using Vvr.Provider;
 
 namespace Vvr.Session
@@ -415,6 +416,7 @@ namespace Vvr.Session
             return result;
         }
 
+        [ThreadSafe]
         public IDependencyContainer Connect<TProvider>(IConnector<TProvider> c) where TProvider : IProvider
         {
             if (Disposed)
@@ -445,7 +447,8 @@ namespace Vvr.Session
                 wr = new(hash,
                     x => c.Connect((TProvider)x),
                     x => c.Disconnect((TProvider)x));
-            list.TryAdd(hash, wr);
+            if (!list.TryAdd(hash, wr))
+                throw new InvalidOperationException();
 
             if (m_ConnectedProviders.TryGetValue(t, out var pStack) &&
                 pStack.TryPeek(out var provider))
@@ -455,6 +458,7 @@ namespace Vvr.Session
 
             return this;
         }
+        [ThreadSafe]
         public IDependencyContainer Disconnect<TProvider>(IConnector<TProvider> c) where TProvider : IProvider
         {
             if (Disposed)
@@ -564,6 +568,8 @@ namespace Vvr.Session
             }
         }
 
+        #region Evaluations
+
         [Conditional("UNITY_EDITOR")]
         [Conditional("DEVELOPMENT_BUILD")]
         protected virtual void EvaluateSessionCreation(IParentSession parent)
@@ -607,6 +613,17 @@ namespace Vvr.Session
         //     if (existing.Any(x => ReferenceEquals(x, provider)))
         //         throw new InvalidOperationException($"Already registered {providerType.FullName}.");
         // }
+
+        [Conditional("UNITY_EDITOR")]
+        protected void AssertMainThreadOnly()
+        {
+#if UNITY_EDITOR
+            if (!UnityEditorInternal.InternalEditorUtility.CurrentThreadIsMainThread())
+                throw new InvalidOperationException("Is not main thread");
+#endif
+        }
+
+        #endregion
 
         protected virtual void SetupConditionResolver(ConditionResolver conditionResolver) {}
 

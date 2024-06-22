@@ -21,7 +21,7 @@
 
 namespace Vvr.Session.ContentView.Tests
 {
-    enum TestContentViewEvent
+    public enum TestContentViewEvent
     {
         Test0,
         Test1,

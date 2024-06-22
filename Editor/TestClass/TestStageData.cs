@@ -54,6 +54,10 @@ namespace Vvr.TestClass
         public IReadOnlyList<IActorData>                       Actors => m_ResolvedActors;
         public IReadOnlyDictionary<AssetType, AddressablePath> Assets => m_Assets;
 
+        public TestStageData(string id, int index) : base(id, index)
+        {
+        }
+
         public override void Build(GameDataSheets data)
         {
             m_Sheets = data;

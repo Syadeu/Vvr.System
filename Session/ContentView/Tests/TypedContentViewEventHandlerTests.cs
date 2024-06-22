@@ -28,30 +28,9 @@ using Vvr.Session.ContentView.Core;
 namespace Vvr.Session.ContentView.Tests
 {
     [TestFixture]
-    public sealed class TypedContentViewEventHandlerTests
+    public sealed class TypedContentViewEventHandlerTests : TypedContentViewEventHandlerTestBase
     {
-        private TypedContentViewEventHandler<TestContentViewEvent> EventHandler   { get; set; }
-
         private int             ExecutionCount          { get; set; }
-        private HashSet<string> ExecutedContextTypeName { get; } = new();
-
-        [OneTimeSetUp]
-        public void OneTimeSetUp()
-        {
-            EventHandler = new();
-        }
-        [OneTimeTearDown]
-        public void OneTimeTearDown()
-        {
-            EventHandler.Dispose();
-        }
-
-        [TearDown]
-        public void TearDown()
-        {
-            Assert.IsFalse(EventHandler.WriteLocked);
-            EventHandler.Clear();
-        }
 
         struct TestContext00
         {
@@ -69,7 +48,6 @@ namespace Vvr.Session.ContentView.Tests
         private async UniTask TestContextEventHandler(TestContentViewEvent e, TestContext00 ctx)
         {
             ExecutionCount++;
-            ExecutedContextTypeName.Add(nameof(TestContext00));
 
             "executed".ToLog();
         }

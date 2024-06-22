@@ -32,28 +32,8 @@ using Assert = NUnit.Framework.Assert;
 namespace Vvr.Session.ContentView.Tests
 {
     [TestFixture]
-    public sealed class ContentViewEventHandlerTests
+    public sealed class ContentViewEventHandlerTests : ContentViewEventHandlerTestBase
     {
-        private ContentViewEventHandler<TestContentViewEvent> EventHandler { get; set; }
-
-        [OneTimeSetUp]
-        public void OneTimeSetUp()
-        {
-            EventHandler = new();
-        }
-        [OneTimeTearDown]
-        public void OneTimeTearDown()
-        {
-            EventHandler.Dispose();
-        }
-
-        [TearDown]
-        public void TearDown()
-        {
-            Assert.IsFalse(EventHandler.WriteLocked);
-            EventHandler.Clear();
-        }
-
         private UniTask TestMethod(TestContentViewEvent e, object ctx)
         {
             Debug.Log($"Executed: {e} with {ctx}");

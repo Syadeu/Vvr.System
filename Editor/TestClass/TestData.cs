@@ -34,6 +34,12 @@ namespace Vvr.TestClass
         public string Id    => m_Id;
         public int    Index => m_Index;
 
+        protected TestData(string id, int index)
+        {
+            m_Id    = id;
+            m_Index = index;
+        }
+
         public abstract void Build(GameDataSheets sheets);
     }
 }

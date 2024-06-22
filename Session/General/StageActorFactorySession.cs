@@ -306,22 +306,18 @@ namespace Vvr.Session
         private ICanvasViewProvider m_CanvasViewProvider;
         private IActorViewProvider  m_ActorViewProvider;
 
+        private SpinLock m_SpinLock = new();
+
         public override string DisplayName => nameof(StageActorFactorySession);
 
         protected override async UniTask OnReserve()
         {
             await base.OnReserve();
 
-            using var timer = DebugTimer.Start();
-
-            for (int i = m_Created.Count - 1; i >= 0; i--)
-            {
-                var e = m_Created[i];
-                DisconnectActor(e);
-            }
-            m_Created.Clear();
+            Clear();
         }
 
+        [ThreadSafe(ThreadSafeAttribute.SafeType.SpinLock)]
         public IStageActor Get(IActor actor)
         {
             Assert.IsNotNull(actor);
@@ -330,8 +326,19 @@ namespace Vvr.Session
                 DebugTimer.BuildDisplayName(nameof(StageActorFactorySession), nameof(Get))
             );
 
-            return m_Created.BinarySearch(ActorComparer.ActorSelector, ActorComparer.ActorStatic, actor);
+            bool wl = false;
+            try
+            {
+                m_SpinLock.Enter(ref wl);
+                return m_Created.BinarySearch(ActorComparer.ActorSelector, ActorComparer.ActorStatic, actor);
+            }
+            finally
+            {
+                if (wl)
+                    m_SpinLock.Exit();
+            }
         }
+        [ThreadSafe(ThreadSafeAttribute.SafeType.SpinLock)]
         public IStageActor Create(IActor actor, IActorData data)
         {
             Assert.IsNotNull(actor);
@@ -340,37 +347,56 @@ namespace Vvr.Session
                 DebugTimer.BuildDisplayName(nameof(StageActorFactorySession), nameof(Create))
                 );
 
-            var ob = actor.ConditionResolver.CreateObserver();
-            SetupObserver(ob);
-
-            StageActor result = new StageActor(actor, data, ob);
-            IActor     item   = result.Owner;
-            Connect<IAssetProvider>(result)
-                .Connect<ITargetProvider>(result)
-                .Connect<IActorViewProvider>(result)
-                .Connect<IActorDataProvider>(result)
-                .Connect<IEventConditionProvider>(result)
-                .Connect<IStateConditionProvider>(result)
-                .Connect<IEffectViewProvider>(result)
-                ;
-
-            item.ConnectTime();
-
-            // Only if player actor
-            if (actor.Owner == Owner)
+            StageActor result;
+            bool       wl = false;
+            try
             {
-                foreach (var nodeGroup in m_ResearchDataProvider)
+                m_SpinLock.Enter(ref wl);
+
+                result = m_Created.BinarySearch(ActorComparer.ActorSelector, ActorComparer.ActorStatic, actor);
+                if (result is null)
                 {
-                    foreach (var node in nodeGroup)
+                    var ob = actor.ConditionResolver.CreateObserver();
+                    SetupObserver(ob);
+
+                    result = new StageActor(actor, data, ob);
+
+                    IActor item = result.Owner;
+                    Connect<IAssetProvider>(result)
+                        .Connect<ITargetProvider>(result)
+                        .Connect<IActorViewProvider>(result)
+                        .Connect<IActorDataProvider>(result)
+                        .Connect<IEventConditionProvider>(result)
+                        .Connect<IStateConditionProvider>(result)
+                        .Connect<IEffectViewProvider>(result)
+                        ;
+
+                    item.ConnectTime();
+
+                    // Only if player actor
+                    if (actor.Owner == Owner)
                     {
-                        item.Stats.AddModifier(node);
+                        foreach (var nodeGroup in m_ResearchDataProvider)
+                        {
+                            foreach (var node in nodeGroup)
+                            {
+                                item.Stats.AddModifier(node);
+                            }
+                        }
                     }
+
+                    m_Created.Add(result, ActorComparer.StageActorStatic);
                 }
             }
-
-            m_Created.Add(result, ActorComparer.StageActorStatic);
+            finally
+            {
+                if (wl)
+                    m_SpinLock.Exit();
+            }
             return result;
         }
+
+        [ThreadSafe(ThreadSafeAttribute.SafeType.SpinLock)]
         public void Reserve(IStageActor item)
         {
             Assert.IsNotNull(item);
@@ -378,12 +404,54 @@ namespace Vvr.Session
                 DebugTimer.BuildDisplayName(nameof(StageActorFactorySession), nameof(Reserve))
                 );
 
-            if (item is not StageActor actor ||
-                !m_Created.Remove(actor, ActorComparer.StageActorStatic))
-                throw new InvalidOperationException();
+            StageActor actor;
+            bool       wl = false;
+            try
+            {
+                m_SpinLock.Enter(ref wl);
+
+                if (item is not StageActor stageActor ||
+                    !m_Created.Remove(stageActor, ActorComparer.StageActorStatic))
+                    throw new InvalidOperationException();
+
+                actor = stageActor;
+            }
+            finally
+            {
+                if (wl)
+                    m_SpinLock.Exit();
+            }
 
             DisconnectActor(actor);
             item.Dispose();
+        }
+
+        [ThreadSafe(ThreadSafeAttribute.SafeType.SpinLock)]
+        public void Clear()
+        {
+            using var timer = DebugTimer.StartWithCustomName(
+                DebugTimer.BuildDisplayName(nameof(StageActorFactorySession), nameof(Clear))
+            );
+
+            bool wl = false;
+            try
+            {
+                m_SpinLock.Enter(ref wl);
+
+                for (int i = m_Created.Count - 1; i >= 0; i--)
+                {
+                    var e = m_Created[i];
+                    DisconnectActor(e);
+                    e.Dispose();
+                }
+
+                m_Created.Clear();
+            }
+            finally
+            {
+                if (wl)
+                    m_SpinLock.Exit();
+            }
         }
 
         private void DisconnectActor(StageActor item)
@@ -416,7 +484,6 @@ namespace Vvr.Session
             // item.Owner.Passive.cle
             item.Owner.Abnormal.Clear();
         }
-
 
         private void SetupObserver(IDynamicConditionObserver observer)
         {

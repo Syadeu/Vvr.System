@@ -26,6 +26,7 @@ using JetBrains.Annotations;
 using Vvr.Controller.Abnormal;
 using Vvr.Controller.Actor;
 using Vvr.Controller.Asset;
+using Vvr.Controller.BehaviorTree;
 using Vvr.Controller.Passive;
 using Vvr.Controller.Skill;
 using Vvr.Controller.Stat;
@@ -52,7 +53,7 @@ namespace Vvr.TestClass
             Stats = stats;
         }
 
-        public async UniTask         Execute(IReadOnlyList<string> parameters)
+        async UniTask IBehaviorTarget.Execute(IReadOnlyList<string> parameters)
         {
             throw new NotImplementedException();
         }

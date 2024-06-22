@@ -30,16 +30,12 @@ using Vvr.Controller.Actor;
 using Vvr.Model;
 using Vvr.Provider;
 using Vvr.Session.Actor;
-using Vvr.Session.Provider;
 
 namespace Vvr.Session
 {
     [UsedImplicitly]
     public sealed class StageActorFieldSession : ChildSession<StageActorFieldSession.SessionData>,
         IStageActorField, IReadOnlyActorList
-        // ,
-
-        // IConnector<IStageActorProvider>
     {
         public struct SessionData : ISessionData
         {
