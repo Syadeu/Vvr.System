@@ -21,9 +21,12 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Threading;
 using JetBrains.Annotations;
+using UnityEngine.Assertions;
+using Vvr.Model;
 using Vvr.Provider;
 
 namespace Vvr.Session
@@ -72,24 +75,47 @@ namespace Vvr.Session
 
         private static readonly Type s_ConnectorGenericType = typeof(IConnector<>);
 
-        private static readonly Dictionary<Type, Type> s_CachedConnectorTypes = new();
         private static readonly ThreadLocal<object[]>  s_MethodParameter      = new(() => new object[1]);
 
-        /// <summary>
-        /// Returns the connector type for the specified provider type.
-        /// </summary>
-        /// <param name="providerType">The type of the provider.</param>
-        /// <returns>The connector type.</returns>
-        [NotNull]
-        public static Type GetConnectorType(Type providerType)
+        private static          SemaphoreSlim            s_CachedTypeConnectorLock = new(1, 1);
+        private static readonly Dictionary<Type, Type[]> s_CachedTypeConnectorMap  = new();
+
+        public static void Purge()
         {
-            if (s_CachedConnectorTypes.TryGetValue(providerType, out var r)) return r;
+            s_CachedTypeConnectorMap.Clear();
+        }
 
-            r = s_ConnectorGenericType.MakeGenericType(providerType);
+        public static bool TryGetConnectorType(Type t, Type providerType, out Type connectorType)
+        {
+            using var debugTimer = DebugTimer.StartWithCustomName(
+                DebugTimer.BuildDisplayName(
+                    nameof(ConnectorReflectionUtils),
+                    nameof(TryGetConnectorType))
+            );
 
-            s_CachedConnectorTypes[providerType] = r;
+            foreach (var type in GetConnectorTypes(t))
+            {
+                if (type.GetGenericArguments()[0] == providerType)
+                {
+                    connectorType = type;
+                    return true;
+                }
+            }
 
-            return r;
+            connectorType = null;
+            return false;
+        }
+        public static IEnumerable<Type> GetConnectorTypes(Type t)
+        {
+            var interfaces = t.GetInterfaces();
+            for (var i = 0; i < interfaces.Length; i++)
+            {
+                var interfaceType = interfaces[i];
+                if (!interfaceType.IsGenericType) continue;
+
+                var p = interfaceType.GetGenericTypeDefinition();
+                if (p == s_ConnectorGenericType) yield return interfaceType;
+            }
         }
 
         /// <summary>
@@ -97,18 +123,55 @@ namespace Vvr.Session
         /// </summary>
         /// <param name="type">The type to get the connector types for.</param>
         /// <returns>All the connector types implemented by the specified type.</returns>
-        public static IEnumerable<Type> GetAllConnectors(Type type)
+        public static IReadOnlyList<Type> GetAllConnectors([NotNull] Type type)
         {
-            var interfaceTypes = type.GetInterfaces();
+            Assert.IsNotNull(type);
+
+            List<Type> finalTypes;
+            Type[]     interfaceTypes;
+            using (var wl = new SemaphoreSlimLock(s_CachedTypeConnectorLock))
+            {
+                wl.Wait(TimeSpan.FromSeconds(1));
+
+                if (s_CachedTypeConnectorMap.TryGetValue(type, out var cachedConnectorTypes))
+                {
+                    return cachedConnectorTypes;
+                }
+
+                InjectOptionsAttribute options = type.GetCustomAttribute<InjectOptionsAttribute>();
+                interfaceTypes = type.GetInterfaces();
+                if (options is not null && options.Cache)
+                {
+                    finalTypes = new();
+                    for (int i = 0; i < interfaceTypes.Length; i++)
+                    {
+                        var e = interfaceTypes[i];
+
+                        if (e.IsGenericType && e.GetGenericTypeDefinition() == s_ConnectorGenericType)
+                        {
+                            finalTypes.Add(e);
+                        }
+                    }
+
+                    cachedConnectorTypes           = finalTypes.ToArray();
+                    s_CachedTypeConnectorMap[type] = cachedConnectorTypes;
+
+                    return cachedConnectorTypes;
+                }
+            }
+
+            finalTypes = new();
             for (int i = 0; i < interfaceTypes.Length; i++)
             {
                 var e = interfaceTypes[i];
 
                 if (e.IsGenericType && e.GetGenericTypeDefinition() == s_ConnectorGenericType)
                 {
-                    yield return e;
+                    finalTypes.Add(e);
                 }
             }
+
+            return finalTypes;
         }
 
         [ThreadStatic]

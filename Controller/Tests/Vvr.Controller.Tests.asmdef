@@ -1,5 +1,5 @@
 {
-  "name": "Vvr.Controller.Condition.Tests",
+  "name": "Vvr.Controller.Tests",
   "references": [
     "UnityEngine.TestRunner",
     "UnityEditor.TestRunner",

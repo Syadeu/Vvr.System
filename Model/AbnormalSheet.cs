@@ -64,7 +64,7 @@ namespace Vvr.Model
             [UsedImplicitly] public bool      ClearAllStacks { get; private set; }
         }
 
-        public sealed class Row : SheetRow
+        public sealed partial class Row : SheetRow, IAbnormalData
         {
             [UsedImplicitly] public Definition      Definition    { get; private set; }
             [UsedImplicitly] public Duration        Duration      { get; private set; }
@@ -73,6 +73,57 @@ namespace Vvr.Model
             [UsedImplicitly] public Cancellation    Cancellation  { get; private set; }
 
             [UsedImplicitly] public List<Reference> AbnormalChain { get; private set; }
+
+            private List<IAbnormalData> m_AbnormalChain;
+
+            IAbnormalDefinition IAbnormalData.         Definition    => this;
+            IAbnormalDuration IAbnormalData.           Duration      => this;
+            IReadOnlyList<Condition> IAbnormalData.    TimeCondition => TimeCondition;
+            IAbnormalUpdate IAbnormalData.             Update        => this;
+            IAbnormalCancellation IAbnormalData.       Cancellation  => this;
+            IReadOnlyList<IAbnormalData> IAbnormalData.AbnormalChain => m_AbnormalChain;
+
+            public override void PostLoad(SheetConvertingContext context)
+            {
+                base.PostLoad(context);
+
+                m_AbnormalChain = new();
+                for (int i = 0; i < AbnormalChain.Count; i++)
+                {
+                    m_AbnormalChain.Add(AbnormalChain[i].Ref);
+                }
+            }
+        }
+        partial class Row : IAbnormalDefinition
+        {
+            int IAbnormalDefinition.Type => Definition.Type;
+            int IAbnormalDefinition.Level => Definition.Level;
+            bool IAbnormalDefinition.IsBuff => Definition.IsBuff;
+            bool IAbnormalDefinition.Replaceable => Definition.Replaceable;
+            int IAbnormalDefinition.MaxStack => Definition.MaxStack;
+            Method IAbnormalDefinition.Method => Definition.Method;
+            IStatData IAbnormalDefinition.TargetStatus => Definition.TargetStatus.Ref;
+            float IAbnormalDefinition.Value => Definition.Value;
+        }
+        partial class Row : IAbnormalDuration
+        {
+            float IAbnormalDuration.DelayTime => Duration.DelayTime;
+            float IAbnormalDuration.Time => Duration.Time;
+        }
+        partial class Row : IAbnormalUpdate
+        {
+            bool IAbnormalUpdate.Enable => Update.Enable;
+            Condition IAbnormalUpdate.Condition => Update.Condition;
+            string IAbnormalUpdate.Value => Update.Value;
+            float IAbnormalUpdate.Interval => Update.Interval;
+            int IAbnormalUpdate.MaxCount => Update.MaxCount;
+        }
+        partial class Row : IAbnormalCancellation
+        {
+            Condition IAbnormalCancellation.Condition => Cancellation.Condition;
+            float IAbnormalCancellation.Probability => Cancellation.Probability;
+            string IAbnormalCancellation.Value => Cancellation.Value;
+            bool IAbnormalCancellation.ClearAllStacks => Cancellation.ClearAllStacks;
         }
 
         public AbnormalSheet()

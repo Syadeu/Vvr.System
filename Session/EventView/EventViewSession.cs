@@ -19,7 +19,7 @@
 
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
-using NUnit.Framework;
+using UnityEngine.Assertions;
 using Vvr.Provider;
 using Vvr.Session.EventView.ActorView;
 using Vvr.Session.EventView.Core;
@@ -68,8 +68,8 @@ namespace Vvr.Session.EventView
 
         void IConnector<IViewRegistryProvider>.Connect(IViewRegistryProvider t)
         {
-            Assert.NotNull(t);
-            Assert.NotNull(t.Providers);
+            Assert.IsNotNull(t);
+            Assert.IsNotNull(t.Providers);
 
             foreach (var item in t.Providers)
             {

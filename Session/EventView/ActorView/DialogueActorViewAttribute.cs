@@ -19,7 +19,7 @@
 
 using System;
 using Cysharp.Threading.Tasks;
-using NUnit.Framework;
+using UnityEngine.Assertions;
 using UnityEngine.Scripting;
 using Vvr.Provider;
 using Vvr.Session.ContentView.Dialogue.Attributes;
@@ -34,7 +34,7 @@ namespace Vvr.Session.EventView.ActorView
         {
             var p = ctx.resolveProvider(VvrTypeHelper.TypeOf<IActorViewProvider>.Type) as IActorViewProvider;
 
-            Assert.NotNull(p);
+            Assert.IsNotNull(p);
 
             return ExecuteAsync(p, ctx);
         }

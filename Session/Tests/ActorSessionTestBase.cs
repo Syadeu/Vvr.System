@@ -15,43 +15,47 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// File created : 2024, 06, 22 17:06
+// File created : 2024, 06, 22 20:06
 
 #endregion
 
 using System.Threading.Tasks;
-using NUnit.Framework;
+using JetBrains.Annotations;
+using Vvr.Model;
 using Vvr.Session.Provider;
 using Vvr.TestClass;
 
 namespace Vvr.Session.Tests
 {
-    [TestFixture]
-    public sealed class StageActorFieldSessionTests : ActorSessionTestBase
+    [PublicAPI]
+    public abstract class ActorSessionTestBase : SessionWithDataTest<TestRootSession>
     {
-        private IStageActorProvider    FactorySession { get; set; }
-        private StageActorFieldSession FieldSession   { get; set; }
+        private int m_Index;
+
+        public IActorProvider ActorProvider { get; private set; }
 
         public override async Task OneTimeSetUp()
         {
             await base.OneTimeSetUp();
 
-            FactorySession = await Root.CreateSession<StageActorFactorySession>(default);
-            FieldSession   = await Root.CreateSession<StageActorFieldSession>(default);
+            ActorProvider = await Root.CreateSession<TestActorFactorySession>(default);
         }
 
         public override Task TearDown()
         {
-            FactorySession.Clear();
-            FieldSession.Clear();
+            m_Index = 0;
 
             return base.TearDown();
         }
 
-        // [Test]
-        // public async Task AddTest()
-        // {
-        //     var t0 = await FactorySession.Create()
-        // }
+        public TestActorData CreateActorData(
+            string               id,
+            ActorSheet.ActorType actorType, int grade, int population)
+        {
+            var data = new TestActorData(
+                id, m_Index++, actorType, grade, population, TestStatValues.CreateRandom());
+
+            return data;
+        }
     }
 }

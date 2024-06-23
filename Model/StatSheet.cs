@@ -49,7 +49,7 @@ namespace Vvr.Model
         /// </summary>
         /// <param name="t">The <see cref="StatSheet.Row"/> object to convert.</param>
         /// <returns>The <see cref="StatType"/> converted from the <see cref="StatSheet.Row"/> object.</returns>
-        public static StatType ToStat(this StatSheet.Row t)
+        public static StatType ToStat(this IStatData t)
         {
             int i = t.Index;
             return (StatType)(1L << i);

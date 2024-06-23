@@ -23,6 +23,7 @@ using System;
 using System.Collections.Generic;
 using JetBrains.Annotations;
 using UnityEngine;
+using UnityEngine.Pool;
 using Vvr.Model;
 using Vvr.Provider;
 
@@ -225,8 +226,7 @@ namespace Vvr.Session
 
             foreach (var item in container.GetEnumerable())
             {
-                Type connectorType = ConnectorReflectionUtils.GetConnectorType(item.Key);
-                InjectRecursive(container, go, connectorType, item.Value);
+                InjectRecursive(container, go, item.Key, item.Value);
             }
         }
 
@@ -254,8 +254,7 @@ namespace Vvr.Session
 
             foreach (var item in container.GetEnumerable())
             {
-                Type connectorType = ConnectorReflectionUtils.GetConnectorType(item.Key);
-                DetachRecursive(container, go, connectorType, item.Value);
+                DetachRecursive(container, go, item.Key, item.Value);
             }
         }
 
@@ -264,7 +263,7 @@ namespace Vvr.Session
         /// </summary>
         /// <param name="container">The dependency container.</param>
         /// <param name="go">The game object to inject into.</param>
-        /// <param name="connectorType">The type of the connector.</param>
+        /// <param name="providerType">The type of the provider to inject.</param>
         /// <param name="provider">The provider to inject.</param>
         /// <remarks>
         /// This method is used to inject a provider into game objects recursively.
@@ -273,9 +272,9 @@ namespace Vvr.Session
         /// </remarks>
         private static void InjectRecursive(
             [NotNull] IDependencyContainer container,
-            [NotNull] GameObject go,
-            [NotNull] Type       connectorType,
-            [NotNull] IProvider  provider)
+            [NotNull] GameObject           go,
+            [NotNull] Type                 providerType,
+            [NotNull] IProvider            provider)
         {
             const string debugName  = "DependencyContainerExtensions.InjectRecursive";
             using var    debugTimer = DebugTimer.StartWithCustomName(debugName);
@@ -293,10 +292,19 @@ namespace Vvr.Session
                     continue;
                 }
 
-                foreach (var com in current.GetComponents(connectorType))
+                var components = ListPool<Component>.Get();
+                current.GetComponents(components);
+                foreach (var com in components)
                 {
+                    var comT = com.GetType();
+                    if (!ConnectorReflectionUtils.TryGetConnectorType(comT, providerType, out var connectorType))
+                    {
+                        continue;
+                    }
                     ConnectorReflectionUtils.Connect(connectorType, com, provider);
                 }
+                components.Clear();
+                ListPool<Component>.Release(components);
 
                 foreach (Transform child in current.transform)
                 {
@@ -310,17 +318,17 @@ namespace Vvr.Session
         /// </summary>
         /// <param name="container">The dependency container to detach from.</param>
         /// <param name="go">The game object to detach.</param>
-        /// <param name="connectorType">The type of the connector.</param>
+        /// <param name="providerType">The type of the provider.</param>
         /// <param name="provider">The instance of the provider.</param>
         /// <remarks>
         /// This method detaches the specified game object from the dependency container recursively. It is used to remove the game object from any registered connectors and disconnect any associated dependencies.
-        /// If the game object has a <see cref="DependencyInjector"/> component attached, it will be detached using the <see cref="Detach(IDependencyContainer, DependencyInjector)"/> method.
+        /// If the game object has a DependencyInjector component attached, it will be detached using the Detach method.
         /// Otherwise, the method iterates over all registered connectors in the container, and detaches the game object recursively for each connector type using this method.
         /// </remarks>
         private static void DetachRecursive(
             [NotNull] IDependencyContainer container,
             [NotNull] GameObject           go,
-            [NotNull] Type                 connectorType,
+            [NotNull] Type                 providerType,
             [NotNull] IProvider            provider)
         {
             const string debugName  = "DependencyContainerExtensions.DetachRecursive";
@@ -339,10 +347,19 @@ namespace Vvr.Session
                     continue;
                 }
 
-                foreach (var com in current.GetComponents(connectorType))
+                var components = ListPool<Component>.Get();
+                current.GetComponents(components);
+                foreach (var com in components)
                 {
+                    var comT = com.GetType();
+                    if (!ConnectorReflectionUtils.TryGetConnectorType(comT, providerType, out var connectorType))
+                    {
+                        continue;
+                    }
                     ConnectorReflectionUtils.Disconnect(connectorType, com, provider);
                 }
+                components.Clear();
+                ListPool<Component>.Release(components);
 
                 foreach (Transform child in current.transform)
                 {

@@ -104,17 +104,21 @@ namespace Vvr.Session.ContentView.Dialogue.Attributes
 
         void IDialoguePreviewAttribute.Preview(IDialogueView view)
         {
+#if UNITY_EDITOR
             var target = GetTarget(view);
 
             PreviewPreviousPan = target.Pan;
             target.PanAsync(m_Relative, m_Offset, -1).Forget();
+#endif
         }
 
         void IDialogueRevertPreviewAttribute.Revert(IDialogueView view)
         {
+#if UNITY_EDITOR
             var target = GetTarget(view);
 
             target.PanAsync(false, PreviewPreviousPan, -1).Forget();
+#endif
         }
     }
 }

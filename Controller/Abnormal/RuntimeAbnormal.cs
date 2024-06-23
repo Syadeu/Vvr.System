@@ -62,9 +62,9 @@ namespace Vvr.Controller.Abnormal
         public readonly bool            cancelClearAllStacks;
 
         // Chain
-        public readonly IReadOnlyList<AbnormalSheet.Reference> abnormalChain;
+        public readonly IReadOnlyList<IAbnormalData> abnormalChain;
 
-        public RuntimeAbnormal(AbnormalSheet.Row d)
+        public RuntimeAbnormal(IAbnormalData d)
         {
             id       = d.Id;
             hash     = new Hash(d.Id);
@@ -72,7 +72,7 @@ namespace Vvr.Controller.Abnormal
             level    = d.Definition.Level;
             maxStack = d.Definition.MaxStack;
 
-            targetStat = d.Definition.TargetStatus.Ref.ToStat();
+            targetStat = d.Definition.TargetStatus.ToStat();
             methodType = d.Definition.Method;
             method     = d.Definition.Method.ToDelegate();
             getter     = StatValues.GetGetMethod(targetStat);

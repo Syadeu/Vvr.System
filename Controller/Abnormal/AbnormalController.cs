@@ -100,7 +100,7 @@ namespace Vvr.Controller.Abnormal
             m_Values.Clear();
             m_Counter = 0;
         }
-        public async UniTask AddAsync(AbnormalSheet.Row data)
+        public async UniTask AddAsync(IAbnormalData data)
         {
             if (Disposed)
                 throw new ObjectDisposedException(nameof(AbnormalController));
@@ -108,7 +108,7 @@ namespace Vvr.Controller.Abnormal
             var abnormal = new RuntimeAbnormal(data);
             for (int i = 0; i < abnormal.abnormalChain?.Count; i++)
             {
-                await AddAsync(abnormal.abnormalChain[i].Ref)
+                await AddAsync(abnormal.abnormalChain[i])
                     .AttachExternalCancellation(CancellationToken)
                     ;
 

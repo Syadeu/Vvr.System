@@ -51,6 +51,12 @@ namespace Vvr.Session.AssetManagement
 
         public override string DisplayName => nameof(AddressableSession);
 
+        protected override async UniTask OnInitialize(IParentSession session, SessionData data)
+        {
+            await base.OnInitialize(session, data);
+            await Addressables.InitializeAsync();
+        }
+
         /**
          * Do not use UniTask if operation is server request.
          * It will not work
@@ -60,21 +66,23 @@ namespace Vvr.Session.AssetManagement
 
         public async UniTask UpdateCatalogAsync()
         {
-            var updateCheckOperation    = Addressables.CheckForCatalogUpdates(true);
+            var updateCheckOperation    = Addressables.CheckForCatalogUpdates(false);
             var requireUpdatedList = await updateCheckOperation.Task;
             if (updateCheckOperation.Status == AsyncOperationStatus.Failed)
             {
                 throw new InvalidOperationException("Update catalog check has been failed");
             }
+            Addressables.Release(updateCheckOperation);
 
             if (requireUpdatedList.Count > 0)
             {
-                var updateOperation = Addressables.UpdateCatalogs(requireUpdatedList, true);
+                var updateOperation = Addressables.UpdateCatalogs(requireUpdatedList, false);
                 await updateOperation.Task;
                 if (updateOperation.Status == AsyncOperationStatus.Failed)
                 {
                     throw new InvalidOperationException("Update catalog has been failed");
                 }
+                Addressables.Release(updateOperation);
             }
         }
 

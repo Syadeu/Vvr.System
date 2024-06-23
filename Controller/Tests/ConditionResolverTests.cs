@@ -23,9 +23,10 @@ using System;
 using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
 using NUnit.Framework;
+using Vvr.Controller.Condition;
 using Vvr.TestClass;
 
-namespace Vvr.Controller.Condition.Tests
+namespace Vvr.Controller.Tests
 {
     [TestFixture]
     public sealed class ConditionResolverTests

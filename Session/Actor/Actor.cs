@@ -181,6 +181,7 @@ namespace Vvr.Session.Actor
         {
             m_SkillController.Clear();
             m_AbnormalController.Clear();
+            // TODO: Passive
         }
     }
 }

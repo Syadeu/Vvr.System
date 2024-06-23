@@ -30,6 +30,7 @@ namespace Vvr.Controller.Abnormal
     /// <summary>
     /// Abnormal controller
     /// </summary>
+    [PublicAPI]
     public interface IAbnormal : IEnumerable<IReadOnlyRuntimeAbnormal>
     {
         IActor Owner { get; }
@@ -41,14 +42,13 @@ namespace Vvr.Controller.Abnormal
         /// </summary>
         /// <param name="data"></param>
         /// <returns></returns>
-        [PublicAPI]
-        UniTask AddAsync(AbnormalSheet.Row data);
+        UniTask AddAsync(IAbnormalData data);
+
         /// <summary>
         /// Returns given abnormal id is in this controller
         /// </summary>
         /// <param name="abnormalId"></param>
         /// <returns></returns>
-        [PublicAPI]
-        bool Contains(Hash       abnormalId);
+        bool Contains(Hash abnormalId);
     }
 }

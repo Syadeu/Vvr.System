@@ -38,7 +38,7 @@ namespace Vvr.Controller.Stat.Tests
         [OneTimeSetUp]
         public void OneTimeSetUp()
         {
-            m_TestActor = new TestActor(OwnerHelper.Player, "Test Actor", null);
+            m_TestActor = new TestActor(OwnerHelper.Player, "Test Actor", "Test Actor");
         }
         [SetUp]
         public void SetUp()

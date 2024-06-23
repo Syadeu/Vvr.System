@@ -23,10 +23,12 @@ using System;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
+using Vvr.Controller;
 using Vvr.Controller.Abnormal;
 using Vvr.Controller.Actor;
 using Vvr.Controller.Asset;
 using Vvr.Controller.BehaviorTree;
+using Vvr.Controller.Condition;
 using Vvr.Controller.Passive;
 using Vvr.Controller.Skill;
 using Vvr.Controller.Stat;
@@ -40,6 +42,11 @@ namespace Vvr.TestClass
     {
         private readonly int m_InstanceId = unchecked((int)FNV1a32.Calculate(Guid.NewGuid()));
 
+        private StatValueStack     m_Stats;
+        private AbnormalController m_AbnormalController;
+        private PassiveController  m_PassiveController;
+        private SkillController    m_SkillController;
+
         public string          Id       { get; set; }
         public IStatValueStack Stats    { get; set; }
         public IPassive        Passive  { get; set; }
@@ -47,10 +54,10 @@ namespace Vvr.TestClass
         public ISkill          Skill    { get; set; }
         public IAsset          Assets   { get; set; }
 
-        public TestActor(Owner owner, string displayName, IStatValueStack stats)
+        public TestActor(Owner owner, string displayName, string id)
             : base(owner, displayName)
         {
-            Stats = stats;
+            Id = id;
         }
 
         async UniTask IBehaviorTarget.Execute(IReadOnlyList<string> parameters)
@@ -66,29 +73,70 @@ namespace Vvr.TestClass
 
         public int GetInstanceID() => m_InstanceId;
 
-        public void            Initialize(Owner owner, IStatConditionProvider statConditionProvider, IActorData ta)
+        public void Initialize(Owner owner, IStatConditionProvider statConditionProvider, IActorData ta)
         {
-            throw new NotImplementedException();
+            ConditionResolver = new ConditionResolver(this);
+
+            m_Stats              = new StatValueStack(this, ta.Stats);
+            m_AbnormalController = new AbnormalController(this);
+            m_PassiveController  = new PassiveController(this);
+            m_SkillController    = new SkillController(this);
+
+            m_Stats
+                .AddModifier(m_AbnormalController)
+                ;
+
+            ConditionResolver
+                .Connect(m_AbnormalController)
+                .Connect(Stats, statConditionProvider)
+
+                .Subscribe(m_AbnormalController)
+                .Subscribe(m_PassiveController)
+                ;
+
+            for (int i = 0; i < ta.Passive?.Count; i++)
+            {
+                if (ta.Passive[i] == null) continue;
+
+                m_PassiveController.Add(ta.Passive[i]);
+            }
         }
 
-        public void            Release()
+        public void Release()
         {
-            throw new NotImplementedException();
+            ((IActor)this).DisconnectTime();
+
+            ConditionResolver
+                .Unsubscribe(m_AbnormalController)
+                .Unsubscribe(m_PassiveController);
+
+            ConditionResolver?.Dispose();
+            m_AbnormalController?.Dispose();
+            m_PassiveController?.Dispose();
+            m_SkillController?.Dispose();
+
+            ConditionResolver    = null;
+            m_AbnormalController = null;
+            m_PassiveController  = null;
+            m_SkillController    = null;
         }
 
-        public void            ConnectTime()
+        void IActor.ConnectTime()
         {
-            throw new NotImplementedException();
+            TimeController.Register(m_SkillController);
+            TimeController.Register(m_AbnormalController);
         }
 
-        public void            DisconnectTime()
+        void IActor.DisconnectTime()
         {
-            throw new NotImplementedException();
+            TimeController.Unregister(m_SkillController);
+            TimeController.Unregister(m_AbnormalController);
         }
 
-        public void            Reset()
+        public void Reset()
         {
-            throw new NotImplementedException();
+            m_SkillController.Clear();
+            m_AbnormalController.Clear();
         }
     }
 }

@@ -143,9 +143,26 @@ namespace Vvr.Provider
         [Pure]
         public static Type ExtractType(Type t)
         {
+            EvaluateExtractType(t);
+
             const string debugName  = "Provider.ExtractType";
             using var    debugTimer = DebugTimer.StartWithCustomName(debugName);
 
+            if (t.IsInterface)
+            {
+                return t;
+            }
+
+            return t.GetInterfaces()
+                .First(x =>
+                    x != VvrTypeHelper.TypeOf<IProvider>.Type &&
+                    x.GetCustomAttribute<AbstractProviderAttribute>() is null &&
+                    VvrTypeHelper.InheritsFrom(x, VvrTypeHelper.TypeOf<IProvider>.Type));
+        }
+
+        [Conditional("UNITY_EDITOR")]
+        private static void EvaluateExtractType(Type t)
+        {
             if (t == VvrTypeHelper.TypeOf<IProvider>.Type)
                 throw new InvalidOperationException("Raw provider cannot be extract");
 
@@ -156,14 +173,7 @@ namespace Vvr.Provider
             {
                 if (t.GetCustomAttribute<AbstractProviderAttribute>() is not null)
                     throw new InvalidOperationException("Abstract provider cannot be extract");
-                return t;
             }
-
-            return t.GetInterfaces()
-                .First(x =>
-                    x != VvrTypeHelper.TypeOf<IProvider>.Type &&
-                    x.GetCustomAttribute<AbstractProviderAttribute>() is null &&
-                    VvrTypeHelper.InheritsFrom(x, VvrTypeHelper.TypeOf<IProvider>.Type));
         }
 
         /// <summary>

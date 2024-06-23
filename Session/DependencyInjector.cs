@@ -50,16 +50,20 @@ namespace Vvr.Session
         /// <param name="provider">The provider instance.</param>
         internal void Inject([NotNull] Type providerType, [NotNull] IProvider provider)
         {
-            Type connectorType = ConnectorReflectionUtils.GetConnectorType(providerType);
-
             for (int i = 0; i < m_Objects.Length; i++)
             {
                 var             e          = m_Objects[i];
                 List<Component> components = ListPool<Component>.Get();
-                e.GetComponents(connectorType, components);
+                e.GetComponents(components);
 
                 foreach (var com in components)
                 {
+                    var comT = com.GetType();
+                    if (!ConnectorReflectionUtils.TryGetConnectorType(comT, providerType, out var connectorType))
+                    {
+                        continue;
+                    }
+
                     ConnectorReflectionUtils.Connect(connectorType, com, provider);
                 }
 
@@ -75,16 +79,19 @@ namespace Vvr.Session
         /// <param name="provider">The provider instance.</param>
         internal void Detach([NotNull] Type providerType, [NotNull] IProvider provider)
         {
-            Type connectorType = ConnectorReflectionUtils.GetConnectorType(providerType);
-
             for (int i = 0; i < m_Objects.Length; i++)
             {
                 var             e          = m_Objects[i];
                 List<Component> components = ListPool<Component>.Get();
-                e.GetComponents(connectorType, components);
+                e.GetComponents(components);
 
                 foreach (var com in components)
                 {
+                    var comT = com.GetType();
+                    if (!ConnectorReflectionUtils.TryGetConnectorType(comT, providerType, out var connectorType))
+                    {
+                        continue;
+                    }
                     ConnectorReflectionUtils.Disconnect(connectorType, com, provider);
                 }
 

@@ -54,35 +54,41 @@ namespace Vvr.Session.World
                 = await world.CreateSession<AddressableSession>(new AddressableSession.SessionData(m_EssentialDataLabels));
 
             await addressableSession.UpdateCatalogAsync();
-            if (m_DownloadPopup != null)
+
+            long bytes = await addressableSession.GetTotalDownloadSizeAsync();
+
+            if (bytes > 0)
             {
-                long bytes = await addressableSession.GetTotalDownloadSizeAsync();
-
-                UniTaskCompletionSource<bool> shouldDownload = new();
-                await m_DownloadPopup.OpenAsync(bytes, shouldDownload);
-
-                bool confirmation = await shouldDownload.Task;
-                if (!confirmation)
+                if (m_DownloadPopup != null)
                 {
-                    // TODO: exit application
-                    Application.Quit();
+                    UniTaskCompletionSource<bool> shouldDownload = new();
+                    await m_DownloadPopup.OpenAsync(bytes, shouldDownload);
+
+                    bool confirmation = await shouldDownload.Task;
+                    if (!confirmation)
+                    {
+                        // TODO: exit application
+                        Application.Quit();
 #if UNITY_EDITOR
-                    UnityEditor.EditorApplication.isPlaying = false;
+                        UnityEditor.EditorApplication.isPlaying = false;
 #endif
-                    return null;
+                        return null;
+                    }
+
+                    await addressableSession.DownloadAsync(m_DownloadPopup);
+
+                    if (m_DownloadPopup != null)
+                    {
+                        while (m_DownloadPopup.DownloadSlider.value < m_DownloadPopup.DownloadSlider.maxValue - .01f)
+                        {
+                            await UniTask.Yield();
+                        }
+
+                        await m_DownloadPopup.CloseAsync();
+                    }
                 }
-            }
-
-            await addressableSession.DownloadAsync(m_DownloadPopup);
-
-            if (m_DownloadPopup != null)
-            {
-                while (m_DownloadPopup.DownloadSlider.value < m_DownloadPopup.DownloadSlider.maxValue - .01f)
-                {
-                    await UniTask.Yield();
-                }
-
-                await m_DownloadPopup.CloseAsync();
+                else
+                    await addressableSession.DownloadAsync(m_DownloadPopup);
             }
 
             await addressableSession.Reserve();
