@@ -49,6 +49,8 @@ namespace Vvr.Controller.Abnormal
 
             public uint index;
 
+            public IAbnormalHandle handle;
+
             public int CompareTo(Value other)
             {
                 return abnormal.CompareTo(other.abnormal);
@@ -76,7 +78,6 @@ namespace Vvr.Controller.Abnormal
             Owner  = owner;
 
             m_IsDirty = true;
-            ObjectObserver<AbnormalController>.Get(this).EnsureContainer();
         }
 
         public void Dispose()
@@ -153,15 +154,14 @@ namespace Vvr.Controller.Abnormal
                     updateCount   = abnormal.delayTime > 0 ? 0 : 1,
                     stack = 1,
 
-                    index = m_Counter++
+                    index = m_Counter++,
+
+                    handle = new AbnormalHandle(this, abnormal.id, UniqueID.Issue)
                 };
                 m_Values.Add(v);
                 m_Values.Sort();
                 m_IsDirty = true;
-                ObjectObserver<AbnormalController>.ChangedEvent(this);
-                ObjectObserver<IStatValueStack>.ChangedEvent(Owner.Stats);
-                await trigger.Execute(Model.Condition.OnAbnormalAdded, data.Id)
-                        .AttachExternalCancellation(CancellationToken)
+                await trigger.Execute(Model.Condition.OnAbnormalAdded, data.Id, CancellationToken)
                     ;
                 return;
             }
@@ -178,7 +178,9 @@ namespace Vvr.Controller.Abnormal
                     updateCount   = abnormal.delayTime > 0 ? 0 : 1,
                     stack = 1,
 
-                    index = m_Counter++
+                    index = m_Counter++,
+
+                    handle = new AbnormalHandle(this, abnormal.id, UniqueID.Issue)
                 };
             }
             else
@@ -198,11 +200,13 @@ namespace Vvr.Controller.Abnormal
 
             m_Values[index] = boxed;
             m_IsDirty       = true;
-            ObjectObserver<AbnormalController>.ChangedEvent(this);
-            ObjectObserver<IStatValueStack>.ChangedEvent(Owner.Stats);
-            await trigger.Execute(Model.Condition.OnAbnormalAdded, data.Id)
-                    .AttachExternalCancellation(CancellationToken)
+            await trigger.Execute(Model.Condition.OnAbnormalAdded, data.Id, CancellationToken)
                 ;
+        }
+
+        public void Remove(AbnormalHandle handle)
+        {
+
         }
         public bool Contains(Hash abnormalId)
         {

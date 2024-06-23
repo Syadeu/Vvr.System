@@ -27,7 +27,9 @@ using Vvr.Model.Stat;
 
 namespace Vvr.Controller.Abnormal
 {
-    internal readonly struct RuntimeAbnormal : IComparable<RuntimeAbnormal>, IEquatable<RuntimeAbnormal>
+    internal readonly struct RuntimeAbnormal :
+        IUniqueID,
+        IComparable<RuntimeAbnormal>, IEquatable<RuntimeAbnormal>
     {
         public readonly string id;
         public readonly Hash   hash;
@@ -64,6 +66,8 @@ namespace Vvr.Controller.Abnormal
         // Chain
         public readonly IReadOnlyList<IAbnormalData> abnormalChain;
 
+        public UniqueID UniqueID { get; }
+
         public RuntimeAbnormal(IAbnormalData d)
         {
             id       = d.Id;
@@ -97,6 +101,8 @@ namespace Vvr.Controller.Abnormal
             cancelClearAllStacks = d.Cancellation.ClearAllStacks;
 
             abnormalChain = d.AbnormalChain;
+
+            UniqueID = UniqueID.Issue;
         }
 
         public int CompareTo(RuntimeAbnormal other)

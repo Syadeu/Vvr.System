@@ -85,6 +85,19 @@ namespace Vvr.Controller.Abnormal
             for (int i = 0; i < m_Values.Count; i++)
             {
                 Value e = m_Values[i];
+                // If handle has been disposed (not from time update likely from handle)
+                // Remove it from the list
+                if (e.handle.Disposed)
+                {
+                    // TODO: maybe execute when handle is released?
+                    await trigger.Execute(Model.Condition.OnAbnormalRemoved, e.abnormal.id, CancellationToken)
+                        ;
+
+                    m_Values.RemoveAt(i--);
+                    m_IsDirty = true;
+                    continue;
+                }
+
                 // This is ordered list. infinite duration should be last of the list
                 if (e.abnormal.duration < 0) break;
 
@@ -129,13 +142,11 @@ namespace Vvr.Controller.Abnormal
 #if UNITY_EDITOR
                             $"[Abnormal:{Owner.GetInstanceID()}] Remove {e.abnormal.hash.Key}".ToLog();
 #endif
-                            ObjectObserver<AbnormalController>.ChangedEvent(this);
-                            ObjectObserver<IStatValueStack>.ChangedEvent(Owner.Stats);
+                            e.handle.Dispose();
                             m_Values.RemoveAt(i--);
                             m_IsDirty = true;
 
-                            await trigger.Execute(Model.Condition.OnAbnormalRemoved, e.abnormal.id)
-                                    .AttachExternalCancellation(CancellationToken)
+                            await trigger.Execute(Model.Condition.OnAbnormalRemoved, e.abnormal.id, CancellationToken)
                                 ;
                             if (CancellationToken.IsCancellationRequested)
                                 return;
@@ -170,8 +181,7 @@ namespace Vvr.Controller.Abnormal
 
                     if (updateCount > 0)
                     {
-                        await trigger.Execute(Model.Condition.OnAbnormalUpdate, e.abnormal.id)
-                                .AttachExternalCancellation(CancellationToken)
+                        await trigger.Execute(Model.Condition.OnAbnormalUpdate, e.abnormal.id, CancellationToken)
                             ;
                         if (CancellationToken.IsCancellationRequested)
                             return;
@@ -182,8 +192,6 @@ namespace Vvr.Controller.Abnormal
             if (shouldUpdate)
             {
                 m_IsDirty = true;
-                ObjectObserver<AbnormalController>.ChangedEvent(this);
-                ObjectObserver<IStatValueStack>.ChangedEvent(Owner.Stats);
             }
         }
     }
