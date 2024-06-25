@@ -85,18 +85,6 @@ namespace Vvr.Controller.Abnormal
             for (int i = 0; i < m_Values.Count; i++)
             {
                 Value e = m_Values[i];
-                // If handle has been disposed (not from time update likely from handle)
-                // Remove it from the list
-                if (e.handle.Disposed)
-                {
-                    // TODO: maybe execute when handle is released?
-                    await trigger.Execute(Model.Condition.OnAbnormalRemoved, e.abnormal.id, CancellationToken)
-                        ;
-
-                    m_Values.RemoveAt(i--);
-                    m_IsDirty = true;
-                    continue;
-                }
 
                 // This is ordered list. infinite duration should be last of the list
                 if (e.abnormal.duration < 0) break;
@@ -142,7 +130,6 @@ namespace Vvr.Controller.Abnormal
 #if UNITY_EDITOR
                             $"[Abnormal:{Owner.GetInstanceID()}] Remove {e.abnormal.hash.Key}".ToLog();
 #endif
-                            e.handle.Dispose();
                             m_Values.RemoveAt(i--);
                             m_IsDirty = true;
 

@@ -36,13 +36,19 @@ namespace Vvr.Controller.Abnormal
         IActor Owner { get; }
         int    Count { get; }
 
+        bool Disposed { get; }
+
         void Clear();
         /// <summary>
         /// Add raw abnormal data to process
         /// </summary>
         /// <param name="data"></param>
         /// <returns></returns>
-        UniTask AddAsync(IAbnormalData data);
+        UniTask<AbnormalHandle> AddAsync(IAbnormalData data);
+
+        UniTask RemoveAsync(AbnormalHandle handle);
+
+        bool IsActivated(in AbnormalHandle handle);
 
         /// <summary>
         /// Returns given abnormal id is in this controller
@@ -50,5 +56,7 @@ namespace Vvr.Controller.Abnormal
         /// <param name="abnormalId"></param>
         /// <returns></returns>
         bool Contains(Hash abnormalId);
+
+        bool Contains(in AbnormalHandle handle);
     }
 }

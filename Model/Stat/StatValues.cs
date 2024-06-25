@@ -22,6 +22,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using Cathei.BakingSheet;
@@ -140,11 +141,13 @@ namespace Vvr.Model.Stat
         [Pure, PublicAPI]
         public int IndexOf(StatType t)
         {
+            EvaluateSingleStatType(t);
+
             long target  = (long)Types;
             long typeVal = (long)t;
             long e       = 1L;
 
-            for (int i = 0, c = 0; i < 64 && c < m_Values.Length; i++, e <<= 1)
+            for (int i = 0, c = 0; i < 64 && c < m_Values?.Length; i++, e <<= 1)
             {
                 if ((target & e) != e) continue;
                 if (typeVal      == e) return c;
@@ -152,6 +155,25 @@ namespace Vvr.Model.Stat
             }
 
             return -1;
+        }
+
+        [Conditional("UNITY_EDITOR")]
+        private static void EvaluateSingleStatType(StatType t)
+        {
+            long v     = (long)t;
+            long count = 0;
+
+            int i = 0;
+            while (i < 64)
+            {
+                long p = 1L << i;
+                count += (v & p) >> i;
+                i++;
+
+                if (count > 1)
+                    throw new InvalidOperationException(
+                        "Multiple StatType should not provided");
+            }
         }
 
         /// <summary>
@@ -162,6 +184,8 @@ namespace Vvr.Model.Stat
         [Pure, PublicAPI]
         public float GetValue(StatType t)
         {
+            if (m_Values is null) return 0;
+
             int index = IndexOf(t);
             if (index < 0) return 0;
 
@@ -188,7 +212,7 @@ namespace Vvr.Model.Stat
         [PublicAPI]
         public void Clear()
         {
-            for (int i = 0; i < m_Values.Length; i++)
+            for (int i = 0; i < m_Values?.Length; i++)
             {
                 m_Values[i] = 0;
             }

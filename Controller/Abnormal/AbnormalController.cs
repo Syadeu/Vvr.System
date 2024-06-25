@@ -40,6 +40,8 @@ namespace Vvr.Controller.Abnormal
     {
         struct Value : IComparable<Value>, IReadOnlyRuntimeAbnormal
         {
+            public UniqueID uniqueID;
+
             public CryptoFloat     delayDuration, duration;
             public CryptoInt       stack;
             public RuntimeAbnormal abnormal;
@@ -48,8 +50,6 @@ namespace Vvr.Controller.Abnormal
             public CryptoInt   updateCount;
 
             public uint index;
-
-            public IAbnormalHandle handle;
 
             public int CompareTo(Value other)
             {
@@ -67,7 +67,7 @@ namespace Vvr.Controller.Abnormal
         private uint m_Counter;
         private bool m_IsDirty;
 
-        private bool              Disposed          { get; set; }
+        public  bool              Disposed          { get; private set; }
         private CancellationToken CancellationToken => m_CancellationTokenSource.Token;
 
         public IActor Owner { get; }
@@ -87,7 +87,6 @@ namespace Vvr.Controller.Abnormal
 
             m_CancellationTokenSource.Cancel();
 
-            ObjectObserver<AbnormalController>.Remove(this);
             TimeController.Unregister(this);
 
             Disposed = true;
@@ -101,7 +100,8 @@ namespace Vvr.Controller.Abnormal
             m_Values.Clear();
             m_Counter = 0;
         }
-        public async UniTask AddAsync(IAbnormalData data)
+
+        public async UniTask<AbnormalHandle> AddAsync(IAbnormalData data)
         {
             if (Disposed)
                 throw new ObjectDisposedException(nameof(AbnormalController));
@@ -114,18 +114,55 @@ namespace Vvr.Controller.Abnormal
                     ;
 
                 if (CancellationToken.IsCancellationRequested)
-                    return;
+                    return default;
             }
 
             if (CancellationToken.IsCancellationRequested)
-                return;
+                return default;
 
+            Value value = default;
+            if (!AddInternal(ref abnormal, ref value))
+            {
+                return default;
+            }
+
+            using var trigger = ConditionTrigger.Push(Owner, ConditionTrigger.Abnormal);
+            await trigger.Execute(Model.Condition.OnAbnormalAdded, data.Id, CancellationToken);
+
+            return new AbnormalHandle(this, abnormal.id, value.uniqueID);
+        }
+
+        public bool IsActivated(in AbnormalHandle handle)
+        {
+            int index = IndexOf(in handle);
+            if (index < 0) return false;
+
+            return m_Values[index].updateCount > 0;
+        }
+
+        private int IndexOf(in AbnormalHandle handle)
+        {
+            for (int i = 0; i < m_Values.Count; i++)
+            {
+                var e = m_Values[i];
+                if (e.uniqueID != handle.UniqueID) continue;
+
+                return i;
+            }
+
+            return -1;
+        }
+        private bool AddInternal(ref RuntimeAbnormal abnormal, ref Value value)
+        {
             if (abnormal.maxStack < 0)
             {
                 $"Trying to add abnormal has max stack {abnormal.maxStack}".ToLogError();
-                return;
+                return false;
             }
 
+            $"Add abnormal {abnormal.hash}".ToLog();
+
+            // Prevent overflow
             if (uint.MaxValue - 1000 < m_Counter + 1)
             {
                 uint start = m_Counter - (uint)m_Values.Count;
@@ -139,74 +176,93 @@ namespace Vvr.Controller.Abnormal
                 m_Counter = 0;
             }
 
-            $"Add abnormal {abnormal.hash}".ToLog();
-            using var trigger = ConditionTrigger.Push(Owner, ConditionTrigger.Abnormal);
-            int       index   = m_Values.BinarySearch(new Value() { abnormal = abnormal });
+            int index = m_Values.BinarySearch(new Value() { abnormal = abnormal });
 
             // If no entry
             if (index < 0)
             {
-                var v = new Value()
+                value = new Value()
                 {
+                    uniqueID = UniqueID.Issue,
+
                     abnormal      = abnormal,
                     duration      = abnormal.duration,
                     delayDuration = abnormal.delayTime > 0 ? abnormal.delayTime : 0,
                     updateCount   = abnormal.delayTime > 0 ? 0 : 1,
-                    stack = 1,
+                    stack         = 1,
 
                     index = m_Counter++,
-
-                    handle = new AbnormalHandle(this, abnormal.id, UniqueID.Issue)
                 };
-                m_Values.Add(v);
+                m_Values.Add(value);
+                // Full list sort is required since runtime abnormal order will be changed by duration
                 m_Values.Sort();
                 m_IsDirty = true;
-                await trigger.Execute(Model.Condition.OnAbnormalAdded, data.Id, CancellationToken)
-                    ;
-                return;
+
+                return true;
             }
 
-            var boxed = m_Values[index];
+            value = m_Values[index];
             // If newly added abnormal has higher level
-            if (boxed.abnormal.level < abnormal.level)
+            if (value.abnormal.level < abnormal.level)
             {
-                boxed = new Value()
+                value = new Value()
                 {
-                    abnormal    = abnormal,
+                    uniqueID = UniqueID.Issue,
+
+                    abnormal      = abnormal,
                     duration      = abnormal.duration,
                     delayDuration = abnormal.delayTime > 0 ? abnormal.delayTime : 0,
                     updateCount   = abnormal.delayTime > 0 ? 0 : 1,
-                    stack = 1,
+                    stack         = 1,
 
                     index = m_Counter++,
-
-                    handle = new AbnormalHandle(this, abnormal.id, UniqueID.Issue)
                 };
             }
             else
             {
 
-                if (// if maxstack is lower than 0, take as infinite stack
+                if ( // if max stack is lower than 0, take as infinite stack
                     abnormal.maxStack > 0 &&
-                    // If exceed maxstack
+                    // If exceed max stack
                     abnormal.maxStack <= m_Values[index].stack)
                 {
                     // Update duration for current time
-                    boxed.duration = abnormal.duration;
+                    value.duration = abnormal.duration;
                 }
                 // add stack
-                else boxed.stack++;
+                else value.stack++;
             }
 
-            m_Values[index] = boxed;
+            m_Values[index] = value;
             m_IsDirty       = true;
-            await trigger.Execute(Model.Condition.OnAbnormalAdded, data.Id, CancellationToken)
-                ;
+
+            return true;
         }
 
-        public void Remove(AbnormalHandle handle)
+        public bool Contains(in AbnormalHandle handle)
         {
+            int index = IndexOf(in handle);
+            return index >= 0;
+        }
+        public async UniTask RemoveAsync(AbnormalHandle handle)
+        {
+            bool removed = false;
+            for (int i = 0; i < m_Values.Count; i++)
+            {
+                var e = m_Values[i];
+                if (e.uniqueID != handle.UniqueID) continue;
 
+                m_Values.RemoveAt(i);
+                removed = true;
+                break;
+            }
+
+            if (!removed) return;
+
+            m_IsDirty = true;
+
+            using var trigger = ConditionTrigger.Push(Owner, ConditionTrigger.Abnormal);
+            await trigger.Execute(Model.Condition.OnAbnormalRemoved, handle.Id, CancellationToken);
         }
         public bool Contains(Hash abnormalId)
         {

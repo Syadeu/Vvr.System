@@ -30,6 +30,26 @@ namespace Vvr.TestClass
     [Serializable]
     public class TestAbnormalDefinition : IAbnormalDefinition
     {
+        public static TestAbnormalDefinition Create(
+            TestStatData targetStat = null,
+            int type = 0, int level = 0)
+        {
+            var rnd = Unity.Mathematics.Random.CreateFromIndex(FNV1a32.Calculate(Guid.NewGuid()));
+            TestAbnormalDefinition t = new TestAbnormalDefinition()
+            {
+                m_Type         = type,
+                m_Level        = level,
+                m_IsBuff       = rnd.NextBool(),
+                m_Replaceable  = rnd.NextBool(),
+                m_MaxStack     = rnd.NextInt(1, 100),
+                m_Method       = TestUtils.RandomEnumValue<Method>(),
+                m_TargetStatus = targetStat ?? TestStatData.CreateRandom(),
+                m_Value        = rnd.NextFloat(0, 100)
+            };
+
+            return t;
+        }
+
         [SerializeField]
         private int       m_Type;
         [SerializeField]
@@ -101,6 +121,16 @@ namespace Vvr.TestClass
     [Serializable]
     public class TestAbnormalDuration : IAbnormalDuration
     {
+        public static TestAbnormalDuration Create()
+        {
+            var rnd = Unity.Mathematics.Random.CreateFromIndex(FNV1a32.Calculate(Guid.NewGuid()));
+            return new TestAbnormalDuration()
+            {
+                m_DelayTime = rnd.NextFloat(-1, 1),
+                m_Time      = rnd.NextFloat(0, 1)
+            };
+        }
+
         [SerializeField]
         private float m_DelayTime;
         [SerializeField]
@@ -123,6 +153,21 @@ namespace Vvr.TestClass
     [Serializable]
     public class TestAbnormalUpdate : IAbnormalUpdate
     {
+        public static TestAbnormalUpdate Create(
+            Condition condition = Condition.Always,
+            string value = null)
+        {
+            var rnd = Unity.Mathematics.Random.CreateFromIndex(FNV1a32.Calculate(Guid.NewGuid()));
+            return new TestAbnormalUpdate()
+            {
+                m_Enable    = rnd.NextBool(),
+                m_Condition = condition,
+                m_Value     = value,
+                m_Interval  = rnd.NextInt(0, 100),
+                m_MaxCount  = rnd.NextInt(0, 100)
+            };
+        }
+
         [SerializeField]
         private bool      m_Enable;
         [SerializeField]
@@ -169,12 +214,26 @@ namespace Vvr.TestClass
     [Serializable]
     public class TestAbnormalCancellation : IAbnormalCancellation
     {
+        public static TestAbnormalCancellation Create(
+            Condition condition = Condition.Always,
+            string value = null)
+        {
+            var rnd = Unity.Mathematics.Random.CreateFromIndex(FNV1a32.Calculate(Guid.NewGuid()));
+
+            return new TestAbnormalCancellation()
+            {
+                m_Condition      = condition,
+                m_Probability    = rnd.NextFloat(0, 100),
+                m_ClearAllStacks = rnd.NextBool()
+            };
+        }
+
         [SerializeField]
         private Condition m_Condition;
         [SerializeField]
-        private float     m_Probability;
-        [SerializeField]
         private string    m_Value;
+        [SerializeField]
+        private float     m_Probability;
         [SerializeField]
         private bool      m_ClearAllStacks;
 

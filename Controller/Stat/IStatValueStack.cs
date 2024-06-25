@@ -34,5 +34,7 @@ namespace Vvr.Controller.Stat
         IStatValueStack RemoveModifier(IStatModifier modifier);
 
         void Update();
+
+        void Clear();
     }
 }

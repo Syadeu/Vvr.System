@@ -19,14 +19,16 @@
 
 #endregion
 
+using JetBrains.Annotations;
 using Vvr.Model.Stat;
 
 namespace Vvr.Controller.Stat
 {
+    [PublicAPI]
     public interface IStatModifier
     {
         bool IsDirty { get; }
         int  Order   { get; }
-        void UpdateValues(in IReadOnlyStatValues originalStats, ref StatValues stats);
+        void UpdateValues([CanBeNull] in IReadOnlyStatValues originalStats, ref StatValues stats);
     }
 }

@@ -40,7 +40,7 @@ namespace Vvr.Model
                 var c = value[i];
                 if (!char.IsDigit(c))
                 {
-                    throw new ArgumentException("Invalid input string. Only numeric characters and '.' are allowed.");
+                    throw new ArgumentException("Invalid input string. Only numeric characters are allowed.");
                 }
             }
         }

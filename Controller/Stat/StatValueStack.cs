@@ -36,6 +36,7 @@ namespace Vvr.Controller.Stat
     {
         private readonly IActor m_Owner;
 
+        [CanBeNull]
         private readonly IReadOnlyStatValues m_OriginalStats;
         private          StatValues          m_ModifiedStats;
         private          StatValues          m_PushStats;
@@ -50,6 +51,9 @@ namespace Vvr.Controller.Stat
         {
             get
             {
+                if (Disposed)
+                    throw new ObjectDisposedException(nameof(StatValueStack));
+
                 Update();
                 return m_ResultStats.Types;
             }
@@ -59,26 +63,46 @@ namespace Vvr.Controller.Stat
         {
             get
             {
+                if (Disposed)
+                    throw new ObjectDisposedException(nameof(StatValueStack));
+
                 Update();
                 return (IReadOnlyList<float>)m_ResultStats.Values;
                 // return ((IReadOnlyStatValues)m_ResultStats).Values;
             }
         }
 
-        public IReadOnlyStatValues OriginalStats => m_OriginalStats;
+        public bool Disposed { get; private set; }
 
-        public StatValueStack(IActor owner, IReadOnlyStatValues originalStats)
+        [CanBeNull]
+        public IReadOnlyStatValues OriginalStats
+        {
+            get
+            {
+                if (Disposed)
+                    throw new ObjectDisposedException(nameof(StatValueStack));
+                return m_OriginalStats;
+            }
+        }
+
+        public StatValueStack([NotNull] IActor owner, [CanBeNull] IReadOnlyStatValues originalStats)
         {
             m_Owner         =  owner;
             m_OriginalStats =  originalStats;
-            m_ModifiedStats |= m_OriginalStats.Types;
-            m_PushStats     |= m_OriginalStats.Types;
+            if (originalStats is not null)
+            {
+                m_ModifiedStats |= m_OriginalStats.Types;
+                m_PushStats     |= m_OriginalStats.Types;
 
-            m_ResultStats =  StatValues.Copy(m_OriginalStats);
+                m_ResultStats = StatValues.Copy(m_OriginalStats);
+            }
         }
 
         public void Push(StatType t, float v)
         {
+            if (Disposed)
+                throw new ObjectDisposedException(nameof(StatValueStack));
+
             using var debugTimer = DebugTimer.Start();
             m_PushStats    |= t;
             m_PushStats[t] += v;
@@ -89,6 +113,9 @@ namespace Vvr.Controller.Stat
         }
         public void Push<TProcessor>(StatType t, float v) where TProcessor : struct, IStatValueProcessor
         {
+            if (Disposed)
+                throw new ObjectDisposedException(nameof(StatValueStack));
+
             using var debugTimer = DebugTimer.Start();
             m_PushStats |= t;
 
@@ -104,21 +131,24 @@ namespace Vvr.Controller.Stat
 
         public void Update()
         {
+            if (Disposed)
+                throw new ObjectDisposedException(nameof(StatValueStack));
+
             using var debugTimer = DebugTimer.Start();
 
             if (!m_Modifiers.Any(x => x.IsDirty) && !m_IsDirty) return;
 
-            m_ModifiedStats |= m_OriginalStats.Types;
+            if (m_OriginalStats is not null)
+                m_ModifiedStats |= m_OriginalStats.Types;
             m_ModifiedStats.Clear();
             m_ModifiedStats += m_OriginalStats;
 
             float prevHp = m_ModifiedStats[StatType.HP];
-            float currentHp;
             foreach (var e in m_Modifiers.OrderBy(StatModifierComparer.Selector, StatModifierComparer.Static))
             {
                 e.UpdateValues(m_OriginalStats, ref m_ModifiedStats);
 
-                currentHp = m_ModifiedStats[StatType.HP];
+                float currentHp = m_ModifiedStats[StatType.HP];
                 if (currentHp < prevHp && (m_ModifiedStats.Types & StatType.SHD) == StatType.SHD)
                 {
                     float shield = m_ModifiedStats[StatType.SHD];
@@ -141,12 +171,19 @@ namespace Vvr.Controller.Stat
             m_ResultStats |= m_ModifiedStats.Types | m_PushStats.Types;
             m_ResultStats.Clear();
 
+            PostUpdate();
+
+            m_IsDirty = false;
+        }
+
+        private void PostUpdate()
+        {
             m_ResultStats += m_ModifiedStats;
 
-            prevHp        =  m_ResultStats[StatType.HP];
+            float prevHp = m_ResultStats[StatType.HP];
             m_ResultStats += m_PushStats;
 
-            currentHp = m_ResultStats[StatType.HP];
+            float currentHp = m_ResultStats[StatType.HP];
             if (currentHp < prevHp && (m_ResultStats.Types & StatType.SHD) == StatType.SHD)
             {
                 float shield = m_ResultStats[StatType.SHD];
@@ -163,12 +200,13 @@ namespace Vvr.Controller.Stat
                     m_ResultStats[StatType.SHD] = shield - sub;
                 }
             }
-
-            m_IsDirty = false;
         }
 
         public float GetValue(StatType t)
         {
+            if (Disposed)
+                throw new ObjectDisposedException(nameof(StatValueStack));
+
             Update();
             return m_ResultStats[t];
         }
@@ -193,9 +231,15 @@ namespace Vvr.Controller.Stat
             return this;
         }
 
+        public void Clear()
+        {
+            m_Modifiers.Clear();
+            m_IsDirty = true;
+        }
         public void Dispose()
         {
             m_Modifiers.Clear();
+            Disposed = true;
         }
 
         public IEnumerator<KeyValuePair<StatType, float>> GetEnumerator()

@@ -33,9 +33,10 @@ namespace Vvr.TestClass
     {
         public static TestStatData CreateRandom()
         {
-            Model.Stat.StatType t = (StatType)UnityEngine.Random.Range(0, 64);
             return new TestStatData(
-                t, UnityEngine.Random.Range(short.MinValue, short.MaxValue), null);
+                UnityEngine.Random.Range(0, 64),
+                UnityEngine.Random.Range(short.MinValue, short.MaxValue),
+                null);
         }
 
         [SerializeField] [LabelText("Raw StatType")]
@@ -60,12 +61,13 @@ namespace Vvr.TestClass
         }
 
         public string Id           => VvrTypeHelper.Enum<StatType>.ToString(StatType);
-        public int    Index        { get; set; }
+        public int    Index        { get; }
         public object IconAssetKey => m_IconAsset;
 
-        public TestStatData(StatType statType, float value, AssetReferenceSprite iconAsset)
+        public TestStatData(int statType, float value, AssetReferenceSprite iconAsset)
         {
-            StatType    = statType;
+            StatType    = (StatType)(1L << statType);
+            Index       = statType;
             Value       = value;
             m_IconAsset = iconAsset;
         }

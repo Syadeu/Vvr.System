@@ -46,5 +46,19 @@ namespace Vvr.TestClass
             var exporter = new ScriptableObjectSheetExporter("Assets/AddressableResources/Data");
             await cont.Store(exporter);
         }
+
+        public static TEnum RandomEnumValue<TEnum>()
+            where TEnum : struct, IConvertible
+        {
+            var rnd = Unity.Mathematics.Random.CreateFromIndex(FNV1a32.Calculate(Guid.NewGuid()));
+
+            var e = VvrTypeHelper.Enum<TEnum>.Values;
+            return e[rnd.NextInt(0, e.Length)];
+        }
+
+        public static bool Approximately(float x, float y)
+        {
+            return UnityEngine.Mathf.Approximately(x, y);
+        }
     }
 }

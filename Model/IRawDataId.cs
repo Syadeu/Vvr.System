@@ -19,10 +19,16 @@
 
 #endregion
 
+using JetBrains.Annotations;
+
 namespace Vvr.Model
 {
+    [PublicAPI]
     public interface IRawDataId
     {
+        /// <summary>
+        /// Represent unique id from excel sheet
+        /// </summary>
         string Id { get; }
     }
 }

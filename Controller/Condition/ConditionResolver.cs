@@ -63,7 +63,13 @@ namespace Vvr.Controller.Condition
 
             // TODO: ocp
             var resolver = (ConditionResolver)target.ConditionResolver;
-            if (resolver.m_Parent != null)
+            if (resolver is null)
+            {
+                $"Event target has no {nameof(ConditionResolver)}. This is most likely not expected.".ToLogWarning();
+                return;
+            }
+
+            if (resolver.m_Parent is not null)
             {
                 await Execute(resolver.m_Parent.Owner, condition, v, cancellationToken);
             }

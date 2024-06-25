@@ -20,17 +20,31 @@
 #endregion
 
 using System;
+using Cysharp.Threading.Tasks;
+using JetBrains.Annotations;
 using Vvr.Model;
 
 namespace Vvr.Controller.Abnormal
 {
-    public sealed class AbnormalHandle : IAbnormalHandle
+    [PublicAPI]
+    public readonly struct AbnormalHandle : IRawDataId, IUniqueID, IDisposable
     {
-        public IAbnormal Owner    { get; }
+        private IAbnormal Owner    { get; }
+
         public string    Id       { get; }
         public UniqueID  UniqueID { get; }
 
-        public bool Disposed { get; private set; }
+        public bool Disposed => !Owner.Contains(this);
+
+        public bool IsActivated
+        {
+            get
+            {
+                if (Disposed)
+                    throw new ObjectDisposedException(nameof(AbnormalHandle));
+                return Owner.IsActivated(this);
+            }
+        }
 
         internal AbnormalHandle(IAbnormal owner, string id, UniqueID uniqueID)
         {
@@ -41,12 +55,11 @@ namespace Vvr.Controller.Abnormal
 
         public void Dispose()
         {
-            Disposed = true;
-        }
-    }
+            if (Disposed)
+                throw new ObjectDisposedException(nameof(AbnormalHandle) + $" {Id}");
 
-    internal interface IAbnormalHandle : IUniqueID, IDisposable
-    {
-        bool Disposed { get; }
+            Owner.RemoveAsync(this)
+                .Forget();
+        }
     }
 }

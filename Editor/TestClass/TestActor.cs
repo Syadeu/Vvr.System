@@ -40,6 +40,18 @@ namespace Vvr.TestClass
     [PublicAPI]
     public class TestActor : TestConditionTarget, IActor
     {
+        public static TestActor Create(Owner owner, string displayName = null)
+        {
+            string id = unchecked((int)FNV1a32.Calculate(Guid.NewGuid())).ToString();
+            if (displayName.IsNullOrEmpty())
+            {
+                displayName = id;
+            }
+
+            TestActor t = new TestActor(owner, displayName, id);
+            return t;
+        }
+
         private readonly int m_InstanceId = unchecked((int)FNV1a32.Calculate(Guid.NewGuid()));
 
         private StatValueStack     m_Stats;

@@ -21,6 +21,7 @@
 
 using Cathei.BakingSheet;
 using JetBrains.Annotations;
+using UnityEngine.Assertions;
 using UnityEngine.Scripting;
 using Vvr.Model.Stat;
 
@@ -51,6 +52,9 @@ namespace Vvr.Model
         /// <returns>The <see cref="StatType"/> converted from the <see cref="StatSheet.Row"/> object.</returns>
         public static StatType ToStat(this IStatData t)
         {
+            Assert.IsTrue(0 <= t.Index);
+            Assert.IsTrue(t.Index < 64);
+
             int i = t.Index;
             return (StatType)(1L << i);
         }
