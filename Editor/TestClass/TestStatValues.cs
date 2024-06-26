@@ -120,5 +120,10 @@ namespace Vvr.TestClass
         {
             return GetEnumerator();
         }
+
+        public override string ToString()
+        {
+            return m_StatValues.ToString();
+        }
     }
 }

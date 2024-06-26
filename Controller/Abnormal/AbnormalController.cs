@@ -73,6 +73,8 @@ namespace Vvr.Controller.Abnormal
         public IActor Owner { get; }
         public int    Count => m_Values.Count;
 
+        public bool IsDirty => m_IsDirty;
+
         public AbnormalController(IActor owner)
         {
             Owner  = owner;
@@ -160,7 +162,7 @@ namespace Vvr.Controller.Abnormal
                 return false;
             }
 
-            $"Add abnormal {abnormal.hash}".ToLog();
+            // $"Add abnormal {abnormal.hash}".ToLog();
 
             // Prevent overflow
             if (uint.MaxValue - 1000 < m_Counter + 1)

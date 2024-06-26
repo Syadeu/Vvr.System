@@ -31,8 +31,10 @@ namespace Vvr.TestClass
     public class TestAbnormalDefinition : IAbnormalDefinition
     {
         public static TestAbnormalDefinition Create(
+            int type = 0, int level = 0,
             TestStatData targetStat = null,
-            int type = 0, int level = 0)
+            Method method = Method.Addictive
+            )
         {
             var rnd = Unity.Mathematics.Random.CreateFromIndex(FNV1a32.Calculate(Guid.NewGuid()));
             TestAbnormalDefinition t = new TestAbnormalDefinition()
@@ -42,7 +44,7 @@ namespace Vvr.TestClass
                 m_IsBuff       = rnd.NextBool(),
                 m_Replaceable  = rnd.NextBool(),
                 m_MaxStack     = rnd.NextInt(1, 100),
-                m_Method       = TestUtils.RandomEnumValue<Method>(),
+                m_Method       = method,
                 m_TargetStatus = targetStat ?? TestStatData.CreateRandom(),
                 m_Value        = rnd.NextFloat(0, 100)
             };

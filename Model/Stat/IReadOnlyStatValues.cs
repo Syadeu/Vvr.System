@@ -31,5 +31,7 @@ namespace Vvr.Model.Stat
         float this[StatType t] { get; }
         StatType             Types  { get; }
         IReadOnlyList<float> Values { get; }
+
+        string ToString();
     }
 }

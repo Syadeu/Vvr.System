@@ -54,7 +54,7 @@ namespace Vvr.Controller.Tests
         {
             TimeController.ResetTime();
 
-            Stats = new StatValueStack(Actor, TestStatValues.CreateRandom(1));
+            Stats = new StatValueStack(Actor, null);
 
             Stats.AddModifier(m_Controller);
             Stats.Update();
@@ -98,14 +98,41 @@ namespace Vvr.Controller.Tests
         }
 
         [Test, Repeat(10)]
-        public async Task StatModifierTest()
+        public void StatModifierTestMultiple()
         {
-            Assert.IsTrue(TestUtils.Approximately(Stats.OriginalStats.Values[0], Stats.Values[0]));
+            StatModifierTestSingle().Wait();
+        }
 
-            TestAbnormalData d = TestAbnormalData.Create();
-            await Controller.AddAsync(d);
+        [Test]
+        public async Task StatModifierTestSingle()
+        {
+            TestAbnormalData d              = TestAbnormalData.Create(
+                definition: TestAbnormalDefinition.Create(method: Method.Addictive));
+            var              targetStatType = d.Definition.TargetStatus.ToStat();
+            float            original       = Stats[targetStatType];
 
-            Assert.IsFalse(TestUtils.Approximately(Stats.OriginalStats.Values[0], Stats.Values[0]));
+            $"original: {Stats}".ToLog();
+
+            var handle = await Controller.AddAsync(d);
+
+            Assert.IsTrue(m_Controller.IsDirty);
+            if (handle.IsActivated)
+                Assert.IsTrue((Stats.Types & targetStatType) == targetStatType);
+
+            float current = Stats[targetStatType];
+            $"current: {Stats}".ToLog();
+
+            Assert.IsFalse(m_Controller.IsDirty);
+
+            $"{Stats.OriginalStats}".ToLog();
+
+            string str = $"Original: {original} Current: {current}\n"  +
+                         $"Target: {targetStatType}, v: {d.Definition.Value} c: {Stats.Values.Count}";
+
+            if (handle.IsActivated)
+                Assert.IsFalse(TestUtils.Approximately(original, current), str);
+            else
+                Assert.IsTrue(TestUtils.Approximately(original, current), str);
         }
 
         [Test, Repeat(10)]
@@ -117,10 +144,10 @@ namespace Vvr.Controller.Tests
         private async Task MultipleStatModifierTestTask()
         {
             TestAbnormalData
-                d0 = TestAbnormalData.Create(definition: TestAbnormalDefinition.Create(type: 0)),
-                d1 = TestAbnormalData.Create(definition: TestAbnormalDefinition.Create(type: 1)),
-                d2 = TestAbnormalData.Create(definition: TestAbnormalDefinition.Create(type: 2)),
-                d3 = TestAbnormalData.Create(definition: TestAbnormalDefinition.Create(type: 3))
+                d0 = TestAbnormalData.Create(definition: TestAbnormalDefinition.Create(type: 0, method: Method.Addictive)),
+                d1 = TestAbnormalData.Create(definition: TestAbnormalDefinition.Create(type: 1, method: Method.Addictive)),
+                d2 = TestAbnormalData.Create(definition: TestAbnormalDefinition.Create(type: 2, method: Method.Addictive)),
+                d3 = TestAbnormalData.Create(definition: TestAbnormalDefinition.Create(type: 3, method: Method.Addictive))
                 ;
 
             var results = await UniTask.WhenAll(
@@ -131,7 +158,7 @@ namespace Vvr.Controller.Tests
             );
 
             int      activated        = 0;
-            StatType expectedStatType = Stats.OriginalStats.Types;
+            StatType expectedStatType = 0;
             if (results.Item1.IsActivated)
             {
                 expectedStatType |= d0.Definition.TargetStatus.ToStat();

@@ -67,8 +67,10 @@ namespace Vvr.Controller.Stat
                     throw new ObjectDisposedException(nameof(StatValueStack));
 
                 Update();
-                return (IReadOnlyList<float>)m_ResultStats.Values;
-                // return ((IReadOnlyStatValues)m_ResultStats).Values;
+                if (m_ResultStats.Values is not null)
+                    return (IReadOnlyList<float>)m_ResultStats.Values;
+
+                return Array.Empty<float>();
             }
         }
 
@@ -140,8 +142,11 @@ namespace Vvr.Controller.Stat
 
             if (m_OriginalStats is not null)
                 m_ModifiedStats |= m_OriginalStats.Types;
+
             m_ModifiedStats.Clear();
             m_ModifiedStats += m_OriginalStats;
+            m_ResultStats   |= m_ModifiedStats.Types | m_PushStats.Types;
+            m_ResultStats.Clear();
 
             float prevHp = m_ModifiedStats[StatType.HP];
             foreach (var e in m_Modifiers.OrderBy(StatModifierComparer.Selector, StatModifierComparer.Static))
@@ -168,8 +173,7 @@ namespace Vvr.Controller.Stat
                 prevHp = currentHp;
             }
 
-            m_ResultStats |= m_ModifiedStats.Types | m_PushStats.Types;
-            m_ResultStats.Clear();
+            m_ResultStats += m_ModifiedStats;
 
             PostUpdate();
 
@@ -178,8 +182,6 @@ namespace Vvr.Controller.Stat
 
         private void PostUpdate()
         {
-            m_ResultStats += m_ModifiedStats;
-
             float prevHp = m_ResultStats[StatType.HP];
             m_ResultStats += m_PushStats;
 
@@ -250,6 +252,11 @@ namespace Vvr.Controller.Stat
         IEnumerator IEnumerable.GetEnumerator()
         {
             return GetEnumerator();
+        }
+
+        public override string ToString()
+        {
+            return m_ResultStats.ToString();
         }
     }
 }
