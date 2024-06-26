@@ -140,8 +140,8 @@ namespace Vvr.Controller.Stat
             m_PushStats[t] += processedV;
             m_IsDirty = true;
 
-            Update();
-            $"[Stats:{m_Owner.Owner}:{m_Owner.GetInstanceID()}] Stat({t}) changed to {m_ResultStats[t]}(processed: {processedV}) with {VvrTypeHelper.TypeOf<TProcessor>.ToString()}".ToLog();
+            // Update();
+            // $"[Stats:{m_Owner.Owner}:{m_Owner.GetInstanceID()}] Stat({t}) changed to {m_ResultStats[t]}(processed: {processedV}) with {VvrTypeHelper.TypeOf<TProcessor>.ToString()}".ToLog();
         }
 
         public void Update()

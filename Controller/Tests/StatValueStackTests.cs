@@ -176,11 +176,60 @@ namespace Vvr.Controller.Tests
                     $"{expected.Values[i]} == {StatValueStack.Values[i]}");
             }
         }
-
         [Test]
         public void ModifierTest_1()
         {
-            HpShieldModifier m = new HpShieldModifier();
+            IStatModifier
+                hpPlus = new TestStatValueModifier(0, StatType.HP, 100),
+                shdPlus = new TestStatValueModifier(1, StatType.SHD, 100),
+                hpMinus = new TestStatValueModifier(2, StatType.HP, -50)
+                ;
+
+            StatValueStack.AddModifier(hpPlus);
+            AreSame(StatType.HP, 100);
+            StatValueStack.AddModifier(hpMinus);
+            AreSame(StatType.HP, 50);
+            StatValueStack.AddModifier(shdPlus);
+            AreSame(StatType.HP, 50);
+            AreSame(StatType.SHD, 100);
+        }
+        [Test]
+        public void ModifierTest_2()
+        {
+            IStatModifier
+                m0 = new TestStatValueModifier(0, StatType.HP, 100),
+                m1 = new TestStatValueModifier(1, StatType.HP, -50),
+                m2 = new TestStatValueMulModifier(2, StatType.HP, 2)
+                ;
+
+            StatValueStack.AddModifier(m0);
+            AreSame(StatType.HP, 100);
+            StatValueStack.AddModifier(m2);
+            AreSame(StatType.HP, 200);
+            StatValueStack.AddModifier(m1);
+            AreSame(StatType.HP, 100);
+        }
+        [Test]
+        public void ModifierTest_3()
+        {
+            IStatModifier
+                m0 = new TestStatValueModifier(0, StatType.HP, 100),
+                m1 = new TestStatValueModifier(1, StatType.HP, -50),
+                m2 = new TestStatValueMulModifier(2, StatType.HP, 2)
+                ;
+
+            StatValueStack.AddModifier(m0);
+            StatValueStack.AddModifier(m2);
+            StatValueStack.AddModifier(m1);
+
+            StatValueStack.RemoveModifier(m0);
+            AreSame(StatType.HP, -100);
+        }
+
+        [Test]
+        public void PostProcessorTest_0()
+        {
+            HpShieldPostProcessor m = new HpShieldPostProcessor();
             StatValueStack.AddPostProcessor(m);
 
             StatValueStack.Push(StatType.HP, 100);
@@ -199,15 +248,15 @@ namespace Vvr.Controller.Tests
         }
 
         [Test]
-        public void ModifierTest_2()
+        public void PostProcessorTest_1()
         {
             IStatModifier
-                hpPlus = new TestStatValueModifier(0, StatType.HP, 100),
+                hpPlus  = new TestStatValueModifier(0, StatType.HP, 100),
                 shdPlus = new TestStatValueModifier(1, StatType.SHD, 100),
                 hpMinus = new TestStatValueModifier(2, StatType.HP, -50)
                 ;
 
-            HpShieldModifier m = new HpShieldModifier();
+            HpShieldPostProcessor m = new HpShieldPostProcessor();
             StatValueStack.AddPostProcessor(m);
 
             StatValueStack.AddModifier(hpPlus);

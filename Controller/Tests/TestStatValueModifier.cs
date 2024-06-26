@@ -48,4 +48,28 @@ namespace Vvr.Controller.Tests
             IsDirty = false;
         }
     }
+    class TestStatValueMulModifier : IStatModifier
+    {
+        public bool IsDirty { get; set; } = true;
+        public int  Order   { get; set; }
+
+        public StatType StatType { get; set; }
+        public float    Value    { get; set; }
+
+        public TestStatValueMulModifier(int order, StatType t, float v)
+        {
+            Order    = order;
+            StatType = t;
+            Value    = v;
+        }
+
+        public void UpdateValues(in IReadOnlyStatValues originalStats, ref StatValues stats)
+        {
+            stats |= StatType;
+
+            stats[StatType] *= Value;
+
+            IsDirty = false;
+        }
+    }
 }

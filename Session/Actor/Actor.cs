@@ -104,7 +104,7 @@ namespace Vvr.Session.Actor
             Owner   = owner;
 
             m_Stats = new StatValueStack(this, ta.Stats);
-            m_Stats.AddPostProcessor(HpShieldModifier.Static);
+            m_Stats.AddPostProcessor(HpShieldPostProcessor.Static);
 
             m_ItemInventory          = new ItemInventory(this);
             m_ConditionResolver      = new ConditionResolver(this);
