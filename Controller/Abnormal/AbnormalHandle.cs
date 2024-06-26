@@ -46,6 +46,16 @@ namespace Vvr.Controller.Abnormal
             }
         }
 
+        public float Duration
+        {
+            get
+            {
+                if (Disposed)
+                    throw new ObjectDisposedException(nameof(AbnormalHandle));
+                return Owner.GetDuration(this);
+            }
+        }
+
         internal AbnormalHandle(IAbnormal owner, string id, UniqueID uniqueID)
         {
             Owner    = owner;

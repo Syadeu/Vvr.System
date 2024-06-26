@@ -121,8 +121,8 @@ namespace Vvr.Controller.Stat
             using var debugTimer = DebugTimer.Start();
             m_PushStats |= t;
 
-            TProcessor processor = Activator.CreateInstance<TProcessor>();
-            float processedV = processor.Process(m_ResultStats, v);
+            TProcessor processor  = default(TProcessor);
+            float      processedV = processor.Process(m_ResultStats, v);
 
             m_PushStats[t] += processedV;
             m_IsDirty = true;

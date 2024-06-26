@@ -188,5 +188,79 @@ namespace Vvr.Controller.Tests
                 $"Expected: {Convert.ToString((long)expectedStatType, 2)} " +
                 $"But: {Convert.ToString((long)Stats.Types, 2)}");
         }
+
+        [Test]
+        public async Task TimeUpdateTest_0()
+        {
+            TestAbnormalData d = TestAbnormalData.Create(
+                definition: TestAbnormalDefinition.Create(method: Method.Addictive),
+                duration: TestAbnormalDuration.Create(0, 0));
+            var targetStatType = d.Definition.TargetStatus.ToStat();
+
+            float original = Stats[targetStatType];
+            var   handle   = await Controller.AddAsync(d);
+            float modified = Stats[targetStatType];
+
+            TestUtils.Approximately(original, modified);
+            await TimeController.Next(1);
+
+            Assert.IsTrue(handle.Disposed);
+        }
+        [Test]
+        public async Task TimeUpdateTest_1()
+        {
+            TestAbnormalData d = TestAbnormalData.Create(
+                definition: TestAbnormalDefinition.Create(method: Method.Addictive),
+                duration: TestAbnormalDuration.Create(0, 2),
+                update: TestAbnormalUpdate.Create(enable: false),
+                cancellation: TestAbnormalCancellation.Create(probability: 0, clearAllStacks: true)
+                );
+            var targetStatType = d.Definition.TargetStatus.ToStat();
+
+            var handle = await Controller.AddAsync(d);
+            Assert.IsTrue(handle.IsActivated);
+
+            await TimeController.Next(1);
+
+            Assert.IsFalse(handle.Disposed);
+
+            await TimeController.Next(1);
+
+            Assert.IsFalse(Controller.Contains(handle));
+            Assert.IsTrue(handle.Disposed);
+        }
+
+        [Test, Repeat(10)]
+        public void TimeUpdateTest_1_Multiple()
+        {
+            TimeUpdateTest_1().Wait();
+        }
+        [Test]
+        public async Task TimeUpdateTest_2()
+        {
+            TestAbnormalData d = TestAbnormalData.Create(
+                definition: TestAbnormalDefinition.Create(method: Method.Addictive),
+                duration: TestAbnormalDuration.Create(1, 2));
+            var targetStatType = d.Definition.TargetStatus.ToStat();
+
+            var handle = await Controller.AddAsync(d);
+
+            Assert.IsFalse(handle.IsActivated);
+            await TimeController.Next(1);
+
+            Assert.IsFalse(handle.Disposed);
+            Assert.IsTrue(handle.IsActivated);
+
+            await TimeController.Next(2);
+
+            Assert.IsFalse(Controller.Contains(handle));
+            Assert.IsTrue(handle.Disposed);
+        }
+
+        [Test, Repeat(10)]
+        public void TimeUpdateTest_2_Multiple()
+        {
+            TimeUpdateTest_2().Wait();
+        }
     }
 }

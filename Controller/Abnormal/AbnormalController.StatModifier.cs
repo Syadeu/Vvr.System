@@ -63,6 +63,9 @@ namespace Vvr.Controller.Abnormal
             if (Disposed)
                 throw new ObjectDisposedException(nameof(AbnormalController));
 
+            using var wl = new SemaphoreSlimLock(m_Lock);
+            wl.Wait(TimeSpan.FromSeconds(1), CancellationToken);
+
             foreach (Value e in m_Values.OrderBy(ValueMethodOrderComparer.Selector, ValueMethodOrderComparer.Static))
             {
                 int length = e.updateCount;

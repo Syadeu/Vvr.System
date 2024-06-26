@@ -64,6 +64,8 @@ namespace Vvr.Controller.Abnormal
         private readonly List<Value>             m_Values                  = new();
         private readonly CancellationTokenSource m_CancellationTokenSource = new();
 
+        private readonly SemaphoreSlim m_Lock = new(1, 1);
+
         private uint m_Counter;
         private bool m_IsDirty;
 
@@ -99,6 +101,9 @@ namespace Vvr.Controller.Abnormal
             if (Disposed)
                 throw new ObjectDisposedException(nameof(AbnormalController));
 
+            using var wl = new SemaphoreSlimLock(m_Lock);
+            wl.Wait(TimeSpan.FromSeconds(1), CancellationToken);
+
             m_Values.Clear();
             m_Counter = 0;
         }
@@ -123,9 +128,13 @@ namespace Vvr.Controller.Abnormal
                 return default;
 
             Value value = default;
-            if (!AddInternal(ref abnormal, ref value))
+            using (var wl = new SemaphoreSlimLock(m_Lock))
             {
-                return default;
+                await wl.WaitAsync(TimeSpan.FromSeconds(1), CancellationToken);
+                if (!AddInternal(ref abnormal, ref value))
+                {
+                    return default;
+                }
             }
 
             using var trigger = ConditionTrigger.Push(Owner, ConditionTrigger.Abnormal);
@@ -142,8 +151,19 @@ namespace Vvr.Controller.Abnormal
             return m_Values[index].updateCount > 0;
         }
 
+        public float GetDuration(in AbnormalHandle handle)
+        {
+            int index = IndexOf(in handle);
+            if (index < 0) throw new InvalidOperationException();
+
+            return m_Values[index].delayDuration + m_Values[index].duration;
+        }
+
         private int IndexOf(in AbnormalHandle handle)
         {
+            using var wl = new SemaphoreSlimLock(m_Lock);
+            wl.Wait(TimeSpan.FromSeconds(1), CancellationToken);
+
             for (int i = 0; i < m_Values.Count; i++)
             {
                 var e = m_Values[i];
@@ -244,19 +264,24 @@ namespace Vvr.Controller.Abnormal
         public bool Contains(in AbnormalHandle handle)
         {
             int index = IndexOf(in handle);
+            // $"{index} {index >= 0}".ToLog();
             return index >= 0;
         }
         public async UniTask RemoveAsync(AbnormalHandle handle)
         {
             bool removed = false;
-            for (int i = 0; i < m_Values.Count; i++)
+            using (var wl = new SemaphoreSlimLock(m_Lock))
             {
-                var e = m_Values[i];
-                if (e.uniqueID != handle.UniqueID) continue;
+                await wl.WaitAsync(TimeSpan.FromSeconds(1), CancellationToken);
+                for (int i = 0; i < m_Values.Count; i++)
+                {
+                    var e = m_Values[i];
+                    if (e.uniqueID != handle.UniqueID) continue;
 
-                m_Values.RemoveAt(i);
-                removed = true;
-                break;
+                    m_Values.RemoveAt(i);
+                    removed = true;
+                    break;
+                }
             }
 
             if (!removed) return;
@@ -271,6 +296,9 @@ namespace Vvr.Controller.Abnormal
             if (Disposed)
                 throw new ObjectDisposedException(nameof(AbnormalController));
 
+            using var wl = new SemaphoreSlimLock(m_Lock);
+            wl.Wait(TimeSpan.FromSeconds(1), CancellationToken);
+
             return m_Values.Any(x => x.abnormal.hash == abnormalId);
         }
 
@@ -279,7 +307,14 @@ namespace Vvr.Controller.Abnormal
             if (Disposed)
                 throw new ObjectDisposedException(nameof(AbnormalController));
 
-            return m_Values.Select(x => (IReadOnlyRuntimeAbnormal)x).GetEnumerator();
+            Value[] result;
+            using (var wl = new SemaphoreSlimLock(m_Lock))
+            {
+                wl.Wait(TimeSpan.FromSeconds(1), CancellationToken);
+                result = m_Values.ToArray();
+            }
+
+            return result.Select(x => (IReadOnlyRuntimeAbnormal)x).GetEnumerator();
         }
         IEnumerator IEnumerable.GetEnumerator()
         {

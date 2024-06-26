@@ -48,7 +48,8 @@ namespace Vvr.Controller.Abnormal
 
         UniTask RemoveAsync(AbnormalHandle handle);
 
-        bool IsActivated(in AbnormalHandle handle);
+        bool  IsActivated(in AbnormalHandle handle);
+        float GetDuration(in AbnormalHandle handle);
 
         /// <summary>
         /// Returns given abnormal id is in this controller

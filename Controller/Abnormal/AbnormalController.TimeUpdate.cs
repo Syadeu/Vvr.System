@@ -91,38 +91,46 @@ namespace Vvr.Controller.Abnormal
 
                 if (!CheckTimeCondition(e)) continue;
 
-                float delayDuration = e.delayDuration -= deltaTime;
-                m_Values[i] = e;
-
                 // If abnormal is delayed execution
                 if (0 < e.abnormal.delayTime)
                 {
+                    float delayDuration = e.delayDuration;
                     // Check has passed delay time
-                    if (delayDuration <= 0) continue;
-
-                    // Check should execute
-                    if (e.updateCount < 1)
+                    if (delayDuration > 0)
                     {
-#if UNITY_EDITOR
-                        $"[Abnormal:{Owner.GetInstanceID()}] Delayed abnormal activation {e.abnormal.hash.Key}".ToLog();
-#endif
-                        e.updateCount   = 1;
-                        m_Values[i]  = e;
+                        e.delayDuration = delayDuration - deltaTime;
+                        m_Values[i]     = e;
 
-                        shouldUpdate = true;
+                        // $"delay: {e.delayDuration}".ToLog();
+
+                        // Check should execute
+                        if (e.updateCount < 1)
+                        {
+#if UNITY_EDITOR
+                            $"[Abnormal:{Owner.GetInstanceID()}] Delayed abnormal activation {e.abnormal.hash.Key}"
+                                .ToLog();
+#endif
+                            e.updateCount = 1;
+                            m_Values[i]   = e;
+
+                            shouldUpdate = true;
+                        }
                     }
                 }
 
                 if (e.abnormal.isInfiniteDuration != 1)
                 {
-                    float duration = e.duration -= deltaTime;
+                    e.duration  -= deltaTime;
+                    m_Values[i] =  e;
+
+                    // $"duration: {e.duration}".ToLog();
+
+                    float duration = e.duration;
                     // Abnormal completed
                     if (duration <= 0)
                     {
                         // Sub stack and update time to current
                         e.stack--;
-                        e.duration  = e.abnormal.duration;
-                        m_Values[i] = e;
 
                         // If abnormal has no stack, should remove
                         if (e.stack <= 0)
@@ -140,6 +148,9 @@ namespace Vvr.Controller.Abnormal
 
                             continue;
                         }
+
+                        e.duration  = e.abnormal.duration;
+                        m_Values[i] = e;
                     }
                 }
 

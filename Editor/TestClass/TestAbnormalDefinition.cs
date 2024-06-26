@@ -32,8 +32,11 @@ namespace Vvr.TestClass
     {
         public static TestAbnormalDefinition Create(
             int type = 0, int level = 0,
+            bool? replaceable = null,
+            int? maxStack = null,
+            Method method = Method.Addictive,
             TestStatData targetStat = null,
-            Method method = Method.Addictive
+            float? value = null
             )
         {
             var rnd = Unity.Mathematics.Random.CreateFromIndex(FNV1a32.Calculate(Guid.NewGuid()));
@@ -42,11 +45,11 @@ namespace Vvr.TestClass
                 m_Type         = type,
                 m_Level        = level,
                 m_IsBuff       = rnd.NextBool(),
-                m_Replaceable  = rnd.NextBool(),
-                m_MaxStack     = rnd.NextInt(1, 100),
+                m_Replaceable  = replaceable ?? rnd.NextBool(),
+                m_MaxStack     = maxStack ?? rnd.NextInt(1, 100),
                 m_Method       = method,
                 m_TargetStatus = targetStat ?? TestStatData.CreateRandom(),
-                m_Value        = rnd.NextFloat(0, 100)
+                m_Value        = value ?? rnd.NextFloat(0, 100)
             };
 
             return t;
@@ -123,13 +126,16 @@ namespace Vvr.TestClass
     [Serializable]
     public class TestAbnormalDuration : IAbnormalDuration
     {
-        public static TestAbnormalDuration Create()
+        public static TestAbnormalDuration Create(
+            float? delayTime = null,
+            float? time = null
+            )
         {
             var rnd = Unity.Mathematics.Random.CreateFromIndex(FNV1a32.Calculate(Guid.NewGuid()));
             return new TestAbnormalDuration()
             {
-                m_DelayTime = rnd.NextFloat(-1, 1),
-                m_Time      = rnd.NextFloat(0, 1)
+                m_DelayTime = delayTime ?? rnd.NextFloat(-1, 1),
+                m_Time      = time ?? rnd.NextFloat(0, 1)
             };
         }
 
@@ -156,17 +162,21 @@ namespace Vvr.TestClass
     public class TestAbnormalUpdate : IAbnormalUpdate
     {
         public static TestAbnormalUpdate Create(
+            bool? enable = null,
             Condition condition = Condition.Always,
-            string value = null)
+            string value = null,
+            int? interval = null,
+            int? maxCount = null
+            )
         {
             var rnd = Unity.Mathematics.Random.CreateFromIndex(FNV1a32.Calculate(Guid.NewGuid()));
             return new TestAbnormalUpdate()
             {
-                m_Enable    = rnd.NextBool(),
+                m_Enable    = enable ?? rnd.NextBool(),
                 m_Condition = condition,
                 m_Value     = value,
-                m_Interval  = rnd.NextInt(0, 100),
-                m_MaxCount  = rnd.NextInt(0, 100)
+                m_Interval  = interval ?? rnd.NextInt(0, 100),
+                m_MaxCount  = maxCount ?? rnd.NextInt(0, 100)
             };
         }
 
@@ -218,15 +228,19 @@ namespace Vvr.TestClass
     {
         public static TestAbnormalCancellation Create(
             Condition condition = Condition.Always,
-            string value = null)
+            string value = null,
+            float? probability = null,
+            bool? clearAllStacks = null
+            )
         {
             var rnd = Unity.Mathematics.Random.CreateFromIndex(FNV1a32.Calculate(Guid.NewGuid()));
 
             return new TestAbnormalCancellation()
             {
                 m_Condition      = condition,
-                m_Probability    = rnd.NextFloat(0, 100),
-                m_ClearAllStacks = rnd.NextBool()
+                m_Value = value,
+                m_Probability    = probability ?? rnd.NextFloat(0, 100),
+                m_ClearAllStacks = clearAllStacks ?? rnd.NextBool()
             };
         }
 
