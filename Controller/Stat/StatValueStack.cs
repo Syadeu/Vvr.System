@@ -26,6 +26,7 @@ using System.Linq;
 using JetBrains.Annotations;
 using UnityEngine.Assertions;
 using Vvr.Controller.Actor;
+using Vvr.Model;
 using Vvr.Model.Stat;
 using Vvr.UI.Observer;
 
@@ -42,7 +43,9 @@ namespace Vvr.Controller.Stat
         private          StatValues          m_PushStats;
         private          StatValues          m_ResultStats;
 
-        private readonly List<IStatModifier> m_Modifiers = new();
+        // These lists are ordered list
+        private readonly List<IStatModifier>      m_Modifiers      = new();
+        private readonly List<IStatPostProcessor> m_PostProcessors = new();
 
         private bool m_IsDirty;
 
@@ -106,12 +109,22 @@ namespace Vvr.Controller.Stat
                 throw new ObjectDisposedException(nameof(StatValueStack));
 
             using var debugTimer = DebugTimer.Start();
-            m_PushStats    |= t;
-            m_PushStats[t] += v;
-            m_IsDirty      =  true;
+            m_PushStats |= t;
 
-            Update();
-            $"[Stats:{m_Owner.Owner}:{m_Owner.GetInstanceID()}] Stat({t}) changed to {m_ResultStats[t]}".ToLog();
+            using (var tempArray = TempArray<float>.Shared(m_PushStats.Values.Count))
+            {
+                m_PushStats.Values.CopyTo(tempArray.Value);
+                StatValues prevStats = StatValues.Create(m_PushStats.Types, tempArray.Value);
+
+                m_PushStats[t] += v;
+
+                PostProcess(in prevStats, ref m_PushStats);
+            }
+
+            m_IsDirty = true;
+
+            // Update();
+            // $"[Stats:{m_Owner.Owner}:{m_Owner.GetInstanceID()}] Stat({t}) changed to {m_ResultStats[t]}".ToLog();
         }
         public void Push<TProcessor>(StatType t, float v) where TProcessor : struct, IStatValueProcessor
         {
@@ -148,29 +161,22 @@ namespace Vvr.Controller.Stat
             m_ResultStats   |= m_ModifiedStats.Types | m_PushStats.Types;
             m_ResultStats.Clear();
 
-            float prevHp = m_ModifiedStats[StatType.HP];
-            foreach (var e in m_Modifiers.OrderBy(StatModifierComparer.Selector, StatModifierComparer.Static))
+            // float prevHp = m_ModifiedStats[StatType.HP];
+            for (int i = 0; i < m_Modifiers.Count; i++)
             {
-                e.UpdateValues(m_OriginalStats, ref m_ModifiedStats);
+                var e = m_Modifiers[i];
 
-                float currentHp = m_ModifiedStats[StatType.HP];
-                if (currentHp < prevHp && (m_ModifiedStats.Types & StatType.SHD) == StatType.SHD)
+                using (var tempValueArray = TempArray<float>.Shared(m_ModifiedStats.Values?.Count ?? 0))
                 {
-                    float shield = m_ModifiedStats[StatType.SHD];
-                    float sub    = prevHp - currentHp;
-                    if (sub > shield)
-                    {
-                        currentHp                     -= sub - shield;
-                        m_ModifiedStats[StatType.HP]  =  currentHp;
-                        m_ModifiedStats[StatType.SHD] =  0;
-                    }
-                    else
-                    {
-                        m_ModifiedStats[StatType.SHD] = shield - sub;
-                    }
-                }
+                    var prevStatTypes = m_ModifiedStats.Types;
+                    if (m_ModifiedStats.Values is not null)
+                        m_ModifiedStats.Values.CopyTo(tempValueArray.Value);
 
-                prevHp = currentHp;
+                    e.UpdateValues(m_OriginalStats, ref m_ModifiedStats);
+
+                    StatValues prevStats = StatValues.Create(prevStatTypes, tempValueArray.Value);
+                    PostProcess(in prevStats, ref m_ModifiedStats);
+                }
             }
 
             m_ResultStats += m_ModifiedStats;
@@ -180,27 +186,29 @@ namespace Vvr.Controller.Stat
             m_IsDirty = false;
         }
 
+        private void PostProcess(in StatValues previous, ref StatValues current)
+        {
+            for (int i = 0; i < m_PostProcessors.Count; i++)
+            {
+                var e = m_PostProcessors[i];
+
+                e.OnChanged(in previous, ref current);
+            }
+        }
+
         private void PostUpdate()
         {
-            float prevHp = m_ResultStats[StatType.HP];
-            m_ResultStats += m_PushStats;
+            // float prevHp = m_ResultStats[StatType.HP];
 
-            float currentHp = m_ResultStats[StatType.HP];
-            if (currentHp < prevHp && (m_ResultStats.Types & StatType.SHD) == StatType.SHD)
+            using (var tempValueArray = TempArray<float>.Shared(m_ResultStats.Values.Count))
             {
-                float shield = m_ResultStats[StatType.SHD];
-                float sub    = prevHp - currentHp;
-                if (sub > shield)
-                {
-                    currentHp                   -= sub - shield;
-                    m_ResultStats[StatType.HP]  =  currentHp;
-                    m_ResultStats[StatType.SHD] =  0;
-                }
-                else
-                {
-                    m_ResultStats[StatType.HP]  = prevHp;
-                    m_ResultStats[StatType.SHD] = shield - sub;
-                }
+                var prevStatTypes = m_ResultStats.Types;
+                m_ResultStats.Values.CopyTo(tempValueArray.Value);
+
+                m_ResultStats += m_PushStats;
+
+                StatValues prevStats = StatValues.Create(prevStatTypes, tempValueArray.Value);
+                PostProcess(in prevStats, ref m_ResultStats);
             }
         }
 
@@ -219,7 +227,7 @@ namespace Vvr.Controller.Stat
             using var    debugTimer = DebugTimer.StartWithCustomName(debugName);
 
             Assert.IsFalse(m_Modifiers.Contains(modifier));
-            m_Modifiers.Add(modifier);
+            m_Modifiers.Add(modifier, StatModifierComparer.Static);
             m_IsDirty = true;
             return this;
         }
@@ -228,18 +236,35 @@ namespace Vvr.Controller.Stat
             const string debugName  = "StatValueStack.RemoveModifier";
             using var    debugTimer = DebugTimer.StartWithCustomName(debugName);
 
-            m_Modifiers.Remove(modifier);
+            m_Modifiers.Remove(modifier, StatModifierComparer.Static);
             m_IsDirty = true;
+            return this;
+        }
+
+        public IStatValueStack AddPostProcessor(IStatPostProcessor processor)
+        {
+            Assert.IsFalse(m_PostProcessors.Contains(processor));
+
+            m_PostProcessors.Add(processor, StatPostProcessorComparer.Static);
+            return this;
+        }
+        public IStatValueStack RemovePostProcessor(IStatPostProcessor processor)
+        {
+            Assert.IsFalse(m_PostProcessors.Contains(processor));
+
+            m_PostProcessors.Remove(processor, StatPostProcessorComparer.Static);
             return this;
         }
 
         public void Clear()
         {
+            m_PostProcessors.Clear();
             m_Modifiers.Clear();
             m_IsDirty = true;
         }
         public void Dispose()
         {
+            m_PostProcessors.Clear();
             m_Modifiers.Clear();
             Disposed = true;
         }

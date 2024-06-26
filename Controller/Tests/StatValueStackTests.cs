@@ -176,5 +176,46 @@ namespace Vvr.Controller.Tests
                     $"{expected.Values[i]} == {StatValueStack.Values[i]}");
             }
         }
+
+        [Test]
+        public void ModifierTest_1()
+        {
+            HpShieldModifier m = new HpShieldModifier();
+            StatValueStack.AddPostProcessor(m);
+
+            StatValueStack.Push(StatType.HP, 100);
+
+            AreSame(StatType.HP, 100);
+
+            StatValueStack.Push(StatType.SHD, 100);
+
+            AreSame(StatType.HP, 100);
+            AreSame(StatType.SHD, 100);
+
+            StatValueStack.Push(StatType.HP, -100);
+
+            AreSame(StatType.HP, 100);
+            AreSame(StatType.SHD, 0);
+        }
+
+        [Test]
+        public void ModifierTest_2()
+        {
+            IStatModifier
+                hpPlus = new TestStatValueModifier(0, StatType.HP, 100),
+                shdPlus = new TestStatValueModifier(1, StatType.SHD, 100),
+                hpMinus = new TestStatValueModifier(2, StatType.HP, -50)
+                ;
+
+            HpShieldModifier m = new HpShieldModifier();
+            StatValueStack.AddPostProcessor(m);
+
+            StatValueStack.AddModifier(hpPlus);
+            StatValueStack.AddModifier(shdPlus);
+            StatValueStack.AddModifier(hpMinus);
+
+            AreSame(StatType.HP, 100);
+            AreSame(StatType.SHD, 50);
+        }
     }
 }

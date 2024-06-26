@@ -19,6 +19,7 @@
 
 #endregion
 
+using JetBrains.Annotations;
 using Vvr.Model.Stat;
 
 namespace Vvr.Controller.Stat
@@ -55,6 +56,53 @@ namespace Vvr.Controller.Stat
 
             value *= pa;
             return -value;
+        }
+    }
+
+    [PublicAPI]
+    public interface IStatPostProcessor
+    {
+        int Order { get; }
+
+        void OnChanged(in StatValues previous, ref StatValues current);
+    }
+
+    [PublicAPI]
+    public sealed class HpShieldModifier : IStatPostProcessor
+    {
+        public static IStatPostProcessor Static { get; } = new HpShieldModifier();
+
+        public int Order => StatModifierOrder.PostProcess;
+
+        public void OnChanged(in StatValues previous, ref StatValues current)
+        {
+            float prevHp    = previous[StatType.HP];
+            float currentHp = current[StatType.HP];
+
+            float shield = current[StatType.SHD];
+            // float sub    = currentHp - prevHp;
+
+            if (currentHp < prevHp && shield > 0)
+            {
+                // $"prev: {previous}\ncurrent: {current}".ToLog();
+
+                float sub = prevHp - currentHp;
+                if (sub > shield)
+                {
+                    currentHp             -= sub - shield;
+                    current[StatType.HP]  =  currentHp;
+                    current[StatType.SHD] =  0;
+
+                    // $"11. {current[StatType.HP]}, {current[StatType.SHD]}".ToLog();
+                }
+                else
+                {
+                    current[StatType.SHD] = shield - sub;
+                    current[StatType.HP]  = prevHp;
+
+                    // $"22. {current[StatType.HP]}, {current[StatType.SHD]}".ToLog();
+                }
+            }
         }
     }
 }

@@ -19,10 +19,12 @@
 
 #endregion
 
+using JetBrains.Annotations;
 using Vvr.Model.Stat;
 
 namespace Vvr.Controller.Stat
 {
+    [PublicAPI]
     public interface IStatValueStack : IReadOnlyStatValues
     {
         IReadOnlyStatValues OriginalStats { get; }
@@ -32,6 +34,9 @@ namespace Vvr.Controller.Stat
 
         IStatValueStack AddModifier(IStatModifier    modifier);
         IStatValueStack RemoveModifier(IStatModifier modifier);
+
+        IStatValueStack AddPostProcessor(IStatPostProcessor    processor);
+        IStatValueStack RemovePostProcessor(IStatPostProcessor processor);
 
         void Update();
 

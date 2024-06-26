@@ -98,6 +98,13 @@ namespace Vvr.Model.Stat
             return new StatValues(t, new float[t.Count()]);
         }
 
+        public static StatValues Create(StatType t, float[] v)
+        {
+            Assert.IsTrue(t.Count() <= v.Length);
+
+            return new StatValues(t, v);
+        }
+
         public static StatValues Copy(IReadOnlyStatValues from)
         {
             return new StatValues(from.Types, from.Values.ToArray());

@@ -89,7 +89,9 @@ namespace Vvr.TestClass
         {
             ConditionResolver = new ConditionResolver(this);
 
-            m_Stats              = new StatValueStack(this, ta.Stats);
+            m_Stats = new StatValueStack(this, ta.Stats);
+            m_Stats.AddPostProcessor(HpShieldModifier.Static);
+
             m_AbnormalController = new AbnormalController(this);
             m_PassiveController  = new PassiveController(this);
             m_SkillController    = new SkillController(this);

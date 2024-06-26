@@ -31,6 +31,9 @@ namespace Vvr.Model
     {
         public static TempArray<T> Shared(int minLength, bool clearOnDispose = true)
         {
+            if (minLength == 0)
+                return new TempArray<T>(null, false, Array.Empty<T>());
+
             ArrayPool<T> pool = ArrayPool<T>.Shared;
             return new TempArray<T>(
                 pool,
@@ -57,7 +60,8 @@ namespace Vvr.Model
         }
         public void Dispose()
         {
-            m_Pool.Return(Value, m_ClearOnDispose);
+            if (m_Pool is not null)
+                m_Pool.Return(Value, m_ClearOnDispose);
             Value = null;
         }
     }

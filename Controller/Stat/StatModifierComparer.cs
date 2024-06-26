@@ -27,12 +27,27 @@ namespace Vvr.Controller.Stat
     struct StatModifierComparer : IComparer<IStatModifier>
     {
         public static readonly IComparer<IStatModifier>           Static   = default(StatModifierComparer);
-        public static readonly Func<IStatModifier, IStatModifier> Selector = x => x;
+        // public static readonly Func<IStatModifier, IStatModifier> Selector = x => x;
 
         public int Compare(IStatModifier x, IStatModifier y)
         {
             if (x == null) return y == null ? 0 : 1;
             if (y == null) return -1;
+
+            if (x.Order < y.Order) return -1;
+            return x.Order > y.Order ? 1 : 0;
+        }
+    }
+
+    struct StatPostProcessorComparer : IComparer<IStatPostProcessor>
+    {
+        public static readonly IComparer<IStatPostProcessor> Static = default(StatPostProcessorComparer);
+
+        public int Compare(IStatPostProcessor x, IStatPostProcessor y)
+        {
+            if (ReferenceEquals(x, y)) return 0;
+            if (ReferenceEquals(null, y)) return 1;
+            if (ReferenceEquals(null, x)) return -1;
 
             if (x.Order < y.Order) return -1;
             return x.Order > y.Order ? 1 : 0;

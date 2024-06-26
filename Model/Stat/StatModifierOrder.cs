@@ -28,5 +28,7 @@ namespace Vvr.Model.Stat
     {
         public static int Item     => 0;
         public static int Abnormal => Item + 1;
+
+        public static int PostProcess => int.MaxValue;
     }
 }
