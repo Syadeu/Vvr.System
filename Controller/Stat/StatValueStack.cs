@@ -122,7 +122,7 @@ namespace Vvr.Controller.Stat
             m_PushStats |= t;
 
             TProcessor processor  = default(TProcessor);
-            float      processedV = processor.Process(m_ResultStats, v);
+            float      processedV = processor.Process(m_ResultStats, t, v);
 
             m_PushStats[t] += processedV;
             m_IsDirty = true;

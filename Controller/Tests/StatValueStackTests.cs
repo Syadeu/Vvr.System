@@ -1,5 +1,4 @@
 #region Copyrights
-
 // Copyright 2024 Syadeu
 // Author : Seung Ha Kim
 //
@@ -15,13 +14,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// File created : 2024, 06, 26 15:06
-
+// File created : 2024, 06, 17 21:06
 #endregion
 
+using System.Collections.Generic;
 using NUnit.Framework;
+using UnityEngine;
 using Vvr.Controller.Stat;
-using Vvr.Provider;
+using Vvr.Model.Stat;
 using Vvr.TestClass;
 
 namespace Vvr.Controller.Tests
@@ -29,25 +29,152 @@ namespace Vvr.Controller.Tests
     [TestFixture]
     public sealed class StatValueStackTests
     {
-        private TestActor      m_Actor;
-        private StatValueStack m_Value;
+        #region Initialize
+
+        private TestActor m_TestActor;
+
+        private StatValueStack m_StatValueStack;
 
         [OneTimeSetUp]
         public void OneTimeSetUp()
         {
-            m_Actor = TestActor.Create(Owner.Issue);
+            m_TestActor = new TestActor(OwnerHelper.Player, "Test Actor", "Test Actor");
         }
         [SetUp]
         public void SetUp()
         {
-            m_Value = new StatValueStack(m_Actor, null);
+            m_StatValueStack  = new StatValueStack(m_TestActor, null);
+            m_TestActor.Stats = m_StatValueStack;
         }
+
         [TearDown]
         public void TearDown()
         {
-            m_Value.Dispose();
+            m_TestActor.Stats = null;
+            m_StatValueStack.Dispose();
         }
 
-        
+        private static StatValues CreateRandomStatValues()
+        {
+            long        t = 0b1111_1111 ^ (long)StatType.SHD;
+            StatValues v = StatValues.Create((StatType)t);
+
+            for (int i = 0; i < v.Values.Count; i++)
+            {
+                v.Values[i] = UnityEngine.Random.Range(short.MinValue, short.MaxValue);
+            }
+
+            return v;
+        }
+
+        protected static IEnumerable<StatValues> GetTestStatValues(int count)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                yield return CreateRandomStatValues();
+            }
+        }
+
+        #endregion
+
+        private TestActor      Actor          => m_TestActor;
+        private StatValueStack StatValueStack => m_StatValueStack;
+
+        private void AreSame(StatType type, float v)
+        {
+            Assert.IsTrue(
+                Mathf.Approximately(StatValueStack[type], v),
+                $"Expected: {v} but {StatValueStack[type]}");
+        }
+
+        struct Processor_0 : IStatValueProcessor
+        {
+            public float Process(in IReadOnlyStatValues stats, in StatType type, float value)
+            {
+                return value;
+            }
+        }
+        struct Processor_1 : IStatValueProcessor
+        {
+            public float Process(in IReadOnlyStatValues stats, in StatType type, float value)
+            {
+                return -value;
+            }
+        }
+
+        [Test]
+        public void PushTest_0()
+        {
+            StatType targetType = (StatType)(1L << 30);
+
+            StatValueStack.Push<Processor_0>(targetType, 100);
+
+            AreSame(targetType, 100);
+        }
+
+        [Test]
+        public void PushTest_1()
+        {
+            StatValueStack.Push(StatType.HP, 10);
+
+            AreSame(StatType.HP, 10);
+        }
+        [Test]
+        public void PushTest_2()
+        {
+            DamageProcessor processor = new DamageProcessor();
+
+            float v = processor.Process(StatValueStack, StatType.HP, 10);
+
+            StatValueStack.Push<DamageProcessor>(StatType.HP, 10);
+
+            AreSame(StatType.HP, v);
+        }
+
+        [Test]
+        public void PushTest_3()
+        {
+            StatType targetType = (StatType)(1L << 30);
+
+            StatValueStack.Push<Processor_0>(targetType, 100);
+            StatValueStack.Push<Processor_0>(targetType, 100);
+            StatValueStack.Push<Processor_0>(targetType, 100);
+            StatValueStack.Push<Processor_0>(targetType, 100);
+            StatValueStack.Push<Processor_0>(targetType, 100);
+
+            AreSame(targetType, 500);
+        }
+        [Test]
+        public void PushTest_4()
+        {
+            StatType targetType = (StatType)(1L << 30);
+
+            StatValueStack.Push<Processor_0>(targetType, 100);
+            AreSame(targetType, 100);
+            StatValueStack.Push<Processor_1>(targetType, 100);
+            AreSame(targetType, 0);
+            StatValueStack.Push<Processor_0>(targetType, 100);
+            AreSame(targetType, 100);
+        }
+
+        [Test, TestCaseSource(typeof(StatValueStackTests), nameof(GetTestStatValues), new object[1]{ 5 })]
+        public void ModifierTest_0(StatValues n)
+        {
+            TestStatModifier m = new TestStatModifier(n);
+
+            StatValueStack.AddModifier(m);
+            StatValueStack.Update();
+
+            var expected = n;
+            Assert.AreEqual(expected.Values.Count, StatValueStack.Values.Count);
+            Assert.AreEqual(expected.Types, StatValueStack.Types);
+
+            for (int i = 0; i < StatValueStack.Values.Count; i++)
+            {
+                Assert.IsTrue(
+                    Mathf.Approximately(expected.Values[i], StatValueStack.Values[i]),
+                    $"{expected.Values[i]} == {StatValueStack.Values[i]}");
+            }
+        }
     }
 }

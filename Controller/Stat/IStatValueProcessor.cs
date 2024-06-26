@@ -25,6 +25,6 @@ namespace Vvr.Controller.Stat
 {
     public interface IStatValueProcessor
     {
-        float Process(in IReadOnlyStatValues stats, float value);
+        float Process(in IReadOnlyStatValues stats, in StatType type, float value);
     }
 }

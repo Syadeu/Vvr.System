@@ -25,11 +25,16 @@ namespace Vvr.Controller.Stat
 {
     public struct DamageProcessor : IStatValueProcessor
     {
-        public float Process(in IReadOnlyStatValues stats, float value)
+        public float Process(in IReadOnlyStatValues stats, in StatType type, float value)
         {
             float defMultiplier = 0.01f;
 
-            float def = stats[StatType.DEF] + stats[StatType.ARM];
+            float def = 0;
+            if (stats is not null)
+            {
+                def = stats[StatType.DEF] + stats[StatType.ARM];
+            }
+
             // if (def == 0) return dmg;
 
             float lvl = 1;

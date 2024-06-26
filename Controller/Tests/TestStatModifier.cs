@@ -19,9 +19,10 @@
 
 #endregion
 
+using Vvr.Controller.Stat;
 using Vvr.Model.Stat;
 
-namespace Vvr.Controller.Stat.Tests
+namespace Vvr.Controller.Tests
 {
     class TestStatModifier : IStatModifier
     {
