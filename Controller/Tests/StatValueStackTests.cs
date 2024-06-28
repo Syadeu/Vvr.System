@@ -105,6 +105,30 @@ namespace Vvr.Controller.Tests
         [Test]
         public void PushTest_0()
         {
+            StatValueStack.Push(StatType.HP, 10);
+
+            AreSame(StatType.HP, 10);
+        }
+        [Test]
+        public void PushTest_1()
+        {
+            StatValueStack.Push(StatType.HP, 10);
+            StatValueStack.Push(StatType.HP, 10);
+
+            AreSame(StatType.HP, 20);
+        }
+        [Test]
+        public void PushTest_2()
+        {
+            StatValueStack.Push(StatType.HP, 10);
+            StatValueStack.Push(StatType.HP, -10);
+
+            AreSame(StatType.HP, 0);
+        }
+
+        [Test]
+        public void PushProcessorTest_0()
+        {
             StatType targetType = (StatType)(1L << 30);
 
             StatValueStack.Push<Processor_0>(targetType, 100);
@@ -113,14 +137,7 @@ namespace Vvr.Controller.Tests
         }
 
         [Test]
-        public void PushTest_1()
-        {
-            StatValueStack.Push(StatType.HP, 10);
-
-            AreSame(StatType.HP, 10);
-        }
-        [Test]
-        public void PushTest_2()
+        public void PushProcessorTest_1()
         {
             DamageProcessor processor = new DamageProcessor();
 
@@ -132,7 +149,7 @@ namespace Vvr.Controller.Tests
         }
 
         [Test]
-        public void PushTest_3()
+        public void PushProcessorTest_2()
         {
             StatType targetType = (StatType)(1L << 30);
 
@@ -145,7 +162,7 @@ namespace Vvr.Controller.Tests
             AreSame(targetType, 500);
         }
         [Test]
-        public void PushTest_4()
+        public void PushProcessorTest_3()
         {
             StatType targetType = (StatType)(1L << 30);
 
@@ -246,7 +263,6 @@ namespace Vvr.Controller.Tests
             AreSame(StatType.HP, 100);
             AreSame(StatType.SHD, 0);
         }
-
         [Test]
         public void PostProcessorTest_1()
         {
@@ -265,6 +281,19 @@ namespace Vvr.Controller.Tests
 
             AreSame(StatType.HP, 100);
             AreSame(StatType.SHD, 50);
+        }
+        [Test]
+        public void PostProcessorTest_2()
+        {
+            HpShieldPostProcessor m = new HpShieldPostProcessor();
+            StatValueStack.AddPostProcessor(m);
+
+            StatValueStack.Push<Processor_0>(StatType.HP, 10);
+            StatValueStack.Push<Processor_0>(StatType.SHD, 10);
+            StatValueStack.Push<Processor_1>(StatType.HP, 10);
+
+            AreSame(StatType.HP, 10);
+            AreSame(StatType.SHD, 0);
         }
     }
 }

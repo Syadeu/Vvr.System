@@ -28,7 +28,6 @@ using UnityEngine.Assertions;
 using Vvr.Controller.Actor;
 using Vvr.Model;
 using Vvr.Model.Stat;
-using Vvr.UI.Observer;
 
 namespace Vvr.Controller.Stat
 {
@@ -135,9 +134,19 @@ namespace Vvr.Controller.Stat
             m_PushStats |= t;
 
             TProcessor processor  = default(TProcessor);
-            float      processedV = processor.Process(m_ResultStats, t, v);
 
-            m_PushStats[t] += processedV;
+            using (var tempArray = TempArray<float>.Shared(m_PushStats.Values.Count))
+            {
+                m_PushStats.Values.CopyTo(tempArray.Value);
+                StatValues prevStats = StatValues.Create(m_PushStats.Types, tempArray.Value);
+
+                Update();
+                float processedV = processor.Process(m_ResultStats, t, v);
+                m_PushStats[t] += processedV;
+
+                PostProcess(in prevStats, ref m_PushStats);
+            }
+
             m_IsDirty = true;
 
             // Update();

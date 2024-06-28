@@ -17,12 +17,11 @@
 // File created : 2024, 05, 09 23:05
 #endregion
 
-using Newtonsoft.Json;
 using NUnit.Framework;
 using UnityEngine;
 using Vvr.Model.Stat;
 
-namespace Vvr.Stat.Tests.Stat.Tests
+namespace Vvr.Model.Tests
 {
     public class StatValueTests
     {
