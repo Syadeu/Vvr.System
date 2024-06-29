@@ -31,6 +31,8 @@ namespace Vvr.Model.Wallet
     {
         protected override UnresolvedWallet StringToValue(Type type, string value, SheetValueConvertingContext context)
         {
+            if (value.IsNullOrEmpty()) return null;
+
             JObject jo = JObject.Parse(value);
             var     o  = new UnresolvedWallet();
             o.ReadJson(jo);

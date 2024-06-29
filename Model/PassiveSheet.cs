@@ -103,7 +103,7 @@ namespace Vvr.Model
                 object v;
                 if (Conclusion.Type == ConclusionType.Abnormal)
                 {
-                    v = context.Container.Find<AbnormalSheet>(nameof(GameDataSheets.AbnormalSheet))[Conclusion.Value.Id];
+                    v = context.Container.Find<AbnormalSheet>(nameof(GameDataSheets.Abnormal))[Conclusion.Value.Id];
                 }
                 else
                 {

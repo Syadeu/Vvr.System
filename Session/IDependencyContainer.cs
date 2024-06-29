@@ -23,6 +23,7 @@ using System;
 using System.Collections.Generic;
 using JetBrains.Annotations;
 using UnityEngine;
+using UnityEngine.Assertions;
 using UnityEngine.Pool;
 using Vvr.Model;
 using Vvr.Provider;
@@ -147,11 +148,55 @@ namespace Vvr.Session
         IEnumerable<KeyValuePair<Type, IProvider>> GetEnumerable();
     }
 
+    public record DependencyInfo(Type Type, IReadOnlyList<Type> ConnectorTypes)
+    {
+        public Type                Type           { get; } = Type;
+        public IReadOnlyList<Type> ConnectorTypes { get; } = ConnectorTypes;
+    }
+
     /// <summary>
     /// Contains extension methods for the IDependencyContainer interface.
     /// </summary>
     public static class DependencyContainerExtensions
     {
+        [PublicAPI]
+        public static DependencyInfo GetDependencyInfo([NotNull] this object o, [CanBeNull] Type t = null)
+        {
+            t ??= o.GetType();
+            Assert.AreEqual(o.GetType(), t);
+
+            return new(t, ConnectorReflectionUtils.GetAllConnectors(t));
+        }
+
+        [PublicAPI]
+        public static void Inject([NotNull] this IDependencyContainer container, [NotNull] object o, [NotNull] DependencyInfo info)
+        {
+            Assert.AreEqual(o.GetType(), info.Type);
+
+            foreach (var connectorType in info.ConnectorTypes)
+            {
+                Type providerType = connectorType.GetGenericArguments()[0];
+                if (!container.TryGetProvider(providerType, out var p)) continue;
+
+                ConnectorReflectionUtils.Connect(connectorType, o, p);
+            }
+        }
+
+        [PublicAPI]
+        public static void Detach([NotNull] this IDependencyContainer container, [NotNull] object o,
+            [NotNull]                            DependencyInfo       info)
+        {
+            Assert.AreEqual(o.GetType(), info.Type);
+
+            foreach (var connectorType in info.ConnectorTypes)
+            {
+                Type providerType = connectorType.GetGenericArguments()[0];
+                if (!container.TryGetProvider(providerType, out var p)) continue;
+
+                ConnectorReflectionUtils.Disconnect(connectorType, o, p);
+            }
+        }
+
         /// <summary>
         /// Injects dependencies into the given object using the dependency container.
         /// </summary>

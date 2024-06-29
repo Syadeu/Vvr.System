@@ -88,7 +88,7 @@ namespace Vvr.Model
                 base.PostLoad(context);
 
                 m_AbnormalChain = new();
-                for (int i = 0; i < AbnormalChain.Count; i++)
+                for (int i = 0; i < AbnormalChain?.Count; i++)
                 {
                     m_AbnormalChain.Add(AbnormalChain[i].Ref);
                 }

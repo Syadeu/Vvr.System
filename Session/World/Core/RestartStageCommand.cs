@@ -32,7 +32,8 @@ namespace Vvr.Session.World.Core
     {
         UniTask ICommand.ExecuteAsync(IEventTarget target)
         {
-            var floor = Provider.Provider.Static.Get<IFloorProvider>();
+
+            var floor = Vvr.Provider.Provider.Static.Get<IFloorProvider>();
             Assert.IsNotNull(floor);
 
             floor.RestartStage();

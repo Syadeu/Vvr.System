@@ -19,6 +19,7 @@
 
 using UnityEngine;
 using UnityEngine.UI;
+using Vvr.Provider;
 using Vvr.Session.Provider;
 using Vvr.Session.World;
 using Vvr.TestClass;

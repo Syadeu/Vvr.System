@@ -20,6 +20,7 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using Vvr.Provider;
@@ -39,18 +40,36 @@ namespace Vvr.Session
 
         public override string DisplayName => nameof(CommandSession);
 
+        private readonly Dictionary<Type, DependencyInfo> m_DependencyInfo = new();
+
+        protected override UniTask OnReserve()
+        {
+            m_DependencyInfo.Clear();
+
+            return base.OnReserve();
+        }
+
         public async UniTask EnqueueAsync<TCommand>(IEventTarget target) where TCommand : ICommand
         {
             await EnqueueAsync(target, Activator.CreateInstance<TCommand>());
         }
         public async UniTask EnqueueAsync(IEventTarget target, ICommand command)
         {
-            this.Inject(command);
+            var t = command.GetType();
+            if (!m_DependencyInfo.TryGetValue(t, out var info))
+            {
+                info                = command.GetDependencyInfo(t);
+                m_DependencyInfo[t] = info;
+            }
+
+            this.Inject(command, info);
 
             // TODO: maybe record?
 
             $"[{target.DisplayName}] Execute command {command.GetType().Name}".ToLog();
             await command.ExecuteAsync(target);
+
+            this.Detach(command, info);
         }
     }
 }

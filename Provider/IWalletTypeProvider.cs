@@ -15,24 +15,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // 
-// File created : 2024, 05, 07 03:05
+// File created : 2024, 06, 29 20:06
 
 #endregion
 
-using System.Collections.Generic;
 using JetBrains.Annotations;
-using Newtonsoft.Json;
+using Vvr.Model;
+using Vvr.Model.Wallet;
 
-namespace Vvr.Model.Stat
+namespace Vvr.Provider
 {
-    [PublicAPI]
-    [JsonConverter(typeof(UnresolvedStatValuesJsonConverter))]
-    public interface IReadOnlyStatValues : IEnumerable<KeyValuePair<StatType, float>>
+    [PublicAPI, LocalProvider]
+    public interface IWalletTypeProvider : IProvider
     {
-        float this[StatType t] { get; }
-        StatType             Types  { get; }
-        IReadOnlyList<float> Values { get; }
-
-        string ToString();
+        IWalletType this[WalletType type] { get; }
     }
 }

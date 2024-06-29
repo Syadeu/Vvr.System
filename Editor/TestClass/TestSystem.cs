@@ -19,6 +19,7 @@
 
 #endregion
 
+using System;
 using Cysharp.Threading.Tasks;
 using Sirenix.OdinInspector;
 using UnityEditor;
@@ -56,23 +57,47 @@ namespace Vvr.TestClass
 
         protected abstract UniTask OnStart(TWorld world);
 
-        private UniTask m_DownloadTask;
+        private string  m_Result;
+        private bool m_Downloading;
 
         [OnInspectorGUI]
         private void OnInspectorGUI()
         {
-            using (new EditorGUI.DisabledScope(
-                       m_DownloadTask.Status == UniTaskStatus.Pending))
+            using (new EditorGUI.DisabledScope(m_Downloading))
             {
                 string text;
-                if (m_DownloadTask.Status == UniTaskStatus.Pending)
+                if (m_Downloading)
                     text = "Downloading...";
                 else
                     text = "Download Excel sheets";
                 if (GUILayout.Button(text))
                 {
-                    m_DownloadTask = TestUtils.DownloadSheet();
+                    Download().Forget();
                 }
+            }
+
+            if (!m_Result.IsNullOrEmpty())
+            {
+                EditorGUILayout.LabelField(m_Result);
+            }
+        }
+
+        private async UniTaskVoid Download()
+        {
+            m_Downloading = true;
+            try
+            {
+                await TestUtils.DownloadSheet();
+                m_Result = null;
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+                m_Result = e.Message;
+            }
+            finally
+            {
+                m_Downloading = false;
             }
         }
 

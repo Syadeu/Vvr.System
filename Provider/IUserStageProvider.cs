@@ -15,28 +15,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// File created : 2024, 05, 17 00:05
+// File created : 2024, 05, 19 18:05
 
 #endregion
 
-using System.Collections.Generic;
 using JetBrains.Annotations;
 using Vvr.Model;
-using Vvr.Provider;
-using Vvr.Provider.Command;
 
-namespace Vvr.Session.Provider
+namespace Vvr.Provider
 {
-    /// <summary>
-    /// Represents a provider for user actor data.
-    /// </summary>
-    [PublicAPI, LocalProvider]
-    public interface IUserActorProvider : IProvider, IQueryCommandProvider<UserActorDataQuery>
+    [LocalProvider]
+    public interface IUserStageProvider : IProvider
     {
-        IReadOnlyList<IResolvedActorData> PlayerActors { get; }
-
-        IReadOnlyList<IResolvedActorData> GetCurrentTeam();
-
-        void Flush();
+        [PublicAPI]
+        IStageData CurrentStage { get; }
     }
 }

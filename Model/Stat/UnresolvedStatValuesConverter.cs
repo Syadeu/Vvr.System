@@ -31,13 +31,16 @@ namespace Vvr.Model.Stat
     {
         protected override UnresolvedStatValues StringToValue(Type type, string value, SheetValueConvertingContext context)
         {
+            if (value.IsNullOrEmpty())
+            {
+                return null;
+            }
+
             JObject jo = JObject.Parse(value);
             var o = new UnresolvedStatValues();
             o.ReadJson(jo);
 
             return o;
-
-            // return new StatValues((StatType)query, v);
         }
         protected override string ValueToString(Type type, UnresolvedStatValues value, SheetValueConvertingContext context)
         {

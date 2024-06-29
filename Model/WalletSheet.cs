@@ -28,7 +28,7 @@ namespace Vvr.Model
     [Preserve]
     public sealed class WalletSheet : Sheet<WalletSheet.Row>
     {
-        public sealed class Row : SheetRow
+        public sealed class Row : SheetRow, IWalletType
         {
         }
 

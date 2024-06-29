@@ -22,6 +22,7 @@
 using System;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using UnityEngine;
 using UnityEngine.Scripting;
 
 namespace Vvr.Model.Stat
@@ -37,7 +38,14 @@ namespace Vvr.Model.Stat
             UnresolvedStatValues                                 existingValue,
             bool                                                 hasExistingValue, JsonSerializer serializer)
         {
-            JObject jo = JObject.Load(reader);
+            JToken jk = JToken.Load(reader);
+            if (jk.Type != JTokenType.Object)
+            {
+                Debug.LogWarning($"Target is not object format but trying to convert {nameof(UnresolvedStatValues)}.");
+                return null;
+            }
+
+            JObject jo = (JObject)jk;
             var     o  = new UnresolvedStatValues();
             o.ReadJson(jo);
             return o;

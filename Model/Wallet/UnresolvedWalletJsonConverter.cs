@@ -22,6 +22,7 @@
 using System;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using UnityEngine;
 using UnityEngine.Scripting;
 
 namespace Vvr.Model.Wallet
@@ -37,7 +38,14 @@ namespace Vvr.Model.Wallet
         public override UnresolvedWallet ReadJson(JsonReader reader, Type objectType, UnresolvedWallet existingValue, bool hasExistingValue,
             JsonSerializer                         serializer)
         {
-            JObject jo = JObject.Load(reader);
+            JToken jk = JToken.Load(reader);
+            if (jk.Type != JTokenType.Object)
+            {
+                Debug.LogWarning($"Target is not object format but trying to convert {nameof(UnresolvedWallet)}.");
+                return null;
+            }
+
+            JObject jo = (JObject)jk;
             var     o  = new UnresolvedWallet();
             o.ReadJson(jo);
             return o;

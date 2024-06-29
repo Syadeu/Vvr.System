@@ -43,8 +43,8 @@ namespace Vvr.Model
 
         [UsedImplicitly] public SkillSheet Skills    { get; private set; }
 
-        [UsedImplicitly] public AbnormalSheet AbnormalSheet { get; private set; }
-        [UsedImplicitly] public PassiveSheet  PassiveSheet  { get; private set; }
+        [UsedImplicitly] public AbnormalSheet Abnormal { get; private set; }
+        [UsedImplicitly] public PassiveSheet  Passive  { get; private set; }
 
         [UsedImplicitly] public ItemSheet Items { get; private set; }
     }

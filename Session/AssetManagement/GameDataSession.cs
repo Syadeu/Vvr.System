@@ -72,10 +72,12 @@ namespace Vvr.Session.AssetManagement
             ScriptableObjectSheetImporter imp = new(dataContainer.Object);
             await SheetContainer.Bake(imp);
 
-            StatDataSession statDataSession = await CreateSessionOnBackground<StatDataSession>(
-                new StatDataSession.SessionData(SheetContainer.StatTable));
             Parent
-                .Register<IStatConditionProvider>(statDataSession);
+                .Register<IStatConditionProvider>(await CreateSessionOnBackground<StatDataSession>(
+                    new StatDataSession.SessionData(SheetContainer.StatTable)))
+                .Register<IWalletTypeProvider>(await CreateSessionOnBackground<WalletDataSession>(
+                    new WalletDataSession.SessionData(SheetContainer.WalletTable)))
+                ;
 
             var result = await LoadAsync();
 

@@ -15,19 +15,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // 
-// File created : 2024, 05, 19 13:05
+// File created : 2024, 06, 29 20:06
 
 #endregion
 
-using System;
-using System.Collections.Generic;
-using Vvr.Provider;
+using JetBrains.Annotations;
 
-namespace Vvr.Session.Provider
+namespace Vvr.Model
 {
-    [Obsolete("", true)]
-    public interface ITestUserDataProvider : IProvider
+    [PublicAPI]
+    public interface IWalletType : IRawData
     {
-        IReadOnlyList<string> CurrentTeam { get; }
+        
     }
 }

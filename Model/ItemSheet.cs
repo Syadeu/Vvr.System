@@ -53,17 +53,17 @@ namespace Vvr.Model
         {
             [UsedImplicitly] public Definition Definition { get; private set; }
 
-            // [SheetValueConverter(typeof(UnresolvedWalletConverter))]
-            // [UsedImplicitly] public IReadOnlyWallet Fragment { get; private set; }
-            // [SheetValueConverter(typeof(UnresolvedWalletConverter))]
-            // [UsedImplicitly] public IReadOnlyWallet Transcend { get; private set; }
+            [SheetValueConverter(typeof(UnresolvedWalletConverter))]
+            [UsedImplicitly] public IReadOnlyWallet Fragment { get; private set; }
+            [SheetValueConverter(typeof(UnresolvedWalletConverter))]
+            [UsedImplicitly] public IReadOnlyWallet Transcend { get; private set; }
 
             [SheetValueConverter(typeof(UnresolvedStatValuesConverter))]
             [UsedImplicitly] public IReadOnlyStatValues Stats { get; private set; }
             [SheetValueConverter(typeof(UnresolvedStatValuesConverter))]
             [UsedImplicitly] public IReadOnlyStatValues UpgradeStats { get; private set; }
 
-            [UsedImplicitly] public List<AbnormalSheet.Reference> Abnormal { get; private set; }
+            [UsedImplicitly] public List<PassiveSheet.Reference> Passive { get; private set; }
         }
 
         public ItemSheet()

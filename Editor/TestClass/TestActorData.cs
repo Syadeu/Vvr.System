@@ -87,7 +87,7 @@ namespace Vvr.TestClass
                 m_PassiveData = new PassiveSheet.Row[m_PassiveIds.Length];
                 for (int i = 0; i < m_PassiveData.Length; i++)
                 {
-                    m_PassiveData[i] = sheets.PassiveSheet[m_PassiveIds[i]];
+                    m_PassiveData[i] = sheets.Passive[m_PassiveIds[i]];
                 }
             }
 

@@ -32,6 +32,12 @@ using Vvr.Session.Provider;
 namespace Vvr.Session
 {
     [UsedImplicitly]
+    [ProviderSession(
+        typeof(IUserDataProvider),
+        typeof(IPlayerPrefDataProvider),
+        typeof(IUserStageProvider),
+        typeof(IUserActorProvider)
+        )]
     public class UserSession : ParentSession<UserSession.SessionData>,
         IUserStageProvider,
         IConnector<IStageDataProvider>
@@ -52,11 +58,12 @@ namespace Vvr.Session
                 prefDataSession = await CreateSession<PlayerPrefDataSession>(default);
 
             Parent
+                // IDataProvider Sessions
                 .Register<IUserDataProvider>(await CreateSession<UserDataSession>(default))
                 .Register<IPlayerPrefDataProvider>(prefDataSession)
-                .Register<IUserStageProvider>(this);
+                // IDataProvider
 
-            Parent
+                .Register<IUserStageProvider>(this)
                 .Register<IUserActorProvider>(await CreateSessionOnBackground<UserActorDataSession>(
                     new UserActorDataSession.SessionData()
                     {
