@@ -37,20 +37,22 @@ namespace Vvr.Model.Wallet
 
             float[] v = new float[values.Length];
 
-            int  i     = 0;
-            long query = 0;
+            int                     i     = 0;
+            ShortFlag64<WalletType> query = default;
+            // long query = 0;
             foreach (var item in ids)
             {
                 int index = sheet[item].Index;
 
-                long e = 1L << index;
+                WalletType e = (WalletType)index;
+                // long e = 1L << index;
                 query |= e;
 
                 v[i] = values[i];
                 i++;
             }
 
-            return new Wallet((WalletType)query, v);
+            return new Wallet(query, v);
         }
 
         public IEnumerator<KeyValuePair<WalletType, float>> GetEnumerator() => Value.GetEnumerator();
@@ -61,7 +63,7 @@ namespace Vvr.Model.Wallet
 
         public float this[WalletType t] => Value[t];
 
-        public WalletType           Types  => Value.Types;
-        public IReadOnlyList<float> Values => (IReadOnlyList<float>)Value.Values;
+        public ShortFlag64<WalletType> Types  => Value.Types;
+        public IReadOnlyList<float>    Values => (IReadOnlyList<float>)Value.Values;
     }
 }

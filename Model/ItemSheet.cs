@@ -53,10 +53,10 @@ namespace Vvr.Model
         {
             [UsedImplicitly] public Definition Definition { get; private set; }
 
-            [SheetValueConverter(typeof(UnresolvedWalletConverter))]
-            [UsedImplicitly] public IReadOnlyWallet Fragment { get; private set; }
-            [SheetValueConverter(typeof(UnresolvedWalletConverter))]
-            [UsedImplicitly] public IReadOnlyWallet Transcend { get; private set; }
+            // [SheetValueConverter(typeof(UnresolvedWalletConverter))]
+            // [UsedImplicitly] public IReadOnlyWallet Fragment { get; private set; }
+            // [SheetValueConverter(typeof(UnresolvedWalletConverter))]
+            // [UsedImplicitly] public IReadOnlyWallet Transcend { get; private set; }
 
             [SheetValueConverter(typeof(UnresolvedStatValuesConverter))]
             [UsedImplicitly] public IReadOnlyStatValues Stats { get; private set; }

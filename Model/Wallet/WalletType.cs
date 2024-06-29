@@ -23,8 +23,7 @@ using System;
 
 namespace Vvr.Model.Wallet
 {
-    [Flags]
-    public enum WalletType : long
+    public enum WalletType : short
     {
         // ReSharper disable InconsistentNaming
         None = 0,
@@ -33,6 +32,7 @@ namespace Vvr.Model.Wallet
 
     public static class WalletTypeExtensions
     {
+        [Obsolete("", true)]
         public static int Count(this WalletType t)
         {
             long x     = (long)t;
@@ -46,4 +46,34 @@ namespace Vvr.Model.Wallet
             return count;
         }
     }
+
+    // public readonly struct RuntimeWalletType : IEquatable<RuntimeWalletType>
+    // {
+    //     private readonly WalletType m_Type;
+    //     private readonly uint       m_Key;
+    //
+    //     public RuntimeWalletType(WalletType t, uint v)
+    //     {
+    //         m_Type = t;
+    //         m_Key = v;
+    //     }
+    //
+    //     public bool Equals(RuntimeWalletType other)
+    //     {
+    //         return m_Type == other.m_Type && m_Key == other.m_Key;
+    //     }
+    //
+    //     public override bool Equals(object obj)
+    //     {
+    //         return obj is RuntimeWalletType other && Equals(other);
+    //     }
+    //
+    //     public override int GetHashCode()
+    //     {
+    //         unchecked
+    //         {
+    //             return ((int)m_Type * 397) ^ (int)m_Key;
+    //         }
+    //     }
+    // }
 }

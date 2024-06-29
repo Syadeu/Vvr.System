@@ -20,15 +20,17 @@
 #endregion
 
 using System.Collections.Generic;
+using JetBrains.Annotations;
 using Newtonsoft.Json;
 
 namespace Vvr.Model.Wallet
 {
+    [PublicAPI]
     [JsonConverter(typeof(UnresolvedWalletJsonConverter))]
     public interface IReadOnlyWallet : IEnumerable<KeyValuePair<WalletType, float>>
     {
         float this[WalletType t] { get; }
-        WalletType           Types  { get; }
-        IReadOnlyList<float> Values { get; }
+        ShortFlag64<WalletType> Types  { get; }
+        IReadOnlyList<float>    Values { get; }
     }
 }

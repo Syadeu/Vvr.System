@@ -27,44 +27,13 @@ using UnityEngine.Assertions;
 
 namespace Vvr.Model.Wallet
 {
-    public delegate float WalletGetterDelegate(in Wallet wallet);
-    public delegate void WalletSetterDelegate(in Wallet wallet, float value);
-
     [JsonConverter(typeof(UnresolvedWalletJsonConverter))]
     [SheetValueConverter(typeof(UnresolvedWalletConverter))]
     public readonly struct Wallet : IReadOnlyWallet
     {
-        private static readonly Dictionary<WalletType, WalletGetterDelegate>
-            s_CachedGetter = new();
-
-        private static readonly Dictionary<WalletType, WalletSetterDelegate>
-            s_CachedSetter = new();
-
-        public static WalletGetterDelegate GetGetMethod(WalletType t)
+        public static Wallet Create(ShortFlag64<WalletType> t)
         {
-            if (!s_CachedGetter.TryGetValue(t, out var d))
-            {
-                d                 = (in Wallet x) => x[t];
-                s_CachedGetter[t] = d;
-            }
-
-            return d;
-        }
-
-        public static WalletSetterDelegate GetSetMethod(WalletType t)
-        {
-            if (!s_CachedSetter.TryGetValue(t, out var d))
-            {
-                d                 = (in Wallet x, float value) => x.SetValue(t, value);
-                s_CachedSetter[t] = d;
-            }
-
-            return d;
-        }
-
-        public static Wallet Create(WalletType t = (WalletType)~0)
-        {
-            return new Wallet(t, new float[t.Count()]);
+            return new Wallet(t, new float[t.Count]);
         }
 
         private readonly float[] m_Values;
@@ -75,43 +44,27 @@ namespace Vvr.Model.Wallet
             set => SetValue(t, value);
         }
 
-        public WalletType   Types  { get; }
-        public IList<float> Values => m_Values;
+        public ShortFlag64<WalletType> Types  { get; }
+        public IList<float>            Values => m_Values;
 
         IReadOnlyList<float> IReadOnlyWallet.Values => m_Values;
 
-        internal Wallet(WalletType query, float[] values)
+        internal Wallet(ShortFlag64<WalletType> query, float[] values)
         {
             Types    = query;
             m_Values = values;
         }
 
-        public int IndexOf(WalletType t)
-        {
-            long target  = (long)Types;
-            long typeVal = (long)t;
-            long e       = 1L;
-
-            for (int i = 0, c = 0; i < 64 && c < m_Values.Length; i++, e <<= 1)
-            {
-                if ((target & e) != e) continue;
-                if (typeVal      == e) return c;
-                c++;
-            }
-
-            return -1;
-        }
-
         public float GetValue(WalletType t)
         {
-            int index = IndexOf(t);
+            int index = Types.IndexOf(t);
             if (index < 0) return 0;
 
             return Values[index];
         }
         public void SetValue(WalletType t, float v)
         {
-            int index = IndexOf(t);
+            int index = Types.IndexOf(t);
             Assert.IsFalse(index < 0);
 
             Values[index] = v;
@@ -125,10 +78,15 @@ namespace Vvr.Model.Wallet
             int maxIndex = result.Values.Count;
             for (int i = 0, c = 0, xx = 0; i < 64 && c < maxIndex; i++)
             {
-                var e = 1L << i;
-                if (((long)result.Types & e) == 0) continue;
+                var q = (WalletType)i;
+                if (!result.Types.Contains((WalletType)i)) continue;
 
-                if (((long)x.Types & e) != 0) result.m_Values[c] = x.m_Values[xx++];
+                if (x.Types.Contains(q)) result.m_Values[c] = x.m_Values[xx++];
+
+                // var e = 1L << i;
+                // if (((long)result.Types & e) == 0) continue;
+                //
+                // if (((long)x.Types & e) != 0) result.m_Values[c] = x.m_Values[xx++];
                 c++;
             }
             return result;
@@ -138,16 +96,22 @@ namespace Vvr.Model.Wallet
             if (y.Values == null) return x;
 
             var newTypes = (x.Types | y.Types);
-            var result   = Create(x.Types | y.Types);
+            var result   = Create(newTypes);
 
             int maxIndex = result.Values.Count;
             for (int i = 0, c = 0, xx = 0, yy = 0; i < 64 && c < maxIndex; i++)
             {
-                var e = 1L << i;
-                if (((long)newTypes & e) == 0) continue;
+                var q = (WalletType)i;
+                if (!newTypes.Contains((WalletType)i)) continue;
 
-                if (((long)x.Types & e) != 0) result.m_Values[c] =  x.m_Values[xx++];
-                if (((long)y.Types & e) != 0) result.m_Values[c] += y.Values[yy++];
+                if (x.Types.Contains(q)) result.m_Values[c] =  x.m_Values[xx++];
+                if (y.Types.Contains(q)) result.m_Values[c] += y.Values[yy++];
+
+                // var e = 1L << i;
+                // if (((long)newTypes & e) == 0) continue;
+                //
+                // if (((long)x.Types & e) != 0) result.m_Values[c] =  x.m_Values[xx++];
+                // if (((long)y.Types & e) != 0) result.m_Values[c] += y.Values[yy++];
                 c++;
             }
 
@@ -163,11 +127,17 @@ namespace Vvr.Model.Wallet
             int maxIndex = result.Values.Count;
             for (int i = 0, c = 0, xx = 0, yy = 0; i < 64 && c < maxIndex; i++)
             {
-                var e = 1L << i;
-                if (((long)newTypes & e) == 0) continue;
+                var q = (WalletType)i;
+                if (!newTypes.Contains((WalletType)i)) continue;
 
-                if (((long)x.Types & e) != 0) result.m_Values[c] =  x.m_Values[xx++];
-                if (((long)y.Types & e) != 0) result.m_Values[c] -= y.Values[yy++];
+                if (x.Types.Contains(q)) result.m_Values[c] =  x.m_Values[xx++];
+                if (y.Types.Contains(q)) result.m_Values[c] -= y.Values[yy++];
+
+                // var e = 1L << i;
+                // if (((long)newTypes & e) == 0) continue;
+                //
+                // if (((long)x.Types & e) != 0) result.m_Values[c] =  x.m_Values[xx++];
+                // if (((long)y.Types & e) != 0) result.m_Values[c] -= y.Values[yy++];
                 c++;
             }
 
@@ -176,13 +146,18 @@ namespace Vvr.Model.Wallet
 
         public IEnumerator<KeyValuePair<WalletType, float>> GetEnumerator()
         {
-            long target = (long)Types;
+            // long target = (long)Types;
             for (int i = 0, c = 0; i < 64; i++)
             {
-                long e = 1L << i;
-                if ((target & e) != e) continue;
+                var q = (WalletType)i;
+                if (!Types.Contains(q)) continue;
 
-                yield return new((WalletType)e, m_Values[c++]);
+                yield return new(q, m_Values[c++]);
+
+                // long e = 1L << i;
+                // if ((target & e) != e) continue;
+
+                // yield return new((WalletType)e, m_Values[c++]);
             }
         }
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
