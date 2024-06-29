@@ -30,6 +30,7 @@ using Vvr.Model;
 using Vvr.Provider;
 using Vvr.Session;
 using Vvr.Session.Provider;
+using Vvr.Session.User;
 
 namespace Vvr.TestClass
 {

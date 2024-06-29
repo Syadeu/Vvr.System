@@ -23,7 +23,6 @@ using System;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Unity.Collections;
 using UnityEngine;
@@ -34,17 +33,14 @@ using Vvr.Model.Stat;
 using Vvr.Provider;
 using Vvr.Provider.Command;
 using Vvr.Session.AssetManagement;
-using Vvr.Session.Provider;
 
-namespace Vvr.Session
+namespace Vvr.Session.User
 {
     [UsedImplicitly]
     public sealed partial class UserActorDataSession : ParentSession<UserActorDataSession.SessionData>,
         IUserActorProvider,
         IConnector<IActorDataProvider>
     {
-        public const int TEAM_COUNT = 3;
-
         sealed class ResolvedActorData : IResolvedActorData, IComparable<ResolvedActorData>
         {
             public static Func<ResolvedActorData, int> KeySelector { get; } = x => x.UniqueId;
@@ -208,7 +204,7 @@ namespace Vvr.Session
 
         private void LoadCurrentTeam()
         {
-            m_CurrentTeam ??= new ResolvedActorData[TEAM_COUNT];
+            m_CurrentTeam ??= new ResolvedActorData[UserDataKeyCollection.Actor.TeamCount];
 
             var jr = Data.dataProvider.GetJson(UserDataKeyCollection.Actor.CurrentTeam());
             if (jr is not null)

@@ -25,7 +25,7 @@ using Newtonsoft.Json.Linq;
 using Vvr.Model;
 using Vvr.Provider;
 
-namespace Vvr.Session
+namespace Vvr.Session.User
 {
     [UsedImplicitly]
     public sealed class UserDataSession : ChildSession<UserDataSession.SessionData>,

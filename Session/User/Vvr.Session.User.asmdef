@@ -1,0 +1,28 @@
+{
+    "name": "Vvr.Session.User",
+    "rootNamespace": "",
+    "references": [
+        "GUID:12885ca8baec4272b040170f769f92b9",
+        "GUID:3957eefabf624d2485d569ea058bfc85",
+        "GUID:0bebf4b98a2c47cd93c8f4c2f5f17d2a",
+        "GUID:60df735478b04dd3aa2c4819aa583f3c",
+        "GUID:ca7a9d7f2d304e6d8e77b3a8931dc117",
+
+        "Unity.Collections",
+        "Unity.Mathematics",
+
+        "GUID:f51ebe6a0ceec4240a699833d6309b23",
+        "GUID:eff4759ec02784e83a3522cd45057e0b"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "Newtonsoft.Json.dll"
+    ],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

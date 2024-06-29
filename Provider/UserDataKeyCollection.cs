@@ -49,6 +49,8 @@ namespace Vvr.Provider
 
         public readonly ref struct Actor
         {
+            public const int TeamCount = 3;
+
             public static UserDataKey UserActors()
             {
                 return KeyFormatter(nameof(Actor), nameof(UserActors));

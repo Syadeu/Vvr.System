@@ -22,6 +22,7 @@
 using System.Collections.Generic;
 using JetBrains.Annotations;
 using Vvr.Model;
+using Vvr.Model.Wallet;
 using Vvr.Provider.Command;
 
 namespace Vvr.Provider
@@ -35,6 +36,14 @@ namespace Vvr.Provider
         IReadOnlyList<IResolvedActorData> PlayerActors { get; }
 
         IReadOnlyList<IResolvedActorData> GetCurrentTeam();
+
+        void Flush();
+    }
+
+    [PublicAPI, LocalProvider]
+    public interface IUserWalletProvider : IProvider, IQueryCommandProvider<UserWalletQuery>
+    {
+        float this[WalletType walletType] { get; }
 
         void Flush();
     }

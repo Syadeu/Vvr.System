@@ -18,20 +18,21 @@
 #endregion
 
 using System;
-using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using Unity.Collections;
 using UnityEngine.Assertions;
 using Vvr.Model;
+using Vvr.Provider;
 using Vvr.Provider.Command;
 
-namespace Vvr.Session
+namespace Vvr.Session.User
 {
     public partial class UserActorDataSession
     {
         private readonly SemaphoreSlim m_QueryExecutionSemaphore = new(1, 1);
-        private readonly ConcurrentQueue<IQueryCommand<UserActorDataQuery>>
+        private readonly Queue<IQueryCommand<UserActorDataQuery>>
             m_QueryCommands = new();
 
         private int m_QueryQueued;
@@ -143,7 +144,7 @@ namespace Vvr.Session
 
         private partial void ProcessCommandData(UserActorDataQuery.SetTeamActorData data)
         {
-            if (data.index is < 0 or >= TEAM_COUNT)
+            if (data.index is < 0 or >= UserDataKeyCollection.Actor.TeamCount)
                 throw new InvalidOperationException($"{data.index}");
 
             ResolvedActorData targetData

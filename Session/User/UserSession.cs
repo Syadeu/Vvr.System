@@ -19,17 +19,13 @@
 
 #endregion
 
-using System.Collections.Generic;
 using System.Linq;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
-using Vvr.Controller.Actor;
 using Vvr.Model;
 using Vvr.Provider;
-using Vvr.Session.Actor;
-using Vvr.Session.Provider;
 
-namespace Vvr.Session
+namespace Vvr.Session.User
 {
     [UsedImplicitly]
     [ProviderSession(
@@ -69,7 +65,14 @@ namespace Vvr.Session
                     {
                         // TODO: this is temporarily. Should changed to firebase
                         dataProvider = prefDataSession
-                    }));
+                    }))
+                .Register<IUserWalletProvider>(await CreateSessionOnBackground<UserWalletDataSession>(
+                    new UserWalletDataSession.SessionData()
+                    {
+                        // TODO: This is temporarily
+                        dataProvider = prefDataSession
+                    }))
+                ;
 
             await base.OnInitialize(session, data);
         }
@@ -86,7 +89,5 @@ namespace Vvr.Session
 
         void IConnector<IStageDataProvider>.Connect(IStageDataProvider    t) => m_StageDataProvider = t;
         void IConnector<IStageDataProvider>.Disconnect(IStageDataProvider t) => m_StageDataProvider = null;
-
-
     }
 }
