@@ -21,6 +21,9 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Reflection;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
@@ -64,6 +67,29 @@ namespace Vvr.Session
             public Type                 providerType;
             public IProvider            provider;
         }
+#if UNITY_EDITOR
+        class SessionCreationBlock : IDisposable
+        {
+            public HashSet<Type> RequestedProviderTypes   { get; }
+
+            public SessionCreationBlock(Type targetType)
+            {
+                var pAtt = targetType.GetCustomAttribute<ProviderSessionAttribute>();
+
+                if (pAtt is not null)
+                    RequestedProviderTypes = new(pAtt.ProviderTypes ?? Array.Empty<Type>());
+                else
+                    RequestedProviderTypes = new();
+            }
+
+            public void Dispose()
+            {
+                RequestedProviderTypes.Clear();
+            }
+        }
+
+        private readonly AsyncLocal<SessionCreationBlock> m_SessionCreationBlock = new();
+#endif
 
         private readonly List<IChildSession> m_ChildSessions  = new();
 
@@ -108,9 +134,9 @@ namespace Vvr.Session
                     m_CreateSessionLock.Exit();
             }
 
-            var  ctx       = new SessionCreateContext(this, ins, childType, data);
-
+            var ctx = new SessionCreateContext(this, ins, childType, data);
             await UniTask.RunOnThreadPool(CreateSession, ctx, cancellationToken: ReserveToken);
+
             return ins;
         }
 
@@ -126,22 +152,20 @@ namespace Vvr.Session
             Type childType = typeof(TChildSession);
             var  ins       = new TChildSession();
 
-             bool lt = false;
-             try
-             {
-                 m_CreateSessionLock.Enter(ref lt);
-                 m_ChildSessions.Add(ins);
-             }
-             finally
-             {
-                 if (lt)
-                     m_CreateSessionLock.Exit();
-             }
+            bool lt = false;
+            try
+            {
+                m_CreateSessionLock.Enter(ref lt);
+                m_ChildSessions.Add(ins);
+            }
+            finally
+            {
+                if (lt)
+                    m_CreateSessionLock.Exit();
+            }
 
-             var ctx = new SessionCreateContext(this, ins, childType, data);
-
-             await CreateSession(ctx)
-                 .AttachExternalCancellation(ReserveToken);
+            var ctx = new SessionCreateContext(this, ins, childType, data);
+            await CreateSession(ctx).AttachExternalCancellation(ReserveToken);
 
             return ins;
         }
@@ -180,9 +204,43 @@ namespace Vvr.Session
             }
             // else $"[Session: {Type.FullName}] No connector for {childType.FullName}".ToLog();
 
-            await session.Initialize(ctx.parentSession.Owner, ctx.parentSession, ctx.data);
+#if UNITY_EDITOR
+            using (ctx.parentSession.m_SessionCreationBlock.Value = new SessionCreationBlock(ctx.sessionType))
+#endif
+            {
+                await session.Initialize(ctx.parentSession.Owner, ctx.parentSession, ctx.data);
+                EvaluateProviderSession(ctx.parentSession, ctx.sessionType);
+            }
+#if UNITY_EDITOR
+            ctx.parentSession.m_SessionCreationBlock.Value = null;
+#endif
+
             // $"[Session: {ctx.parentSession.Type.FullName}] created {ctx.sessionType.FullName}".ToLog();
         }
+
+#line hidden
+        [DebuggerHidden]
+        [Conditional("UNITY_EDITOR")]
+        private static void EvaluateProviderSession(ParentSession<TSessionData> s, Type childSessionType)
+        {
+#if UNITY_EDITOR
+            if (s.m_SessionCreationBlock.Value is null) return;
+
+            if (s.m_SessionCreationBlock.Value.RequestedProviderTypes.Count > 0)
+            {
+                string f = string.Join(
+                    "\n",
+                    s.m_SessionCreationBlock.Value.RequestedProviderTypes.Select(x => x.FullName)
+                    );
+
+                throw new InvalidOperationException(
+                    $"Session({childSessionType.FullName}) has missing providers" +
+                    $"which has provider that must be provided. "                 +
+                    $"See {nameof(ProviderSessionAttribute)}.\n{f}");
+            }
+#endif
+        }
+#line default
 
         private static void RegisterProvider(object ctx)
         {
@@ -306,6 +364,11 @@ namespace Vvr.Session
 
                     c.Register(providerType, provider);
                 }
+
+#if UNITY_EDITOR
+                if (m_SessionCreationBlock.Value is not null)
+                    m_SessionCreationBlock.Value.RequestedProviderTypes.Remove(providerType);
+#endif
             }
             finally
             {

@@ -40,7 +40,7 @@ namespace Vvr.Session.Firebase
         {
             await base.OnInitialize(session, data);
 
-            var result = await FirebaseApp.CheckAndFixDependenciesAsync().AsUniTask();
+            var result = await FirebaseApp.CheckAndFixDependenciesAsync();
             if (result != DependencyStatus.Available)
             {
                 $"[Firebase] {result}".ToLogError();
@@ -49,6 +49,8 @@ namespace Vvr.Session.Firebase
 
             var app = FirebaseApp.DefaultInstance;
             await UniTask.WhenAll(
+                // CreateSession<AuthSession>(new AuthSession.SessionData() { app = app }),
+                CreateSession<FirestoreSession>(new FirestoreSession.SessionData() { app = app }),
                 CreateSession<CrashlyticsSession>(new CrashlyticsSession.SessionData() { app = app }),
                 CreateSession<AnalyticsSession>(new AnalyticsSession.SessionData() { app   = app })
             );

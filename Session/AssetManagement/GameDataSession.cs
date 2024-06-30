@@ -38,7 +38,8 @@ namespace Vvr.Session.AssetManagement
         typeof(IActorDataProvider),
         typeof(ICustomMethodProvider),
         typeof(IStageDataProvider),
-        typeof(IResearchDataProvider)
+        typeof(IResearchDataProvider),
+        typeof(IWalletTypeProvider)
         )]
     public sealed class GameDataSession : ParentSession<GameDataSession.SessionData>
     {
