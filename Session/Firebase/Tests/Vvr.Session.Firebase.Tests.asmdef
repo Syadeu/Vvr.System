@@ -17,7 +17,8 @@
     "GUID:e0cd26848372d4e5c891c569017e11f1",
 
     "UniTask",
-    "UniTask.Linq"
+    "UniTask.Linq",
+    "GUID:9c4a2330d68ce4c2a8219cebd57b7dd2"
   ],
   "includePlatforms": [
     "Editor"

@@ -88,7 +88,6 @@ namespace Vvr.Session.Firebase
         {
             Assert.IsNull(m_CurrentUser);
 
-            m_Instance.SignInAndRetrieveDataWithCredentialAsync()
             try
             {
                 AuthResult result = await m_Instance.SignInAnonymouslyAsync()
@@ -114,6 +113,11 @@ namespace Vvr.Session.Firebase
             Assert.IsNotNull(m_CurrentUser);
             if (m_CurrentUser is null) return;
 
+            if (m_CurrentUser.IsAnonymous)
+            {
+                DeleteAccountAsync().Forget();
+                return;
+            }
             m_CurrentUser = null;
             m_Instance.SignOut();
         }
@@ -122,15 +126,16 @@ namespace Vvr.Session.Firebase
         {
             Assert.IsNotNull(m_CurrentUser);
 
-            await m_CurrentUser.DeleteAsync()
+            var user = m_CurrentUser;
+            m_CurrentUser       = null;
+            m_CurrentCredential = null;
+
+            await user.DeleteAsync()
                 .AsUniTask()
                 .Timeout(TimeSpan.FromSeconds(5))
                 .AttachExternalCancellation(ReserveToken)
                 ;
             m_Instance.SignOut();
-
-            m_CurrentUser       = null;
-            m_CurrentCredential = null;
         }
     }
 }
