@@ -575,9 +575,9 @@ namespace Vvr.Session
         protected virtual void EvaluateSessionCreation(IParentSession parent)
         {
             ParentSessionAttribute att = Type.GetCustomAttribute<ParentSessionAttribute>();
-            if (att != null)
+            if (att is not null)
             {
-                if (parent == null)
+                if (parent is null)
                     throw new InvalidOperationException(
                         $"Session({Type.FullName}) is trying to create without any parent " +
                         $"while its child marked by attribute.");
@@ -596,6 +596,22 @@ namespace Vvr.Session
                         throw new InvalidOperationException(
                             $"Session({Type.FullName}) trying to create under " +
                             $"{parentType.FullName} but only accepts {att.Type.FullName}");
+                }
+            }
+
+            UniqueSessionAttribute uniqueAtt = Type.GetCustomAttribute<UniqueSessionAttribute>();
+            if (uniqueAtt is not null)
+            {
+                for (int i = 0; i < parent.ChildSessions.Count; i++)
+                {
+                    IChildSession e = parent.ChildSessions[i];
+                    if (e == this) continue;
+
+                    if (e.Type == Type)
+                        throw new InvalidOperationException(
+                            $"Session({Type.FullName}) has been marked as unique session " +
+                            $"but trying to create more than 2 under {parent.Type.FullName}."
+                        );
                 }
             }
         }

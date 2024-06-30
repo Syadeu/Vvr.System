@@ -25,6 +25,7 @@ using UnityEngine.Analytics;
 namespace Vvr.Session.Firebase
 {
     [UsedImplicitly]
+    [UniqueSession]
     public class FirebaseSession : ParentSession<FirebaseSession.SessionData>
     {
         // https://developers.google.com/unity/packages#vr
@@ -50,7 +51,7 @@ namespace Vvr.Session.Firebase
             var app = FirebaseApp.DefaultInstance;
             await UniTask.WhenAll(
                 // CreateSession<AuthSession>(new AuthSession.SessionData() { app = app }),
-                CreateSession<FirestoreSession>(new FirestoreSession.SessionData() { app = app }),
+                CreateSession<FirestoreSession>(new FirestoreSession.SessionData() { }),
                 CreateSession<CrashlyticsSession>(new CrashlyticsSession.SessionData() { app = app }),
                 CreateSession<AnalyticsSession>(new AnalyticsSession.SessionData() { app   = app })
             );

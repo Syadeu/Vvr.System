@@ -23,14 +23,15 @@ using Cysharp.Threading.Tasks;
 using Firebase;
 using Firebase.Firestore;
 using JetBrains.Annotations;
-using Newtonsoft.Json.Linq;
-using UnityEngine.Assertions;
-using Vvr.Model;
 using Vvr.Provider;
 
 namespace Vvr.Session.Firebase
 {
     [UsedImplicitly]
+    [UniqueSession, ParentSession(typeof(FirebaseSession))]
+    [ProviderSession(
+        typeof(IFirestoreProvider)
+        )]
     public sealed class FirestoreSession : ChildSession<FirestoreSession.SessionData>,
         IFirestoreProvider,
 
@@ -38,7 +39,6 @@ namespace Vvr.Session.Firebase
     {
         public struct SessionData : ISessionData
         {
-            public FirebaseApp app;
         }
 
         public override string DisplayName => nameof(FirestoreSession);
@@ -52,10 +52,14 @@ namespace Vvr.Session.Firebase
             await base.OnInitialize(session, data);
 
             Instance = FirebaseFirestore.DefaultInstance;
+
+            Parent.Register<IFirestoreProvider>(this);
         }
 
         protected override UniTask OnReserve()
         {
+            Parent.Unregister<IFirestoreProvider>();
+
             Instance = null;
 
             return base.OnReserve();

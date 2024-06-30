@@ -27,6 +27,7 @@ using JetBrains.Annotations;
 namespace Vvr.Session.Firebase
 {
     [UsedImplicitly]
+    [UniqueSession, ParentSession(typeof(FirebaseSession))]
     class CrashlyticsSession : ChildSession<CrashlyticsSession.SessionData>
     {
         // https://firebase.google.com/docs/crashlytics/get-started?_gl=1*1o55qxr*_up*MQ..*_ga*MTQxMjI4MDkxLjE3MTY4MTk0NzA.*_ga_CW55HF8NVT*MTcxNjgxOTQ3MC4xLjAuMTcxNjgxOTQ3MC4wLjAuMA..&platform=unity

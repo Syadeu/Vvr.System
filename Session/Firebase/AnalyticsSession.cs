@@ -26,6 +26,7 @@ using JetBrains.Annotations;
 namespace Vvr.Session.Firebase
 {
     [UsedImplicitly]
+    [UniqueSession, ParentSession(typeof(FirebaseSession))]
     class AnalyticsSession : ChildSession<AnalyticsSession.SessionData>
     {
         // https://firebase.google.com/docs/analytics/unity/start

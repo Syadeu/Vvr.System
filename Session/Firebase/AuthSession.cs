@@ -32,7 +32,7 @@ using Vvr.Provider;
 namespace Vvr.Session.Firebase
 {
     [UsedImplicitly]
-    [ProviderSession(
+    [UniqueSession, ProviderSession(
         typeof(IAuthenticationProvider)
         )]
     public sealed class AuthSession : ChildSession<AuthSession.SessionData>,

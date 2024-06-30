@@ -32,6 +32,7 @@ using Vvr.Provider.Command;
 namespace Vvr.Session.Firebase
 {
     [UsedImplicitly]
+    [UniqueSession]
     public sealed class UserWalletDataSession : ChildSession<UserWalletDataSession.SessionData>,
         IUserWalletProvider,
         IConnector<IWalletTypeProvider>,
