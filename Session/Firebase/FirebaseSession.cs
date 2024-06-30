@@ -17,6 +17,7 @@
 // File created : 2024, 05, 27 23:05
 #endregion
 
+using System;
 using Cysharp.Threading.Tasks;
 using Firebase;
 using JetBrains.Annotations;
@@ -41,7 +42,11 @@ namespace Vvr.Session.Firebase
         {
             await base.OnInitialize(session, data);
 
-            var result = await FirebaseApp.CheckAndFixDependenciesAsync();
+            var result = await FirebaseApp.CheckAndFixDependenciesAsync()
+                .AsUniTask()
+                .Timeout(TimeSpan.FromSeconds(5))
+                .AttachExternalCancellation(ReserveToken)
+                ;
             if (result != DependencyStatus.Available)
             {
                 $"[Firebase] {result}".ToLogError();

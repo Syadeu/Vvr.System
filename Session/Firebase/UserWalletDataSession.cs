@@ -19,6 +19,7 @@
 
 #endregion
 
+using System;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using Firebase.Firestore;
@@ -35,6 +36,8 @@ namespace Vvr.Session.Firebase
     [UniqueSession]
     public sealed class UserWalletDataSession : ChildSession<UserWalletDataSession.SessionData>,
         IUserWalletProvider,
+        IAuthenticationCallbacks,
+
         IConnector<IWalletTypeProvider>,
         IConnector<IFirestoreProvider>,
         IConnector<IAuthenticationProvider>
@@ -63,6 +66,11 @@ namespace Vvr.Session.Firebase
         {
             await base.OnInitialize(session, data);
 
+            m_AuthenticationProvider.RegisterCallback(this);
+        }
+
+        async UniTask IAuthenticationCallbacks.OnLoggedIn(UserInfo userInfo)
+        {
             var walletSnapshot = await LoadWalletAsync();
             if (walletSnapshot.Exists)
             {
@@ -89,7 +97,11 @@ namespace Vvr.Session.Firebase
                 .Collection(nameof(UserDataStructure.Private))
                 .Document(UserDataStructure.Private.Wallet);
 
-            DocumentSnapshot snapshot = await docRef.GetSnapshotAsync();
+            DocumentSnapshot snapshot = await docRef.GetSnapshotAsync()
+                .AsUniTask()
+                .Timeout(TimeSpan.FromSeconds(5))
+                .AttachExternalCancellation(ReserveToken)
+                ;
             return snapshot;
         }
 
@@ -138,5 +150,6 @@ namespace Vvr.Session.Firebase
 
         void IConnector<IAuthenticationProvider>.Connect(IAuthenticationProvider    t) => m_AuthenticationProvider = t;
         void IConnector<IAuthenticationProvider>.Disconnect(IAuthenticationProvider t) => m_AuthenticationProvider = null;
+
     }
 }

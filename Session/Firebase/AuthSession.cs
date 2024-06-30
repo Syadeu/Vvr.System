@@ -20,6 +20,7 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
 using Firebase;
@@ -27,6 +28,7 @@ using Firebase.Auth;
 using JetBrains.Annotations;
 using UnityEngine;
 using UnityEngine.Assertions;
+using Vvr.Model;
 using Vvr.Provider;
 
 namespace Vvr.Session.Firebase
@@ -49,6 +51,8 @@ namespace Vvr.Session.Firebase
         private FirebaseUser m_CurrentUser;
         private Credential   m_CurrentCredential;
 
+        private readonly List<IAuthenticationCallbacks> m_CallbacksList = new();
+
         [NotNull]
         public UserInfo CurrentUserInfo
         {
@@ -64,6 +68,7 @@ namespace Vvr.Session.Firebase
                 return new UserInfo(m_CurrentUser.DisplayName, m_CurrentUser.UserId);
             }
         }
+        public bool LoggedIn => m_CurrentUser is not null;
 
         protected override async UniTask OnInitialize(IParentSession session, SessionData data)
         {
@@ -86,7 +91,12 @@ namespace Vvr.Session.Firebase
 
         public async UniTask<UserInfo> SignInAnonymouslyAsync()
         {
-            Assert.IsNull(m_CurrentUser);
+            // https://github.com/firebase/quickstart-unity/issues/1320
+
+            if (m_CurrentUser is not null)
+            {
+                return new UserInfo(m_CurrentUser.DisplayName, m_CurrentUser.UserId);
+            }
 
             try
             {
@@ -100,7 +110,10 @@ namespace Vvr.Session.Firebase
                 m_CurrentUser       = result.User;
                 m_CurrentCredential = result.Credential;
 
-                return new UserInfo(m_CurrentUser.DisplayName, m_CurrentUser.UserId);
+                var r = new UserInfo(m_CurrentUser.DisplayName, m_CurrentUser.UserId);
+                await OnLoggedIn(r);
+
+                return r;
             }
             catch (Exception e)
             {
@@ -108,6 +121,32 @@ namespace Vvr.Session.Firebase
                 throw;
             }
         }
+
+        private async UniTask OnLoggedIn(UserInfo userInfo)
+        {
+            using var tempArray = TempArray<UniTask>.Shared(m_CallbacksList.Count);
+
+            for (int i = 0; i < m_CallbacksList.Count; i++)
+            {
+                tempArray.Value[i] = m_CallbacksList[i].OnLoggedIn(userInfo)
+                        .AttachExternalCancellation(ReserveToken)
+                    ;
+            }
+
+            await UniTask.WhenAll(tempArray);
+        }
+        public void RegisterCallback(IAuthenticationCallbacks callbacks)
+        {
+            // TODO: Thread safe
+            m_CallbacksList.Add(callbacks);
+
+            if (LoggedIn)
+                callbacks.OnLoggedIn(CurrentUserInfo)
+                    .AttachExternalCancellation(ReserveToken)
+                    .Forget()
+                    ;
+        }
+
         public void SignOut()
         {
             Assert.IsNotNull(m_CurrentUser);

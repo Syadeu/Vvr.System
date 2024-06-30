@@ -23,16 +23,19 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Net.Http;
+using System.Threading;
 using Cathei.BakingSheet.Unity;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.Assertions;
+using UnityEngine.ResourceManagement;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.ResourceManagement.ResourceLocations;
 using Vvr.Model;
 using Vvr.Provider;
+using Object = UnityEngine.Object;
 
 namespace Vvr.Session.AssetManagement
 {
@@ -57,9 +60,12 @@ namespace Vvr.Session.AssetManagement
             /// </summary>
             public readonly string[] preloadGroups;
 
+            public bool useEditorAsset;
+
             public SessionData(params string[] preloadGroups)
             {
                 this.preloadGroups = preloadGroups;
+                useEditorAsset     = false;
             }
         }
 
@@ -119,6 +125,8 @@ namespace Vvr.Session.AssetManagement
         private readonly LinkedList<AsyncOperationHandle>  m_Handles       = new();
         private readonly Dictionary<Hash, ImmutableObject> m_LoadedObjects = new();
 
+        private readonly SemaphoreSlim m_LoadLock = new(1, 1);
+
         private IList<IResourceLocation> m_PreloadedLocations;
 
         protected override async UniTask OnInitialize(IParentSession session, SessionData data)
@@ -127,7 +135,7 @@ namespace Vvr.Session.AssetManagement
 
             if (data.preloadGroups?.Length > 0)
             {
-                await PreloadGroup(data.preloadGroups);
+                await UniTask.Create(data.preloadGroups, PreloadGroup);
             }
         }
 
@@ -202,6 +210,7 @@ namespace Vvr.Session.AssetManagement
             return base.OnReserve();
         }
 
+        [ThreadSafe(ThreadSafeAttribute.SafeType.Semaphore)]
         public async UniTask<IImmutableObject<TObject>> LoadAsync<TObject>(object key)
             where TObject : UnityEngine.Object
         {
@@ -225,35 +234,58 @@ namespace Vvr.Session.AssetManagement
                 ^ FNV1a32.Calculate(type.AssemblyQualifiedName)
                 ^ 367
                 );
-            if (m_LoadedObjects.TryGetValue(hash, out var existingValue))
+
+            ImmutableObject existingValue;
+            using (var wl = new SemaphoreSlimLock(m_LoadLock))
             {
-                // Because preloaded assets are UnityEngine.Object type.
-                if (existingValue is not ImmutableObject<TObject>)
+                await wl.WaitAsync(TimeSpan.FromSeconds(1));
+
+                if (!m_LoadedObjects.TryGetValue(hash, out existingValue))
                 {
-                    existingValue         = new ImmutableObject<TObject>(existingValue.Object);
-                    m_LoadedObjects[hash] = existingValue;
+                    var handle = await UniTask.Create(() => LoadObjectAsync<TObject>(key));
+
+                    // var handle = Addressables.LoadAssetAsync<TObject>(key);
+                    m_Handles.AddLast(handle);
+
+                    await handle;
+                    if (handle.OperationException is HttpRequestException http)
+                    {
+                        Debug.LogException(http);
+                        $"{http.Message}".ToLog();
+                    }
+
+                    ImmutableObject<TObject> obj = new(handle.Result);
+                    m_LoadedObjects[hash] = obj;
+
+                    existingValue = obj;
                 }
-                return (ImmutableObject<TObject>)existingValue;
             }
+
+            // Because preloaded assets are UnityEngine.Object type.
+            if (existingValue is not ImmutableObject<TObject>)
+            {
+                existingValue         = new ImmutableObject<TObject>(existingValue.Object);
+                m_LoadedObjects[hash] = existingValue;
+            }
+
+            return (ImmutableObject<TObject>)existingValue;
+        }
+
+        private async UniTask<AsyncOperationHandle<TObject>> LoadObjectAsync<TObject>(object key)
+            where TObject : UnityEngine.Object
+        {
+#if UNITY_EDITOR
+            if (Data.useEditorAsset)
+            {
+                if (key is AssetReference a)
+                {
+                    return Addressables.ResourceManager.CreateCompletedOperation((TObject)a.editorAsset, null);
+                }
+            }
+#endif
 
             var handle = Addressables.LoadAssetAsync<TObject>(key);
-            m_Handles.AddLast(handle);
-
-            await handle;
-            // await handle.ToUniTask()
-            //     .SuppressCancellationThrow()
-            //     .AttachExternalCancellation(ReserveToken);
-
-            if (handle.OperationException is HttpRequestException http)
-            {
-                Debug.LogException(http);
-                $"{http.Message}".ToLog();
-            }
-
-            ImmutableObject<TObject> obj = new(handle.Result);
-            m_LoadedObjects[hash] = obj;
-
-            return obj;
+            return handle;
         }
     }
 }

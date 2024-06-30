@@ -47,6 +47,12 @@ namespace Vvr.Model
 
         public T[] Value { get; private set; }
 
+        public T this[int index]
+        {
+            get => Value[index];
+            set => Value[index] = value;
+        }
+
         private TempArray(
             ArrayPool<T> pool,
             bool         clearOnDispose,
@@ -64,5 +70,7 @@ namespace Vvr.Model
                 m_Pool.Return(Value, m_ClearOnDispose);
             Value = null;
         }
+
+        public static implicit operator T[](TempArray<T> t) => t.Value;
     }
 }

@@ -19,9 +19,11 @@
 
 #endregion
 
+using System;
 using Cathei.BakingSheet.Unity;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
+using UnityEngine;
 using Vvr.Model;
 using Vvr.Provider;
 using Vvr.Session.Provider;
@@ -33,12 +35,12 @@ namespace Vvr.Session.AssetManagement
     /// </summary>
     [UsedImplicitly]
     [ProviderSession(
-        typeof(IStatConditionProvider),
         typeof(IGameConfigProvider),
         typeof(IActorDataProvider),
         typeof(ICustomMethodProvider),
         typeof(IStageDataProvider),
         typeof(IResearchDataProvider),
+        typeof(IStatConditionProvider),
         typeof(IWalletTypeProvider)
         )]
     public sealed class GameDataSession : ParentSession<GameDataSession.SessionData>
@@ -60,27 +62,38 @@ namespace Vvr.Session.AssetManagement
             const string DATA_KEY = "Data/_Container.asset";
 
             var assetSession = await CreateSession<AssetSession>(
-                new AssetSession.SessionData(
-                    // "GameData"
-                ));
+                new AssetSession.SessionData()
+                {
+                    useEditorAsset = true
+                });
             Register<IAssetProvider>(assetSession);
 
-            await UniTask.SwitchToMainThread();
-            SheetContainer = new GameDataSheets(UnityLogger.Default);
-            IImmutableObject<SheetContainerScriptableObject> dataContainer
-                = await assetSession.LoadAsync<SheetContainerScriptableObject>(DATA_KEY);
+            try
+            {
+                SheetContainer = await UniTask.Create(() => BakeSheetAsync(assetSession));
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+                throw;
+            }
 
-            ScriptableObjectSheetImporter imp = new(dataContainer.Object);
-            await SheetContainer.Bake(imp);
-
-            Parent
-                .Register<IStatConditionProvider>(await CreateSessionOnBackground<StatDataSession>(
-                    new StatDataSession.SessionData(SheetContainer.StatTable)))
-                .Register<IWalletTypeProvider>(await CreateSessionOnBackground<WalletDataSession>(
-                    new WalletDataSession.SessionData(SheetContainer.WalletTable)))
-                ;
-
-            var result = await LoadAsync();
+            var result = await UniTask.WhenAll(
+                CreateSession<GameConfigSession>(
+                    new GameConfigSession.SessionData(SheetContainer.GameConfigTable)),
+                CreateSession<ActorDataSession>(
+                    new ActorDataSession.SessionData(SheetContainer.Actors)),
+                CreateSession<CustomMethodSession>(
+                    new CustomMethodSession.SessionData(SheetContainer.CustomMethodTable)),
+                CreateSession<StageDataSession>(
+                    new StageDataSession.SessionData(SheetContainer.Stages)),
+                CreateSession<ResearchDataSession>(
+                    new ResearchDataSession.SessionData(SheetContainer.ResearchTable)),
+                CreateSession<StatDataSession>(
+                    new StatDataSession.SessionData(SheetContainer.StatTable)),
+                CreateSession<WalletDataSession>(
+                    new WalletDataSession.SessionData(SheetContainer.WalletTable))
+                );
 
             Parent
                 .Register<IGameConfigProvider>(result.Item1)
@@ -88,46 +101,53 @@ namespace Vvr.Session.AssetManagement
                 .Register<ICustomMethodProvider>(result.Item3)
                 .Register<IStageDataProvider>(result.Item4)
                 .Register<IResearchDataProvider>(result.Item5)
+                .Register<IStatConditionProvider>(result.Item6)
+                .Register<IWalletTypeProvider>(result.Item7)
                 ;
         }
+
+        private async UniTask<GameDataSheets> BakeSheetAsync(IAssetProvider assetSession)
+        {
+            const string DATA_KEY = "Data/_Container.asset";
+
+            try
+            {
+                var result = new GameDataSheets(UnityLogger.Default);
+                IImmutableObject<SheetContainerScriptableObject> dataContainer
+                        = await assetSession.LoadAsync<SheetContainerScriptableObject>(DATA_KEY)
+                            .AttachExternalCancellation(ReserveToken)
+                    ;
+
+                ScriptableObjectSheetImporter imp = new(dataContainer.Object);
+                await result.Bake(imp)
+                        .AsUniTask()
+                        .AttachExternalCancellation(ReserveToken)
+                    ;
+
+                return result;
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+                throw;
+            }
+        }
+
         protected override UniTask OnReserve()
         {
             Parent
-                .Unregister<IStatConditionProvider>()
-
                 .Unregister<IGameConfigProvider>()
                 .Unregister<IActorDataProvider>()
                 .Unregister<ICustomMethodProvider>()
                 .Unregister<IStageDataProvider>()
                 .Unregister<IResearchDataProvider>()
+                .Unregister<IStatConditionProvider>()
+                .Unregister<IWalletTypeProvider>()
                 ;
 
             SheetContainer.Dispose();
 
             return base.OnReserve();
-        }
-
-        private async
-            UniTask<(GameConfigSession, ActorDataSession, CustomMethodSession, StageDataSession, ResearchDataSession)>
-            LoadAsync()
-        {
-            var gameConfigSessionTask = CreateSessionOnBackground<GameConfigSession>(
-                new GameConfigSession.SessionData(SheetContainer.GameConfigTable));
-            var actorDataSessionTask = CreateSessionOnBackground<ActorDataSession>(
-                new ActorDataSession.SessionData(SheetContainer.Actors));
-            var customMethodSessionTask = CreateSessionOnBackground<CustomMethodSession>(
-                new CustomMethodSession.SessionData(SheetContainer.CustomMethodTable));
-            var stageDataSessionTask = CreateSessionOnBackground<StageDataSession>(
-                new StageDataSession.SessionData(SheetContainer.Stages));
-            var researchDataSessionTask = CreateSessionOnBackground<ResearchDataSession>(
-                new ResearchDataSession.SessionData(SheetContainer.ResearchTable));
-
-            return await UniTask.WhenAll(
-                gameConfigSessionTask,
-                actorDataSessionTask,
-                customMethodSessionTask,
-                stageDataSessionTask,
-                researchDataSessionTask);
         }
     }
 }

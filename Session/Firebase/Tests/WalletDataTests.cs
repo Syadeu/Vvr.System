@@ -22,29 +22,38 @@
 using System.Threading.Tasks;
 using NUnit.Framework;
 using Vvr.Provider;
-using Vvr.Session.Tests;
+using Vvr.Session.AssetManagement;
 using Vvr.TestClass;
 
 namespace Vvr.Session.Firebase.Tests
 {
     [TestFixture]
-    public sealed class WalletDataTests : SessionWithDataTest<TestRootSession>
+    public sealed class WalletDataTests : SessionTest<TestRootSession>
     {
         protected IAuthenticationProvider Authentication { get; set; }
+
+        private UserWalletDataSession WalletDataSession { get; set; }
 
         public override async Task OneTimeSetUp()
         {
             await base.OneTimeSetUp();
 
-            await Root.CreateSession<FirestoreSession>(default);
-            Authentication = await Root.CreateSession<AuthSession>(default);
-            await Authentication.SignInAnonymouslyAsync();
+            await Root.CreateSession<GameDataSession>(default);
+            // await Root.CreateSession<FirestoreSession>(default);
+            // Authentication = await Root.CreateSession<AuthSession>(default);
+            // WalletDataSession = await Root.CreateSession<UserWalletDataSession>(default);
         }
 
         public override async Task OneTimeTearDown()
         {
-            await Authentication.DeleteAccountAsync();
+            // await Authentication.DeleteAccountAsync();
             await base.OneTimeTearDown();
+        }
+
+        [Test]
+        public async Task LoadTest()
+        {
+            // await Authentication.SignInAnonymouslyAsync();
         }
     }
 }

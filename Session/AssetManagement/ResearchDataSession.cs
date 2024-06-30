@@ -61,27 +61,27 @@ namespace Vvr.Session.AssetManagement
         {
             await base.OnInitialize(session, data);
 
-            Assert.IsNotNull(m_StatConditionProvider);
-
-            Dictionary<int, LinkedList<ResearchSheet.Row>> dataMap = new();
-            foreach (var e in data.sheet)
-            {
-                if (!dataMap.TryGetValue(e.Definition.Group, out var list))
-                {
-                    list                        = new();
-                    dataMap[e.Definition.Group] = list;
-                }
-
-                list.AddLast(e);
-            }
-
-            foreach (var item in dataMap)
-            {
-                ResearchNodeGroup group = ResearchNodeGroup.Build(
-                    m_StatConditionProvider,
-                    item.Value);
-                m_NodeGroups[item.Key] = group;
-            }
+            // Assert.IsNotNull(m_StatConditionProvider);
+            //
+            // Dictionary<int, LinkedList<ResearchSheet.Row>> dataMap = new();
+            // foreach (var e in data.sheet)
+            // {
+            //     if (!dataMap.TryGetValue(e.Definition.Group, out var list))
+            //     {
+            //         list                        = new();
+            //         dataMap[e.Definition.Group] = list;
+            //     }
+            //
+            //     list.AddLast(e);
+            // }
+            //
+            // foreach (var item in dataMap)
+            // {
+            //     ResearchNodeGroup group = ResearchNodeGroup.Build(
+            //         m_StatConditionProvider,
+            //         item.Value);
+            //     m_NodeGroups[item.Key] = group;
+            // }
         }
 
         protected override async UniTask OnReserve()
@@ -120,7 +120,31 @@ namespace Vvr.Session.AssetManagement
         {
         }
 
-        void IConnector<IStatConditionProvider>.Connect(IStatConditionProvider    t) => m_StatConditionProvider = t;
+        void IConnector<IStatConditionProvider>.Connect(IStatConditionProvider    t)
+        {
+            m_StatConditionProvider = t;
+
+            Dictionary<int, LinkedList<ResearchSheet.Row>> dataMap = new();
+            foreach (var e in Data.sheet)
+            {
+                if (!dataMap.TryGetValue(e.Definition.Group, out var list))
+                {
+                    list                        = new();
+                    dataMap[e.Definition.Group] = list;
+                }
+
+                list.AddLast(e);
+            }
+
+            foreach (var item in dataMap)
+            {
+                ResearchNodeGroup group = ResearchNodeGroup.Build(
+                    m_StatConditionProvider,
+                    item.Value);
+                m_NodeGroups[item.Key] = group;
+            }
+        }
+
         void IConnector<IStatConditionProvider>.Disconnect(IStatConditionProvider t) => m_StatConditionProvider = null;
     }
 }

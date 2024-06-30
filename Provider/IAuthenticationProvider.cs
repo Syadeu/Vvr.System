@@ -28,11 +28,20 @@ namespace Vvr.Provider
     public interface IAuthenticationProvider : IProvider
     {
         UserInfo CurrentUserInfo { get; }
+        bool     LoggedIn        { get; }
 
         UniTask<UserInfo> SignInAnonymouslyAsync();
 
+        void RegisterCallback(IAuthenticationCallbacks callbacks);
+
         void SignOut();
         UniTask DeleteAccountAsync();
+    }
+
+    [PublicAPI]
+    public interface IAuthenticationCallbacks
+    {
+        UniTask OnLoggedIn(UserInfo userInfo);
     }
 
     [PublicAPI]
