@@ -23,22 +23,19 @@ using Cysharp.Threading.Tasks;
 using Firebase;
 using Firebase.Firestore;
 using JetBrains.Annotations;
+using Newtonsoft.Json.Linq;
+using UnityEngine.Assertions;
+using Vvr.Model;
+using Vvr.Provider;
 
 namespace Vvr.Session.Firebase
 {
     [UsedImplicitly]
-    public sealed class FirestoreSession : ChildSession<FirestoreSession.SessionData>
+    public sealed class FirestoreSession : ChildSession<FirestoreSession.SessionData>,
+        IFirestoreProvider,
+
+        IConnector<IAuthenticationProvider>
     {
-        struct UserStructure
-        {
-            public const string Users = nameof(Users);
-
-            public struct Private
-            {
-                public const string Wallet = nameof(Wallet);
-            }
-        }
-
         public struct SessionData : ISessionData
         {
             public FirebaseApp app;
@@ -46,37 +43,25 @@ namespace Vvr.Session.Firebase
 
         public override string DisplayName => nameof(FirestoreSession);
 
-        private FirebaseFirestore m_Instance;
+        private IAuthenticationProvider m_AuthenticationProvider;
+
+        public FirebaseFirestore Instance { get; private set; }
 
         protected override async UniTask OnInitialize(IParentSession session, SessionData data)
         {
             await base.OnInitialize(session, data);
 
-            m_Instance = FirebaseFirestore.DefaultInstance;
+            Instance = FirebaseFirestore.DefaultInstance;
         }
 
         protected override UniTask OnReserve()
         {
-            m_Instance = null;
+            Instance = null;
 
             return base.OnReserve();
         }
 
-        public async UniTask LoadWalletAsync()
-        {
-            const string TempId = "1234";
-
-            var docRef = m_Instance
-                .Collection(UserStructure.Users)
-                .Document(TempId)
-                .Collection(nameof(UserStructure.Private))
-                .Document(UserStructure.Private.Wallet);
-
-            DocumentSnapshot snapshot = await docRef.GetSnapshotAsync();
-            if (!snapshot.Exists)
-            {
-
-            }
-        }
+        void IConnector<IAuthenticationProvider>.Connect(IAuthenticationProvider    t) => m_AuthenticationProvider = t;
+        void IConnector<IAuthenticationProvider>.Disconnect(IAuthenticationProvider t) => m_AuthenticationProvider = null;
     }
 }

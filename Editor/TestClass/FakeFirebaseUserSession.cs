@@ -144,8 +144,8 @@ namespace Vvr.TestClass
                     currentTeamArray.Add(d.uniqueId);
             }
 
-            dataProvider.SetJson(UserDataKeyCollection.Actor.UserActors(), userActorData);
-            dataProvider.SetJson(UserDataKeyCollection.Actor.CurrentTeam(), currentTeamArray);
+            dataProvider.SetJson(UserDataPath.Actor.UserActors(), userActorData);
+            dataProvider.SetJson(UserDataPath.Actor.CurrentTeam(), currentTeamArray);
         }
 
         void IConnector<IActorDataProvider>.Connect(IActorDataProvider    t) => m_ActorDataProvider = t;

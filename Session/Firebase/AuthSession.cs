@@ -19,16 +19,22 @@
 
 #endregion
 
+using System;
+using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
 using Firebase;
 using Firebase.Auth;
 using JetBrains.Annotations;
+using UnityEngine;
 using UnityEngine.Assertions;
 using Vvr.Provider;
 
 namespace Vvr.Session.Firebase
 {
     [UsedImplicitly]
+    [ProviderSession(
+        typeof(IAuthenticationProvider)
+        )]
     public sealed class AuthSession : ChildSession<AuthSession.SessionData>,
         IAuthenticationProvider
     {
@@ -40,17 +46,39 @@ namespace Vvr.Session.Firebase
 
         private FirebaseAuth m_Instance;
 
-        public UserInfo CurrentUserInfo { get; private set; }
+        private FirebaseUser m_CurrentUser;
+        private Credential   m_CurrentCredential;
 
-        protected override UniTask OnInitialize(IParentSession session, SessionData data)
+        [NotNull]
+        public UserInfo CurrentUserInfo
         {
+            get
+            {
+                if (m_CurrentUser is null)
+                {
+                    throw new InvalidOperationException(
+                        "No login info"
+                        );
+                }
+
+                return new UserInfo(m_CurrentUser.DisplayName, m_CurrentUser.UserId);
+            }
+        }
+
+        protected override async UniTask OnInitialize(IParentSession session, SessionData data)
+        {
+            await base.OnInitialize(session, data);
+            await UniTask.SwitchToMainThread();
+
             m_Instance = FirebaseAuth.DefaultInstance;
 
-            return base.OnInitialize(session, data);
+            Parent.Register<IAuthenticationProvider>(this);
         }
 
         protected override UniTask OnReserve()
         {
+            Parent.Unregister<IAuthenticationProvider>();
+
             m_Instance = null;
 
             return base.OnReserve();
@@ -58,14 +86,51 @@ namespace Vvr.Session.Firebase
 
         public async UniTask<UserInfo> SignInAnonymouslyAsync()
         {
-            Assert.IsNull(CurrentUserInfo);
+            Assert.IsNull(m_CurrentUser);
 
-            AuthResult result = await m_Instance.SignInAnonymouslyAsync();
-            $"{result.User.DisplayName}, {result.User.UserId}".ToLog();
+            m_Instance.SignInAndRetrieveDataWithCredentialAsync()
+            try
+            {
+                AuthResult result = await m_Instance.SignInAnonymouslyAsync()
+                    .AsUniTask()
+                    .Timeout(TimeSpan.FromSeconds(5))
+                    .AttachExternalCancellation(ReserveToken)
+                    ;
+                $"{result.User.DisplayName}, {result.User.UserId}".ToLog();
 
-            CurrentUserInfo = new UserInfo(result.User.DisplayName, result.User.UserId);
+                m_CurrentUser       = result.User;
+                m_CurrentCredential = result.Credential;
 
-            return CurrentUserInfo;
+                return new UserInfo(m_CurrentUser.DisplayName, m_CurrentUser.UserId);
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+                throw;
+            }
+        }
+        public void SignOut()
+        {
+            Assert.IsNotNull(m_CurrentUser);
+            if (m_CurrentUser is null) return;
+
+            m_CurrentUser = null;
+            m_Instance.SignOut();
+        }
+
+        public async UniTask DeleteAccountAsync()
+        {
+            Assert.IsNotNull(m_CurrentUser);
+
+            await m_CurrentUser.DeleteAsync()
+                .AsUniTask()
+                .Timeout(TimeSpan.FromSeconds(5))
+                .AttachExternalCancellation(ReserveToken)
+                ;
+            m_Instance.SignOut();
+
+            m_CurrentUser       = null;
+            m_CurrentCredential = null;
         }
     }
 }

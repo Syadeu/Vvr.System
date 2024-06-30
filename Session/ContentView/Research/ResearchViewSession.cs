@@ -22,6 +22,7 @@ using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using UnityEngine;
 using Vvr.Controller.Research;
+using Vvr.Model;
 using Vvr.Provider;
 using Vvr.Session.AssetManagement;
 using Vvr.Session.ContentView.Core;
@@ -133,14 +134,14 @@ namespace Vvr.Session.ContentView.Research
                 return;
             }
 
-            int lvl = m_UserDataProvider.GetInt(UserDataKeyCollection.Research.NodeLevel(node.Id));
+            int lvl = m_UserDataProvider.GetInt(UserDataPath.Research.NodeLevel(node.Id));
             if (lvl != node.Level)
                 throw new InvalidOperationException("lvl has been modified");
 
             $"Upgrade node {node.Id}".ToLog();
 
             lvl += 1;
-            m_UserDataProvider.SetInt(UserDataKeyCollection.Research.NodeLevel(node.Id), lvl);
+            m_UserDataProvider.SetInt(UserDataPath.Research.NodeLevel(node.Id), lvl);
             node.SetLevel(lvl);
 
             EventHandler

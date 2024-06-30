@@ -22,27 +22,26 @@
 using System.Text;
 using System.Threading;
 using JetBrains.Annotations;
-using Vvr.Model;
 
-namespace Vvr.Provider
+namespace Vvr.Model
 {
     /// <summary>
     /// Represents a collection of user data keys related to game configuration and research.
     /// </summary>
     [PublicAPI]
-    public readonly ref struct UserDataKeyCollection
+    public readonly ref struct UserDataPath
     {
+        public const char Delimiter = '_';
+
         private static readonly ThreadLocal<StringBuilder> s_StringBuilder
             = new(() => new StringBuilder(256));
 
         private static string KeyFormatter(string x, string y)
         {
-            const char delimiter = '_';
-
             StringBuilder sb = s_StringBuilder.Value;
             sb.Clear();
             sb.Append(x);
-            sb.Append(delimiter);
+            sb.Append(Delimiter);
             sb.Append(y);
             return sb.ToString();
         }

@@ -23,6 +23,7 @@ using System;
 using JetBrains.Annotations;
 using Unity.Collections;
 using UnityEngine.Assertions;
+using Vvr.Crypto;
 using Vvr.Model.Wallet;
 
 namespace Vvr.Provider.Command
@@ -32,8 +33,8 @@ namespace Vvr.Provider.Command
     {
         public struct Entry
         {
-            public short walletType;
-            public float value;
+            public short       walletType;
+            public CryptoFloat value;
 
             public Entry(WalletType t, float v)
             {

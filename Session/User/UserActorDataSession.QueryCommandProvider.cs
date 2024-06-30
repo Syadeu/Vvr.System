@@ -144,7 +144,7 @@ namespace Vvr.Session.User
 
         private partial void ProcessCommandData(UserActorDataQuery.SetTeamActorData data)
         {
-            if (data.index is < 0 or >= UserDataKeyCollection.Actor.TeamCount)
+            if (data.index is < 0 or >= UserDataPath.Actor.TeamCount)
                 throw new InvalidOperationException($"{data.index}");
 
             ResolvedActorData targetData

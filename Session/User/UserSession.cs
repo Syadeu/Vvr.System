@@ -66,12 +66,12 @@ namespace Vvr.Session.User
                         // TODO: this is temporarily. Should changed to firebase
                         dataProvider = prefDataSession
                     }))
-                .Register<IUserWalletProvider>(await CreateSessionOnBackground<UserWalletDataSession>(
-                    new UserWalletDataSession.SessionData()
-                    {
-                        // TODO: This is temporarily
-                        dataProvider = prefDataSession
-                    }))
+                // .Register<IUserWalletProvider>(await CreateSessionOnBackground<UserWalletDataSession>(
+                //     new UserWalletDataSession.SessionData()
+                //     {
+                //         // TODO: This is temporarily
+                //         dataProvider = prefDataSession
+                //     }))
                 ;
 
             await base.OnInitialize(session, data);

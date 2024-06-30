@@ -132,15 +132,15 @@ namespace Vvr.TestClass
                     currentTeamArray.Add(d.uniqueId);
             }
 
-            dataProvider.SetJson(UserDataKeyCollection.Actor.UserActors(), userActorData);
-            dataProvider.SetJson(UserDataKeyCollection.Actor.CurrentTeam(), currentTeamArray);
+            dataProvider.SetJson(UserDataPath.Actor.UserActors(), userActorData);
+            dataProvider.SetJson(UserDataPath.Actor.CurrentTeam(), currentTeamArray);
         }
 
         private void LoadTestPlayerData(PlayerPrefDataSession session)
         {
             Assert.IsNotNull(m_ActorDataProvider);
 
-            var jr = session.GetString(UserDataKeyCollection.Actor.UserActors(), null);
+            var jr = session.GetString(UserDataPath.Actor.UserActors(), null);
             if (jr is null) return;
 
             JArray arr = JArray.Parse(jr);

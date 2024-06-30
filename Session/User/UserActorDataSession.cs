@@ -197,16 +197,16 @@ namespace Vvr.Session.User
             }
 
             Data.dataProvider
-                .SetJson(UserDataKeyCollection.Actor.UserActors(), userActorArray);
+                .SetJson(UserDataPath.Actor.UserActors(), userActorArray);
             Data.dataProvider
-                .SetJson(UserDataKeyCollection.Actor.CurrentTeam(), currentTeamArray);
+                .SetJson(UserDataPath.Actor.CurrentTeam(), currentTeamArray);
         }
 
         private void LoadCurrentTeam()
         {
-            m_CurrentTeam ??= new ResolvedActorData[UserDataKeyCollection.Actor.TeamCount];
+            m_CurrentTeam ??= new ResolvedActorData[UserDataPath.Actor.TeamCount];
 
-            var jr = Data.dataProvider.GetJson(UserDataKeyCollection.Actor.CurrentTeam());
+            var jr = Data.dataProvider.GetJson(UserDataPath.Actor.CurrentTeam());
             if (jr is not null)
             {
                 JArray arr = (JArray)jr;
@@ -231,7 +231,7 @@ namespace Vvr.Session.User
 
             Assert.IsNotNull(m_AssetProvider);
 
-            var jr = Data.dataProvider.GetJson(UserDataKeyCollection.Actor.UserActors());
+            var jr = Data.dataProvider.GetJson(UserDataPath.Actor.UserActors());
             if (jr is not null)
             {
                 bool corrpted = false;

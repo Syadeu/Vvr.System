@@ -112,7 +112,7 @@ namespace Vvr.Session.AssetManagement
             {
                 foreach (var node in nodeGroup)
                 {
-                    node.SetLevel(t.GetInt(UserDataKeyCollection.Research.NodeLevel(node.Id)));
+                    node.SetLevel(t.GetInt(UserDataPath.Research.NodeLevel(node.Id)));
                 }
             }
         }

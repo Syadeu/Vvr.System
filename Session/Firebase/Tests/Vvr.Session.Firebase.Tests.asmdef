@@ -1,0 +1,45 @@
+{
+  "name": "Vvr.Session.Firebase.Tests",
+  "rootNamespace": "",
+  "references": [
+    "UnityEngine.TestRunner",
+    "UnityEditor.TestRunner",
+
+    "Vvr.TestClass",
+    "Vvr",
+    "GUID:3957eefabf624d2485d569ea058bfc85",
+    "GUID:0bebf4b98a2c47cd93c8f4c2f5f17d2a",
+    "GUID:60df735478b04dd3aa2c4819aa583f3c",
+    "GUID:ca7a9d7f2d304e6d8e77b3a8931dc117",
+    "GUID:c2bbddf0f1a741a5bd8600ce5935d604",
+
+    "GUID:d8b63aba1907145bea998dd612889d6b",
+    "GUID:e0cd26848372d4e5c891c569017e11f1",
+
+    "UniTask",
+    "UniTask.Linq"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": true,
+  "precompiledReferences": [
+    "Newtonsoft.Json.dll",
+    "Firebase.App.dll",
+    "Firebase.Analytics.dll",
+    "Firebase.Crashlytics.dll",
+    "Firebase.TaskExtension.dll",
+    "Firebase.Auth.dll",
+    "Firebase.Firestore.dll",
+    "nunit.framework.dll"
+  ],
+  "autoReferenced": false,
+  "defineConstraints": [
+    "UNITY_INCLUDE_TESTS",
+    "VVR_FIREBASE"
+  ],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

@@ -155,7 +155,7 @@ namespace Vvr.Session.ContentView.Deck
                 this.Inject(m_ViewInstance);
 
                 // TODO:
-                m_CachedTeamData ??= new IResolvedActorData[UserDataKeyCollection.Actor.TeamCount];
+                m_CachedTeamData ??= new IResolvedActorData[UserDataPath.Actor.TeamCount];
                 m_TargetDeck     =   m_UserActorProvider.GetCurrentTeam();
                 m_TargetDeck.CopyTo(m_CachedTeamData);
             }

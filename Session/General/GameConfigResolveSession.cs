@@ -247,7 +247,7 @@ namespace Vvr.Session
             int counter;
             if (config.Definition.CacheLimit)
             {
-                var key = UserDataKeyCollection.GameConfig.ExecutedCount(config.Id);
+                var key = UserDataPath.GameConfig.ExecutedCount(config.Id);
                 counter   = m_UserDataProvider.GetInt(key);
             }
             else
@@ -268,7 +268,7 @@ namespace Vvr.Session
 
             if (config.Definition.CacheLimit)
             {
-                var key     = UserDataKeyCollection.GameConfig.ExecutedCount(config.Id);
+                var key     = UserDataPath.GameConfig.ExecutedCount(config.Id);
                 int counter = m_UserDataProvider.GetInt(key);
                 m_UserDataProvider.SetInt(key, ++counter);
             }
